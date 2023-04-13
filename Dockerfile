@@ -14,5 +14,5 @@ EXPOSE 80
 ENV NAME World
 
 # Rename the file to app.py
-CMD ["python3", "app.py"]
+CMD ["python3", "text_to_image.py"]
 
