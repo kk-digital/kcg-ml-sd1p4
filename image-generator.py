@@ -48,7 +48,6 @@ def generate_image():
     image.save(img_bytes, format='PNG')
     img_bytes.seek(0)
 
-    # Devolver la imagen generada como respuesta
     return img_bytes.getvalue(), 200
 
 
@@ -58,4 +57,4 @@ def ping():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)  # Ejecuta la aplicación en modo de depuración
+    app.run(debug=True)  
