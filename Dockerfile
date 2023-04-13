@@ -1,4 +1,4 @@
-FROM nvidia/cuda:11.2.2-cudnn8-runtime-ubuntu20.04
+FROM docker.io/nvidia/cuda:11.2.2-cudnn8-runtime-ubuntu20.04
 
 WORKDIR /app
 
@@ -13,6 +13,6 @@ EXPOSE 80
 
 ENV NAME World
 
-# Rename the file to app.py
-CMD ["python3", "image-generator"]
+
+CMD ["python3", "image-generator.py"]
 
