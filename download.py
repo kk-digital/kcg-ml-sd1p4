@@ -8,11 +8,11 @@ import libtorrent as lt
 
 magnet_link = 'magnet:?xt=urn:btih:3f8016061132ad4a475eb33dac569f3a88418974&dn=v1-5-pruned-emaonly.safetensors&tr=udp%3a%2f%2fopen.demonii.com%3a1337%2fannounce&tr=udp%3a%2f%2fexodus.desync.com%3a6969%2fannounce'
 
-destination = '/tmp/input/models/' 
+destination = '/tmp/input/models/'
 
 
-output_dir = '/tmp/output'  
-logs_dir = '/tmp/logs'  
+output_dir = '/tmp/output'
+logs_dir = '/tmp/logs'
 
 try:
     ses = lt.session()
@@ -39,8 +39,10 @@ except Exception as e:
     print(f"Failed to save output: {e}")
 
 try:
-    
-    log_file = os.path.join(logs_dir, f'log_{datetime.datetime.now().strftime("%Y%m%d_%H%M%S")}.txt')
+
+    log_file = os.path.join(
+        logs_dir,
+        f'log_{datetime.datetime.now().strftime("%Y%m%d_%H%M%S")}.txt')
     with open(log_file, 'w') as file:
         file.write("This is a log entry.")
     print(f"Log saved to: {log_file}")
