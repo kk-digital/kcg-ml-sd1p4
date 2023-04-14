@@ -30,3 +30,8 @@ python -m nbconvert --ClearOutputPreprocessor.enabled=True --to notebook *.ipynb
 podman build -t image-generator .
 ```
 
+### Download our finetuned model weights
+
+```bash 
+python3 download.py
+```
