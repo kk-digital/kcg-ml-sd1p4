@@ -1,21 +1,34 @@
 FROM docker.io/nvidia/cuda:11.2.2-cudnn8-runtime-ubuntu20.04
 
+
 WORKDIR /app
 
-COPY app.py /app/app.py
-COPY requirements.txt /app/requirements.txt
+COPY script.py /app/script.py
 
 RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
+    wget \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip3 install -r requirements.txt
+RUN python3 /app/script.py test
 
-VOLUME ["/host/input", "/host/output"]
+RUN apt-get update && apt-get install -y \
+    transmission-cli \
+    && rm -rf /var/lib/apt/lists/*
 
-ENV FLASK_APP=app.py
+RUN mkdir /models \
+    && cd /models \
+    && transmission-cli "magnet:?xt=urn:btih:3f8016061132ad4a475eb33dac569f3a88418974&dn=v1-5-pruned-emaonly.safetensors&tr=udp%3a%2f%2fopen.demonii.com%3a1337%2fannounce&tr=udp%3a%2f%2fexodus.desync.com%3a6969%2fannounce" \
+    && rm -rf /var/lib/apt/lists/*
 
-EXPOSE 5000
+VOLUME ["/host/tmp/input", "/host/tmp/output"]
 
-CMD ["flask", "run", "--host=0.0.0.0"]
+ENV LOG_DIR=/app/output/logs
+
+CMD echo "Start Time: $(date)" \
+    && transmission-cli "magnet:?xt=urn:btih:3f8016061132ad4a475eb33dac569f3a88418974&dn=v1-5-pruned-emaonly.safetensors&tr=udp%3a%2f%2fopen.demonii.com%3a1337%2fannounce&tr=udp%3a%2f%2fexodus.desync.com%3a6969%2fannounce" \
+    && echo "End Time: $(date)" \
+    && echo "M/S: $(du -sh /models)" \
+    && echo "Stats: $(transmission-show -s /models/*.torrent)"
