@@ -30,12 +30,17 @@ except Exception as e:
     # Error logging
     with open(os.path.join(log_dir, 'error.log'), 'w') as f:
         f.write(str(e))
-    print('An error occurred. Please check the log file at:', os.path.join(log_dir, 'error.log'))
+    print(
+        'An error occurred. Please check the log file at:',
+        os.path.join(
+            log_dir,
+            'error.log'))
 
 finally:
     # End time and download speed logging
     end_time = time.time()
-    download_speed = os.path.getsize('/models') / (end_time - start_time) / (1024 * 1024)
+    download_speed = os.path.getsize(
+        '/models') / (end_time - start_time) / (1024 * 1024)
     with open(os.path.join(log_dir, 'stats.log'), 'w') as f:
         f.write('Start time: {}\n'.format(time.ctime(start_time)))
         f.write('End time: {}\n'.format(time.ctime(end_time)))
