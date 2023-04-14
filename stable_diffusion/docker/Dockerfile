@@ -4,6 +4,7 @@ FROM docker.io/nvidia/cuda:11.2.2-cudnn8-runtime-ubuntu20.04
 WORKDIR /app
 
 COPY script.py /app/script.py
+COPY requirements.txt /app/requirements.txt
 
 RUN apt-get update && apt-get install -y \
     python3 \
