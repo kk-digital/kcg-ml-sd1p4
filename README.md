@@ -23,3 +23,10 @@ nbstripout --install --attributes .gitattributes
 ```sh
 python -m nbconvert --ClearOutputPreprocessor.enabled=True --to notebook *.ipynb --inplace
 ```
+
+### How to build dockerfile with podman
+
+```bash 
+podman build -t image-generator .
+```
+
