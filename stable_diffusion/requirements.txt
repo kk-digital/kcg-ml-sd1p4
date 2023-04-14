@@ -1,0 +1,6 @@
+diffusers==0.11.1
+transformers
+scipy
+ftfy
+accelerate
+torch
