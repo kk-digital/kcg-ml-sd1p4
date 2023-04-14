@@ -2,18 +2,20 @@ FROM docker.io/nvidia/cuda:11.2.2-cudnn8-runtime-ubuntu20.04
 
 WORKDIR /app
 
-COPY . /app
+COPY app.py /app/app.py
+COPY requirements.txt /app/requirements.txt
 
-RUN apt update && \
-    apt install -y python3-pip && \
-    pip3 install --upgrade pip && \
-    pip3 install --no-cache-dir -r requirements.txt
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/*
 
-EXPOSE 80
+RUN pip3 install -r requirements.txt
 
-ENV NAME World
+VOLUME ["/host/input", "/host/output"]
 
+ENV FLASK_APP=app.py
 
-CMD ["python3", "image-generator.py"]
+EXPOSE 5000
 
-
+CMD ["flask", "run", "--host=0.0.0.0"]
