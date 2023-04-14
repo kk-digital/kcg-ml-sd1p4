@@ -24,10 +24,16 @@ nbstripout --install --attributes .gitattributes
 python -m nbconvert --ClearOutputPreprocessor.enabled=True --to notebook *.ipynb --inplace
 ```
 
-### Docker image generation with Podman
+### Create the Docker image
 
 ```bash 
 podman build -t image-generator .
+```
+
+### Run the Docker container with the input and output directories mounted from the host
+
+```bash 
+podman run -v /path/to/host/tmp/input:/host/tmp/input -v /path/to/host/tmp/output:/host/tmp/output image-generator
 ```
 
 ### Download our finetuned model weights
