@@ -1,11 +1,11 @@
-FROM python:3.10-slim
+FROM python:3.10
 FROM nvidia/cuda:11.2.2-cudnn8-runtime-ubuntu20.04
 
 
-RUN apt-get update 
-RUN apt-get install -y python3-pip
-RUN apt-get install -y python3-dev
-RUN apt-get install -y wget
+RUN sudo apt-get update 
+RUN sudo apt-get install -y python3-pip
+RUN sudo apt-get install -y python3-dev
+RUN sudo apt-get install -y wget
 
 
 
