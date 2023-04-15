@@ -22,6 +22,7 @@ RUN wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86
 RUN mv cuda-ubuntu2004.pin /etc/apt/preferences.d/cuda-repository-pin-600
 
 RUN wget https://huggingface.co/CompVis/stable-diffusion-v-1-4-original/resolve/main/sd-v1-4.ckptipts/data/stable_diffusion/
+RUN mkdir /app/stable_diffusion/scripts/data/stable_diffusion/
 RUN mv sd-v1-4.ckpt /app/stable_diffusion/scripts/data/stable_diffusion/
 
 
