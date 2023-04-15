@@ -1,0 +1,8 @@
+version: '3.4'
+
+services:
+  kcgmlsd1p4:
+    image: kcgmlsd1p4
+    build:
+      context: .
+      dockerfile: ./Dockerfile

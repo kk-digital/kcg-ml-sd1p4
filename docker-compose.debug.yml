@@ -1,0 +1,11 @@
+version: '3.4'
+
+services:
+  kcgmlsd1p4:
+    image: kcgmlsd1p4
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    command: ["sh", "-c", "pip install debugpy -t /tmp && python /tmp/debugpy --wait-for-client --listen 0.0.0.0:5678 stable_diffusion/scripts/text_to_image.py "]
+    ports:
+      - 5678:5678
