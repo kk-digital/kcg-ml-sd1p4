@@ -23,3 +23,4 @@ nbstripout --install --attributes .gitattributes
 ```sh
 python -m nbconvert --ClearOutputPreprocessor.enabled=True --to notebook *.ipynb --inplace
 ```
+# kcg-ml-sd1p4
