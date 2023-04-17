@@ -5,7 +5,7 @@ FROM docker.io/nvidia/cuda:11.2.2-cudnn8-runtime-ubuntu20.04
 WORKDIR /app
 
 # Copy script.py and requirements.txt into the container
-COPY script.py /app/script.py
+COPY script_download_model.py /app/script_download_model.py
 COPY requirements.txt /app/requirements.txt
 
 # Install dependencies
@@ -18,7 +18,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Run tests for the script
-RUN python3 /app/script.py test
+RUN python3 /app/script_download_model.py test
 
 # Create a directory for the models
 RUN mkdir /models
