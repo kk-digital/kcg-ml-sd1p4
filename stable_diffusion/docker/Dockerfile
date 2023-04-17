@@ -34,13 +34,7 @@ RUN pip3 install python-qbittorrent
 # Create a directory for the models
 RUN mkdir /models
 
-# Set environment variable for log directory
-ENV LOG_DIR=/app/output/logs
-
-# Run tests for the script
-RUN python3 /app/script_download_model.py test
-
-# Run the main command with logging and stats
+# Run the script as the main command
 CMD echo "Start Time: $(date)" \
     && python3 /app/script_download_model.py \
     && echo "End Time: $(date)" \
