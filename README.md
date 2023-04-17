@@ -29,15 +29,3 @@ python -m nbconvert --ClearOutputPreprocessor.enabled=True --to notebook *.ipynb
 ```bash 
 podman build -t image-generator .
 ```
-
-### Run the Docker container with the input and output directories mounted from the host
-
-```bash 
-podman run -v /path/to/host/tmp/input:/host/tmp/input -v /path/to/host/tmp/output:/host/tmp/output image-generator
-```
-
-### Download our finetuned model weights
-
-```bash 
-python3 download.py
-```
