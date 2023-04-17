@@ -48,3 +48,9 @@ try:
 except Exception as e:
     print(f"Failed to save log: {e}")
 
+while not h.is_seed():
+    s = h.status()
+    print(f"Progress: {s.progress * 100:.2f}%")
+    time.sleep(1)
+
+print(f"Download complete. File saved to: {destination}/{h.name()}")
