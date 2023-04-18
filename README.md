@@ -66,7 +66,10 @@ sudo usermod -aG docker $USER
 ```bash
 docker run hello-world
 ```
-
+### Download the model
+```bash
+./download-model.sh
+```
 ### Create the Docker image
 
 ```bash

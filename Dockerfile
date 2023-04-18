@@ -24,9 +24,12 @@ RUN apt-get update && apt-get install -y \
     libtorrent-rasterbar-dev \
     git \
     && rm -rf /var/lib/apt/lists/*
+# Copy files
+COPY /stable_diffusion /stable_diffusion
+
 
 # Install Python dependencies from requirements.txt
-RUN pip3 install -r /stable_diffusion/requirements.txt
+RUN pip3 install -r requirements.txt
 
 # Install python-qbittorrent
 RUN pip3 install python-qbittorrent
@@ -39,11 +42,8 @@ ENV LOG_DIR=/output/logs
 
 
 # Download the model if it doesn't exist
-RUN if [ ! -f "/input/models/v1-5-pruned-emaonly.safetensors" ]; then \
-        python3 /stable_diffusion/script_download_model.py; \
-    fi
 
 # Run the main command with logging and stats
 CMD echo "Start Time: $(date)" \
-    && python3 /stable_diffusion/script_run_diffusion.py \
+    && python3 stable_diffusion/script_run_diffusion.py \
     && echo "End Time: $(date)" \
