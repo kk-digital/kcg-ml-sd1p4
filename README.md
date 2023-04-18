@@ -23,6 +23,8 @@ nbstripout --install --attributes .gitattributes
 ```sh
 python -m nbconvert --ClearOutputPreprocessor.enabled=True --to notebook *.ipynb --inplace
 ```
+
+# Docker
 ## Setting up docker
 ### Add the docker GPG key to your systems
 ```bash
