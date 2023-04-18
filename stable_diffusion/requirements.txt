@@ -1,2 +1,10 @@
 requests==2.26.0
 libtorrent
+tqdm==4.62.3
+numpy==1.21.4
+torch==1.10.0+cu102
+pillow==8.4.0
+transformers==4.16.1
+ftfy==6.0.1
+scipy==1.7.3
+accelerate==0.5.1
