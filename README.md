@@ -70,8 +70,10 @@ docker run hello-world
 ### Create the Docker image
 
 ```bash
-podman build -t image-generator .
+docker build -t stable-diffusion .
+docker run --gpus all -v /path/to/input:/input -v /path/to/output:/output stable-diffusion
 ```
+Replace /path/to/input with your input path, and /path/to/output with your output that
 
 ## Downloading Models
 
