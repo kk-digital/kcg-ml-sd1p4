@@ -30,11 +30,17 @@ python -m nbconvert --ClearOutputPreprocessor.enabled=True --to notebook *.ipynb
 podman build -t image-generator .
 ```
 
-### Downloading Model 
-v1-5-pruned-emaonly.safetensors
-``` !wget https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors ```
-sd-v1-4.ckpt
-```!wget https://huggingface.co/CompVis/stable-diffusion-v-1-4-original/resolve/main/sd-v1-4.ckpt ``` 
+## Downloading Models
+
+##### v1-5-pruned-emaonly.safetensors
+``` bash 
+!wget https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors 
+```
+
+##### sd-v1-4.ckpt
+```
+!wget https://huggingface.co/CompVis/stable-diffusion-v-1-4-original/resolve/main/sd-v1-4.ckpt 
+``` 
 
 
 
