@@ -29,3 +29,7 @@ python -m nbconvert --ClearOutputPreprocessor.enabled=True --to notebook *.ipynb
 ```bash 
 podman build -t image-generator .
 ```
+
+### Downloading Model 
+``` !wget https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors ```
+
