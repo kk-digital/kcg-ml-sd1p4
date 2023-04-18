@@ -25,8 +25,8 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 # Copy files
-COPY /stable_diffusion /stable_diffusion
-
+COPY /stable_diffusion/requirements.txt /stable_diffusion/requirements.txt
+COPY /stable_diffusion/script_run_diffusion.py /stable_diffusion/script_run_diffusion.py
 
 # Install Python dependencies from requirements.txt
 RUN pip3 install -r requirements.txt
@@ -45,5 +45,5 @@ ENV LOG_DIR=/output/logs
 
 # Run the main command with logging and stats
 CMD echo "Start Time: $(date)" \
-    && python3 stable_diffusion/script_run_diffusion.py \
+    && python3 script_run_diffusion.py \
     && echo "End Time: $(date)" \
