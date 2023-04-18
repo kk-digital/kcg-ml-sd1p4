@@ -18,10 +18,10 @@ def load_models():
 
 
     torch_device = "cuda" if torch.cuda.is_available() else "cpu"
-    
+
     from transformers import CLIPTextModel, CLIPTokenizer
     from diffusers import AutoencoderKL, UNet2DConditionModel, PNDMScheduler, LMSDiscreteScheduler
-    
+
     # what is function is PNDMScheduler??
     vae = AutoencoderKL.from_pretrained("CompVis/stable-diffusion-v1-4", subfolder="vae")
     tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14")
@@ -30,7 +30,7 @@ def load_models():
     schenduler = LMSDiscreteScheduler.from_pretrained("CompVis/stable-diffusion-v1-4", subfolder="scheduler")
 
 
-    
+
 @app.route('/generate_image', methods=['POST'])
 def generate_image():
     prompt = ["a photograph of a monkey riding a horse"]
@@ -41,7 +41,7 @@ def generate_image():
     image = Image.new("RGB", (width, height), color=(255, 255, 255))
     draw = ImageDraw.Draw(image)
 
-    font = ImageFont.truetype("arial.ttf", 24) 
+    font = ImageFont.truetype("arial.ttf", 24)
     draw.text((10, 10), prompt, fill=(0, 0, 0))
 
     img_bytes = io.BytesIO()
@@ -57,4 +57,4 @@ def ping():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)  
+    app.run(debug=True)
