@@ -1,9 +1,11 @@
-requests==2.26.0
-libtorrent
 tqdm==4.62.3
-numpy==1.21.4
-pillow==8.4.0
+numpy==1.21.5
+pillow==9.0.0
 transformers==4.16.1
 ftfy==6.0.1
 scipy==1.7.3
 accelerate==0.5.1
+pytorch-lightning==1.5.5
+ldm==0.1.9
+einops==1.0.7
+omegaconf==2.1.1
