@@ -23,24 +23,62 @@ nbstripout --install --attributes .gitattributes
 ```sh
 python -m nbconvert --ClearOutputPreprocessor.enabled=True --to notebook *.ipynb --inplace
 ```
+## Setting up docker
+### Add the docker GPG key to your systems
+```bash
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+```
+### Add docker to apt sources
+```bash
+sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+```
+### Update the package database
+```bash
+sudo apt-get update
+```
+### Install docker
+```bash
+sudo apt-get install docker-ce docker-ce-cli containerd.io
+```
+### Startup docker
+```bash
+sudo systemctl enable docker --now
+sudo systemctl status docker
+```
+
+### Install the NVIDIA toolkit (for Ubuntu)
+```bash
+distribution=$(. /etc/os-release;echo $ID$VERSION_ID) && curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add - && curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list && sudo apt-get update && sudo apt-get install -y nvidia-docker2 && sudo systemctl restart docker
+```
+### Verify the NVIDIA container toolkit is working
+```bash
+sudo docker run --gpus all nvidia/cuda:11.0-base nvidia-smi
+```
+This command should display information about the current GPUs on the system
+### Add yourself to the docker group
+```bash
+sudo usermod -aG docker $USER
+```
+**You must log out and log back in to apply the changes**
+### Verify you can run docker commands
+```bash
+docker run hello-world
+```
 
 ### Create the Docker image
 
-```bash 
+```bash
 podman build -t image-generator .
 ```
 
 ## Downloading Models
 
 ##### v1-5-pruned-emaonly.safetensors
-``` bash 
-!wget https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors 
+``` bash
+!wget https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors
 ```
 
 ##### sd-v1-4.ckpt
 ```
-!wget https://huggingface.co/CompVis/stable-diffusion-v-1-4-original/resolve/main/sd-v1-4.ckpt 
-``` 
-
-
-
+!wget https://huggingface.co/CompVis/stable-diffusion-v-1-4-original/resolve/main/sd-v1-4.ckpt
+```
