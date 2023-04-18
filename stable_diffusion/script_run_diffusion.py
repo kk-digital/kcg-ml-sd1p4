@@ -15,7 +15,7 @@ def main():
     args = parser.parse_args()
 
     # Load the diffusion model
-    model_path = '/input/models/v1-5-pruned-emaonly.safetensors'
+    model_path = '/input/models/sd-v1-4.ckpt'
     diffusion = model.load(model_path)
 
     # Load the prompts
