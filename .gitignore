@@ -131,5 +131,8 @@ dmypy.json
 # Ignore .DS_Store files
 .DS_Store
 
+#Ignore output
+/output
+
 #Ignore input/models/
 input/models/
