@@ -28,6 +28,11 @@ RUN apt-get update && apt-get install -y \
 COPY /stable_diffusion/requirements.txt /stable_diffusion/requirements.txt
 COPY /stable_diffusion/script_run_diffusion.py /stable_diffusion/script_run_diffusion.py
 
+# These deps are large, so put them in their own layer to save rebuild time
+RUN pip install --extra-index-url https://download.pytorch.org/whl/cu116 \
+    diffusers==0.6.0 \
+    torch==1.12.1+cu116
+
 # Install Python dependencies from requirements.txt
 RUN pip3 install -r requirements.txt
 
