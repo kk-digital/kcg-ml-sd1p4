@@ -1,62 +1,47 @@
-# Use base image
-FROM docker.io/nvidia/cuda:11.3.1-cudnn8-runtime-ubuntu20.04
+FROM continuumio/miniconda3:4.12.0 AS build
 
-# These deps are large, so put them in their own layer to save rebuild time
-ARG DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get install -y \
-    python3 \
-    python3-pip
+# Step for image utility dependencies.
+RUN apt update \
+ && apt install --no-install-recommends -y git \
+ && apt-get clean
 
-RUN pip3 install --upgrade pip
-RUN pip3 install torch==1.11.0+cu113 torchvision==0.12.0+cu113 torchaudio==0.11.0 --extra-index-url https://download.pytorch.org/whl/cu113
+COPY . /root/repo/
 
+# Step to install dependencies with conda
+RUN eval "$(conda shell.bash hook)" \
+ && conda install -c conda-forge conda-pack \
+ && conda env create -f /root/repo/environment.yaml \
+ && conda activate ldm \
+ && pip install gradio==3.1.7 \
+ && conda activate base
 
-# Mount volumes
-VOLUME /input
-VOLUME /output
-VOLUME /stable_diffusion
+# Step to zip and conda environment to "venv" folder
+RUN conda pack --ignore-missing-files --ignore-editable-packages -n ldm -o /tmp/env.tar \
+ && mkdir /venv \
+ && cd /venv \
+ && tar xf /tmp/env.tar \
+ && rm /tmp/env.tar
 
+FROM nvidia/cuda:11.8.0-base-ubuntu22.04 as runtime
 
-# Set environment variable to avoid interactive configuration prompts
-ENV DEBIAN_FRONTEND=noninteractive
+ARG OPTIMIZED_FILE=txt2img_gradio.py
+WORKDIR /root/repo
 
-# Install dependencies
-RUN apt-get update && apt-get install -y \
-    wget \
-    curl \
-    libboost-python-dev \
-    libboost-system-dev \
-    libboost-chrono-dev \
-    libtorrent-rasterbar-dev \
-    git \
-    && rm -rf /var/lib/apt/lists/*
-# Change directory
-WORKDIR /tmp/
+COPY --from=build /venv /venv
+COPY --from=build /root/repo /root/stable-diffusion
 
-# Copy files
-COPY /stable_diffusion/requirements.txt /tmp/
-COPY /stable_diffusion/script_run_diffusion.py /tmp/
+RUN mkdir -p /output /root/repo/outputs \
+ && ln -s /data /root/repo/models/ldm/stable-diffusion-v1 \
+ && ln -s /output /root/repo/outputs/txt2img-samples
 
-# Install Python dependencies from requirements.txt
-RUN pip3 install --extra-index-url https://download.pytorch.org/whl/cu116 -r /tmp/requirements.txt
+ENV PYTHONUNBUFFERED=1
+ENV GRADIO_SERVER_NAME=0.0.0.0
+ENV GRADIO_SERVER_PORT=7860
+ENV APP_MAIN_FILE=${OPTIMIZED_FILE}
+EXPOSE 7860
 
-# Set environment variable for log directory
-ENV LOG_DIR=/output/logs
+VOLUME ["/root/.cache", "/data", "/output"]
 
-# Clone stable-diffusion repo
-WORKDIR /
-RUN git clone https://github.com/basujindal/stable-diffusion
-RUN mv /stable-diffusion /repo
-WORKDIR /repo
-
-# Work around for VectorQuantizer2
-RUN pip3 install taming-transformers-rom1504 clip kornia
-
-# Predownload model
-RUN wget https://github.com/kk-digital/kcg-ml-sd1p4/raw/main/stable_diffusion/inference.py -O /repo/inference.py
-RUN python3 inference.py --prompt Download
-
-# Run the main command with logging and stats
-CMD echo "Start Time: $(date)" \
-    && python3 /tmp/script_run_diffusion.py \
-    && echo "End Time: $(date)" \
+SHELL ["/bin/bash", "-c"]
+ENTRYPOINT ["/root/repo/docker-bootstrap.sh"]
+CMD python optimizedSD/${APP_MAIN_FILE}
