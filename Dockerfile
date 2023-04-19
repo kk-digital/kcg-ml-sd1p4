@@ -52,13 +52,11 @@ WORKDIR /repo
 # Work around for VectorQuantizer2
 RUN pip3 install taming-transformers-rom1504 clip kornia
 
-# Set cache
-RUN mkdir -p /root/.cache/huggingface/
-RUN ln -sf /stable_diffusion/modelstore/ /root/.cache/huggingface/transformers
+# Predownload model
+RUN wget https://github.com/kk-digital/kcg-ml-sd1p4/raw/main/stable_diffusion/inference.py -O /repo/inference.py
+RUN python3 inference.py --prompt Download
 
 # Run the main command with logging and stats
 CMD echo "Start Time: $(date)" \
-    && cd /stable_diffusion \
-    && cp inference.py /repo/\
     && python3 /tmp/script_run_diffusion.py \
     && echo "End Time: $(date)" \

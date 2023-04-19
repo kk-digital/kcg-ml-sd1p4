@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Make modelstore directory if not there
+mkdir ./stable_diffusion/modelstore
+
 # Check if the model ckpt file exists
 if [ ! -f "./stable_diffusion/modelstore/sd-v1-4.ckpt" ]; then
     # Download the model ckpt file
