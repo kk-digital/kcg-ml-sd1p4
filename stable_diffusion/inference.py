@@ -34,7 +34,7 @@ def parse_args():
     parser.add_argument('--outdir', type=str, default='outputs', help='output directory')
     parser.add_argument('--history', type=str, default='history.txt', help='history file')
     parser.add_argument('--config', type=str, default='configs/stable-diffusion/v1-inference.yaml', help='config file')
-    parser.add_argument('--ckpt', type=str, default='modelstore/sd-v1-4.ckpt', help='checkpoint file')
+    parser.add_argument('--ckpt', type=str, default='/stable_diffusion/modelstore/sd-v1-4.ckpt', help='checkpoint file')
 
     return parser.parse_args()
 
@@ -78,10 +78,7 @@ def load_model(config, ckpt=CHECKPOINT):
     return model
 
 def set_device(model):
-    if torch.backends.mps.is_available():
-        device = torch.device('mps')
-        precision = nullcontext
-    elif torch.cuda.is_available():
+    if torch.cuda.is_available():
         device = torch.device('cuda')
         precision = torch.autocast
     else:

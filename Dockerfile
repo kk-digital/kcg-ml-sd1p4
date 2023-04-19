@@ -51,6 +51,11 @@ WORKDIR /repo
 
 # Work around for VectorQuantizer2
 RUN pip3 install taming-transformers-rom1504 clip kornia
+
+# Set cache
+RUN mkdir -p /root/.cache/huggingface/
+RUN ln -sf /stable_diffusion/modelstore/ /root/.cache/huggingface/transformers
+
 # Run the main command with logging and stats
 CMD echo "Start Time: $(date)" \
     && cd /stable_diffusion \
