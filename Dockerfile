@@ -1,5 +1,5 @@
 # Use base image
-FROM docker.io/nvidia/cuda:11.3.1-cudnn8-runtime-ubuntu16.04
+FROM docker.io/nvidia/cuda:11.3.1-cudnn8-runtime-ubuntu20.04
 
 # These deps are large, so put them in their own layer to save rebuild time
 RUN apt-get update && apt-get install -y \
