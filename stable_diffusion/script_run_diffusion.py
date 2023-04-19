@@ -14,7 +14,6 @@ def main():
 
     # Load the diffusion model
     model_path = '/stable_diffusion/modelstore/sd-v1-4.ckpt'
-    diffusion = model.load(model_path)
 
     # Load the prompts
     prompts_path = '/input/prompts.txt'
@@ -26,5 +25,9 @@ def main():
     batch_size = args.batch_size
     for i in tqdm(range(0, args.num_images, batch_size)):
         batch_prompts = prompts[i:i+batch_size]
-        cmd = ['python', 'inference.py', '--diffusion_model', model_path, '--prompts'] + batch_prompts
+        cmd = ['python3', '/repo/inference.py', '--prompt'] + batch_prompts
+        print(cmd)
         subprocess.run(cmd, check=True)
+
+if __name__ == '__main__':
+    main()

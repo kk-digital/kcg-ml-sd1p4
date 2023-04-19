@@ -29,16 +29,28 @@ RUN apt-get update && apt-get install -y \
     libtorrent-rasterbar-dev \
     git \
     && rm -rf /var/lib/apt/lists/*
+# Change directory
+WORKDIR /tmp/
+
 # Copy files
-WORKDIR /stable_diffusion
+COPY /stable_diffusion/requirements.txt /tmp/
+COPY /stable_diffusion/script_run_diffusion.py /tmp/
 
 # Install Python dependencies from requirements.txt
-RUN pip3 install -r requirements.txt
+RUN pip3 install -r /tmp/requirements.txt
 
 # Set environment variable for log directory
 ENV LOG_DIR=/output/logs
 
+# Clone stable-diffusion repo
+WORKDIR /
+RUN git clone https://github.com/basujindal/stable-diffusion
+RUN mv stable-diffusion /repo
+WORKDIR /repo
+RUN git revert 23b12cde63b3931fd671d0e09a6a74dea088b7df
 # Run the main command with logging and stats
 CMD echo "Start Time: $(date)" \
-    && python3 script_run_diffusion.py \
+    && cd /stable_diffusion \
+    && cp inferency.py /repo/\
+    && python3 /tmp/script_run_diffusion.py \
     && echo "End Time: $(date)" \
