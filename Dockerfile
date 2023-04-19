@@ -1,14 +1,14 @@
 # Use base image
-FROM docker.io/nvidia/cuda:11.2.2-cudnn8-runtime-ubuntu20.04
+FROM docker.io/nvidia/cuda:11.3.1-cudnn8-runtime-ubuntu16.04
 
 # These deps are large, so put them in their own layer to save rebuild time
 RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip
 
-RUN pip install --extra-index-url https://download.pytorch.org/whl/cu116 \
-    diffusers==0.6.0 \
-    torch==1.12.1+cu116
+RUN pip3 install --upgrade pip
+RUN pip3 install torch==1.11.0+cu113 torchvision==0.12.0+cu113 torchaudio==0.11.0 --extra-index-url https://download.pytorch.org/whl/cu113
+
 
 # Mount volumes
 VOLUME /input
@@ -37,7 +37,7 @@ COPY /stable_diffusion/requirements.txt /tmp/
 COPY /stable_diffusion/script_run_diffusion.py /tmp/
 
 # Install Python dependencies from requirements.txt
-RUN pip3 install -r /tmp/requirements.txt
+RUN pip3 install --extra-index-url https://download.pytorch.org/whl/cu116 -r /tmp/requirements.txt
 
 # Set environment variable for log directory
 ENV LOG_DIR=/output/logs
