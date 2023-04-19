@@ -74,7 +74,7 @@ docker run hello-world
 
 ```bash
 docker build -t stable-diffusion .
-docker run --gpus all -v /path/to/input:/input -v /path/to/output:/output stable-diffusion
+docker run --gpus all -v ./input:/input -v ./output:/output -v ./stable_diffusion:/stable_diffusion stable-diffusion
 ```
 Replace /path/to/input with your input path, and /path/to/output with your output that
 

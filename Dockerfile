@@ -46,12 +46,11 @@ ENV LOG_DIR=/output/logs
 # Clone stable-diffusion repo
 WORKDIR /
 RUN git clone https://github.com/basujindal/stable-diffusion
-RUN mv stable-diffusion /repo
+RUN mv /stable-diffusion /repo
 WORKDIR /repo
-RUN git revert 23b12cde63b3931fd671d0e09a6a74dea088b7df
 # Run the main command with logging and stats
 CMD echo "Start Time: $(date)" \
     && cd /stable_diffusion \
-    && cp inferency.py /repo/\
+    && cp inference.py /repo/\
     && python3 /tmp/script_run_diffusion.py \
     && echo "End Time: $(date)" \
