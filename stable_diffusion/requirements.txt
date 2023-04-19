@@ -16,3 +16,4 @@ imageio-ffmpeg==0.4.2
 test-tube>=0.7.5
 torch-fidelity==0.3.0
 torchmetrics==0.6.0
+taming-transformers
