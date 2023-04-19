@@ -48,6 +48,9 @@ WORKDIR /
 RUN git clone https://github.com/basujindal/stable-diffusion
 RUN mv /stable-diffusion /repo
 WORKDIR /repo
+
+# Work around for VectorQuantizer2
+RUN pip3 install taming-transformers-rom1504 clip kornia
 # Run the main command with logging and stats
 CMD echo "Start Time: $(date)" \
     && cd /stable_diffusion \
