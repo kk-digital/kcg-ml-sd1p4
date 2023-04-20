@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y \
     python3-pip
 
 RUN pip3 install --upgrade pip
+RUN pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 RUN pip3 install torch==1.11.0+cu113 torchvision==0.12.0+cu113 torchaudio==0.11.0 --extra-index-url https://download.pytorch.org/whl/cu113
 
 
