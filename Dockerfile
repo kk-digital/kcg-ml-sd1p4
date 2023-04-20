@@ -35,7 +35,6 @@ WORKDIR /tmp/
 
 # Copy files
 COPY /stable_diffusion/requirements.txt /tmp/
-COPY /stable_diffusion/script_run_diffusion.py /tmp/
 
 # Install Python dependencies from requirements.txt
 RUN pip3 install --extra-index-url https://download.pytorch.org/whl/cu116 -r /tmp/requirements.txt
@@ -60,5 +59,6 @@ RUN mv /root/.cache/huggingface/cache /root/.cache/huggingface/transformers
 # Run the main command with logging and stats
 CMD echo "Start Time: $(date)" \
     && cp /stable_diffusion/inference.py /repo/inference.py \
+    && cp /stable_diffusion/script_run_diffusion.py /tmp \
     && python3 /tmp/script_run_diffusion.py \
     && echo "End Time: $(date)" \
