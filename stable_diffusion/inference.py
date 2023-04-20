@@ -23,7 +23,7 @@ def parse_args():
     parser.add_argument('--W', type=int, default=512, help='image width')
     parser.add_argument('--f', type=int, default=8, help='downsampling factor')
     parser.add_argument('--fixed_code', type=int, default=0, help='1 for repeatable results')
-    parser.add_argument('--seed', type=int, default=42, help='random seed')
+    parser.add_argument('--seed', type=int, default=None, help='random seed for stable diffusion')
     parser.add_argument('--ddim_eta', type=float, default=0.0, help='noise level for DDIM sampler')
     parser.add_argument('--plms', type=int, default=0, help='1 for PLMS sampler')
     parser.add_argument('--n_iter', type=int, default=1, help='number of iterations')
@@ -35,6 +35,7 @@ def parse_args():
     parser.add_argument('--history', type=str, default='history.txt', help='history file')
     parser.add_argument('--config', type=str, default='configs/stable-diffusion/v1-inference.yaml', help='config file')
     parser.add_argument('--ckpt', type=str, default='/stable_diffusion/modelstore/sd-v1-4.ckpt', help='checkpoint file')
+    parser.add_argument('--low-vram', action='store_true', help='enable low VRAM mode')
 
     return parser.parse_args()
 
@@ -44,7 +45,6 @@ HEIGHT = args.H
 WIDTH = args.W
 FACTOR = args.f
 FIXED = args.fixed_code
-SEED = args.seed
 NOISE = args.ddim_eta
 PLMS = args.plms
 ITERATIONS = args.n_iter
@@ -56,13 +56,17 @@ FOLDER = args.outdir
 HISTORY = args.history
 CONFIG = args.config
 CHECKPOINT = args.ckpt
+LOW_VRAM = args.low_vram
 
 PROMPTS = args.prompt
 NEGATIVES = args.negative
 
 def seed_pre():
     if not FIXED:
-        seed_everything(SEED)
+        if args.seed is None:
+            seed = int(time.time() * 1000) % (2**32)
+            print(f"Setting random stable diffusion seed: {seed}")
+        else
 
 def seed_post(device):
     if FIXED:
@@ -77,10 +81,14 @@ def load_model(config, ckpt=CHECKPOINT):
     model.load_state_dict(sd, strict=False)
     return model
 
-def set_device(model):
+def set_device(model, low_vram):
     if torch.cuda.is_available():
         device = torch.device('cuda')
         precision = torch.autocast
+        if low_vram:
+            torch.backends.cudnn.benchmark = False
+        else:
+            torch.backends.cudnn.benchmark = True
     else:
         device = torch.device('cpu')
         precision = torch.autocast
