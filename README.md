@@ -66,6 +66,11 @@ sudo usermod -aG docker $USER
 ```bash
 docker run hello-world
 ```
+### Create input and output directories
+```bash
+mkdir input output
+```
+
 ### Download the model
 ```bash
 ./download-model.sh
