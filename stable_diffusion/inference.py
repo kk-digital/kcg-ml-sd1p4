@@ -66,7 +66,11 @@ def seed_pre():
         if args.seed is None:
             seed = int(time.time() * 1000) % (2**32)
             print(f"Setting random stable diffusion seed: {seed}")
-        else
+        else:
+            seed=args.seed
+    else:
+        seed = FIXED_SEED
+    return seed
 
 def seed_post(device):
     if FIXED:
