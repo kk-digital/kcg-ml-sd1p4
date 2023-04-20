@@ -1,5 +1,4 @@
 # kcg-ml-sd1p4
-
 ### Notebooks
 | Notebook Title | Google Colab Link |
 | --- | --- |
@@ -68,7 +67,7 @@ docker run hello-world
 ```
 ### Create input and output directories
 ```bash
-mkdir input output
+mkdir input output stable_diffusion/cache
 ```
 
 ### Download the model

@@ -142,3 +142,6 @@ dmypy.json
 
 # Ignore all downloaded models, we don't have enough storage for that!
 *.ckpt
+
+# Ignore cache
+/stable_diffusion/cache
