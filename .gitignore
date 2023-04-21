@@ -138,8 +138,8 @@ dmypy.json
 
 /input
 
-#Ignore input/model
-/input/model
+#Ignore input/models
+/input/models
 
 # Ignore all downloaded models, we don't have enough storage for that!
 *.ckpt
