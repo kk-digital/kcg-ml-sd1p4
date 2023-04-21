@@ -59,7 +59,7 @@ RUN mv /root/.cache/huggingface/cache /root/.cache/huggingface/transformers
 
 # Run the main command with logging and stats
 CMD echo "Start Time: $(date)" \
-    && chmod -R 777 /input/model
+    && chmod -R 777 /input/model \
     && cp /stable_diffusion/inference.py /repo/inference.py \
     && cp /stable_diffusion/script_run_diffusion.py /tmp \
     && python3 /tmp/script_run_diffusion.py \
