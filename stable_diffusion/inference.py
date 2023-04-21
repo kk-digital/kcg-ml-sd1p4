@@ -31,7 +31,7 @@ def parse_args():
     parser.add_argument('--ddim_steps', type=int, default=50, help='number of DDIM steps')
     parser.add_argument('--init_img', type=str, default=None, help='path to the initial image for image-to-image generation')
     parser.add_argument('--strength', type=float, default=0.75, help='strength for conditioning on initial image for image-to-image generation')
-    parser.add_argument('--outdir', type=str, default='outputs', help='output directory')
+    parser.add_argument('--outdir', type=str, default='/output/', help='output directory')
     parser.add_argument('--history', type=str, default='history.txt', help='history file')
     parser.add_argument('--config', type=str, default='configs/stable-diffusion/v1-inference.yaml', help='config file')
     parser.add_argument('--ckpt', type=str, default='/input/model/sd-v1-4.ckpt', help='checkpoint file')
