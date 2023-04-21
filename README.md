@@ -23,9 +23,9 @@ nbstripout --install --attributes .gitattributes
 python -m nbconvert --ClearOutputPreprocessor.enabled=True --to notebook *.ipynb --inplace
 ```
 
-# Docker
-## Setting up docker
-### Add the docker GPG key to your systems
+# Setting up Docker for the Stable Diffusion server
+## Installing Docker
+### Add the docker GPG key to the repository
 ```bash
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
 ```
@@ -67,7 +67,7 @@ docker run hello-world
 ```
 ### Create input and output directories
 ```bash
-mkdir input output stable_diffusion/cache
+mkdir -p input/models output
 ```
 
 ### Download the model
