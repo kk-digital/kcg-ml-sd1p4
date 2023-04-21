@@ -85,12 +85,13 @@ def load_model(config, ckpt=CHECKPOINT):
     model.load_state_dict(sd, strict=False)
     return model
 
-def set_device(model, low_vram):
+def set_device(model, low_vram=False):
     if torch.cuda.is_available():
         device = torch.device('cuda')
         precision = torch.autocast
         if low_vram:
             torch.backends.cudnn.benchmark = False
+            torch.backends.cudnn.deterministic = True
         else:
             torch.backends.cudnn.benchmark = True
     else:
