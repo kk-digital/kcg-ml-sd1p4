@@ -54,7 +54,7 @@ RUN pip3 install taming-transformers-rom1504 clip kornia
 
 # Setup cache
 RUN mkdir -p /root/.cache/huggingface
-RUN ln -sf /stable_diffusion/cache /root/.cache/huggingface/
+RUN ln -sf /input/models/cache /root/.cache/huggingface/
 RUN mv /root/.cache/huggingface/cache /root/.cache/huggingface/transformers
 
 # Run the main command with logging and stats

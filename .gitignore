@@ -134,9 +134,6 @@ dmypy.json
 # Ignore output
 /output
 
-# Ignore modelstore
-/modelstore
-
 #Ignore input
 /input
 

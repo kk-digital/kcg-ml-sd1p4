@@ -67,7 +67,7 @@ docker run hello-world
 ```
 ### Create input and output directories
 ```bash
-mkdir -p input/models output
+mkdir -p input/models/cache output
 ```
 
 ### Download the model

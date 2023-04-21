@@ -13,7 +13,7 @@ def main():
     args = parser.parse_args()
 
     # Load the diffusion model
-    model_path = '/stable_diffusion/modelstore/sd-v1-4.ckpt'
+    model_path = '/input/models/sd-v1-4.ckpt'
 
     # Load the prompts
     prompts_path = '/input/prompts.txt'
