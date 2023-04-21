@@ -34,7 +34,7 @@ def parse_args():
     parser.add_argument('--outdir', type=str, default='outputs', help='output directory')
     parser.add_argument('--history', type=str, default='history.txt', help='history file')
     parser.add_argument('--config', type=str, default='configs/stable-diffusion/v1-inference.yaml', help='config file')
-    parser.add_argument('--ckpt', type=str, default='/input/models/sd-v1-4.ckpt', help='checkpoint file')
+    parser.add_argument('--ckpt', type=str, default='/input/model/sd-v1-4.ckpt', help='checkpoint file')
     parser.add_argument('--low-vram', action='store_true', default=False, help='reduce GPU memory usage')
 
     return parser.parse_args()
