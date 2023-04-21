@@ -160,7 +160,7 @@ def save_image(image):
 
 def save_history(name, prompt, negative):
     with open(os.path.join(FOLDER, HISTORY), 'a') as history:
-        history.write(f'{name} -> {"PLMS" if PLMS else "DDIM"}, Seed={SEED}{" fixed" if FIXED else ""}, Scale={SCALE}, Steps={STEPS}, Noise={NOISE}')
+        history.write(f'{name} -> {"PLMS" if PLMS else "DDIM"}, Scale={SCALE}, Steps={STEPS}, Noise={NOISE}')
         if IMAGE:
             history.write(f', Image={IMAGE}, Strength={STRENGTH}')
         if len(negative):
