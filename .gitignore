@@ -131,6 +131,15 @@ dmypy.json
 # Ignore .DS_Store files
 .DS_Store
 
+# Ignore input
+/input
+
+# Ignore output
+/output
+
+# Ignore input/model
+/input/model
+
 # Ignore all downloaded models, we don't have enough storage for that!
 *.ckpt
 
