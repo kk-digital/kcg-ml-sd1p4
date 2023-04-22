@@ -131,7 +131,7 @@ def main():
     opt = parser.parse_args()
     set_seed(42)
 
-    img2img = Img2Img(checkpoint_path=lab.get_data_path() / 'stable-diffusion' / 'sd-v1-4.ckpt',
+    img2img = Img2Img(checkpoint_path='/input/model/sd-v1-4.ckpt',
                       ddim_steps=opt.steps)
 
     with monit.section('Generate'):

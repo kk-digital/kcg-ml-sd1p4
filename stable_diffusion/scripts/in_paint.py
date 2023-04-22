@@ -149,7 +149,7 @@ def main():
     opt = parser.parse_args()
     set_seed(42)
 
-    in_paint = InPaint(checkpoint_path=lab.get_data_path() / 'stable-diffusion' / 'sd-v1-4.ckpt',
+    in_paint = InPaint(checkpoint_path='/input/model/sd-v1-4.ckpt',
                        ddim_steps=opt.steps)
 
     with monit.section('Generate'):
