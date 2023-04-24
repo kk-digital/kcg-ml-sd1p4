@@ -15,11 +15,10 @@ RUN apt-get update && apt-get install -y \
 
 
 # Install dependencies
-RUN --mount=type=cache,target=/root/.cache/pip pip install pyyaml
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
-RUN pip3 --mount=type=cache,target=/root/.cache/pip install \
+RUN --mount=type=cache,target=/root/.cache/pip pip3 install \
 	torch==1.11.0+cu113 \
 	torchvision==0.12.0+cu113 \
 	torchaudio==0.11.0 \
@@ -30,7 +29,7 @@ RUN pip3 --mount=type=cache,target=/root/.cache/pip install \
 
 # Install other dependencies
 COPY /stable_diffusion/requirements.txt /tmp/
-RUN pip3 --mount=type=cache,target=/root/.cache/pip install \
+RUN --mount=type=cache,target=/root/.cache/pip pip3 install \
 	-r /tmp/requirements.txt
 
 # Mount volumes
