@@ -1,0 +1,12 @@
+FROM pytorch/pytorch
+
+# Copy
+COPY . /kcg-ml-sd1p4
+WORKDIR /kcg-ml-sd1p4
+
+# mirror
+RUN pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+RUN pip3 install -r ./notebooks/requirements-docker.txt
+
+WORKDIR /kcg-ml-sd1p4/notebooks
+CMD ["python3", "run-all-notebooks.py"]
