@@ -6,7 +6,7 @@ WORKDIR /kcg-ml-sd1p4
 
 # mirror
 RUN pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
-RUN pip3 install -r ./notebooks/requirements-docker.txt
+RUN pip3 install -r ./requirements-docker.txt
 
 WORKDIR /kcg-ml-sd1p4
 CMD ["python3", "run-all-notebooks.py"]
