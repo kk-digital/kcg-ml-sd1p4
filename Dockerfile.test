@@ -6,5 +6,5 @@ WORKDIR /kcg-ml-sd1p4
 
 RUN pip3 install -r ./notebooks/requirements-docker.txt
 
-WORKDIR /kcg-ml-sd1p4/notebooks
+WORKDIR /kcg-ml-sd1p4
 CMD ["python3", "run-all-notebooks.py"]
