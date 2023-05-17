@@ -145,3 +145,6 @@ dmypy.json
 
 # Ignore cache
 /stable_diffusion/cache
+
+#Ignore prompts
+data.json
