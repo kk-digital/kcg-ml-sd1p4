@@ -9,7 +9,7 @@ pytorch-lightning==1.4.2
 einops==0.3.0
 omegaconf==2.1.1
 albumentations==0.4.3
-opencv-python==4.1.2.30
+opencv-python==4.5.4.60
 pudb==2019.2
 imageio==2.9.0
 imageio-ffmpeg==0.4.2
