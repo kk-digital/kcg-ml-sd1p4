@@ -12,6 +12,8 @@ from einops import rearrange
 from pytorch_lightning import seed_everything
 from contextlib import nullcontext
 
+import pprint
+
 #from ldm.util import instantiate_from_config
 
 USE_LDM = False
@@ -35,7 +37,7 @@ def get_obj_from_str(string, reload=False):
     #wtf is this doing
 
     print("get_obj_from_str: Attempting to Import " + module)
-    #imports = importlib.import_module(module, package=None)
+    #imports = like(module, package=None)
     #imports = None=
     #return getattr(imports, cls)
     return None
@@ -44,13 +46,16 @@ def get_obj_from_str(string, reload=False):
 # https://huggingface.co/spaces/multimodalart/latentdiffusion/blob/main/latent-diffusion/ldm/util.py
 #ldm
 def instantiate_from_config(config):
+    print("config= " )
+    pprint.pprint(config)
+    
     if not "target" in config:
         if config == '__is_first_stage__':
             return None
         elif config == "__is_unconditional__":
             return None
         raise KeyError("Expected key `target` to instantiate.")
-    print("instantiate_from_config: params= " + str(config.get("params", dict())) )
+    print("instantiate_from_config: params= " + pprint.pprint(config.get("params", dict())) )
     return get_obj_from_str(config["target"])(**config.get("params", dict()))
 
 
