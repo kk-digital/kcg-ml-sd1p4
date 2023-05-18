@@ -34,7 +34,7 @@ if USE_LDM:
 #addapted from 
 # https://huggingface.co/spaces/multimodalart/latentdiffusion/blob/main/latent-diffusion/ldm/util.py
 #ldm
-def instantiate(string, reload=False):
+def instantiate():
     ## full function path = ldm.models.diffusion.ddpm.LatentDiffusion, do not use params
     autoencoder_params = Config.AUTO_ENCODER_PARAMS
     unet_params = Config.UNET_PARAMS
