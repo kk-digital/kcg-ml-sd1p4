@@ -2,16 +2,6 @@ import model.unet as unet
 import model.clip_embedder as clip_embedder
 import model.autoencoder as autoencoder
 
-'''
-unet_model: UNetModel,
-                 autoencoder: Autoencoder,
-                 clip_embedder: CLIPTextEmbedder,
-                 latent_scaling_factor: float,
-                 n_steps: int,
-                 linear_start: float,
-                 linear_end: float,
-'''
-
 
 class Config:
     UNET_PARAMS = {
