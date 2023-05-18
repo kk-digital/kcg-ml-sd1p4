@@ -12,6 +12,8 @@ from einops import rearrange
 from pytorch_lightning import seed_everything
 from contextlib import nullcontext
 from config import Config
+
+#why ldm
 import latent_diffusion as ldm
 
 import pprint
@@ -29,10 +31,11 @@ if USE_LDM:
 # https://huggingface.co/spaces/multimodalart/latentdiffusion/blob/main/latent-diffusion/ldm/util.py
 #ldm
 import importlib
-def get_obj_from_str(string, reload=False):
+def get_obj_from_str(string=None, reload=False):
     ## full function path = ldm.models.diffusion.ddpm.LatentDiffusion, do not use params
     params = Config.params
-    $print("get_obj_from_str: Attempting to Import " + module)
+    
+    #print("get_obj_from_str: Attempting to Import " + module)
     #imports = like(module, package=None)
     #imports = None=
     #return getattr(imports, cls)
