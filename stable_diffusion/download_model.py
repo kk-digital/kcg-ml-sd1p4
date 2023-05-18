@@ -4,15 +4,15 @@ import time
 import requests
 import libtorrent as lt
 
-if not os.path.exists('/tmp/output'):
-    os.makedirs('/tmp/output')
+if not os.path.exists('/output/tmp'):
+    os.makedirs('/output/tmp')
 
 if not os.path.exists('/tmp/logs'):
     os.makedirs('/tmp/logs')
 
 magnet_link = 'magnet:?xt=urn:btih:3f8016061132ad4a475eb33dac569f3a88418974&dn=v1-5-pruned-emaonly.safetensors&tr=udp%3a%2f%2fopen.demonii.com%3a1337%2fannounce&tr=udp%3a%2f%2fexodus.desync.com%3a6969%2fannounce'
 destination = '/tmp/input/models/'
-output_dir = '/tmp/output'
+output_dir = '/output/tmp'
 logs_dir = '/tmp/logs'
 
 try:

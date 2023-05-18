@@ -17,8 +17,9 @@ from contextlib import nullcontext
 USE_LDM = False
 
 if USE_LDM:
-    from ldm.models.diffusion.plms import PLMSSampler
-    from ldm.models.diffusion.ddim import DDIMSampler
+    from ldm.models.diffusion.plms import PLMSSampler 
+    from stable_diffusion.sampler.ddim import DDIMSampler
+    
 
 #copied from 
 # https://huggingface.co/spaces/multimodalart/latentdiffusion/blob/main/latent-diffusion/ldm/util.py
