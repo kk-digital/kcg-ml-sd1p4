@@ -45,6 +45,8 @@ def instantiate():
                 channels=autoencoder_params["ddconfig"]["ch"],
                 channel_multipliers=autoencoder_params["ddconfig"]["ch_mult"],
                 n_resnet_blocks=autoencoder_params["ddconfig"]["num_res_blocks"],
+                in_channels=autoencoder_params["ddconfig"]["in_channels"],
+                z_channels=autoencoder_params["ddconfig"]["z_channels"],
             ),
             decoder=autoencoder.Decoder(
                 channels=autoencoder_params["ddconfig"]["ch"],
