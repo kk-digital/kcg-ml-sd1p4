@@ -11,14 +11,18 @@ from PIL import Image
 from einops import rearrange
 from pytorch_lightning import seed_everything
 from contextlib import nullcontext
-from config import Config
 
-#why ldm
-import latent_diffusion as ldm
+from config import Config
 
 import pprint
 
 #from ldm.util import instantiate_from_config
+
+import latent_diffusion
+
+import model.unet as unet
+import model.clip_embedder as clip_embedder
+import model.autoencoder as autoencoder
 
 USE_LDM = False
 
@@ -27,42 +31,57 @@ if USE_LDM:
     from stable_diffusion.sampler.ddim import DDIMSampler
     
 
-#copied from 
+#addapted from 
 # https://huggingface.co/spaces/multimodalart/latentdiffusion/blob/main/latent-diffusion/ldm/util.py
 #ldm
-import importlib
-def get_obj_from_str(string=None, reload=False):
+def instantiate(string, reload=False):
     ## full function path = ldm.models.diffusion.ddpm.LatentDiffusion, do not use params
-    params = Config.params
-    
-    #print("get_obj_from_str: Attempting to Import " + module)
-    #imports = like(module, package=None)
-    #imports = None=
-    #return getattr(imports, cls)
-    #return None
-    return ldm.LatentDiffusion(**params)
+    autoencoder_params = Config.AUTO_ENCODER_PARAMS
+    unet_params = Config.UNET_PARAMS
+    latent_diffusion_params = Config.LATENT_DIFFUSION_PARAMS
 
-#copied from 
-# https://huggingface.co/spaces/multimodalart/latentdiffusion/blob/main/latent-diffusion/ldm/util.py
-#ldm
-'''
-def instantiate_from_config(config):
-    print("config= " )
-    pprint.pprint(config)
+    autoencoder_model = autoencoder.Autoencoder(
+            encoder=autoencoder.Encoder(
+                channels=autoencoder_params["ddconfig"]["ch"],
+                channel_multipliers=autoencoder_params["ddconfig"]["ch_mult"],
+                n_resnet_blocks=autoencoder_params["ddconfig"]["num_res_blocks"],
+            ),
+            decoder=autoencoder.Decoder(
+                channels=autoencoder_params["ddconfig"]["ch"],
+                channel_multipliers=autoencoder_params["ddconfig"]["ch_mult"],
+                n_resnet_blocks=autoencoder_params["ddconfig"]["num_res_blocks"],
+                out_channels=autoencoder_params["ddconfig"]["out_ch"],
+                z_channels=autoencoder_params["ddconfig"]["z_channels"],
+            ),
+            emb_channels=autoencoder_params["embed_dim"],
+            z_channels=autoencoder_params["ddconfig"]["z_channels"],
+        )
     
-    if not "target" in config:
-        if config == '__is_first_stage__':
-            return None
-        elif config == "__is_unconditional__":
-            return None
-        raise KeyError("Expected key `target` to instantiate.")
-    print("instantiate_from_config: params= " + pprint.pprint(config.get("params", dict())) )
-    return get_obj_from_str(config["target"])(**config.get("params", dict()))
-'''
-#=======
-def instantiate():
-    return get_obj_from_str()
-#>>>>>>> refs/remotes/origin/main
+    unet_model = unet.UNetModel(
+            in_channels=unet_params["in_channels"],
+            out_channels=unet_params["out_channels"],
+            channels=unet_params["model_channels"],
+            n_res_blocks=unet_params["num_res_blocks"],
+            attention_levels=unet_params["attention_resolutions"],
+            channel_multipliers=unet_params["channel_mult"],
+            n_heads=unet_params["num_heads"],
+            tf_layers=unet_params["transformer_depth"],
+            d_cond=unet_params["context_dim"],
+        )
+    
+    clip_embedder_model = clip_embedder.CLIPTextEmbedder()
+
+    return latent_diffusion.LatentDiffusion(
+        autoencoder=autoencoder_model,
+        unet_model=unet_model,
+        clip_embedder=clip_embedder_model,
+
+        latent_scaling_factor=latent_diffusion_params["latent_scaling_factor"],
+        linear_start=latent_diffusion_params["linear_start"],
+        linear_end=latent_diffusion_params["linear_end"],
+        n_steps=latent_diffusion_params["n_steps"],
+    )
+
 
 
 from transformers import logging

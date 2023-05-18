@@ -1,8 +1,3 @@
-import model.unet as unet
-import model.clip_embedder as clip_embedder
-import model.autoencoder as autoencoder
-
-
 class Config:
     UNET_PARAMS = {
         "image_size": 32,
@@ -54,46 +49,10 @@ class Config:
         }
     }
 
+    LATENT_DIFFUSION_PARAMS = {
+        "linear_start": 0.00085,
+        "linear_end": 0.012,
+        "n_steps": 1,
+        "latent_scaling_factor": 0.18215,
+    }
 
-    @property
-    def params(self):
-        unet_model = unet.UNetModel(
-            in_channels=self.UNET_PARAMS["in_channels"],
-            out_channels=self.UNET_PARAMS["out_channels"],
-            channels=self.UNET_PARAMS["model_channels"],
-            n_res_blocks=self.UNET_PARAMS["num_res_blocks"],
-            attention_levels=self.UNET_PARAMS["attention_resolutions"],
-            channel_multipliers=self.UNET_PARAMS["channel_mult"],
-            n_heads=self.UNET_PARAMS["num_heads"],
-            tf_layers=self.UNET_PARAMS["transformer_depth"],
-            d_cond=self.UNET_PARAMS["context_dim"],
-        )
-
-        autoencoder_model = autoencoder.Autoencoder(
-            encoder=autoencoder.Encoder(
-                channels=self.AUTO_ENCODER_PARAMS["ddconfig"]["ch"],
-                channel_multipliers=self.AUTO_ENCODER_PARAMS["ddconfig"]["ch_mult"],
-                n_resnet_blocks=self.AUTO_ENCODER_PARAMS["ddconfig"]["num_res_blocks"],
-            ),
-            decoder=autoencoder.Decoder(
-                channels=self.AUTO_ENCODER_PARAMS["ddconfig"]["ch"],
-                channel_multipliers=self.AUTO_ENCODER_PARAMS["ddconfig"]["ch_mult"],
-                n_resnet_blocks=self.AUTO_ENCODER_PARAMS["ddconfig"]["num_res_blocks"],
-                out_channels=self.AUTO_ENCODER_PARAMS["ddconfig"]["out_ch"],
-                z_channels=self.AUTO_ENCODER_PARAMS["ddconfig"]["z_channels"],
-            ),
-            emb_channels=self.AUTO_ENCODER_PARAMS["embed_dim"],
-            z_channels=self.AUTO_ENCODER_PARAMS["ddconfig"]["z_channels"],
-        )
-
-        clip_embedder_model = clip_embedder.CLIPTextEmbedder()
-
-        return {
-            "linear_start": 0.00085,
-            "linear_end": 0.012,
-            "n_steps": 1,
-            "latent_scaling_factor": 0.18215,
-            "unet_model": unet_model,
-            "autoencoder": autoencoder_model,
-            "clip_embedder": clip_embedder_model,
-        }
