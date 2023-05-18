@@ -34,7 +34,7 @@ def get_obj_from_str(string, reload=False):
     print("get_obj_from_str: cls= " + cls)
     #wtf is this doing
     #imports = importlib.import_module(module, package=None)
-    imports = nil
+    imports = None
     return getattr(imports, cls)
 
 #copied from 
@@ -47,7 +47,7 @@ def instantiate_from_config(config):
         elif config == "__is_unconditional__":
             return None
         raise KeyError("Expected key `target` to instantiate.")
-    print("instantiate_from_config: params= " + (config.get("params", dict())) )
+    print("instantiate_from_config: params= " + str(config.get("params", dict())) )
     return get_obj_from_str(config["target"])(**config.get("params", dict()))
 
 
