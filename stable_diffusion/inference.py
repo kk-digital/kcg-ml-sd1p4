@@ -11,6 +11,8 @@ from PIL import Image
 from einops import rearrange
 from pytorch_lightning import seed_everything
 from contextlib import nullcontext
+from config import Config
+import latent_diffusion as ldm
 
 #from ldm.util import instantiate_from_config
 
@@ -25,33 +27,16 @@ if USE_LDM:
 #ldm
 import importlib
 def get_obj_from_str(string, reload=False):
-    module, cls = string.rsplit(".", 1)
-    if reload:
-        module_imp = importlib.import_module(module)
-        importlib.reload(module_imp)
-    #wtf
-    print("get_obj_from_str: module= " + module)
-    print("get_obj_from_str: cls= " + cls)
-    #wtf is this doing
+    ## full function path = ldm.models.diffusion.ddpm.LatentDiffusion, do not use params
+    params = Config.params
 
-    print("get_obj_from_str: Attempting to Import " + module)
-    #imports = importlib.import_module(module, package=None)
-    #imports = None=
-    #return getattr(imports, cls)
-    return None
+    return ldm.LatentDiffusion(**params)
 
 #copied from 
 # https://huggingface.co/spaces/multimodalart/latentdiffusion/blob/main/latent-diffusion/ldm/util.py
 #ldm
-def instantiate_from_config(config):
-    if not "target" in config:
-        if config == '__is_first_stage__':
-            return None
-        elif config == "__is_unconditional__":
-            return None
-        raise KeyError("Expected key `target` to instantiate.")
-    print("instantiate_from_config: params= " + str(config.get("params", dict())) )
-    return get_obj_from_str(config["target"])(**config.get("params", dict()))
+def instantiate():
+    return get_obj_from_str()
 
 
 from transformers import logging
@@ -122,7 +107,7 @@ def seed_post(device):
 def load_model(config, ckpt=CHECKPOINT):
     pl_sd = torch.load(ckpt, map_location='cpu')
     sd = pl_sd['state_dict']
-    model = instantiate_from_config(config.model)
+    model = instantiate()
     model.load_state_dict(sd, strict=False)
     return model
 
