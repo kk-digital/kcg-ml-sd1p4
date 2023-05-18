@@ -1,6 +1,7 @@
 #! python
 # copyright (c) 2022 C.Y. Wong, myByways.com simplified Stable Diffusion v0.1
 
+import logging as sys_logging
 import argparse
 import os, sys, time
 import torch
@@ -11,9 +12,27 @@ from einops import rearrange
 from pytorch_lightning import seed_everything
 from contextlib import nullcontext
 
-from ldm.util import instantiate_from_config
-from ldm.models.diffusion.plms import PLMSSampler
-from ldm.models.diffusion.ddim import DDIMSampler
+#from ldm.util import instantiate_from_config
+
+USE_LDM = False
+
+if USE_LDM:
+    from ldm.models.diffusion.plms import PLMSSampler
+    from ldm.models.diffusion.ddim import DDIMSampler
+
+#copied from 
+# https://huggingface.co/spaces/multimodalart/latentdiffusion/blob/main/latent-diffusion/ldm/util.py
+#ldm
+
+def instantiate_from_config(config):
+    if not "target" in config:
+        if config == '__is_first_stage__':
+            return None
+        elif config == "__is_unconditional__":
+            return None
+        raise KeyError("Expected key `target` to instantiate.")
+    return get_obj_from_str(config["target"])(**config.get("params", dict()))
+
 
 from transformers import logging
 
@@ -35,8 +54,8 @@ def parse_args():
     parser.add_argument('--strength', type=float, default=0.75, help='strength for conditioning on initial image for image-to-image generation')
     parser.add_argument('--outdir', type=str, default='/output/', help='output directory')
     parser.add_argument('--history', type=str, default='history.txt', help='history file')
-    parser.add_argument('--config', type=str, default='configs/stable-diffusion/v1-inference.yaml', help='config file')
-    parser.add_argument('--ckpt', type=str, default='/input/model/sd-v1-4.ckpt', help='checkpoint file')
+    parser.add_argument('--config', type=str, default='./stable_diffusion/configs/sd-v1-inference.yaml', help='config file')
+    parser.add_argument('--ckpt', type=str, default='./input/model/sd-v1-4.ckpt', help='checkpoint file')
     parser.add_argument('--low-vram', action='store_true', default=False, help='reduce GPU memory usage')
 
     return parser.parse_args()
@@ -173,9 +192,13 @@ def save_history(name, prompt, negative):
 def main():
     tic1 = time.time()
     logging.set_verbosity_error()
-    os.makedirs(FOLDER, exist_ok=True)
+
+    #check if path exists
+    if not os.path.exists(FOLDER):
+        os.makedirs(FOLDER, exist_ok=True)
 
     seed_pre()
+    print("Loading Configuration From: " + CONFIG)
     config = OmegaConf.load(CONFIG)
     model = load_model(config)
     device, precision_scope = set_device(model)
@@ -213,4 +236,5 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print('*** User abort, goodbye.')
     except FileNotFoundError as e:
+        sys_logging.exception("FileNoteFound:")
         print(f'*** {e}')
