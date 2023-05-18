@@ -33,9 +33,12 @@ def get_obj_from_str(string, reload=False):
     print("get_obj_from_str: module= " + module)
     print("get_obj_from_str: cls= " + cls)
     #wtf is this doing
-    imports = importlib.import_module(module, package=None)
-    #imports = None
-    return getattr(imports, cls)
+
+    print("get_obj_from_str: Attempting to Import " + module)
+    #imports = importlib.import_module(module, package=None)
+    #imports = None=
+    #return getattr(imports, cls)
+    return None
 
 #copied from 
 # https://huggingface.co/spaces/multimodalart/latentdiffusion/blob/main/latent-diffusion/ldm/util.py
