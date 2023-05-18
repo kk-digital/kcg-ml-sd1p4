@@ -28,7 +28,7 @@ RUN --mount=type=cache,target=/root/.cache/pip pip3 install \
 	--extra-index-url https://download.pytorch.org/whl/cu113
 
 # Install other dependencies
-COPY /stable_diffusion/requirements.txt /tmp/
+COPY requirements.txt /tmp/
 RUN --mount=type=cache,target=/root/.cache/pip pip3 install \
 	-r /tmp/requirements.txt
 
