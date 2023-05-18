@@ -33,8 +33,8 @@ def get_obj_from_str(string, reload=False):
     print("get_obj_from_str: module= " + module)
     print("get_obj_from_str: cls= " + cls)
     #wtf is this doing
-    #imports = importlib.import_module(module, package=None)
-    imports = None
+    imports = importlib.import_module(module, package=None)
+    #imports = None
     return getattr(imports, cls)
 
 #copied from 
