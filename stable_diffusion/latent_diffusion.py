@@ -26,9 +26,9 @@ from typing import List
 import torch
 import torch.nn as nn
 
-from model.autoencoder import Autoencoder
-from model.clip_embedder import CLIPTextEmbedder
-from model.unet import UNetModel
+from .model.autoencoder import Autoencoder
+from .model.clip_embedder import CLIPTextEmbedder
+from .model.unet import UNetModel
 
 
 class DiffusionWrapper(nn.Module):
