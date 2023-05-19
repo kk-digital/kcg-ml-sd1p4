@@ -42,10 +42,14 @@ def process_notebooks(input_dir='.', output_dir='../log'):
                     if file.endswith(".html"):
                         with open(os.path.join(root, file), "r") as html_file:
                             f.write("———————————————————————————————————————————————————————————————————————————\n")
+                            print("———————————————————————————————————————————————————————————————————————————\n")
                             # Use regex to change the .html extension to .ipynb
                             f.write("Notebook filename: " + re.sub(r"\.html$", ".ipynb", os.path.basename(file)) + "\n")
+                            print("Notebook filename: " + re.sub(r"\.html$", ".ipynb", os.path.basename(file)) + "\n")
                             f.write("Notebook path: " + os.path.dirname(os.path.abspath(file)) + "/ \n")
+                            print(("Notebook path: " + os.path.dirname(os.path.abspath(file)) + "/ \n"))
                             f.write("Errors:\n\n")
+                            print("Errors:\n\n")
                             html_content = html_file.read()
                             soup = BeautifulSoup(html_content, 'html.parser')
                             error_matches = soup.find_all("div", attrs={"data-mime-type": "application/vnd.jupyter.stderr"})
@@ -53,10 +57,14 @@ def process_notebooks(input_dir='.', output_dir='../log'):
                                 for i, error in enumerate(error_matches):
                                     error_text = error.find("pre").text.strip()
                                     f.write(f"Error on cell {i+1}:\n")
+                                    print(f"Error on cell {i+1}:\n")
                                     f.write(f"{error_text}\n\n")
+                                    print(f"{error_text}\n\n")
                             else:
                                 f.write("No errors\n")
+                                print("No errors\n")
                             f.write("———————————————————————————————————————————————————————————————————————————\n")
+                            print("———————————————————————————————————————————————————————————————————————————\n")
 
         # Move HTML files and errors.txt to logs directory with current timestamp
         for file in os.listdir(unprocessed_dir):
