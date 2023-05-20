@@ -1,13 +1,3 @@
-"""
----
-title: Generate images using stable diffusion with a prompt
-summary: >
- Generate images using stable diffusion with a prompt
----
-
-# Generate images using [stable diffusion](../index.html) with a prompt
-"""
-
 import argparse
 import os
 from pathlib import Path
@@ -19,7 +9,8 @@ from labml_nn.diffusion.stable_diffusion.latent_diffusion import LatentDiffusion
 from labml_nn.diffusion.stable_diffusion.sampler.ddim import DDIMSampler
 from labml_nn.diffusion.stable_diffusion.sampler.ddpm import DDPMSampler
 from labml_nn.diffusion.stable_diffusion.util import load_model, save_images, set_seed
-
+from torch.cuda.amp import autocast, GradScaler
+from contextlib import contextmanager, nullcontext
 
 class Txt2Img:
     """
@@ -56,13 +47,16 @@ class Txt2Img:
 
     @torch.no_grad()
     def __call__(self, *,
+                 seed: int = 0,
                  dest_path: str,
-                 batch_size: int = 3,
+                 batch_size: int = 1,
                  prompt: str,
                  h: int = 512, w: int = 512,
                  uncond_scale: float = 7.5,
+                 low_vram: bool = False,
                  ):
         """
+        :param seed: the seed to use when generating the images
         :param dest_path: is the path to store the generated images
         :param batch_size: is the number of images to generate in a batch
         :param prompt: is the prompt to generate images with
@@ -70,11 +64,17 @@ class Txt2Img:
         :param w: is the width of the image
         :param uncond_scale: is the unconditional guidance scale $s$. This is used for
             $\epsilon_\theta(x_t, c) = s\epsilon_\text{cond}(x_t, c) + (s - 1)\epsilon_\text{cond}(x_t, c_u)$
+        :param low_vram: whether to limit VRAM usage
         """
         # Number of channels in the image
         c = 4
         # Image to latent space resolution reduction
         f = 8
+
+        set_seed(seed)
+        # Adjust batch size based on VRAM availability
+        if low_vram:
+            batch_size = 1
 
         # Make a batch of prompts
         prompts = batch_size * [prompt]
@@ -133,16 +133,16 @@ def main():
                         help="unconditional guidance scale: "
                              "eps = eps(x, empty) + scale * (eps(x, cond) - eps(x, empty))")
 
+    parser.add_argument("--low-vram", action='store_true', help="limit VRAM usage")
+
     opt = parser.parse_args()
 
-    set_seed(42)
 
     # Set flash attention
     from labml_nn.diffusion.stable_diffusion.model.unet_attention import CrossAttention
     CrossAttention.use_flash_attention = opt.flash
 
-    #
-    txt2img = Txt2Img(checkpoint_path='/input/model/sd-v1-4.ckpt',
+    txt2img = Txt2Img(checkpoint_path='../input/model/sd-v1-4.ckpt',
                       sampler_name=opt.sampler_name,
                       n_steps=opt.steps)
 
@@ -150,9 +150,9 @@ def main():
         txt2img(dest_path='outputs',
                 batch_size=opt.batch_size,
                 prompt=opt.prompt,
-                uncond_scale=opt.scale)
+                uncond_scale=opt.scale,
+                low_vram=opt.low_vram)
 
 
-#
 if __name__ == "__main__":
     main()
