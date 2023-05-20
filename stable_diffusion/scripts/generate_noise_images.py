@@ -18,7 +18,7 @@ def save_noise_seeds(num_seeds, output_file):
 
 # Generate prompt
 prompt_prefix = "A woman with flowers in her hair in a courtyard, in the style of"
-artist_file = os.path.join(os.path.dirname(__file__), '../../artists.txt')
+artist_file = os.path.join(os.path.dirname(__file__), '../artists.txt')
 
 # Set the output directory
 output_dir = os.path.join(os.path.dirname(__file__), '../../output/noise-tests/')
