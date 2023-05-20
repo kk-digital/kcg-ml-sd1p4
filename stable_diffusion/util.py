@@ -19,10 +19,10 @@ from PIL import Image
 
 from labml import monit
 from labml.logger import inspect
-from labml_nn.diffusion.stable_diffusion.latent_diffusion import LatentDiffusion
-from labml_nn.diffusion.stable_diffusion.model.autoencoder import Encoder, Decoder, Autoencoder
-from labml_nn.diffusion.stable_diffusion.model.clip_embedder import CLIPTextEmbedder
-from labml_nn.diffusion.stable_diffusion.model.unet import UNetModel
+from stable_diffusion.latent_diffusion import LatentDiffusion
+from stable_diffusion.model.autoencoder import Encoder, Decoder, Autoencoder
+from stable_diffusion.model.clip_embedder import CLIPTextEmbedder
+from stable_diffusion.model.unet import UNetModel
 
 
 def set_seed(seed: int):
@@ -35,7 +35,7 @@ def set_seed(seed: int):
     torch.cuda.manual_seed_all(seed)
 
 
-def load_model(path: Path = None) -> LatentDiffusion:
+def load_model(path: Path = None, device = 'cuda:0') -> LatentDiffusion:
     """
     ### Load [`LatentDiffusion` model](latent_diffusion.html)
     """
@@ -61,7 +61,9 @@ def load_model(path: Path = None) -> LatentDiffusion:
 
     # Initialize the CLIP text embedder
     with monit.section('Initialize CLIP Embedder'):
-        clip_text_embedder = CLIPTextEmbedder()
+        clip_text_embedder = CLIPTextEmbedder(
+            device=device,
+        )
 
     # Initialize the U-Net
     with monit.section('Initialize U-Net'):
@@ -143,7 +145,9 @@ def save_images(images: torch.Tensor, dest_path: str, prefix: str = '', img_form
     # Map images to `[0, 1]` space and clip
     images = torch.clamp((images + 1.0) / 2.0, min=0.0, max=1.0)
     # Transpose to `[batch_size, height, width, channels]` and convert to numpy
-    images = images.cpu().permute(0, 2, 3, 1).numpy()
+    images = images.cpu()
+    images = images.permute(0, 2, 3, 1)
+    images = images.float().numpy()
 
     # Save images
     for i, img in enumerate(images):
