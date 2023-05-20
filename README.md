@@ -100,3 +100,18 @@ cd kcg-ml-sd1p4
 cd kcg-ml-sd1p4
 !wget -P input/model https://huggingface.co/CompVis/stable-diffusion-v-1-4-original/resolve/main/sd-v1-4.ckpt
 ```
+
+## Install requirements
+
+Install required dependency by running
+```
+pip install -r requirements.txt
+```
+
+## Running stable diffusion model
+
+You can run the stable diffusion model with:
+```
+python3 ./stable_diffusion/inference.py --prompt "test" --outdir "./output/"
+```
+You can try your own prompt by replacing "test" with "your prompt"
