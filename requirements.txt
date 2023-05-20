@@ -11,7 +11,7 @@ libtorrent==2.0.7
 matplotlib==3.7.1
 numpy==1.24.3
 omegaconf==2.3.0
-Pillow==9.5.0
+Pillow==9.0.0
 pytorch_lightning
 Requests==2.30.0
 scipy==1.10.1
