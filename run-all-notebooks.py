@@ -77,7 +77,7 @@ def process_notebooks(input_dir='.', output_dir='../log'):
         # Check if there are errors in the errors.log file
         with open(os.path.join(log_dir, "errors.log"), "r") as log_file:
             log_content = log_file.read()
-            if "Error" in log_content:
+            if "No errors" not in log_content:
                 raise Exception("Errors found in the errors.log file.")
 
     except Exception as e:
