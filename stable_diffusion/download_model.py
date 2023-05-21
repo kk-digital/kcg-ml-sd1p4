@@ -40,14 +40,16 @@ def download_via_direct_link(direct_link: str, destination: str, filename: str =
 
     total_length = int(r.headers.get('content-length')) if 'content-length' in r.headers else None
 
+    progress = 0
     with open(os.path.join(destination, filename), 'wb') as f:
         for chunk in r.iter_content(chunk_size=1024):
+            progress = progress + len(chunk)
             f.write(chunk)
 
             if chunk and total_length:
-                print(f"Progress: {round(len(chunk) / total_length * 100, 2)}%")
+                print(f"\rProgress: {round(progress / total_length * 100, 2)}%", end='\r')
             if chunk and not total_length:
-                print(f"Progress: {round(len(chunk) / 1024 / 1024, 2)}MB")
+                print(f"\rProgress: {round(progress / 1024 / 1024, 2)}MB", end='\r')
 
     print(f"Download complete. File saved to: {destination}/{filename}")
 
@@ -58,9 +60,10 @@ def download_model(
     ):
 
     if via == 'direct':
-        download_via_direct_link(model['direct_link'], destination)
+        download_via_direct_link(model['direct_link'], destination, model['filename'])
     elif via == 'magnet':
-        download_via_magnet_link(model['magnet_link'], destination, model['filename'])
+        print(model)
+        download_via_magnet_link(model['magnet_link'], destination)
     
 
 def show_models():
@@ -72,33 +75,35 @@ def show_models():
 def main():
     parser = argparse.ArgumentParser(description='Download model')
 
-    parser.add_argument('--list-models', type=str, help='List models', action='store_true')
+    parser.add_argument('--list-models', help='List models', action='store_true')
 
-    parser.add_argument('--model', type=str, help='Filename of model to download')
+    parser.add_argument('--model', help='Filename of model to download')
 
-    parser.add_argument('--destination', type=str, help='Destination to save model to', default=DESTINATION)
+    parser.add_argument('--output', help='Destination to save model to', default=DESTINATION)
     
     args = parser.parse_args()
 
     if args.list_models:
         show_models()
         return
-    
+
     if args.model:
-        model_link = next((model for model in model_list if model['filename'] == args.model), None)
+        model = next((model for model in model_list if model['filename'] == args.model), None)
 
-        if model_link:
-            check_dir(args.destination or DESTINATION)
+        if model:
+            check_dir(args.output or DESTINATION)
 
-            if os.path.exists(os.path.join(args.destination or DESTINATION, model_link)):
+            if os.path.exists(os.path.join(args.output or DESTINATION, model['filename'])):
                 print('Model already exists')
                 return
 
-            download_model(model_link, via='direct', destination=args.destination or DESTINATION)
+            download_model(model, via='direct', destination=args.output or DESTINATION)
         else:
             print('Model not found')
 
         return
+    
+    parser.print_help()
     
 
 if __name__ == '__main__':
