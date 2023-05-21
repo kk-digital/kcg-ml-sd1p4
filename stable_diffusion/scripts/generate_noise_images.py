@@ -1,5 +1,5 @@
 import os, sys
-sys.path.append("../../")
+sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
 import random
 from text_to_image import Txt2Img
 import torch
