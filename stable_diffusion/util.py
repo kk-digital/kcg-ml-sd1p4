@@ -129,7 +129,7 @@ def load_img(path: str):
     return torch.from_numpy(image)
 
 
-def save_images(images: torch.Tensor, dest_path: str, prefix: str = '', img_format: str = 'jpeg'):
+def save_images(images: torch.Tensor, dest_path: str, prefix: str = '', img_format: str = 'jpg'):
     """
     ### Save a images
 
@@ -152,4 +152,4 @@ def save_images(images: torch.Tensor, dest_path: str, prefix: str = '', img_form
     # Save images
     for i, img in enumerate(images):
         img = Image.fromarray((255. * img).astype(np.uint8))
-        img.save(os.path.join(dest_path, f"{prefix}{i:05}.{img_format}"), format=img_format)
+        img.save(os.path.join(dest_path, f"{prefix}.{img_format}"), format=img_format)
