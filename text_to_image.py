@@ -104,7 +104,7 @@ class Txt2Img:
             images = self.model.autoencoder_decode(x)
 
         # Save images
-        save_images(images, dest_path, 'txt_')
+        save_images(images, dest_path)
 
 
 def main():
