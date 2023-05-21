@@ -1,4 +1,5 @@
-import os
+import os, sys
+sys.path.append("../../")
 import random
 from text_to_image import Txt2Img
 import torch
