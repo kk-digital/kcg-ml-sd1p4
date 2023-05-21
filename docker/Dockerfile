@@ -40,19 +40,17 @@ ENV LOG_DIR=/output/logs
 
 # Clone stable-diffusion repo
 WORKDIR /
-RUN git clone https://github.com/basujindal/stable-diffusion \
-	&& mv /stable-diffusion /repo
+RUN git clone https://github.com/kk-digital/kcg-ml-sd1p4/ \
+	&& mv /kcg-ml-sd1p4 /repo
 WORKDIR /repo
 
 # Setup model cache
 RUN mkdir -p /root/.cache/huggingface
-RUN ln -sf /input/model /root/.cache/huggingface/
+RUN ln -sf /repo/input/model /root/.cache/huggingface/
 RUN mv /root/.cache/huggingface/model /root/.cache/huggingface/transformers
 
 # Run the main command with logging and stats
 CMD echo "Start Time: $(date)" \
-    && chmod -R 777 /input/model \
-    && cp /stable_diffusion/inference.py /repo/inference.py \
-    && cp /stable_diffusion/script_run_diffusion.py /tmp \
-    && python3 /tmp/script_run_diffusion.py \
+    && chmod -R 777 /repo/input/model \
+    && python3 /repo/stable_diffusion/script_run_diffusion.py \
     && echo "End Time: $(date)" \
