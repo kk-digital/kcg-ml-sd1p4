@@ -54,7 +54,6 @@ class Txt2Img:
     def __call__(self, *,
                  seed: int = 0,
                  dest_path: str,
-                 output_dir: str,
                  batch_size: int = 1,
                  prompt: str,
                  h: int = 512, w: int = 512,
@@ -64,7 +63,6 @@ class Txt2Img:
         """
         :param seed: the seed to use when generating the images
         :param dest_path: is the path to store the generated images
-        :param output_dir: is the path to the directory to store the generated images
         :param batch_size: is the number of images to generate in a batch
         :param prompt: is the prompt to generate images with
         :param h: is the height of the image
@@ -106,7 +104,7 @@ class Txt2Img:
             images = self.model.autoencoder_decode(x)
 
         # Save images
-        save_images(images, dest_path=output_dir, prefix=dest_path)
+        save_images(images, dest_path)
 
 
 def main():
