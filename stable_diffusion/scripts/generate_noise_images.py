@@ -53,7 +53,7 @@ with open(artist_file, 'r') as f:
 
                 # Generate image
                 image_name = f"a{i:04d}_n{noise_seed}.jpg"
-                dest_path = os.path.join(output_dir, image_name)
+                dest_path = os.path.join(output_dir, image_name).replace('.jpg', '')
 
                 # Check if the image already exists
                 if not os.path.exists(dest_path):
