@@ -129,18 +129,14 @@ def load_img(path: str):
     return torch.from_numpy(image)
 
 
-def save_images(images: torch.Tensor, dest_path: str, prefix: str = '', img_format: str = 'jpeg'):
+def save_images(images: torch.Tensor, dest_path: str, img_format: str = 'jpeg'):
     """
     ### Save a images
 
     :param images: is the tensor with images of shape `[batch_size, channels, height, width]`
     :param dest_path: is the folder to save images in
-    :param prefix: is the prefix to add to file names
     :param img_format: is the image format
     """
-
-    # Create the destination folder
-    os.makedirs(dest_path, exist_ok=True)
 
     # Map images to `[0, 1]` space and clip
     images = torch.clamp((images + 1.0) / 2.0, min=0.0, max=1.0)
@@ -152,4 +148,4 @@ def save_images(images: torch.Tensor, dest_path: str, prefix: str = '', img_form
     # Save images
     for i, img in enumerate(images):
         img = Image.fromarray((255. * img).astype(np.uint8))
-        img.save(os.path.join(dest_path, f"{prefix}{i:05}.{img_format}"), format=img_format)
+        img.save(dest_path, format=img_format)

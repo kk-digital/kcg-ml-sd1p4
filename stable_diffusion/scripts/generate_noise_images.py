@@ -1,4 +1,5 @@
-import os
+import os, sys
+sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
 import random
 from text_to_image import Txt2Img
 import torch
@@ -23,6 +24,15 @@ artist_file = os.path.join(os.path.dirname(__file__), '../artists.txt')
 # Set the output directory
 output_dir = os.path.join(os.path.dirname(__file__), '../../output/noise-tests/')
 
+# Check if CUDA is available
+if not torch.cuda.is_available():
+    print("WARNING: You are running this script without CUDA. Brace yourself for a slow ride.")
+
+# Load the Stable Diffusion model
+checkpoint_path = os.path.join(os.path.dirname(__file__), '../../input/model/sd-v1-4.ckpt')
+sampler_name = 'ddim'
+txt2img = Txt2Img(checkpoint_path=checkpoint_path, sampler_name=sampler_name, n_steps=20)
+
 # Generate images for each artist
 with open(artist_file, 'r') as f:
     artists = f.readlines()
@@ -30,15 +40,10 @@ with open(artist_file, 'r') as f:
         artist = artist.strip()
         prompt = generate_prompt(prompt_prefix, artist)
 
-        num_steps = 20
         # Generate images for each noise seed
         num_seeds = 8
         noise_file = "noise-seeds.txt"
         save_noise_seeds(num_seeds, noise_file)
-
-        checkpoint_path = os.path.join(os.path.dirname(__file__), '../../input/model/sd-v1-4.ckpt')
-        sampler_name = 'ddim'
-        txt2img = Txt2Img(checkpoint_path=checkpoint_path, sampler_name=sampler_name, n_steps=num_steps)
 
         with torch.no_grad():
             for i in range(num_seeds):
@@ -51,7 +56,10 @@ with open(artist_file, 'r') as f:
                 dest_path = os.path.join(output_dir, image_name)
 
                 # Check if the image already exists
-                if not os.path.exists(dest_path):
+                if not os.path.isfile(dest_path):
                     txt2img(dest_path=dest_path, batch_size=1, prompt=prompt, seed=noise_seed)
+
+# Unload the Stable Diffusion model
+del txt2img
 
 print("Images generated successfully!")
