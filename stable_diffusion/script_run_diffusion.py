@@ -25,7 +25,7 @@ def main():
     batch_size = args.batch_size
     for i in tqdm(range(0, args.num_images, batch_size)):
         batch_prompts = prompts[i:i+batch_size]
-        cmd = ['python3', '/repo/text_to_image.py', '--checkpoint ', model_path,' --prompt '] + batch_prompts
+        cmd = ['python3', '/repo/text_to_image.py', '--checkpoint', model_path,'--prompt'] + batch_prompts
         print(cmd)
         subprocess.run(cmd, check=True)
 

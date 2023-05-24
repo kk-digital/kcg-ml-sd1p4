@@ -45,8 +45,7 @@ ENV LOG_DIR=/output/logs
 
 # Setup model cache
 RUN mkdir -p /root/.cache/huggingface
-RUN ln -sf /repo/input/model /root/.cache/huggingface/
-RUN mv /root/.cache/huggingface/model /root/.cache/huggingface/transformers
+RUN ln -sf /repo/input/model /root/.cache/huggingface
 
 # Run the main command with logging and stats
 CMD echo "Start Time: $(date)" \
