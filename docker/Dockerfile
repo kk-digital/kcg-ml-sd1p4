@@ -23,15 +23,7 @@ RUN git clone https://github.com/kk-digital/kcg-ml-sd1p4/ \
 	&& mv /kcg-ml-sd1p4 /repo
 WORKDIR /repo
 
-#RUN pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
-#RUN --mount=type=cache,target=/root/.cache/pip pip3 install \
-#	torch==1.11.0+cu113 \
-#	torchvision==0.12.0+cu113 \
-#	torchaudio==0.11.0 \
-#	taming-transformers-rom1504 \
-#	clip \
-#	kornia \
-#	--extra-index-url https://download.pytorch.org/whl/cu113
+RUN pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 
 # Install other dependencies
 RUN --mount=type=cache,target=/root/.cache/pip pip3 install \
