@@ -4,9 +4,6 @@ FROM pytorch/pytorch
 COPY . /kcg-ml-sd1p4
 WORKDIR /kcg-ml-sd1p4
 
-# mirror
-RUN pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
-
 # local pip cache
 RUN pip3 config set global.index-url http://192.168.3.2:5010/index/
 RUN pip3 config set global.trusted-host 192.168.3.2
