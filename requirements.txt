@@ -7,7 +7,7 @@ ftfy==6.1.1
 labml==0.4.162
 labml_nn==0.4.133
 ldm==0.1.3
-libtorrent==2.0.7
+lbry-libtorrent
 matplotlib==3.7.1
 numpy==1.24.3
 omegaconf==2.3.0
