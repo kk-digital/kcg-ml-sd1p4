@@ -3,11 +3,46 @@
 [![Build Status](http://103.68.223.207:8111/app/rest/builds/buildType:(id:KcgMlSd1p4_Build)/statusIcon)](http://teamcity/viewType.html?buildTypeId=KcgMlSd1p4_Build&guest=1)
 [![Docker Image CI](https://github.com/kk-digital/kcg-ml-sd1p4/actions/workflows/docker-image.yml/badge.svg)](https://github.com/kk-digital/kcg-ml-sd1p4/actions/workflows/docker-image.yml)
 
-### Notebooks
+## Summary
+
+- [kcg-ml-sd1p4](#kcg-ml-sd1p4)
+  - [Summary](#summary)
+  - [Learn how to use the scripts](#learn-how-to-use-the-scripts)
+  - [Notebooks](#notebooks)
+    - [Cleaning Jupyter Notebooks for Version Control](#cleaning-jupyter-notebooks-for-version-control)
+    - [Installation](#installation)
+    - [Setting up nbstripout](#setting-up-nbstripout)
+    - [Using nbconvert](#using-nbconvert)
+- [Setting up Docker for the Stable Diffusion server](#setting-up-docker-for-the-stable-diffusion-server)
+  - [Installing Docker](#installing-docker)
+    - [Add the docker GPG key to the repository](#add-the-docker-gpg-key-to-the-repository)
+    - [Add docker to apt sources](#add-docker-to-apt-sources)
+    - [Update the package database](#update-the-package-database)
+    - [Install docker](#install-docker)
+    - [Startup docker](#startup-docker)
+    - [Install the NVIDIA toolkit (for Ubuntu)](#install-the-nvidia-toolkit-for-ubuntu)
+    - [Verify the NVIDIA container toolkit is working](#verify-the-nvidia-container-toolkit-is-working)
+    - [Add yourself to the docker group](#add-yourself-to-the-docker-group)
+    - [Verify you can run docker commands](#verify-you-can-run-docker-commands)
+    - [Create input and output directories](#create-input-and-output-directories)
+    - [Download the model](#download-the-model)
+    - [Create the Docker image](#create-the-docker-image)
+  - [Downloading Models](#downloading-models)
+        - [v1-5-pruned-emaonly.safetensors](#v1-5-pruned-emaonlysafetensors)
+        - [sd-v1-4.ckpt](#sd-v1-4ckpt)
+  - [Install requirements](#install-requirements)
+  - [Running stable diffusion model](#running-stable-diffusion-model)
+
+## Learn how to use the scripts
+
+To learn how to use the scripts, please read the [README.md](DataUtility/README.md) file in the DataUtility folder.
+
+## Notebooks
 | Notebook Title | Google Colab Link |
 | --- | --- |
 | Diffusers Unit Test Example | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/kk-digital/kcg-ml-sd1p4/blob/main/notebooks/diffusers_unit_test.ipynb)|
-## Cleaning Jupyter Notebooks for Version Control
+### Cleaning Jupyter Notebooks for Version Control
+
 ### Installation
 First, make sure you have nbstripout and nbconvert installed . You can install them using pip:
 ```sh
@@ -28,7 +63,9 @@ python -m nbconvert --ClearOutputPreprocessor.enabled=True --to notebook *.ipynb
 ```
 
 # Setting up Docker for the Stable Diffusion server
+
 ## Installing Docker
+
 ### Add the docker GPG key to the repository
 ```bash
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
