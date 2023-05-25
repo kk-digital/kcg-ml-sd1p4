@@ -152,15 +152,16 @@ def main():
     opt = parser.parse_args()
     set_seed(42)
 
-    in_paint = InPaint(checkpoint_path=get_model_path(),
+    in_paint = InPaint(checkpoint_path='/input/model/sd-v1-4.ckpt',
                        ddim_steps=opt.steps)
 
-    in_paint(dest_path='outputs',
-        orig_img=opt.orig_img,
-        strength=opt.strength,
-        batch_size=opt.batch_size,
-        prompt=opt.prompt,
-        uncond_scale=opt.scale)
+    with monit.section('Generate'):
+        in_paint(dest_path='outputs',
+                 orig_img=opt.orig_img,
+                 strength=opt.strength,
+                 batch_size=opt.batch_size,
+                 prompt=opt.prompt,
+                 uncond_scale=opt.scale)
 
 
 #

@@ -7,6 +7,8 @@
 - [kcg-ml-sd1p4](#kcg-ml-sd1p4)
   - [Summary](#summary)
   - [Learn how to use the scripts](#learn-how-to-use-the-scripts)
+  - [Scripts](#scripts)
+    - [Install requirements](#install-requirements)
   - [Notebooks](#notebooks)
     - [Cleaning Jupyter Notebooks for Version Control](#cleaning-jupyter-notebooks-for-version-control)
     - [Installation](#installation)
@@ -27,14 +29,21 @@
     - [Download the model](#download-the-model)
     - [Create the Docker image](#create-the-docker-image)
   - [Downloading Models](#downloading-models)
-        - [v1-5-pruned-emaonly.safetensors](#v1-5-pruned-emaonlysafetensors)
-        - [sd-v1-4.ckpt](#sd-v1-4ckpt)
-  - [Install requirements](#install-requirements)
-  - [Running stable diffusion model](#running-stable-diffusion-model)
 
 ## Learn how to use the scripts
 
 To learn how to use the scripts, please read the [README.md](DataUtility/README.md) file in the DataUtility folder.
+
+## Scripts
+
+To run the scripts, you must install the requirements:
+
+### Install requirements
+
+Install required dependency by running
+```
+pip install -r requirements.txt
+```
 
 ## Notebooks
 | Notebook Title | Google Colab Link |
@@ -43,10 +52,14 @@ To learn how to use the scripts, please read the [README.md](DataUtility/README.
 ### Cleaning Jupyter Notebooks for Version Control
 
 ### Installation
+
 First, make sure you have nbstripout and nbconvert installed . You can install them using pip:
+
 ```sh
 pip install nbstripout nbconvert
 ```
+
+
 ### Setting up nbstripout
 
 ```sh
@@ -128,18 +141,3 @@ Replace /path/to/input with your input path, and /path/to/output with your outpu
 ```bash
 ./download-model.sh
 ```
-
-## Install requirements
-
-Install required dependency by running
-```
-pip install -r requirements.txt
-```
-
-## Running stable diffusion model
-
-You can run the stable diffusion model with:
-```
-python3 ./stable_diffusion/inference.py --prompt "test" --outdir "./output/"
-```
-You can try your own prompt by replacing "test" with "your prompt"

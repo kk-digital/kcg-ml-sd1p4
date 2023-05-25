@@ -8,14 +8,17 @@ summary: >
 # Generate images using [stable diffusion](../index.html) with a prompt from a given image
 """
 
+import os, sys
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
 import argparse
 from pathlib import Path
 
 import torch
 
 from labml import lab, monit
-from labml_nn.diffusion.stable_diffusion.sampler.ddim import DDIMSampler
-from labml_nn.diffusion.stable_diffusion.util import load_model, load_img, save_images, set_seed
+from stable_diffusion.sampler.ddim import DDIMSampler
+from stable_diffusion.util import load_model, load_img, save_images, set_seed
 
 
 class Img2Img:
@@ -75,7 +78,14 @@ class Img2Img:
         t_index = int(strength * self.ddim_steps)
 
         # AMP auto casting
-        with torch.cuda.amp.autocast():
+        cpu_or_gpu = "cpu" if self.device == torch.device("cpu") else "cuda"
+        with torch.autocast(cpu_or_gpu):
+            if cpu_or_gpu == 'cpu':
+                print('[WARNING] Generating images on CPU, this will be slow.')
+            else:
+                print('[INFO] Generating images on GPU.')
+                
+            print(f'Generating images with prompt: "{prompt}"')
             # In unconditional scaling is not $1$ get the embeddings for empty prompts (no conditioning).
             if uncond_scale != 1.0:
                 un_cond = self.model.get_text_conditioning(batch_size * [""])
@@ -127,11 +137,14 @@ def main():
     parser.add_argument("--strength", type=float, default=0.75,
                         help="strength for noise: "
                              " 1.0 corresponds to full destruction of information in init image")
+    
+    parser.add_argument("--checkpoint_path", type=str, default=lab.get_data_path() / 'stable-diffusion' / 'sd-v1-4.ckpt',
+                        help="path to the checkpoint")
 
     opt = parser.parse_args()
     set_seed(42)
 
-    img2img = Img2Img(checkpoint_path=lab.get_data_path() / 'stable-diffusion' / 'sd-v1-4.ckpt',
+    img2img = Img2Img(checkpoint_path=opt.checkpoint_path,
                       ddim_steps=opt.steps)
 
     with monit.section('Generate'):
