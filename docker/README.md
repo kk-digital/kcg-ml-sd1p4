@@ -67,7 +67,7 @@ docker run hello-world
 export DOCKER_BUILDKIT=1
 docker build . --file ./docker/Dockerfile --tag stable-diffusion
 docker run --gpus all \
-	--mount src="$(pwd)/input",target=/input,type=bind \
-	--mount src="$(pwd)/output",target=/output,type=bind \
+	-v input:/input
+	-v output:/output \
 	stable-diffusion
 ```
