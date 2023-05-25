@@ -13,10 +13,12 @@ from pathlib import Path
 
 import torch
 
-from labml import lab, monit
-from labml_nn.diffusion.stable_diffusion.sampler.ddim import DDIMSampler
-from labml_nn.diffusion.stable_diffusion.util import load_model, load_img, save_images, set_seed
+from labml import monit
+from stable_diffusion.sampler.ddim import DDIMSampler
+from stable_diffusion.util import load_model, load_img, save_images, set_seed
 
+def get_model_path():
+    return "./input/model/sd-v1-4.ckpt"  
 
 class Img2Img:
     """
@@ -131,17 +133,16 @@ def main():
     opt = parser.parse_args()
     set_seed(42)
 
-    img2img = Img2Img(checkpoint_path=lab.get_data_path() / 'stable-diffusion' / 'sd-v1-4.ckpt',
+    img2img = Img2Img(checkpoint_path=get_model_path(),
                       ddim_steps=opt.steps)
 
-    with monit.section('Generate'):
-        img2img(
-            dest_path='outputs',
-            orig_img=opt.orig_img,
-            strength=opt.strength,
-            batch_size=opt.batch_size,
-            prompt=opt.prompt,
-            uncond_scale=opt.scale)
+    img2img(
+        dest_path='outputs',
+        orig_img=opt.orig_img,
+        strength=opt.strength,
+        batch_size=opt.batch_size,
+        prompt=opt.prompt,
+        uncond_scale=opt.scale)
 
 
 #

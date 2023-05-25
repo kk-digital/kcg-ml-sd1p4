@@ -20,7 +20,6 @@ from stable_diffusion.sampler.ddim import DDIMSampler
 from stable_diffusion.sampler.ddpm import DDPMSampler
 from stable_diffusion.util import load_model, save_images, set_seed
 
-
 def get_model_path():
     return "./input/model/sd-v1-4.ckpt"  
 
