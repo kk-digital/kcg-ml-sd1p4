@@ -6,7 +6,11 @@
 
 - [kcg-ml-sd1p4](#kcg-ml-sd1p4)
   - [Summary](#summary)
-  - [Learn how to use the scripts](#learn-how-to-use-the-scripts)
+  - [Downloading Models](#downloading-models)
+  - [Install requirements](#install-requirements)
+  - [Running stable diffusion model](#running-stable-diffusion-model)
+  - [Scripts](#scripts)
+    - [Install requirements](#install-requirements-1)
   - [Notebooks](#notebooks)
     - [Cleaning Jupyter Notebooks for Version Control](#cleaning-jupyter-notebooks-for-version-control)
     - [Installation](#installation)
@@ -26,11 +30,6 @@
     - [Create input and output directories](#create-input-and-output-directories)
     - [Download the model](#download-the-model)
     - [Create the Docker image](#create-the-docker-image)
-  - [Downloading Models](#downloading-models)
-        - [v1-5-pruned-emaonly.safetensors](#v1-5-pruned-emaonlysafetensors)
-        - [sd-v1-4.ckpt](#sd-v1-4ckpt)
-  - [Install requirements](#install-requirements)
-  - [Running stable diffusion model](#running-stable-diffusion-model)
 
 ## Downloading Models
 
@@ -57,6 +56,17 @@ Note:
 You can try your own prompt by replacing "test" with "your prompt"
 
 
+## Scripts
+
+To run the scripts, you must install the requirements:
+
+### Install requirements
+
+Install required dependency by running
+```
+pip install -r requirements.txt
+```
+
 ## Notebooks
 | Notebook Title | Google Colab Link |
 | --- | --- |
@@ -65,10 +75,14 @@ You can try your own prompt by replacing "test" with "your prompt"
 ### Cleaning Jupyter Notebooks for Version Control
 
 ### Installation
+
 First, make sure you have nbstripout and nbconvert installed . You can install them using pip:
+
 ```sh
 pip install nbstripout nbconvert
 ```
+
+
 ### Setting up nbstripout
 
 ```sh

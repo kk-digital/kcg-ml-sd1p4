@@ -11,6 +11,7 @@ summary: >
 import os
 import random
 from pathlib import Path
+from typing import Union
 
 import PIL
 import numpy as np
@@ -35,7 +36,7 @@ def set_seed(seed: int):
     torch.cuda.manual_seed_all(seed)
 
 
-def load_model(path: Path = None, device = 'cuda:0') -> LatentDiffusion:
+def load_model(path: Union[str, Path] = '', device = 'cuda:0') -> LatentDiffusion:
     """
     ### Load [`LatentDiffusion` model](latent_diffusion.html)
     """
