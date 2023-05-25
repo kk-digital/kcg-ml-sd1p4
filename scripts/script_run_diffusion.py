@@ -1,7 +1,6 @@
 import os, sys
 import hashlib
 import argparse
-sys.path.append(os.path.join(os.path.dirname(__file__), "../"))
 import subprocess
 from text_to_image import Txt2Img
 import torch
