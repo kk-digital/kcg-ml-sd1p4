@@ -37,5 +37,5 @@ RUN ln -sf /repo/input/model /root/.cache/huggingface
 # Run the main command with logging and stats
 CMD echo "Start Time: $(date)" \
     && chmod -R 777 /repo/input/model \
-    && python3 /repo/stable_diffusion/script_run_diffusion.py \
+    && python3 /repo/scripts/script_run_diffusion.py \
     && echo "End Time: $(date)" \
