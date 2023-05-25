@@ -15,10 +15,14 @@ from pathlib import Path
 import torch
 
 from labml import monit
-from labml_nn.diffusion.stable_diffusion.latent_diffusion import LatentDiffusion
-from labml_nn.diffusion.stable_diffusion.sampler.ddim import DDIMSampler
-from labml_nn.diffusion.stable_diffusion.sampler.ddpm import DDPMSampler
-from labml_nn.diffusion.stable_diffusion.util import load_model, save_images, set_seed
+
+import sys
+sys.path.append('..')
+
+from stable_diffusion.latent_diffusion import LatentDiffusion
+from stable_diffusion.sampler.ddim import DDIMSampler
+from stable_diffusion.sampler.ddpm import DDPMSampler
+from stable_diffusion.util import load_model, save_images, set_seed
 
 
 def get_model_path():
@@ -149,12 +153,15 @@ def main():
                       sampler_name=opt.sampler_name,
                       n_steps=opt.steps)
 
-    with monit.section('Generate'):
-        txt2img(dest_path='outputs',
-                batch_size=opt.batch_size,
-                prompt=opt.prompt,
-                uncond_scale=opt.scale)
-
+    #with monit.section('Generate'):
+    #    txt2img(dest_path='outputs',
+    #            batch_size=opt.batch_size,
+    #            prompt=opt.prompt,
+    #            uncond_scale=opt.scale)
+    txt2img(dest_path='outputs',
+        batch_size=opt.batch_size,
+        prompt=opt.prompt,
+        uncond_scale=opt.scale)
 
 #
 if __name__ == "__main__":
