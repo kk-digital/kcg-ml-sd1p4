@@ -71,4 +71,3 @@ docker run --gpus all \
 	--mount src="$(pwd)/output",target=/output,type=bind \
 	stable-diffusion
 ```
-Replace /path/to/input with your input path, and /path/to/output with your output that
