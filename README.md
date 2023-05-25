@@ -6,9 +6,11 @@
 
 - [kcg-ml-sd1p4](#kcg-ml-sd1p4)
   - [Summary](#summary)
-  - [Learn how to use the scripts](#learn-how-to-use-the-scripts)
+  - [Downloading Models](#downloading-models)
+  - [Install requirements](#install-requirements)
+  - [Running stable diffusion model](#running-stable-diffusion-model)
   - [Scripts](#scripts)
-    - [Install requirements](#install-requirements)
+    - [Install requirements](#install-requirements-1)
   - [Notebooks](#notebooks)
     - [Cleaning Jupyter Notebooks for Version Control](#cleaning-jupyter-notebooks-for-version-control)
     - [Installation](#installation)
@@ -28,11 +30,31 @@
     - [Create input and output directories](#create-input-and-output-directories)
     - [Download the model](#download-the-model)
     - [Create the Docker image](#create-the-docker-image)
-  - [Downloading Models](#downloading-models)
 
-## Learn how to use the scripts
+## Downloading Models
 
-To learn how to use the scripts, please read the [README.md](DataUtility/README.md) file in the DataUtility folder.
+```bash
+./download-model.sh
+```
+
+## Install requirements
+
+Install required dependency by running
+```
+pip install -r requirements.txt
+```
+
+## Running stable diffusion model
+
+You can run the stable diffusion model with:
+```
+python3 ./scripts/text_to_image.py --prompt "a girl by the lake staring at the stars" 
+
+Note:
+-put-out /  --outdir "./output/"
+```
+You can try your own prompt by replacing "test" with "your prompt"
+
 
 ## Scripts
 
@@ -49,6 +71,7 @@ pip install -r requirements.txt
 | Notebook Title | Google Colab Link |
 | --- | --- |
 | Diffusers Unit Test Example | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/kk-digital/kcg-ml-sd1p4/blob/main/notebooks/diffusers_unit_test.ipynb)|
+
 ### Cleaning Jupyter Notebooks for Version Control
 
 ### Installation
@@ -135,9 +158,3 @@ docker build . --file ./docker/Dockerfile --tag stable-diffusion
 docker run --gpus all -v ./input:/input -v ./output:/output -v ./stable_diffusion:/stable_diffusion stable-diffusion
 ```
 Replace /path/to/input with your input path, and /path/to/output with your output that
-
-## Downloading Models
-
-```bash
-./download-model.sh
-```
