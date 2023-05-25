@@ -13,6 +13,10 @@ from pathlib import Path
 
 import torch
 
+#import parent directory
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
 from labml import monit
 from stable_diffusion.sampler.ddim import DDIMSampler
 from stable_diffusion.util import load_model, load_img, save_images, set_seed

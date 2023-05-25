@@ -14,6 +14,10 @@ from typing import Optional
 
 import torch
 
+#import parent directory
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
 from labml import monit
 from stable_diffusion.latent_diffusion import LatentDiffusion
 from stable_diffusion.sampler.ddim import DDIMSampler
