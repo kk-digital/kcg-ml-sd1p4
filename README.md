@@ -16,7 +16,7 @@
     - [Installation](#installation)
     - [Setting up nbstripout](#setting-up-nbstripout)
     - [Using nbconvert](#using-nbconvert)
-- [Setting up Docker for the Stable Diffusion server](#setting-up-docker-for-the-stable-diffusion-server)
+- [Setting up Docker for the Stable Diffusion server](docker/README.md)
   - [Installing Docker](#installing-docker)
     - [Add the docker GPG key to the repository](#add-the-docker-gpg-key-to-the-repository)
     - [Add docker to apt sources](#add-docker-to-apt-sources)

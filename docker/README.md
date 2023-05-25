@@ -1,3 +1,19 @@
+- [Setting up Docker for the Stable Diffusion server](#setting-up-docker-for-the-stable-diffusion-server)
+  - [Installing Docker](#installing-docker)
+    - [Add the docker GPG key to the repository](#add-the-docker-gpg-key-to-the-repository)
+    - [Add docker to apt sources](#add-docker-to-apt-sources)
+    - [Update the package database](#update-the-package-database)
+    - [Install docker](#install-docker)
+    - [Startup docker](#startup-docker)
+    - [Install the NVIDIA toolkit (for Ubuntu)](#install-the-nvidia-toolkit-for-ubuntu)
+    - [Verify the NVIDIA container toolkit is working](#verify-the-nvidia-container-toolkit-is-working)
+    - [Add yourself to the docker group](#add-yourself-to-the-docker-group)
+    - [Verify you can run docker commands](#verify-you-can-run-docker-commands)
+    - [Create input and output directories](#create-input-and-output-directories)
+    - [Download the model](#download-the-model)
+    - [Create the Docker image](#create-the-docker-image)
+
+
 # Setting up Docker for the Stable Diffusion server
 
 ## Installing Docker
