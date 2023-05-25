@@ -13,19 +13,19 @@ parser.add_argument('--batch_size', type=int, default=1, help='Batch size')
 args = parser.parse_args()
 
 # Set the output directory
-output_dir = os.path.join(os.path.dirname(__file__), '/output/')
+output_dir = os.path.join(os.path.dirname(__file__), 'output/')
 
 # Check if CUDA is available
 if not torch.cuda.is_available():
     print("WARNING: You are running this script without CUDA. Brace yourself for a slow ride.")
 
 # Load the prompts
-prompts_path = '/input/prompts.txt'
+prompts_path = '/repo/input/prompts.txt'
 with open(prompts_path, 'r') as f:
     prompts = f.readlines()
 
 # Load the Stable Diffusion model
-checkpoint_path = os.path.join(os.path.dirname(__file__), '/input/model/sd-v1-4.ckpt')
+checkpoint_path = os.path.join(os.path.dirname(__file__), '/repo/input/model/sd-v1-4.ckpt')
 sampler_name = 'ddim'
 txt2img = Txt2Img(checkpoint_path=checkpoint_path, sampler_name=sampler_name, n_steps=20)
 
