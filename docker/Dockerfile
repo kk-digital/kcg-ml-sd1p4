@@ -23,7 +23,10 @@ RUN git clone https://github.com/kk-digital/kcg-ml-sd1p4/ \
 	&& mv /kcg-ml-sd1p4 /repo
 WORKDIR /repo
 
-RUN pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+#RUN pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+# local pip cache
+RUN pip3 config set global.index-url http://192.168.3.2:5010/index/
+RUN pip3 config set global.trusted-host 192.168.3.2
 
 # Install other dependencies
 RUN --mount=type=cache,target=/root/.cache/pip pip3 install \
