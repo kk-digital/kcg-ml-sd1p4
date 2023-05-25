@@ -9,7 +9,6 @@
     - [Verify the NVIDIA container toolkit is working](#verify-the-nvidia-container-toolkit-is-working)
     - [Add yourself to the docker group](#add-yourself-to-the-docker-group)
     - [Verify you can run docker commands](#verify-you-can-run-docker-commands)
-    - [Create input and output directories](#create-input-and-output-directories)
     - [Download the model](#download-the-model)
     - [Create the Docker image](#create-the-docker-image)
 
@@ -58,11 +57,6 @@ sudo usermod -aG docker $USER
 ```bash
 docker run hello-world
 ```
-### Create input and output directories
-```bash
-mkdir -p input/model output
-```
-
 ### Download the model
 ```bash
 ./download-model.sh
