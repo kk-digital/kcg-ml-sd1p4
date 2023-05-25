@@ -24,9 +24,6 @@ RUN pip3 config set global.trusted-host 192.168.3.2
 RUN --mount=type=cache,target=/root/.cache/pip pip3 install \
 	-r /repo/requirements.txt
 
-# Mount volumes
-VOLUME input output
-
 # Set environment variable for log directory
 ENV LOG_DIR=/output/logs
 

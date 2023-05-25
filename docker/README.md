@@ -66,6 +66,9 @@ docker run hello-world
 ```bash
 export DOCKER_BUILDKIT=1
 docker build . --file ./docker/Dockerfile --tag stable-diffusion
-docker run --gpus all stable-diffusion
+docker run --gpus all \
+	--mount src="$(pwd)/input",target=/input,type=bind \
+	--mount src="$(pwd)/output",target=/output,type=bind \
+	stable-diffusion
 ```
 Replace /path/to/input with your input path, and /path/to/output with your output that
