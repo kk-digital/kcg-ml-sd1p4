@@ -14,11 +14,12 @@ from pathlib import Path
 
 import torch
 
-from labml import monit
+
 
 import sys
 sys.path.append('..')
 
+from labml import monit
 from stable_diffusion.latent_diffusion import LatentDiffusion
 from stable_diffusion.sampler.ddim import DDIMSampler
 from stable_diffusion.sampler.ddpm import DDPMSampler

@@ -14,12 +14,15 @@ from typing import Optional
 
 import torch
 
-from labml import lab, monit
-from labml_nn.diffusion.stable_diffusion.latent_diffusion import LatentDiffusion
-from labml_nn.diffusion.stable_diffusion.sampler import DiffusionSampler
-from labml_nn.diffusion.stable_diffusion.sampler.ddim import DDIMSampler
-from labml_nn.diffusion.stable_diffusion.util import load_model, save_images, load_img, set_seed
+from labml import monit
+from stable_diffusion.latent_diffusion import LatentDiffusion
+from stable_diffusion.sampler.ddim import DDIMSampler
+from stable_diffusion.sampler.ddpm import DDPMSampler
+from stable_diffusion.util import load_model, save_images, set_seed
 
+
+def get_model_path():
+    return "./input/model/sd-v1-4.ckpt"  
 
 class InPaint:
     """
@@ -149,16 +152,15 @@ def main():
     opt = parser.parse_args()
     set_seed(42)
 
-    in_paint = InPaint(checkpoint_path=lab.get_data_path() / 'stable-diffusion' / 'sd-v1-4.ckpt',
+    in_paint = InPaint(checkpoint_path=get_model_path(),
                        ddim_steps=opt.steps)
 
-    with monit.section('Generate'):
-        in_paint(dest_path='outputs',
-                 orig_img=opt.orig_img,
-                 strength=opt.strength,
-                 batch_size=opt.batch_size,
-                 prompt=opt.prompt,
-                 uncond_scale=opt.scale)
+    in_paint(dest_path='outputs',
+        orig_img=opt.orig_img,
+        strength=opt.strength,
+        batch_size=opt.batch_size,
+        prompt=opt.prompt,
+        uncond_scale=opt.scale)
 
 
 #
