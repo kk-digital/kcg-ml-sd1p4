@@ -80,8 +80,7 @@ def check_dir(path: str):
 
     return path
 
-DESTINATION = '/tmp/input/models/'
-OUTPUT_DIR = '/output/tmp'
+DESTINATION = '../input/model/'
 LOGS_DIR = '/tmp/logs'
 
 
@@ -139,11 +138,22 @@ def show_models():
 def main():
     parser = argparse.ArgumentParser(description='Download model')
 
-    parser.add_argument('--list-models', help='List models', action='store_true')
+    parser.add_argument(
+        '--list-models',
+        help='List models',
+        action='store_true'
+    )
 
-    parser.add_argument('--model', help='Filename of model to download')
+    parser.add_argument(
+        '--model',
+        help='Filename of model to download, showed in --list-models',
+        default='v1-5-pruned-emaonly.ckpt'
+    )
 
-    parser.add_argument('--output', help='Destination to save model to', default=DESTINATION)
+    parser.add_argument('--output',
+        help='Destination to save model to',
+        default=DESTINATION
+    )
     
     args = parser.parse_args()
 
@@ -166,9 +176,6 @@ def main():
             print('Model not found')
 
         return
-    
-    parser.print_help()
-    
 
 if __name__ == '__main__':
     main()
