@@ -1,26 +1,18 @@
 # Use base image
-FROM docker.io/pytorch/pytorch:2.0.1-cuda11.7-cudnn8-devel
+FROM docker.io/pytorch/pytorch:2.0.1-cuda11.7-cudnn8-runtime
 
 # Set environment variable to avoid interactive configuration prompts
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install apt dependencies
 RUN apt-get update && apt-get install -y \
-    python3 \
-    python3-pip \
     libboost-system-dev \
     libboost-chrono-dev \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-
-# Install dependencies
-ARG DEBIAN_FRONTEND=noninteractive
-
-# Clone stable-diffusion repo
-WORKDIR /
-RUN git clone https://github.com/kk-digital/kcg-ml-sd1p4/ \
-	&& mv /kcg-ml-sd1p4 /repo
+# Add stable diffusion repo
+COPY  ./ /repo
 WORKDIR /repo
 
 #RUN pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
@@ -33,7 +25,7 @@ RUN --mount=type=cache,target=/root/.cache/pip pip3 install \
 	-r /repo/requirements.txt
 
 # Mount volumes
-VOLUME input output stable_diffusion
+VOLUME input output
 
 # Set environment variable for log directory
 ENV LOG_DIR=/output/logs
