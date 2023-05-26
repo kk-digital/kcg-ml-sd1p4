@@ -4,8 +4,9 @@ import argparse
 
 from text_to_image import Txt2Img
 import torch
+import time
 
-noide_seeds = [
+noise_seeds = [
     2982,
     4801,
     1995,
@@ -41,15 +42,15 @@ def generate_images(
     num_seeds: int=8,
     noise_file: str="../input/noise-seeds.txt",
 ):
-    # Check if CUDA is available
-    if not torch.cuda.is_available():
-        print("WARNING: You are running this script without CUDA. Brace yourself for a slow ride.")
-
+    time_before_initialization = time.time()
     txt2img = Txt2Img(checkpoint_path=checkpoint_path, sampler_name=sampler_name, n_steps=n_steps)
+
+    time_after_initialization = time.time()
 
     # Generate images for each artist
     with open(artist_file, 'r') as f:
         artists = f.readlines()
+        total_images = num_seeds * len(artists)
         for artist in artists:
             artist = artist.strip()
             prompt = generate_prompt(prompt_prefix, artist)
@@ -58,9 +59,10 @@ def generate_images(
 
             with torch.no_grad():
                 for i in range(num_seeds):
-                    # Use seed
-                    with open(noise_file, 'r') as f:
-                        noise_seed = int(f.readlines()[i].strip())
+                    noise_seed = noise_seeds[i % len(noise_seeds)]
+
+                    print("INFO: Generating image %s/%s from total" % (i + 1, total_images))
+                    print("INFO: Generating image %s/%s for prompt \"%s\"" % (i+1, num_seeds, prompt))
 
                     # Generate image
                     image_name = f"a{i:04d}_n{noise_seed}.jpg"
@@ -72,6 +74,15 @@ def generate_images(
 
     # Unload the Stable Diffusion model
     del txt2img
+
+    end_time = time.time()
+
+    print("[SUMMARY]")
+    print("Total time taken: %.2f seconds" % (end_time - time_before_initialization))
+    print("Partial time (without initialization): %.2f seconds" % (end_time - time_after_initialization))
+    print("Total images generated: %s" % total_images)
+    print("Images/second: %.2f" % (total_images / (end_time - time_before_initialization)))
+    print("Images/second (without initialization): %.2f" % (total_images / (end_time - time_after_initialization)))
 
     print("Images generated successfully at", output_dir)
 
@@ -88,8 +99,8 @@ def main():
     parser.add_argument(
         '--artist_file',
         type=str,
-        default='./input/prompts/artists.txt',
-        help='Path to the file containing the artists, each on a line (default: \'./input/prompts/artists.txt\')'
+        default='./input/artists.txt',
+        help='Path to the file containing the artists, each on a line (default: \'%(default)s\')'
     )
 
     parser.add_argument(
@@ -139,10 +150,10 @@ def main():
     generate_images(
         prompt_prefix=args.prompt_prefix,
         artist_file=args.artist_file,
-        output_dir=args.output_dir,
+        output_dir=args.output,
         checkpoint_path=args.checkpoint_path,
         sampler_name=args.sampler,
-        n_steps=args.n_steps,
+        n_steps=args.steps,
         num_seeds=args.num_seeds,
         noise_file=args.noise_file,
     )

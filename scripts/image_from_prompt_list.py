@@ -32,8 +32,8 @@ def main():
 
     text2img = text_to_image.Txt2Img(checkpoint_path=model_path,)
     for (index, prompt) in enumerate(prompts):
-        print("Currently generating %s images for prompt %s" % (args.num_images, prompt))
-        print("Progress: %s/%s (%.2f%%)" % (index, len(prompts), (index/len(prompts))*100))
+        print("\nINFO: Currently generating %s images for prompt \"%s\"" % (args.num_images, prompt))
+        print("Progress: %s/%s (%.2f%%) (from total prompts)" % (index, len(prompts), (index/len(prompts))*100))
 
         hash = hashlib.sha1(prompt.encode("UTF-8")).hexdigest()
         filename = hash[:10] + ".jpg"
