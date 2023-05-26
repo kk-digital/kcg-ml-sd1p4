@@ -17,6 +17,9 @@
     - [Setting up nbstripout](#setting-up-nbstripout)
     - [Using nbconvert](#using-nbconvert)
 - [Setting up Docker for the Stable Diffusion server](docker/README.md)
+  - [Generating images from different noise vectors](#generate-images-from-prefixed-noise-vectors/seeds)
+    - [Usage](#usage)
+
 
 ## Downloading Models
 
@@ -82,4 +85,24 @@ nbstripout --install --attributes .gitattributes
 ### Using nbconvert
 ```sh
 python -m nbconvert --ClearOutputPreprocessor.enabled=True --to notebook *.ipynb --inplace
+```
+
+# Generate images from prefixed noise vectors/seeds
+The generate_noise_image.py generates noise seeds, saves them to a file, and uses a file called "artists.txt" in order to generate prompts using a set prefix. It generates an image for each noise seed + artist + prefix combination.
+## Usage
+```bash
+python3 scripts/generate_noise_images.py \
+	--prompt_prefix {enter-the-prefix-for-prompt-here} \
+	--artist_file {default: input/artists.txt} \
+	--output_dir {default: output/noise-tests} \
+	--checkpoint_path {path-to-your-stable-diffusion-model-ckpt-file} \
+	--sampler_name {sampler-here | default: ddim} \
+	--n_steps {steps-for-image-generation} \
+	--num_seeds {how-many-seeds-variations-for-each-prompt} \
+	--noise_file {path-to-the-file-were-noise-seeds-are-going-to-be-stored}
+```
+
+The images will be stored on the output_dir, with the following name:
+```
+[artist-number-in-file]_n[noise-seed].jpg
 ```
