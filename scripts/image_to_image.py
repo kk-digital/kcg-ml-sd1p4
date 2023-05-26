@@ -12,43 +12,22 @@ import os, sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 import argparse
-from pathlib import Path
 
 import torch
 
 from labml import monit
-from stable_diffusion.sampler.ddim import DDIMSampler
-from stable_diffusion.util import load_model, load_img, save_images, set_seed
+from stable_diffusion.util import load_img, save_images, set_seed, get_autocast
+
+from stable_diffusion_base_script import StableDiffusionBaseScript
+
 
 def get_model_path():
     return "../input/model/sd-v1-4.ckpt"  
 
-class Img2Img:
+class Img2Img(StableDiffusionBaseScript):
     """
     ### Image to image class
     """
-
-    def __init__(self, *, checkpoint_path: Path,
-                 ddim_steps: int = 50,
-                 ddim_eta: float = 0.0):
-        """
-        :param checkpoint_path: is the path of the checkpoint
-        :param ddim_steps: is the number of sampling steps
-        :param ddim_eta: is the [DDIM sampling](../sampler/ddim.html) $\eta$ constant
-        """
-        self.ddim_steps = ddim_steps
-
-        # Load [latent diffusion model](../latent_diffusion.html)
-        self.model = load_model(checkpoint_path)
-        # Get device
-        self.device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
-        # Move the model to device
-        self.model.to(self.device)
-
-        # Initialize [DDIM sampler](../sampler/ddim.html)
-        self.sampler = DDIMSampler(self.model,
-                                   n_steps=ddim_steps,
-                                   ddim_eta=ddim_eta)
 
     @torch.no_grad()
     def __call__(self, *,
@@ -80,13 +59,8 @@ class Img2Img:
         t_index = int(strength * self.ddim_steps)
 
         # AMP auto casting
-        cpu_or_gpu = "cpu" if self.device == torch.device("cpu") else "cuda"
-        with torch.autocast(cpu_or_gpu):
-            if cpu_or_gpu == 'cpu':
-                print('[WARNING] Generating images on CPU, this will be slow.')
-            else:
-                print('[INFO] Generating images on GPU.')
-                
+        autocast = get_autocast()
+        with autocast:
             print(f'Generating images with prompt: "{prompt}"')
             # In unconditional scaling is not $1$ get the embeddings for empty prompts (no conditioning).
             if uncond_scale != 1.0:
@@ -123,7 +97,7 @@ def main():
     )
 
     parser.add_argument(
-        "--orig-img",
+        "--orig_img",
         type=str,
         nargs="?",
         help="path to the input image"
@@ -143,14 +117,29 @@ def main():
     parser.add_argument("--checkpoint_path", type=str, default=get_model_path(),
                         help="path to the checkpoint")
 
+    parser.add_argument("--output", type=str, default="./outputs",
+                        help="path to store the generated images")
+    
+    parser.add_argument("--force_cpu", action="store_true",
+                        help="force the generation to be on CPU")
+    
+    parser.add_argument("--cuda_device", type=str, default="cuda:0",
+                        help="cuda device to use for generation")
+
     opt = parser.parse_args()
     set_seed(42)
 
+    if not opt.orig_img:
+        print("[ERROR] Please provide a path to the input image (--orig_img)")
+        return
+
     img2img = Img2Img(checkpoint_path=opt.checkpoint_path,
-                      ddim_steps=opt.steps)
+                      ddim_steps=opt.steps,
+                      force_cpu=opt.force_cpu,
+                      cuda_device=opt.cuda_device)
 
     img2img(
-        dest_path='outputs',
+        dest_path=opt.output,
         orig_img=opt.orig_img,
         strength=opt.strength,
         batch_size=opt.batch_size,

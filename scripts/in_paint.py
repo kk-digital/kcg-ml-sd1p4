@@ -10,51 +10,30 @@ summary: >
 
 import argparse
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 import torch
 
 #import parent directory
-import sys
+import os,sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from labml import monit
 from stable_diffusion.latent_diffusion import LatentDiffusion
-from stable_diffusion.sampler.ddim import DDIMSampler
-from stable_diffusion.sampler.ddpm import DDPMSampler
-from stable_diffusion.util import load_model, save_images, set_seed
+from stable_diffusion.sampler import DiffusionSampler
+from stable_diffusion.util import save_images, set_seed, load_img, get_autocast
+
+from stable_diffusion_base_script import StableDiffusionBaseScript
 
 def get_model_path():
     return "./input/model/sd-v1-4.ckpt"  
 
-class InPaint:
+class InPaint(StableDiffusionBaseScript):
     """
     ### Image in-painting class
     """
     model: LatentDiffusion
     sampler: DiffusionSampler
-
-    def __init__(self, *, checkpoint_path: Path,
-                 ddim_steps: int = 50,
-                 ddim_eta: float = 0.0):
-        """
-        :param checkpoint_path: is the path of the checkpoint
-        :param ddim_steps: is the number of sampling steps
-        :param ddim_eta: is the [DDIM sampling](../sampler/ddim.html) $\eta$ constant
-        """
-        self.ddim_steps = ddim_steps
-
-        # Load [latent diffusion model](../latent_diffusion.html)
-        self.model = load_model(checkpoint_path)
-        # Get device
-        self.device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
-        # Move the model to device
-        self.model.to(self.device)
-
-        # Initialize [DDIM sampler](../sampler/ddim.html)
-        self.sampler = DDIMSampler(self.model,
-                                   n_steps=ddim_steps,
-                                   ddim_eta=ddim_eta)
 
     @torch.no_grad()
     def __call__(self, *,
@@ -96,7 +75,8 @@ class InPaint:
         t_index = int(strength * self.ddim_steps)
 
         # AMP auto casting
-        with torch.cuda.amp.autocast():
+        autocast = get_autocast()
+        with autocast:
             # In unconditional scaling is not $1$ get the embeddings for empty prompts (no conditioning).
             if uncond_scale != 1.0:
                 un_cond = self.model.get_text_conditioning(batch_size * [""])
@@ -135,10 +115,24 @@ def main():
     )
 
     parser.add_argument(
-        "--orig-img",
+        "--checkpoint_path",
+        type=str,
+        default=get_model_path(),
+        help="path to the checkpoint to load"
+    )
+
+    parser.add_argument(
+        "--orig_img",
         type=str,
         nargs="?",
         help="path to the input image"
+    )
+
+    parser.add_argument(
+        "--output",
+        type=str,
+        default="./outputs",
+        help="path to save the generated images"
     )
 
     parser.add_argument("--batch_size", type=int, default=4, help="batch size", )
@@ -151,15 +145,26 @@ def main():
     parser.add_argument("--strength", type=float, default=0.75,
                         help="strength for noise: "
                              " 1.0 corresponds to full destruction of information in init image")
+    
+    parser.add_argument("--force_cpu", action='store_true', help="force cpu usage")
+
+    parser.add_argument("--cuda_device", type=str, default="cuda:0",
+                        help="cuda device to use for generation")
 
     opt = parser.parse_args()
     set_seed(42)
 
-    in_paint = InPaint(checkpoint_path='/input/model/sd-v1-4.ckpt',
-                       ddim_steps=opt.steps)
+    if opt.orig_img is None:
+        print('Please specify the path to the input image with --orig_img')
+        exit(1)
+
+    in_paint = InPaint(checkpoint_path=opt.checkpoint_path,
+                       ddim_steps=opt.steps,
+                       force_cpu=opt.force_cpu,
+                       cuda_device=opt.cuda_device)
 
     with monit.section('Generate'):
-        in_paint(dest_path='outputs',
+        in_paint(dest_path=opt.output,
                  orig_img=opt.orig_img,
                  strength=opt.strength,
                  batch_size=opt.batch_size,

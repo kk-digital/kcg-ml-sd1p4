@@ -150,3 +150,25 @@ def save_images(images: torch.Tensor, dest_path: str, img_format: str = 'jpeg'):
     for i, img in enumerate(images):
         img = Image.fromarray((255. * img).astype(np.uint8))
         img.save(dest_path, format=img_format)
+
+def get_device(force_cpu: bool = False, cuda_fallback: str = 'cuda:0'):
+    """
+    ### Get device
+    """
+    if torch.cuda.is_available() and not force_cpu:
+        device_name = torch.cuda.get_device_name(0)
+        print("INFO: Using CUDA device: {}".format(device_name))
+        return cuda_fallback
+
+    print("WARNING: You are running this script without CUDA. Brace yourself for a slow ride.")
+    return 'cpu'
+
+def get_autocast(force_cpu: bool = False):
+    """
+    ### Get autocast
+    """
+    if torch.cuda.is_available() and not force_cpu:
+        return torch.cuda.amp.autocast()
+
+    print("WARNING: You are running this script without CUDA. Brace yourself for a slow ride.")
+    return torch.cpu.amp.autocast()
