@@ -1,7 +1,4 @@
 import os, sys
-# Make it possible to import from stable_diffusion
-sys.path.append(os.path.join(os.path.dirname(__file__), "../"))
-
 import random
 import argparse
 
@@ -29,14 +26,14 @@ def to_absolute_path(path: str):
 # main function, called when the script is run
 def generate_images(
     prompt_prefix: str="A woman with flowers in her hair in a courtyard, in the style of",
-    artist_file: str=to_absolute_path('../input/prompts/artists.txt'),
-    output_dir: str=to_absolute_path('../../output/noise-tests/'),
-    checkpoint_path: str=to_absolute_path('../../input/model/sd-v1-4.ckpt'),
+    artist_file: str=to_absolute_path('../input/artists.txt'),
+    output_dir: str=to_absolute_path('../output/noise-tests/'),
+    checkpoint_path: str=to_absolute_path('../input/model/sd-v1-4.ckpt'),
     sampler_name: str='ddim',
     n_steps: int=20,
     num_seeds: int=8,
-    noise_file: str="noise-seeds.txt",
-):  
+    noise_file: str="../input/noise-seeds.txt",
+):
     # Check if CUDA is available
     if not torch.cuda.is_available():
         print("WARNING: You are running this script without CUDA. Brace yourself for a slow ride.")
