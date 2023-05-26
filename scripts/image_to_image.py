@@ -22,7 +22,7 @@ from stable_diffusion_base_script import StableDiffusionBaseScript
 
 
 def get_model_path():
-    return "../input/model/sd-v1-4.ckpt"  
+    return "./input/model/sd-v1-4.ckpt"  
 
 class Img2Img(StableDiffusionBaseScript):
     """
