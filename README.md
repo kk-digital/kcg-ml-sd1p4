@@ -45,17 +45,7 @@ Note:
 ```
 You can try your own prompt by replacing "test" with "your prompt"
 
-
-## Scripts
-
-To run the scripts, you must install the requirements:
-
-### Install requirements
-
-Install required dependency by running
-```
-pip install -r requirements.txt
-```
+_OBS:_ See more options on [scripts folder](./scripts/README.md#text_to_imagepy)
 
 ## Notebooks
 | Notebook Title | Google Colab Link |

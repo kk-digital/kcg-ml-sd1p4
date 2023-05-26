@@ -10,6 +10,7 @@ summary: >
 
 import argparse
 import os
+import time
 from pathlib import Path
 from typing import Union
 
@@ -21,50 +22,16 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from labml import monit
 from stable_diffusion.latent_diffusion import LatentDiffusion
-from stable_diffusion.sampler.ddim import DDIMSampler
-from stable_diffusion.sampler.ddpm import DDPMSampler
-from stable_diffusion.util import load_model, save_images, set_seed
+from stable_diffusion.util import save_images, set_seed, get_autocast
 from stable_diffusion.model.unet_attention import CrossAttention
 
-class Txt2Img:
+from stable_diffusion_base_script import StableDiffusionBaseScript
+
+class Txt2Img(StableDiffusionBaseScript):
     """
     ### Text to image class
     """
     model: LatentDiffusion
-
-    def __init__(self, *,
-                 checkpoint_path: Union[str, Path],
-                 sampler_name: str,
-                 n_steps: int = 50,
-                 ddim_eta: float = 0.0,
-                 force_cpu: bool = False
-                 ):
-        """
-        :param checkpoint_path: is the path of the checkpoint
-        :param sampler_name: is the name of the [sampler](../sampler/index.html)
-        :param n_steps: is the number of sampling steps
-        :param ddim_eta: is the [DDIM sampling](../sampler/ddim.html) $\eta$ constant
-        """
-        device_id = "cuda:0" if torch.cuda.is_available() else "cpu"
-
-        if force_cpu:
-            device_id = "cpu"
-
-        # Load [latent diffusion model](../latent_diffusion.html)
-        self.model = load_model(checkpoint_path, device_id)
-        # Get device or force CPU if requested
-        self.device = torch.device(device_id)
-
-        # Move the model to device
-        self.model.to(self.device)
-
-        # Initialize [sampler](../sampler/index.html)
-        if sampler_name == 'ddim':
-            self.sampler = DDIMSampler(self.model,
-                                       n_steps=n_steps,
-                                       ddim_eta=ddim_eta)
-        elif sampler_name == 'ddpm':
-            self.sampler = DDPMSampler(self.model)
 
     @torch.no_grad()
     def __call__(self, *,
@@ -92,6 +59,9 @@ class Txt2Img:
         # Image to latent space resolution reduction
         f = 8
 
+        if seed == 0:
+            seed = time.time_ns() % 2**32
+
         set_seed(seed)
         # Adjust batch size based on VRAM availability
         if low_vram:
@@ -101,8 +71,8 @@ class Txt2Img:
         prompts = batch_size * [prompt]
 
         # AMP auto casting
-        cpu_or_cuda = "cpu" if self.device == torch.device("cpu") else "cuda"
-        with torch.autocast(cpu_or_cuda):
+        autocast = get_autocast()
+        with autocast:
             # In unconditional scaling is not $1$ get the embeddings for empty prompts (no conditioning).
             if uncond_scale != 1.0:
                 un_cond = self.model.get_text_conditioning(batch_size * [""])
@@ -140,10 +110,10 @@ def main():
     parser.add_argument("--batch_size", type=int, default=4, help="batch size")
 
     parser.add_argument(
-        "--out",
+        "--output",
         type=str,
         dest="output_dir",
-        default="../output",
+        default="./outputs",
         help="Output path to store the generated images",
     )
 
@@ -156,7 +126,7 @@ def main():
     )
 
     parser.add_argument(
-        '--checkpoint',
+        '--checkpoint_path',
         dest='checkpoint_path',
         default='./sd-v1-4.ckpt',
         help='Relative path of the checkpoint file (*.ckpt) (defaults to ./sd-v1-4.ckpt)'
@@ -170,9 +140,12 @@ def main():
                         help="unconditional guidance scale: "
                              "eps = eps(x, empty) + scale * (eps(x, cond) - eps(x, empty))")
 
-    parser.add_argument("--low-vram", action='store_true', help="limit VRAM usage")
+    parser.add_argument("--low_vram", action='store_true', help="limit VRAM usage")
 
-    parser.add_argument("--cpu", action='store_true', help="force CPU usage")
+    parser.add_argument("--force_cpu", action='store_true', help="force CPU usage")
+
+    parser.add_argument("--cuda_device", type=str, default="cuda:0",
+                        help="cuda device to use for generation")
 
     opt = parser.parse_args()
 
@@ -184,7 +157,8 @@ def main():
     txt2img = Txt2Img(checkpoint_path=opt.checkpoint_path,
                       sampler_name=opt.sampler_name,
                       n_steps=opt.steps,
-                        force_cpu=opt.cpu)
+                        force_cpu=opt.force_cpu,
+                        cuda_device=opt.cuda_device)
 
     with monit.section('Generate'):
         txt2img(dest_path=opt.output_dir,

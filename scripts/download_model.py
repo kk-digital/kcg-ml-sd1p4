@@ -80,7 +80,7 @@ def check_dir(path: str):
 
     return path
 
-DESTINATION = '../input/model/'
+DESTINATION = './input/model/'
 LOGS_DIR = '/tmp/logs'
 
 

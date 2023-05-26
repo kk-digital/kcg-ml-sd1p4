@@ -5,6 +5,16 @@ import argparse
 from text_to_image import Txt2Img
 import torch
 
+noide_seeds = [
+    2982,
+    4801,
+    1995,
+    3598,
+    987,
+    3688,
+    8872,
+    762
+]
 
 # Function to generate a prompt
 def generate_prompt(prompt_prefix, artist):
@@ -19,16 +29,13 @@ def save_noise_seeds(num_seeds, output_file):
         for seed in noise_seeds:
             f.write(f"{seed}\n")
 
-# Function to convert relative path to absolute path
-def to_absolute_path(path: str):
-    return os.path.join(os.path.dirname(__file__), path)
 
 # main function, called when the script is run
 def generate_images(
     prompt_prefix: str="A woman with flowers in her hair in a courtyard, in the style of",
-    artist_file: str=to_absolute_path('../input/artists.txt'),
-    output_dir: str=to_absolute_path('../output/noise-tests/'),
-    checkpoint_path: str=to_absolute_path('../input/model/sd-v1-4.ckpt'),
+    artist_file: str='./input/prompts/artists.txt',
+    output_dir: str='./outputs/noise-tests/',
+    checkpoint_path: str='./input/model/sd-v1-4.ckpt',
     sampler_name: str='ddim',
     n_steps: int=20,
     num_seeds: int=8,
@@ -81,33 +88,33 @@ def main():
     parser.add_argument(
         '--artist_file',
         type=str,
-        default=to_absolute_path('../input/prompts/artists.txt'),
-        help='Path to the file containing the artists, each on a line (default: \'../input/prompts/artists.txt\')'
+        default='./input/prompts/artists.txt',
+        help='Path to the file containing the artists, each on a line (default: \'./input/prompts/artists.txt\')'
     )
 
     parser.add_argument(
-        '--output_dir',
+        '--output',
         type=str,
-        default=to_absolute_path('../output/noise-tests/'),
-        help='Path to the output directory (default: \'../output/noise-tests/\')'
+        default='./outputs',
+        help='Path to the output directory (default: %(default)s)'
     )
 
     parser.add_argument(
         '--checkpoint_path',
         type=str,
-        default=to_absolute_path('../input/model/sd-v1-4.ckpt'),
-        help='Path to the checkpoint file (default: \'../input/model/sd-v1-4.ckpt\')'
+        default='./input/model/sd-v1-4.ckpt',
+        help='Path to the checkpoint file (default: \'./input/model/sd-v1-4.ckpt\')'
     )
 
     parser.add_argument(
-        '--sampler_name',
+        '--sampler',
         type=str,
         default='ddim',
         help='Name of the sampler to use (default: %(default)s)'
     )
 
     parser.add_argument(
-        '--n_steps',
+        '--steps',
         type=int,
         default=20,
         help='Number of steps to use (default: %(default)s)'
@@ -134,7 +141,7 @@ def main():
         artist_file=args.artist_file,
         output_dir=args.output_dir,
         checkpoint_path=args.checkpoint_path,
-        sampler_name=args.sampler_name,
+        sampler_name=args.sampler,
         n_steps=args.n_steps,
         num_seeds=args.num_seeds,
         noise_file=args.noise_file,
