@@ -35,7 +35,7 @@ def save_noise_seeds(num_seeds, output_file):
 def generate_images(
     prompt_prefix: str="A woman with flowers in her hair in a courtyard, in the style of",
     artist_file: str='./input/prompts/artists.txt',
-    output_dir: str='./outputs/noise-tests/',
+    output_dir: str='./output/noise-tests/',
     checkpoint_path: str='./input/model/sd-v1-4.ckpt',
     sampler_name: str='ddim',
     n_steps: int=20,
@@ -113,7 +113,7 @@ def main():
     parser.add_argument(
         '--output',
         type=str,
-        default='./outputs',
+        default='./output',
         help='Path to the output directory (default: %(default)s)'
     )
 
