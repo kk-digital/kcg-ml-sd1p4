@@ -48,6 +48,8 @@ def generate_images(
     time_after_initialization = time.time()
 
     # Generate images for each artist
+
+    artist_index = 0
     with open(artist_file, 'r') as f:
         artists = f.readlines()
         total_images = num_seeds * len(artists)
@@ -59,8 +61,6 @@ def generate_images(
                 artist = artist.strip()
                 prompt = generate_prompt(prompt_prefix, artist)
 
-                
-
                 for i in range(num_seeds):
                     noise_seed = noise_seeds[i % len(noise_seeds)]
 
@@ -69,7 +69,7 @@ def generate_images(
 
                     # Generate image
                     #image_name = f"a{i:04d}_n{noise_seed}.jpg"
-                    image_name = f"n{noise_seed}_a{i:04d}.jpg"
+                    image_name = f"n{noise_seed:04d}_a{artist_index:04d}.jpg"
 
                     dest_path = os.path.join(output_dir, image_name)
 
@@ -78,6 +78,7 @@ def generate_images(
                     #    txt2img(dest_path=dest_path, batch_size=1, prompt=prompt, seed=noise_seed)
                     print("Generating Image: " + image_name)
                     txt2img(dest_path=dest_path, batch_size=1, prompt=prompt, seed=noise_seed)
+                artist_index += 1
 
     # Unload the Stable Diffusion model
     del txt2img
