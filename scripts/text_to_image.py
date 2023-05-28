@@ -8,35 +8,42 @@ summary: >
 # Generate images using [stable diffusion](../index.html) with a prompt
 """
 
-import argparse
-import os
 import time
-from pathlib import Path
-from typing import Union
 
 import torch
-
-#import parent directory
-import sys
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-
 from labml import monit
-from stable_diffusion.latent_diffusion import LatentDiffusion
-from stable_diffusion.util import save_images, set_seed, get_autocast
-from stable_diffusion.model.unet_attention import CrossAttention
 
 from stable_diffusion_base_script import StableDiffusionBaseScript
+from stable_diffusion.utils.model import save_images, set_seed, get_autocast
+from stable_diffusion.model.unet_attention import CrossAttention
+from cli_builder import CLI
+
+def get_prompts(prompt, prompts_file):
+    prompts = []
+    if prompts_file is not None:
+        with open(prompts_file, 'r') as f:
+            prompts_from_file = f.readlines()
+        
+        prompts.extend(
+            filter(lambda x: len(x) > 0, map(lambda x: x.strip(), prompts_from_file))
+        )
+
+    if prompt is not None:
+        prompts.append(prompt)
+
+    if len(prompts) == 0:
+        prompts = ["a painting of a virus monster playing guitar"]
+
+    return prompts
 
 class Txt2Img(StableDiffusionBaseScript):
     """
     ### Text to image class
     """
-    model: LatentDiffusion
 
     @torch.no_grad()
-    def __call__(self, *,
+    def generate_images(self, *,
                  seed: int = 0,
-                 dest_path: str,
                  batch_size: int = 1,
                  prompt: str,
                  h: int = 512, w: int = 512,
@@ -73,99 +80,61 @@ class Txt2Img(StableDiffusionBaseScript):
         # AMP auto casting
         autocast = get_autocast()
         with autocast:
-            # In unconditional scaling is not $1$ get the embeddings for empty prompts (no conditioning).
-            if uncond_scale != 1.0:
-                un_cond = self.model.get_text_conditioning(batch_size * [""])
-            else:
-                un_cond = None
-            # Get the prompt embeddings
-            cond = self.model.get_text_conditioning(prompts)
+            un_cond, cond = self.get_text_conditioning(uncond_scale, prompts, batch_size)
+            
             # [Sample in the latent space](../sampler/index.html).
             # `x` will be of shape `[batch_size, c, h / f, w / f]`
             x = self.sampler.sample(cond=cond,
                                     shape=[batch_size, c, h // f, w // f],
                                     uncond_scale=uncond_scale,
                                     uncond_cond=un_cond)
-            # Decode the image from the [autoencoder](../model/autoencoder.html)
-            images = self.model.autoencoder_decode(x)
-
-        # Save images
-        save_images(images, dest_path)
+            
+            return self.decode_image(x)
 
 
 def main():
-    """
-    ### CLI
-    """
-    parser = argparse.ArgumentParser()
+    opt = CLI('Generate images using stable diffusion with a prompt') \
+        .prompt() \
+        .prompts_file(check_exists=True, required=False) \
+        .batch_size() \
+        .output() \
+        .sampler() \
+        .checkpoint_path() \
+        .flash() \
+        .steps() \
+        .scale() \
+        .low_vram() \
+        .force_cpu() \
+        .cuda_device() \
+        .parse()
 
-    parser.add_argument(
-        "--prompt",
-        type=str,
-        nargs="?",
-        default="a painting of a virus monster playing guitar",
-        help="the prompt to render"
-    )
-
-    parser.add_argument("--batch_size", type=int, default=4, help="batch size")
-
-    parser.add_argument(
-        "--output",
-        type=str,
-        dest="output_dir",
-        default="./outputs",
-        help="Output path to store the generated images",
-    )
-
-    parser.add_argument(
-        '--sampler',
-        dest='sampler_name',
-        choices=['ddim', 'ddpm'],
-        default='ddim',
-        help=f'Set the sampler.',
-    )
-
-    parser.add_argument(
-        '--checkpoint_path',
-        dest='checkpoint_path',
-        default='./sd-v1-4.ckpt',
-        help='Relative path of the checkpoint file (*.ckpt) (defaults to ./sd-v1-4.ckpt)'
-    )
-
-    parser.add_argument("--flash", action='store_true', help="whether to use flash attention")
-
-    parser.add_argument("--steps", type=int, default=50, help="number of sampling steps")
-
-    parser.add_argument("--scale", type=float, default=7.5,
-                        help="unconditional guidance scale: "
-                             "eps = eps(x, empty) + scale * (eps(x, cond) - eps(x, empty))")
-
-    parser.add_argument("--low_vram", action='store_true', help="limit VRAM usage")
-
-    parser.add_argument("--force_cpu", action='store_true', help="force CPU usage")
-
-    parser.add_argument("--cuda_device", type=str, default="cuda:0",
-                        help="cuda device to use for generation")
-
-    opt = parser.parse_args()
-
+    prompts = get_prompts(opt.prompt, opt.prompts_file)
 
     # Set flash attention
     CrossAttention.use_flash_attention = opt.flash
 
     # Starts the text2img
     txt2img = Txt2Img(checkpoint_path=opt.checkpoint_path,
-                      sampler_name=opt.sampler_name,
+                      sampler_name=opt.sampler,
                       n_steps=opt.steps,
-                        force_cpu=opt.force_cpu,
-                        cuda_device=opt.cuda_device)
+                      force_cpu=opt.force_cpu,
+                      cuda_device=opt.cuda_device
+                    )
+    txt2img.initialize_script()
 
-    with monit.section('Generate'):
-        txt2img(dest_path=opt.output_dir,
+    with monit.section('Generate', total_steps=len(prompts)) as section:
+        for prompt in prompts:
+            print(f'Generating images for prompt: "{prompt}"')
+
+            images = txt2img.generate_images(
                 batch_size=opt.batch_size,
                 prompt=opt.prompt,
                 uncond_scale=opt.scale,
-                low_vram=opt.low_vram)
+                low_vram=opt.low_vram
+            )
+            
+            save_images(images, opt.output_dir)
+            section.progress(1)
 
 
 if __name__ == "__main__":
