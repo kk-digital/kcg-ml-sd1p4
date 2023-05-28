@@ -21,3 +21,4 @@ transformers==4.29.2
 fire
 jupyter-runner
 torchtext==0.6.0
+libtorrent

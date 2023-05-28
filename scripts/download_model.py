@@ -1,12 +1,12 @@
 import os
-import datetime
 import time
-import argparse
 
-from typing import TypedDict, Optional, Literal, Union
+from typing import TypedDict, Optional, Literal, Union, List
 
 import libtorrent as lt
 import requests as rq
+
+from cli_builder import CLI
 
 
 class Model(TypedDict):
@@ -15,7 +15,7 @@ class Model(TypedDict):
     magnet_link: Optional[str]
     direct_link: Optional[str]
 
-ModelList = list[Model]
+ModelList = List[Model]
 
 model_list: ModelList = [
     {
@@ -74,21 +74,24 @@ model_list: ModelList = [
     }
 ]
 
-def check_dir(path: str):
-    if not os.path.exists(path):
-        os.makedirs(path)
-
-    return path
-
 DESTINATION = './input/model/'
 LOGS_DIR = '/tmp/logs'
 
+def to_byte_units(size: int):
+    if size < 1024:
+        return f"{size}B"
+    elif size < 1024 * 1024:
+        return f"{round(size / 1024, 2)}KB"
+    elif size < 1024 * 1024 * 1024:
+        return f"{round(size / 1024 / 1024, 2)}MB"
+    else:
+        return f"{round(size / 1024 / 1024 / 1024, 2)}GB"
 
 def download_via_magnet_link(magnet_link: str, destination: str):
     ses = lt.session()
     h = lt.add_magnet_uri(ses, magnet_link, {'save_path': destination})
 
-    print("Downloading magnet link...")
+    print("Downloading the file {} to {} via magnet link...".format(h.name(), destination))
 
     while not h.is_seed():
         s = h.status()
@@ -98,7 +101,7 @@ def download_via_magnet_link(magnet_link: str, destination: str):
     print(f"Download complete. File saved to: {destination}/{h.name()}")
 
 def download_via_direct_link(direct_link: str, destination: str, filename: str = ''):
-    print("Downloading direct link...")
+    print("Downloading the file {} to {} via direct link...".format(filename, destination))
 
     r = rq.get(direct_link, allow_redirects=True, stream=True) ## print progress below
 
@@ -111,9 +114,11 @@ def download_via_direct_link(direct_link: str, destination: str, filename: str =
             f.write(chunk)
 
             if chunk and total_length:
-                print(f"\rProgress: {round(progress / total_length * 100, 2)}%", end='\r')
+                progress_bytes = to_byte_units(progress)
+                total_length_bytes = to_byte_units(total_length)
+                print(f"\rProgress: ({progress_bytes}/{total_length_bytes}) - {round(progress / total_length * 100, 2)}%", end='\r')
             if chunk and not total_length:
-                print(f"\rProgress: {round(progress / 1024 / 1024, 2)}MB", end='\r')
+                print(f"\rProgress: {to_byte_units(progress)}", end='\r')
 
     print(f"Download complete. File saved to: {destination}/{filename}")
 
@@ -131,51 +136,41 @@ def download_model(
 
 def show_models():
     for model in model_list:
-        direct_link = f"Direct link: {model['direct_link']}\n" if 'direct_link' in model else ''
-        magnet_link = f"Magnet link: {model['magnet_link']}\n" if 'magnet_link' in model else ''
+        direct_link = f"Direct link: {model['direct_link']}\n" if model.get('direct_link') else ''
+        magnet_link = f"Magnet link: {model['magnet_link']}\n" if model.get('magnet_link') else ''
         print(f"{model['filename']}\n{model['description']}\n{direct_link}{magnet_link}")
 
 def main():
-    parser = argparse.ArgumentParser(description='Download model')
-
-    parser.add_argument(
-        '--list-models',
-        help='List models',
-        action='store_true'
-    )
-
-    parser.add_argument(
-        '--model',
-        help='Filename of model to download, showed in --list-models',
-        default='v1-5-pruned-emaonly.ckpt'
-    )
-
-    parser.add_argument('--output',
-        help='Destination to save model to',
-        default=DESTINATION
-    )
-    
-    args = parser.parse_args()
-
+    args = CLI('Download models') \
+            .list_models() \
+            .model() \
+            .output(DESTINATION, lambda args: not args.list_models) \
+            .parse()
+            
     if args.list_models:
         show_models()
         return
-
+    
     if args.model:
         model = next((model for model in model_list if model['filename'] == args.model), None)
 
         if model:
-            check_dir(args.output or DESTINATION)
-
             if os.path.exists(os.path.join(args.output or DESTINATION, model['filename'])):
                 print('Model already exists')
                 return
 
-            download_model(model, via='direct', destination=args.output or DESTINATION)
+            try:
+                download_model(model, via='direct', destination=args.output or DESTINATION)
+            except KeyboardInterrupt:
+                print('Download cancelled, deleting the file...')
+                os.remove(os.path.join(args.output or DESTINATION, model['filename']))
+            except Exception as e:
+                print(e)
+                print('Download failed, deleting the file...')
+                os.remove(os.path.join(args.output or DESTINATION, model['filename']))
+
         else:
             print('Model not found')
-
-        return
 
 if __name__ == '__main__':
     main()
