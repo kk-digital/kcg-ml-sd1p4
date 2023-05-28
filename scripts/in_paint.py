@@ -11,15 +11,10 @@ summary: >
 from typing import Optional
 
 import torch
-
-#import parent directory
-import os,sys
-sys.path.append(os.path.abspath(''))
-
 from labml import monit
-from stable_diffusion.util import save_images, set_seed, load_img, get_autocast
 
 from stable_diffusion_base_script import StableDiffusionBaseScript
+from stable_diffusion.utils.model import save_images, set_seed, get_autocast
 from cli_builder import CLI
 
 def get_model_path():
@@ -32,7 +27,6 @@ class InPaint(StableDiffusionBaseScript):
 
     @torch.no_grad()
     def repaint_image(self, *,
-                 dest_path: str,
                  orig_img: str,
                  strength: float,
                  batch_size: int = 3,
@@ -101,7 +95,7 @@ def main():
     in_paint.initialize_script()
 
     with monit.section('Generate'):
-        images = in_paint.repaint_image(dest_path=opt.output,
+        images = in_paint.repaint_image(
             orig_img=opt.orig_img,
             strength=opt.strength,
             batch_size=opt.batch_size,

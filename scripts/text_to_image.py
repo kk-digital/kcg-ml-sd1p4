@@ -8,21 +8,14 @@ summary: >
 # Generate images using [stable diffusion](../index.html) with a prompt
 """
 
-import argparse
-import os
 import time
 
 import torch
-
-#import parent directory
-import sys
-sys.path.append(os.path.abspath(''))
-
 from labml import monit
-from stable_diffusion.util import save_images, set_seed, get_autocast
-from stable_diffusion.model.unet_attention import CrossAttention
 
 from stable_diffusion_base_script import StableDiffusionBaseScript
+from stable_diffusion.utils.model import save_images, set_seed, get_autocast
+from stable_diffusion.model.unet_attention import CrossAttention
 from cli_builder import CLI
 
 def get_prompts(prompt, prompts_file):

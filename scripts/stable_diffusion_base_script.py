@@ -1,12 +1,15 @@
+import os, sys
+sys.path.append(os.path.abspath(''))
+
 import torch
 
 from stable_diffusion.sampler.ddim import DDIMSampler
 from stable_diffusion.sampler.ddpm import DDPMSampler
-from stable_diffusion.util import load_model, get_device
+from stable_diffusion.utils.model import load_model, get_device
 from stable_diffusion.latent_diffusion import LatentDiffusion
 from stable_diffusion.sampler import DiffusionSampler
 
-from stable_diffusion.util import load_img
+from stable_diffusion.utils.model import load_img
 
 from typing import Union, Optional
 

@@ -8,15 +8,11 @@ summary: >
 # Generate images using [stable diffusion](../index.html) with a prompt from a given image
 """
 
-import os, sys
-sys.path.append(os.path.abspath(''))
-
 import torch
-
 from labml import monit
-from stable_diffusion.util import save_images, set_seed, get_autocast
 
 from stable_diffusion_base_script import StableDiffusionBaseScript
+from stable_diffusion.utils.model import save_images, set_seed, get_autocast
 from cli_builder import CLI
 
 class Img2Img(StableDiffusionBaseScript):

@@ -3,7 +3,7 @@ import hashlib
 
 import text_to_image
 
-from stable_diffusion.util import save_images
+from stable_diffusion.utils.model import save_images
 
 from cli_builder import CLI
 

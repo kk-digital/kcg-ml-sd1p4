@@ -1,6 +1,6 @@
 import argparse
 
-from util import check_folder_existence, check_file_existence
+from stable_diffusion.utils.cli import check_folder_existence, check_file_existence
 
 from typing import Union, Callable
 
