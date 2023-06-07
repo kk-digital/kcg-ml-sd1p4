@@ -109,6 +109,8 @@ def main():
         .parse()
 
     prompts = get_prompts(opt.prompt, opt.prompts_file)
+    if not opt.output_dir:
+        opt.output_dir = './output/'
 
     # Set flash attention
     CrossAttention.use_flash_attention = opt.flash
