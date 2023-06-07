@@ -23,7 +23,7 @@ def get_prompts(prompt, prompts_file):
     if prompts_file is not None:
         with open(prompts_file, 'r') as f:
             prompts_from_file = f.readlines()
-        
+
         prompts.extend(
             filter(lambda x: len(x) > 0, map(lambda x: x.strip(), prompts_from_file))
         )
@@ -81,14 +81,14 @@ class Txt2Img(StableDiffusionBaseScript):
         autocast = get_autocast()
         with autocast:
             un_cond, cond = self.get_text_conditioning(uncond_scale, prompts, batch_size)
-            
+
             # [Sample in the latent space](../sampler/index.html).
             # `x` will be of shape `[batch_size, c, h / f, w / f]`
             x = self.sampler.sample(cond=cond,
                                     shape=[batch_size, c, h // f, w // f],
                                     uncond_scale=uncond_scale,
                                     uncond_cond=un_cond)
-            
+
             return self.decode_image(x)
 
 
@@ -97,7 +97,7 @@ def main():
         .prompt() \
         .prompts_file(check_exists=True, required=False) \
         .batch_size() \
-        .output() \
+        .output_dir() \
         .sampler() \
         .checkpoint_path() \
         .flash() \
@@ -132,7 +132,7 @@ def main():
                 uncond_scale=opt.scale,
                 low_vram=opt.low_vram
             )
-            
+
             save_images(images, opt.output_dir)
             section.progress(1)
 
