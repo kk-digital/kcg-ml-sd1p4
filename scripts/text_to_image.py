@@ -97,7 +97,7 @@ def main():
         .prompt() \
         .prompts_file(check_exists=True, required=False) \
         .batch_size() \
-        .output_dir() \
+        .output() \
         .sampler() \
         .checkpoint_path() \
         .flash() \
@@ -109,8 +109,6 @@ def main():
         .parse()
 
     prompts = get_prompts(opt.prompt, opt.prompts_file)
-    if not hasattr(opt, 'output_dir') or not opt.output_dir:
-        opt.output_dir = './output/'
 
     # Set flash attention
     CrossAttention.use_flash_attention = opt.flash
@@ -135,7 +133,7 @@ def main():
                 low_vram=opt.low_vram
             )
 
-            save_images(images, opt.output_dir)
+            save_images(images, opt.output)
             section.progress(1)
 
 
