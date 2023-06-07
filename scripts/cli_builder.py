@@ -24,7 +24,7 @@ class CLI:
         )
 
         return self
-    
+
     def model(self):
         self.parser.add_argument(
             '--model',
@@ -33,13 +33,13 @@ class CLI:
         )
 
         return self
-    
+
     def output(self, default='./outputs', check_exists: Union[bool, Callable]=True):
         self.parser.add_argument('--output',
             help='Path to the output directory (default: %(default)s)',
             default=default
         )
-        
+
         if check_exists:
             check_fn = check_exists if callable(check_exists) else lambda _: check_exists
 
@@ -49,7 +49,7 @@ class CLI:
 
 
         return self
-    
+
     def prompt_prefix(self):
         self.parser.add_argument(
             '--prompt_prefix',
@@ -59,7 +59,7 @@ class CLI:
         )
 
         return self
-    
+
     def artist_file(self, check_exists: Union[bool, Callable]=True):
         self.parser.add_argument(
             '--artist_file',
@@ -74,9 +74,9 @@ class CLI:
             self.checkers.append(
                 lambda args: check_fn(args) and check_file_existence(args.artist_file)
             )
-        
+
         return self
-    
+
     def checkpoint_path(self, check_exists: Union[bool, Callable]=True):
         self.parser.add_argument(
             '--checkpoint_path',
@@ -103,7 +103,7 @@ class CLI:
         )
 
         return self
-    
+
     def steps(self):
         self.parser.add_argument(
             '--steps',
@@ -113,7 +113,7 @@ class CLI:
         )
 
         return self
-    
+
     def batch_size(self):
         self.parser.add_argument(
             '--batch_size',
@@ -140,7 +140,7 @@ class CLI:
             )
 
         return self
-    
+
     def strength(self):
         self.parser.add_argument(
             '--strength',
@@ -150,8 +150,8 @@ class CLI:
         )
 
         return self
-        
-    
+
+
     def prompt(self):
         self.parser.add_argument(
             '--prompt',
@@ -162,7 +162,7 @@ class CLI:
         )
 
         return self
-    
+
     def orig_img(self, check_exists: Union[bool, Callable]=True, required: bool=True):
         self.parser.add_argument(
             "--orig_img",
@@ -195,7 +195,7 @@ class CLI:
         )
 
         return self
-    
+
     def force_cpu(self):
         self.parser.add_argument(
             "--force_cpu",
@@ -204,7 +204,7 @@ class CLI:
         )
 
         return self
-    
+
     def cuda_device(self):
         self.parser.add_argument(
             "--cuda_device",
@@ -214,7 +214,7 @@ class CLI:
         )
 
         return self
-    
+
     def flash(self):
         self.parser.add_argument(
             "--flash",
@@ -223,7 +223,7 @@ class CLI:
         )
 
         return self
-    
+
     def low_vram(self):
         self.parser.add_argument(
             "--low_vram",

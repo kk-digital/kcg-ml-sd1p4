@@ -109,7 +109,7 @@ def main():
         .parse()
 
     prompts = get_prompts(opt.prompt, opt.prompts_file)
-    if not opt.output_dir:
+    if not hasattr(opt, 'output_dir') or not opt.output_dir:
         opt.output_dir = './output/'
 
     # Set flash attention
