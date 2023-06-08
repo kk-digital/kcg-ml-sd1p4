@@ -9,10 +9,10 @@ summary: >
 """
 
 import time
-
+import os
 import torch
 from labml import monit
-
+from datetime import datetime
 from stable_diffusion_base_script import StableDiffusionBaseScript
 from stable_diffusion.utils.model import save_images, set_seed, get_autocast
 from stable_diffusion.model.unet_attention import CrossAttention
@@ -108,7 +108,8 @@ def main():
         .cuda_device() \
         .parse()
 
-    prompts = get_prompts(opt.prompt, opt.prompts_file)
+    timestamp = datetime.now().strftime('%d-%m-%Y-%H-%M-%S')
+    filename = os.path.join(opt.output, f'{timestamp}.jpg')
 
     # Set flash attention
     CrossAttention.use_flash_attention = opt.flash
@@ -133,7 +134,7 @@ def main():
                 low_vram=opt.low_vram
             )
 
-            save_images(images, opt.output)
+            save_images(images, filename)
             section.progress(1)
 
 
