@@ -22,3 +22,6 @@ fire
 jupyter-runner
 torchtext==0.6.0
 libtorrent
+nbmake==0.5
+pytest
+pytest-xdist
