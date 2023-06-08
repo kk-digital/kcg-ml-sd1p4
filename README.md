@@ -194,3 +194,18 @@ The images will be stored on the output_dir, with the following name:
 ```
 [artist-number-in-file]_n[noise-seed].jpg
 ```
+
+# Run all notebooks test
+## To run all notebooks
+1. Make an env
+
+    `python3 -m venv env`
+2. Activate env
+
+    `source env/bin/activate`
+3. Install requirements
+
+    `pip install -r requirements.txt`
+4. run pytest
+
+    `pytest --nbmake -n=auto "./notebooks"`
