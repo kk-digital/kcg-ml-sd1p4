@@ -1,6 +1,8 @@
 import argparse
+import os, sys
 
-from stable_diffusion.utils.cli import check_folder_existence, check_file_existence
+sys.path.append(os.path.join(".", "stable_diffusion/utils"))
+from cli import check_folder_existence, check_file_existence
 
 from typing import Union, Callable
 
