@@ -9,10 +9,10 @@ summary: >
 """
 
 import time
-
+import os
 import torch
 from labml import monit
-
+from datetime import datetime
 from stable_diffusion_base_script import StableDiffusionBaseScript
 from stable_diffusion.utils.model import save_images, set_seed, get_autocast
 from stable_diffusion.model.unet_attention import CrossAttention
@@ -23,7 +23,7 @@ def get_prompts(prompt, prompts_file):
     if prompts_file is not None:
         with open(prompts_file, 'r') as f:
             prompts_from_file = f.readlines()
-        
+
         prompts.extend(
             filter(lambda x: len(x) > 0, map(lambda x: x.strip(), prompts_from_file))
         )
@@ -81,14 +81,14 @@ class Txt2Img(StableDiffusionBaseScript):
         autocast = get_autocast()
         with autocast:
             un_cond, cond = self.get_text_conditioning(uncond_scale, prompts, batch_size)
-            
+
             # [Sample in the latent space](../sampler/index.html).
             # `x` will be of shape `[batch_size, c, h / f, w / f]`
             x = self.sampler.sample(cond=cond,
                                     shape=[batch_size, c, h // f, w // f],
                                     uncond_scale=uncond_scale,
                                     uncond_cond=un_cond)
-            
+
             return self.decode_image(x)
 
 
@@ -109,6 +109,8 @@ def main():
         .parse()
 
     prompts = get_prompts(opt.prompt, opt.prompts_file)
+    timestamp = datetime.now().strftime('%d-%m-%Y-%H-%M-%S')
+    filename = os.path.join(opt.output, f'{timestamp}.jpg')
 
     # Set flash attention
     CrossAttention.use_flash_attention = opt.flash
@@ -132,8 +134,8 @@ def main():
                 uncond_scale=opt.scale,
                 low_vram=opt.low_vram
             )
-            
-            save_images(images, opt.output_dir)
+
+            save_images(images, filename)
             section.progress(1)
 
 
