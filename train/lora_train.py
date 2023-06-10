@@ -240,7 +240,7 @@ def set_defaults(args):
         for line in fileinput.input(model_util_file, inplace=True):
             print(line.replace("cpu", "cuda"), end="")
 
-    train_util_file = os.path.join(repor_dir, "library", "train_util.py")
+    train_util_file = os.path.join(repo_dir, "library", "train_util.py")
     for line in fileinput.input(train_util_file, inplace=True):
         line = line.replace("from PIL import Image", "from PIL import Image, ImageFile\nImageFile.LOAD_TRUNCATED_IMAGES=True")
         line = line.replace("{:06d}", "{:02d}")
@@ -253,6 +253,7 @@ def set_defaults(args):
 
 
 if __name__ == '__main__':
+    global COLAB
+    COLAB = 'google.colab' in sys.modules
     args = parse_arguments()
-    global COLAB = 'google.colab' in sys.modules
     main(args)
