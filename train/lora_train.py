@@ -7,6 +7,7 @@ import zipfile
 import fileinput
 import toml
 from accelerate.utils import write_basic_config
+global COLAB
 
 def check_dataset(dataset_dir):
     if os.path.isdir(dataset_dir):
@@ -24,10 +25,6 @@ def check_dataset(dataset_dir):
         return extracted_dir
 
     raise ValueError("Invalid dataset path.")
-
-def check_colab():
-    global colab = false
-
 
 def clone_sd_scripts(repo_dir):
     if os.path.isdir(repo_dir) and os.path.isfile(os.path.join(repo_dir, 'train_network.py')):
@@ -48,7 +45,7 @@ def update_sd_scripts(repo_dir):
         print("sd-scripts repository not found. Cloning it instead.")
         clone_sd_scripts(repo_dir)
 
-def generate_config(config_file, dataset_config_file, model_file, activation_tags, num_repeats, max_train_epochs, save_every_n_epochs, unet_lr, text_encoder_lr,
+def generate_config(config_file, dataset_config_file, model_file, activation_tags, max_train_epochs, save_every_n_epochs, unet_lr, text_encoder_lr,
                     network_dim, network_alpha, batch_size, caption_extension,
                     continue_from_lora, resolution,
                     num_repeats, images_folder, project_name):
