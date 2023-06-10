@@ -16,7 +16,7 @@ def check_dataset(dataset_dir):
         extracted_dir = dataset_dir[:-4]
         if os.path.isdir(extracted_dir):
             print("Dataset already extracted.")
-            return extracted_dir
+            return os.path.abspath(extracted_dir)
 
         with zipfile.ZipFile(dataset_dir, 'r') as zip_ref:
             zip_ref.extractall(extracted_dir)
@@ -24,7 +24,7 @@ def check_dataset(dataset_dir):
                 gitignore_file.write("*\n!.gitignore\n")
 
             print("Dataset extracted successfully.")
-        return extracted_dir
+        return os.path.abspath(extracted_dir)
 
     raise ValueError("Invalid dataset path.")
 
