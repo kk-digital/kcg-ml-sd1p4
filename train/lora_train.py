@@ -4,7 +4,7 @@ import shutil
 import subprocess
 import sys
 import zipfile
-import fileinput
+import re
 import toml
 from accelerate.utils import write_basic_config
 
@@ -20,6 +20,9 @@ def check_dataset(dataset_dir):
 
         with zipfile.ZipFile(dataset_dir, 'r') as zip_ref:
             zip_ref.extractall(extracted_dir)
+            with open(os.path.join(extracted_dir, ".gitignore"), "w") as gitignore_file:
+                gitignore_file.write("*\n!.gitignore\n")
+
             print("Dataset extracted successfully.")
         return extracted_dir
 
@@ -45,9 +48,9 @@ def update_sd_scripts(repo_dir):
         clone_sd_scripts(repo_dir)
 
 def generate_config(config_file, dataset_config_file, model_file, activation_tags, max_train_epochs, save_every_n_epochs, unet_lr, text_encoder_lr,
-                    network_dim, network_alpha, batch_size, caption_extension,
+                    network_dim, network_alpha, batch_size, caption_extension, config_dir, log_dir, repo_dir, output_dir, accelerate_config_file,
                     continue_from_lora, resolution,
-                    num_repeats, images_folder, project_name):
+                    num_repeats, dataset, project_name):
 
     config_dict = {
         "additional_network_arguments": {
@@ -118,7 +121,7 @@ def generate_config(config_file, dataset_config_file, model_file, activation_tag
     dataset_config_dict = {
         "general": {
             "resolution": resolution,
-            "keep_tokens": keep_tokens,
+            "keep_tokens": activation_tags,
             "flip_aug": False,
             "caption_extension": caption_extension,
             "enable_bucket": True,
@@ -132,7 +135,7 @@ def generate_config(config_file, dataset_config_file, model_file, activation_tag
                 "subsets": [
                     {
                         "num_repeats": num_repeats,
-                        "image_dir": images_folder,
+                        "image_dir": dataset,
                         "class_tokens": None if caption_extension else project_name
                     }
                 ]
@@ -147,18 +150,45 @@ def generate_config(config_file, dataset_config_file, model_file, activation_tag
 
 def main(args):
     # Check dataset and extract if necessary
-    args.images_folder = check_dataset(args.dataset)
+    dataset_dir = check_dataset(args.dataset)
     print(f"Dataset directory: {dataset_dir}")
 
     # Clone or update sd-scripts repository
     update_sd_scripts(args.repo_dir)
 
+    # Patch kohya for minor stuff
+    if COLAB:
+        model_util_file = os.path.join(args.repo_dir, "library", "model_util.py")
+        with open(model_util_file, "r+") as f:
+            content = f.read()
+            content = re.sub(r"cpu", "cuda", content)
+            f.seek(0)
+            f.write(content)
+            f.truncate()
+
+    train_util_file = os.path.join(args.repo_dir, "library", "train_util.py")
+    with open(train_util_file, "r+") as f:
+        content = f.read()
+        content = re.sub(r"from PIL import Image", "from PIL import Image, ImageFile\nImageFile.LOAD_TRUNCATED_IMAGES=True", content)
+        content = re.sub(r"{:06d}", "{:02d}", content)
+        f.seek(0)
+        f.write(content)
+        f.truncate()
+
+    train_network_file = os.path.join(args.repo_dir, "train_network.py")
+    with open(train_network_file, "r+") as f:
+        content = f.read()
+        content = re.sub(r"model_name \+ \".\"", "model_name + \"-{:02d}.\".format(num_train_epochs)", content)
+        f.seek(0)
+        f.write(content)
+        f.truncate()
+
     # Generate config files
-    generate_config(args.config_file, args.dataset_config_file, args.model_file, **vars(args))
+    generate_config(**vars(args))
 
     # Generate accelerate config if not already there
-    if not os.path.exists(accelerate_config_file):
-        write_basic_config(save_location=accelerate_config_file)
+    if not os.path.exists(args.accelerate_config_file):
+        write_basic_config(save_location=args.accelerate_config_file)
 
     os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
     os.environ["BITSANDBYTES_NOWELCOME"] = "1"
@@ -179,8 +209,8 @@ def main(args):
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", default="./test-images/chibi-waifu-pixelart.zip", help="Path to the dataset directory or ZIP file.")
-    parser.add_argument("--repo_dir", default="train/sd-scripts", help="Directory to clone sd-scripts repository.")
-    parser.add_argument("--activation_tags", default=1, help="The number of activation tags in each txt file on the dataset.")
+    parser.add_argument("--repo_dir", default=None, help="Directory to clone sd-scripts repository.")
+    parser.add_argument("--activation_tags", type=int, default=1, help="The number of activation tags in each txt file on the dataset.")
     parser.add_argument("--num_repeats", default=10, help="Number of times to repeat per image.")
     parser.add_argument("--max_train_epochs", default=10, help="How many epochs to train for.")
     parser.add_argument("--save_every_n_epochs", default=1, help="How frequently should we save the LoRa model.")
@@ -207,6 +237,8 @@ def parse_arguments():
     return args
 
 def set_defaults(args):
+    if args.repo_dir is None:
+        args.repo_dir = os.path.abspath(os.path.join("./", "train/sd-scripts"))
     repo_dir = os.path.abspath(args.repo_dir)
     if args.config_dir is None:
         args.config_dir = os.path.join(repo_dir, "config")
@@ -230,27 +262,9 @@ def set_defaults(args):
 
     # Make directories if they don't exist
 
-    for dir in (args.log_dir, args.output_dir, args.repo_dir):
+    for dir in (args.log_dir, args.output_dir, args.repo_dir, args.config_dir):
       if not os.path.exists(dir):
         os.makedirs(dir)
-
-    # Patch kohya for minor stuff
-    if COLAB:
-        model_util_file = os.path.join(repo_dir, "library", "model_util.py")
-        for line in fileinput.input(model_util_file, inplace=True):
-            print(line.replace("cpu", "cuda"), end="")
-
-    train_util_file = os.path.join(repo_dir, "library", "train_util.py")
-    for line in fileinput.input(train_util_file, inplace=True):
-        line = line.replace("from PIL import Image", "from PIL import Image, ImageFile\nImageFile.LOAD_TRUNCATED_IMAGES=True")
-        line = line.replace("{:06d}", "{:02d}")
-        print(line, end="")
-
-    train_network_file = os.path.join(repo_dir, "train_network.py")
-    for line in fileinput.input(train_network_file, inplace=True):
-        line = line.replace("model_name + \".\"", "model_name + \"-{:02d}.\".format(num_train_epochs)")
-        print(line, end="")
-
 
 if __name__ == '__main__':
     global COLAB
