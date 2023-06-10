@@ -186,6 +186,7 @@ def parse_arguments():
     parser.add_argument("--max_train_epochs", default=10, help="How many epochs to train for.")
     parser.add_argument("--save_every_n_epochs", default=1, help="How frequently should we save the LoRa model.")
     parser.add_argument("--config_file", default=None, help="Path to the training configuration file.")
+    parser.add_argument("--config_dir", default=None, help="Path to store all of the generated config files.")
     parser.add_argument("--dataset_config_file", default=None, help="Path to the dataset configuration file.")
     parser.add_argument("--model_file", default="./input/model/sd-v1-4.ckpt", help="Path to the model file.")
     parser.add_argument("--log_dir", default=None, help="Path to store log files.")
