@@ -7,7 +7,6 @@ import zipfile
 import fileinput
 import toml
 from accelerate.utils import write_basic_config
-global COLAB
 
 def check_dataset(dataset_dir):
     if os.path.isdir(dataset_dir):
@@ -255,5 +254,5 @@ def set_defaults(args):
 
 if __name__ == '__main__':
     args = parse_arguments()
-    COLAB = 'google.colab' in sys.modules
+    global COLAB = 'google.colab' in sys.modules
     main(args)
