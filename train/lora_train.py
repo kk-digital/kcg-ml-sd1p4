@@ -99,7 +99,7 @@ def generate_config(config_file, dataset_config_file, model_file, activation_tag
             "resume": None
         },
         "model_arguments": {
-            "pretrained_model_name_or_path": model_file,
+            "pretrained_model_name_or_path": os.path.abspath(model_file),
             "v2": None,
             "v_parameterization": True
         },
