@@ -158,8 +158,8 @@ def main(args):
         os.makedirs(dir)
 
     # Check dataset and extract if necessary
-    dataset_dir = check_dataset(args.dataset)
-    print(f"Dataset directory: {dataset_dir}")
+    args.dataset = check_dataset(args.dataset)
+    print(f"Dataset directory: {args.dataset}")
 
     # Patch kohya for minor stuff
     if COLAB:
