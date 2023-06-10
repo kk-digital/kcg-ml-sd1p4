@@ -149,12 +149,17 @@ def generate_config(config_file, dataset_config_file, model_file, activation_tag
 
 
 def main(args):
+    # Clone repo first
+    update_sd_scripts(args.repo_dir)
+
+    # Create directories
+    for dir in (args.log_dir, args.output_dir, args.repo_dir, args.config_dir):
+      if not os.path.exists(dir):
+        os.makedirs(dir)
+
     # Check dataset and extract if necessary
     dataset_dir = check_dataset(args.dataset)
     print(f"Dataset directory: {dataset_dir}")
-
-    # Clone or update sd-scripts repository
-    update_sd_scripts(args.repo_dir)
 
     # Patch kohya for minor stuff
     if COLAB:
@@ -261,10 +266,6 @@ def set_defaults(args):
         args.output_dir = os.path.abspath(os.path.join("./output/LoRa/", args.project_name, "output"))
 
     # Make directories if they don't exist
-
-    for dir in (args.log_dir, args.output_dir, args.repo_dir, args.config_dir):
-      if not os.path.exists(dir):
-        os.makedirs(dir)
 
 if __name__ == '__main__':
     global COLAB
