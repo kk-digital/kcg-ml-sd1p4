@@ -28,25 +28,6 @@ def check_dataset(dataset_dir):
 
     raise ValueError("Invalid dataset path.")
 
-def clone_sd_scripts(repo_dir):
-    if os.path.isdir(repo_dir) and os.path.isfile(os.path.join(repo_dir, 'train_network.py')):
-        print("sd-scripts repository already cloned.")
-        return
-
-    subprocess.run(["git", "clone", "git@github.com:kohya-ss/sd-scripts.git", repo_dir], check=True)
-    with open(os.path.join(repo_dir, ".gitignore"), "w") as gitignore_file:
-        gitignore_file.write("*\n!.gitignore\n")
-    print("sd-scripts repository cloned successfully.")
-
-
-def update_sd_scripts(repo_dir):
-    if os.path.isfile(os.path.join(repo_dir, 'train_network.py')):
-        subprocess.run(["git", "-C", repo_dir, "pull"], check=True)
-        print("sd-scripts repository updated successfully.")
-    else:
-        print("sd-scripts repository not found. Cloning it instead.")
-        clone_sd_scripts(repo_dir)
-
 def generate_config(config_file, dataset_config_file, model_file, activation_tags, max_train_epochs, save_every_n_epochs, unet_lr, text_encoder_lr,
                     network_dim, network_alpha, batch_size, caption_extension, config_dir, log_dir, repo_dir, output_dir, accelerate_config_file,
                     continue_from_lora, resolution,
@@ -149,9 +130,6 @@ def generate_config(config_file, dataset_config_file, model_file, activation_tag
 
 
 def main(args):
-    # Clone repo first
-    update_sd_scripts(args.repo_dir)
-
     # Create directories
     for dir in (args.log_dir, args.output_dir, args.repo_dir, args.config_dir):
       if not os.path.exists(dir):
