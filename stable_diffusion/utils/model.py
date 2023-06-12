@@ -34,13 +34,10 @@ def set_seed(seed: int):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
-
-def load_model(path: Union[str, Path] = '', device = 'cuda:0') -> LatentDiffusion:
-    """
-    ### Load [`LatentDiffusion` model](latent_diffusion.html)
-    """
+def initialize_autoencoder(device = 'cuda:0') -> Autoencoder:
 
     # Initialize the autoencoder
+    
     with monit.section('Initialize autoencoder'):
         encoder = Encoder(z_channels=4,
                           in_channels=3,
@@ -58,14 +55,23 @@ def load_model(path: Union[str, Path] = '', device = 'cuda:0') -> LatentDiffusio
                                   encoder=encoder,
                                   decoder=decoder,
                                   z_channels=4)
+        
+        return autoencoder
+
+def initialize_clip_embedder(device = 'cuda:0') -> CLIPTextEmbedder:
 
     # Initialize the CLIP text embedder
+    
     with monit.section('Initialize CLIP Embedder'):
         clip_text_embedder = CLIPTextEmbedder(
             device=device,
         )
+    return clip_text_embedder
 
+def initialize_unet(device = 'cuda:0') -> UNetModel:
+    
     # Initialize the U-Net
+
     with monit.section('Initialize U-Net'):
         unet_model = UNetModel(in_channels=4,
                                out_channels=4,
@@ -76,6 +82,21 @@ def load_model(path: Union[str, Path] = '', device = 'cuda:0') -> LatentDiffusio
                                n_heads=8,
                                tf_layers=1,
                                d_cond=768)
+    return unet_model
+
+def load_model(path: Union[str, Path] = '', device = 'cuda:0', autoencoder = None, clip_text_embedder = None, unet_model = None) -> LatentDiffusion:
+    """
+    ### Load [`LatentDiffusion` model](latent_diffusion.html)
+    """
+
+    if autoencoder is None:
+        autoencoder = initialize_autoencoder(device)
+    
+    if clip_text_embedder is None:
+        clip_text_embedder = initialize_clip_embedder(device)
+    
+    if unet_model is None:
+        unet_model = initialize_unet(device)
 
     # Initialize the Latent Diffusion model
     with monit.section('Initialize Latent Diffusion model'):
@@ -103,7 +124,6 @@ def load_model(path: Union[str, Path] = '', device = 'cuda:0') -> LatentDiffusio
     #
     model.eval()
     return model
-
 
 def load_img(path: str):
     """

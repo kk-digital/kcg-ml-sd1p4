@@ -5,7 +5,7 @@ import torch
 
 from stable_diffusion.sampler.ddim import DDIMSampler
 from stable_diffusion.sampler.ddpm import DDPMSampler
-from stable_diffusion.utils.model import load_model, get_device
+from stable_diffusion.utils.model import load_model, initialize_autoencoder, initialize_clip_embedder, initialize_unet, get_device
 from stable_diffusion.latent_diffusion import LatentDiffusion
 from stable_diffusion.sampler import DiffusionSampler
 
@@ -114,14 +114,29 @@ class StableDiffusionBaseScript:
         
         return x
 
-    def initialize_script(self):
-        self.load_model()
+    def initialize_script(self, autoencoder = None, clip_text_embedder = None, unet_model = None):
+        """You can initialize the autoencoder, CLIP and UNet models externally and pass them to the script.
+        Use the methods: 
+            stable_diffusion.utils.model.initialize_autoencoder,
+            stable_diffusion.utils.model.initialize_clip_embedder and 
+            stable_diffusion.utils.model.initialize_unet to initialize them.
+        for that.
+        If you don't initialize them externally, the script will initialize them internally.
+        Args:
+            autoencoder (Autoencoder, optional): the externally initialized autoencoder. Defaults to None.
+            clip_text_embedder (CLIPTextEmbedder, optional): the externally initialized autoencoder. Defaults to None.
+            unet_model (UNetModel, optional): the externally initialized autoencoder. Defaults to None.
+        """
+        self.load_model(autoencoder, clip_text_embedder, unet_model)
         self.initialize_sampler()
 
-    def load_model(self):
+    def load_model(self, autoencoder, clip_text_embedder, unet_model):
         self.model = load_model(
             self.checkpoint_path,
-            self.device_id
+            self.device_id,
+            autoencoder,
+            clip_text_embedder,
+            unet_model
         )
 
         # Move the model to device
