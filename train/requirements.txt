@@ -11,5 +11,5 @@ tensorflow
 safetensors==0.2.6
 toml==0.10.2
 voluptuous==0.13.1
-xformers==0.0.19
+xformers
 triton==2.0.0
