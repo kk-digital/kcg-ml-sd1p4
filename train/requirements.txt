@@ -2,10 +2,10 @@ accelerate
 transformers==4.26.0
 ftfy==6.1.1
 albumentations
-opencv-python==4.7.0.68
+opencv-python
 einops==0.6.0
 diffusers==0.10.2
-pytorch-lightning==1.9.0
+pytorch-lightning
 bitsandbytes==0.35.0
 tensorflow
 safetensors==0.2.6
