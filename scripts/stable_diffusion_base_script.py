@@ -130,20 +130,20 @@ class StableDiffusionBaseScript:
         self.load_model(autoencoder, clip_text_embedder, unet_model)
         self.initialize_sampler()
 
-        def load_model(self, autoencoder, clip_text_embedder, unet_model):
-            try:
-                self.model = load_model(
-                    self.checkpoint_path,
-                    self.device_id,
-                    autoencoder,
-                    clip_text_embedder,
-                    unet_model
-                )
+    def load_model(self, autoencoder, clip_text_embedder, unet_model):
+        try:
+            self.model = load_model(
+                self.checkpoint_path,
+                self.device_id,
+                autoencoder,
+                clip_text_embedder,
+                unet_model
+            )
 
-                # Move the model to device
-                self.model.to(self.device)
-            except EOFError:
-                print("Stable Diffusion model couldn't be loaded. Check that the ckpt file exists in the specified location (path), and that it is not corrupted.")
+            # Move the model to device
+            self.model.to(self.device)
+        except EOFError:
+            print("Stable Diffusion model couldn't be loaded. Check that the ckpt file exists in the specified location (path), and that it is not corrupted.")
 
     def initialize_sampler(self):
         if self.sampler_name == 'ddim':
