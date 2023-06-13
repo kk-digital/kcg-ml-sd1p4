@@ -15,6 +15,9 @@ from typing import Union, Optional
 
 from pathlib import Path
 
+class ModelLoadError(Exception):
+    pass
+
 class StableDiffusionBaseScript:
     model: LatentDiffusion
     sampler: DiffusionSampler
@@ -143,7 +146,7 @@ class StableDiffusionBaseScript:
             # Move the model to device
             self.model.to(self.device)
         except EOFError:
-            print("Stable Diffusion model couldn't be loaded. Check that the ckpt file exists in the specified location (path), and that it is not corrupted.")
+                raise ModelLoadError("Stable Diffusion model couldn't be loaded. Check that the ckpt file exists in the specified location (path), and that it is not corrupted.")
 
     def initialize_sampler(self):
         if self.sampler_name == 'ddim':
