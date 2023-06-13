@@ -55,7 +55,7 @@ class StableDiffusionBaseScript:
         orig = self.model.autoencoder_encode(orig_image).repeat(batch_size, 1, 1, 1)
 
         return orig
-    
+
     def prepare_mask(self, mask: Optional[torch.Tensor], orig: torch.Tensor):
         # If `mask` is not provided,
         # we set a sample mask to preserve the bottom half of the image
@@ -66,13 +66,13 @@ class StableDiffusionBaseScript:
             mask = mask.to(self.device)
 
         return mask
-    
+
     def calc_strength_time_step(self, strength: float):
         # Get the number of steps to diffuse the original
         t_index = int(strength * self.ddim_steps)
 
         return t_index
-    
+
     def get_text_conditioning(self, uncond_scale: float, prompts: list, batch_size: int = 1):
         # In unconditional scaling is not $1$ get the embeddings for empty prompts (no conditioning).
         if uncond_scale != 1.0:
@@ -85,7 +85,7 @@ class StableDiffusionBaseScript:
         cond = self.model.get_text_conditioning(prompts)
 
         return un_cond, cond
-    
+
     def decode_image(self, x: torch.Tensor):
         return self.model.autoencoder_decode(x)
 
@@ -97,7 +97,7 @@ class StableDiffusionBaseScript:
               un_cond: Optional[torch.Tensor] = None,
               mask: Optional[torch.Tensor] = None,
               orig_noise: Optional[torch.Tensor] = None):
-        
+
         orig_2 = None
         # If we have a mask and noise, it's in-painting
         if mask is not None and orig_noise is not None:
@@ -111,14 +111,14 @@ class StableDiffusionBaseScript:
                                 orig_noise=orig_noise,
                                 uncond_scale=uncond_scale,
                                 uncond_cond=un_cond)
-        
+
         return x
 
     def initialize_script(self, autoencoder = None, clip_text_embedder = None, unet_model = None):
         """You can initialize the autoencoder, CLIP and UNet models externally and pass them to the script.
-        Use the methods: 
+        Use the methods:
             stable_diffusion.utils.model.initialize_autoencoder,
-            stable_diffusion.utils.model.initialize_clip_embedder and 
+            stable_diffusion.utils.model.initialize_clip_embedder and
             stable_diffusion.utils.model.initialize_unet to initialize them.
         for that.
         If you don't initialize them externally, the script will initialize them internally.
@@ -130,17 +130,20 @@ class StableDiffusionBaseScript:
         self.load_model(autoencoder, clip_text_embedder, unet_model)
         self.initialize_sampler()
 
-    def load_model(self, autoencoder, clip_text_embedder, unet_model):
-        self.model = load_model(
-            self.checkpoint_path,
-            self.device_id,
-            autoencoder,
-            clip_text_embedder,
-            unet_model
-        )
+        def load_model(self, autoencoder, clip_text_embedder, unet_model):
+            try:
+                self.model = load_model(
+                    self.checkpoint_path,
+                    self.device_id,
+                    autoencoder,
+                    clip_text_embedder,
+                    unet_model
+                )
 
-        # Move the model to device
-        self.model.to(self.device)
+                # Move the model to device
+                self.model.to(self.device)
+            except EOFError:
+                print("Stable Diffusion model couldn't be loaded. Check that the ckpt file exists in the specified location (path), and that it is not corrupted.")
 
     def initialize_sampler(self):
         if self.sampler_name == 'ddim':
@@ -153,4 +156,3 @@ class StableDiffusionBaseScript:
     def unload_model(self):
         del self.model
         torch.cuda.empty_cache()
-
