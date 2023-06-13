@@ -2,7 +2,7 @@
 
 
 import os
-
+from typing import Callable
 from custom_noise.text_to_image_custom import Txt2Img
 import torch
 import time
@@ -22,18 +22,62 @@ noise_seeds = [
     762
 ]
 #
-# adds kwargs for custom noise function for the samplers
-# adds kwargs for some samplers' parameters
+# CURRENTLY adding kwargs for custom noise function for the samplers
+# TODO adapt the script so that it creates a folder for the outputs of each kind of noise
+# TODO adapt the script so that it generates images for each kind of noise
+# TODO add kwargs for some samplers' parameters
+
 def log_normal(shape, device, mu=0.0, sigma=0.25):
     return torch.exp(mu + sigma*torch.randn(shape, device=device))
 
 def normal(shape, device='cuda:0', mu=0.0, sigma=1.0):
     return torch.normal(mu, sigma, size=shape, device=device)
 
-mu = 0.0
-sigma = 1.1
+DISTRIBUTIONS = {
+    'Normal': dict(loc=0.0, scale=1.0),
+    'Cauchy': dict(loc=0.0, scale=1.0), 
+    'Gumbel': dict(loc=1.0, scale=2.0), 
+    'Laplace': dict(loc=0.0, scale=1.0), 
+    'Uniform': dict(low=0.0, high=1.0)
+}
 
-NOISE_FUNCTION = lambda shape, device = None: normal(shape, mu=mu, sigma=sigma) if device is None else normal(shape, device=device, mu=mu, sigma=sigma)
+OUTPUT_DIR = os.path.abspath('./output/noise-tests/')
+
+def get_all_torch_distributions() -> tuple[list[str], list[type]]:
+    
+    torch_distributions_names = torch.distributions.__all__
+    
+    torch_distributions = [
+        torch.distributions.__dict__[torch_distribution_name] \
+            for torch_distribution_name in torch_distributions_names
+            ]
+    
+    return torch_distributions_names, torch_distributions
+
+def get_torch_distribution_from_name(name: str) -> type:
+    return torch.distributions.__dict__[name]
+
+def build_noise_samplers(distributions: dict[str, dict]) -> list[Callable]:
+    noise_samplers = [
+        lambda shape, device: get_torch_distribution_from_name(k)(**v).sample(shape).to(device) \
+                       for k, v in distributions.items()
+                       ]
+    return noise_samplers
+
+def create_folder_structure(noise_functions: list[Callable], root_dir: str = OUTPUT_DIR) -> None:
+    for noise_function in noise_functions:
+        try:
+            noise_function_name = noise_function.__name__
+        except Exception as e:
+            print(e)
+            noise_function_name = str(noise_function)        
+        noise_function_dir = os.path.join(root_dir, noise_function_name)
+        try:
+            os.makedirs(noise_function_dir, exist_ok=True)
+        except Exception as e:
+            print(e)
+
+NOISE_SAMPLERS = build_noise_samplers(DISTRIBUTIONS)
 
 # Function to generate a prompt
 def generate_prompt(prompt_prefix, artist):
