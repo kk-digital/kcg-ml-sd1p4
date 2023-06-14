@@ -6,6 +6,7 @@ from typing import Callable
 from custom_noise.text_to_image_custom import Txt2Img
 import torch
 import time
+import shutil
 from tqdm import tqdm
 
 from stable_diffusion.utils.model import save_images
@@ -43,6 +44,8 @@ DISTRIBUTIONS = {
 
 OUTPUT_DIR = os.path.abspath('./output/noise-tests/')
 
+CLEAR_OUTPUT_DIR = True
+
 def get_all_torch_distributions() -> tuple[list[str], list[type]]:
     
     torch_distributions_names = torch.distributions.__all__
@@ -57,23 +60,19 @@ def get_all_torch_distributions() -> tuple[list[str], list[type]]:
 def get_torch_distribution_from_name(name: str) -> type:
     return torch.distributions.__dict__[name]
 
-def build_noise_samplers(distributions: dict[str, dict]) -> list[Callable]:
-    noise_samplers = [
-        lambda shape, device: get_torch_distribution_from_name(k)(**v).sample(shape).to(device) \
+def build_noise_samplers(distributions: dict[str, dict[str, float]]) -> dict[str, Callable]:
+    noise_samplers = {
+        k: lambda shape, device = None: get_torch_distribution_from_name(k)(**v).sample(shape).to(device) \
                        for k, v in distributions.items()
-                       ]
+                       }
     return noise_samplers
 
-def create_folder_structure(noise_functions: list[Callable], root_dir: str = OUTPUT_DIR) -> None:
-    for noise_function in noise_functions:
+def create_folder_structure(distributions_dict: dict[str, dict[str, float]], root_dir: str = OUTPUT_DIR) -> None:
+    for distribution_name in distributions_dict.keys():
+        
+        distribution_outputs = os.path.join(root_dir, distribution_name)
         try:
-            noise_function_name = noise_function.__name__
-        except Exception as e:
-            print(e)
-            noise_function_name = str(noise_function)        
-        noise_function_dir = os.path.join(root_dir, noise_function_name)
-        try:
-            os.makedirs(noise_function_dir, exist_ok=True)
+            os.makedirs(distribution_outputs, exist_ok=True)
         except Exception as e:
             print(e)
 
@@ -117,17 +116,48 @@ def show_summary(total_time, partial_time, total_images, output_dir):
 
     print("Images generated successfully at", output_dir)
 
-# main function, called when the script is run
-def generate_images(
-    prompt_prefix: str="A woman with flowers in her hair in a courtyard, in the style of",
-    artist_file: str=os.path.abspath('./input/artists.txt'),
-    output_dir: str=os.path.abspath('./output/noise-tests/'),
-    checkpoint_path: str=os.path.abspath('./input/model/sd-v1-4.ckpt'),
-    sampler_name: str='ddim',
-    n_steps: int=20,
-    batch_size: int=1,
-    noise_fn=NOISE_FUNCTION,
-):
+# TODO add the same args and kwargs that `generate_images` have
+# def generate_images_from_custom_noise(distributions: dict[str, tuple[float, float]], output_dir: str = OUTPUT_DIR, clear_output_dir: bool = CLEAR_OUTPUT_DIR):
+
+
+#     # Clear the output directory
+#     if clear_output_dir:
+#         shutil.rmtree(output_dir)
+#         os.makedirs(output_dir, exist_ok=True)
+
+#     # Create the folder structure for the outputs
+#     create_folder_structure(distributions, output_dir)
+
+#     # Generate the images
+#     for distribution_name, params in distributions.items():
+#         print(f"Generating images for {distribution_name}")
+#         # generate_images(noise_fn=noise_fn, noise_fn_name = distribution_name, output_dir=os.path.join(output_dir, distribution_name))
+#         noise_fn = lambda shape, device = None: get_torch_distribution_from_name(distribution_name)(**params).sample(shape).to(device)
+#         # noise_fn = lambda shape, device = None: get_torch_distribution_from_name(distribution_name)(**dict(loc=0.0, scale=1.0)).sample(shape).to(device)
+#         # noise_fn = lambda shape, device=None: torch.distributions.Normal(**dict(loc=0.0, scale=1.0)).sample(shape).to(device)
+#         generate_images(noise_fn = noise_fn, noise_fn_name=distribution_name, output_dir=os.path.join(output_dir, distribution_name))
+
+def generate_images_from_custom_noise(
+        distributions: dict[str, tuple[float, float]], 
+        output_dir: str = OUTPUT_DIR, 
+        clear_output_dir: bool = CLEAR_OUTPUT_DIR,
+        prompt_prefix: str="A woman with flowers in her hair in a courtyard, in the style of",
+        artist_file: str=os.path.abspath('./input/artists.txt'),
+        checkpoint_path: str=os.path.abspath('./input/model/sd-v1-4.ckpt'),
+        sampler_name: str='ddim',
+        n_steps: int=20,
+        batch_size: int=1,                                      
+        ):
+
+
+    # Clear the output directory
+    if clear_output_dir:
+        shutil.rmtree(output_dir)
+        os.makedirs(output_dir, exist_ok=True)
+
+    # Create the folder structure for the outputs
+    create_folder_structure(distributions, output_dir)
+
     time_before_initialization = time.time()
     
     txt2img = init_txt2img(checkpoint_path, sampler_name, n_steps)
@@ -135,28 +165,40 @@ def generate_images(
     time_after_initialization = time.time()
 
     total_images, prompts = get_all_prompts(prompt_prefix, artist_file)
+    
+    num_prompts_per_distribution = 1
+
+    # Generate the images
 
     with torch.no_grad():
         with tqdm(total=total_images, desc='Generating images', ) as pbar:
-            for prompt_index, prompt in enumerate(prompts):
-                for seed_index, noise_seed in enumerate(noise_seeds):
-                    p_bar_description = f"Generating image {seed_index+prompt_index+1} of {total_images}"
-                    pbar.set_description(p_bar_description)
-
-                    image_name = f"n{noise_seed:04d}_a{prompt_index+1:04d}.jpg"
-                    dest_path = os.path.join(output_dir, image_name)
-                    
-                    images = txt2img.generate_images(
-                        batch_size=batch_size,
-                        prompt=prompt,
-                        seed=noise_seed,
-                        noise_fn = noise_fn,
-                    )
-
-                    save_images(images, dest_path=dest_path)
-                    
-                    pbar.update(1)
-
+            for distribution_name, params in distributions.items():
+                counter = 0
+                print(f"Generating images for {distribution_name}")
+                noise_fn = lambda shape, device = None: get_torch_distribution_from_name(distribution_name)(**params).sample(shape).to(device)
+                for prompt_index, prompt in enumerate(prompts):
+                    if counter <= num_prompts_per_distribution:
+                        for seed_index, noise_seed in enumerate(noise_seeds):
+                            p_bar_description = f"Generating image {seed_index+prompt_index+1} of {total_images} (distribution: {distribution_name}))"
+                            pbar.set_description(p_bar_description)
+                            image_name = f"n{noise_seed:04d}_a{prompt_index+1:04d}.jpg"
+                            dest_path = os.path.join(os.path.join(output_dir, distribution_name), image_name)
+                            
+                            images = txt2img.generate_images(
+                                batch_size=batch_size,
+                                prompt=prompt,
+                                seed=noise_seed,
+                                noise_fn = noise_fn,
+                            )
+                            save_images(images, dest_path=dest_path)
+                            
+                            pbar.update(1)
+                            # TODO adjust this loop so that it generates a fixed number of images per distribution instead of all images, less uglily
+                        counter += 1
+                        print("counter: ", counter)
+                    else:
+                        counter = 0
+                        break
     end_time = time.time()
 
     show_summary(
@@ -164,12 +206,177 @@ def generate_images(
         partial_time=end_time - time_after_initialization,
         total_images=total_images,
         output_dir=output_dir
-    )
+    )        
+        
 
+# def generate_images(
+#     prompt_prefix: str="A woman with flowers in her hair in a courtyard, in the style of",
+#     artist_file: str=os.path.abspath('./input/artists.txt'),
+#     output_dir: str=OUTPUT_DIR,
+#     checkpoint_path: str=os.path.abspath('./input/model/sd-v1-4.ckpt'),
+#     sampler_name: str='ddim',
+#     n_steps: int=20,
+#     batch_size: int=1,
+#     noise_fn= torch.randn,
+
+# ):
+#     time_before_initialization = time.time()
+    
+#     txt2img = init_txt2img(checkpoint_path, sampler_name, n_steps)
+
+#     time_after_initialization = time.time()
+
+#     total_images, prompts = get_all_prompts(prompt_prefix, artist_file)
+    
+#     # TODO add a parameter to specify the number of images per distribution
+#     num_images_per_distribution = 8
+#     counter = 0
+
+#     with torch.no_grad():
+#         with tqdm(total=total_images, desc='Generating images', ) as pbar:
+#             for prompt_index, prompt in enumerate(prompts):
+#                 for seed_index, noise_seed in enumerate(noise_seeds):
+#                     p_bar_description = f"Generating image {seed_index+prompt_index+1} of {total_images} (distribution: {noise_fn_name}))"
+#                     pbar.set_description(p_bar_description)
+
+#                     image_name = f"n{noise_seed:04d}_a{prompt_index+1:04d}.jpg"
+#                     dest_path = os.path.join(output_dir, image_name)
+                    
+#                     images = txt2img.generate_images(
+#                         batch_size=batch_size,
+#                         prompt=prompt,
+#                         seed=noise_seed,
+#                         noise_fn = noise_fn,
+#                     )
+
+#                     save_images(images, dest_path=dest_path)
+                    
+#                     pbar.update(1)
+#                     # TODO adjust this loop so that it generates a fixed number of images per distribution instead of all images, less uglily
+#                     counter += 1
+#                     print("counter: ", counter)
+#                     if counter >= num_images_per_distribution:
+#                         return
+#     end_time = time.time()
+
+#     show_summary(
+#         total_time=end_time - time_before_initialization,
+#         partial_time=end_time - time_after_initialization,
+#         total_images=total_images,
+#         output_dir=output_dir
+#     )
+
+# def generate_images(
+#     prompt_prefix: str="A woman with flowers in her hair in a courtyard, in the style of",
+#     artist_file: str=os.path.abspath('./input/artists.txt'),
+#     output_dir: str=OUTPUT_DIR,
+#     checkpoint_path: str=os.path.abspath('./input/model/sd-v1-4.ckpt'),
+#     sampler_name: str='ddim',
+#     n_steps: int=20,
+#     batch_size: int=1,
+#     noise_fn= torch.randn,
+#     noise_fn_name = 'normal'
+# ):
+#     time_before_initialization = time.time()
+    
+#     txt2img = init_txt2img(checkpoint_path, sampler_name, n_steps)
+
+#     time_after_initialization = time.time()
+
+#     total_images, prompts = get_all_prompts(prompt_prefix, artist_file)
+    
+#     # TODO add a parameter to specify the number of images per distribution
+#     num_images_per_distribution = 8
+#     counter = 0
+
+#     with torch.no_grad():
+#         with tqdm(total=total_images, desc='Generating images', ) as pbar:
+#             for prompt_index, prompt in enumerate(prompts):
+#                 for seed_index, noise_seed in enumerate(noise_seeds):
+#                     p_bar_description = f"Generating image {seed_index+prompt_index+1} of {total_images} (distribution: {noise_fn_name}))"
+#                     pbar.set_description(p_bar_description)
+
+#                     image_name = f"n{noise_seed:04d}_a{prompt_index+1:04d}.jpg"
+#                     dest_path = os.path.join(output_dir, image_name)
+                    
+#                     images = txt2img.generate_images(
+#                         batch_size=batch_size,
+#                         prompt=prompt,
+#                         seed=noise_seed,
+#                         noise_fn = noise_fn,
+#                     )
+
+#                     save_images(images, dest_path=dest_path)
+                    
+#                     pbar.update(1)
+#                     # TODO adjust this loop so that it generates a fixed number of images per distribution instead of all images, less uglily
+#                     counter += 1
+#                     print("counter: ", counter)
+#                     if counter >= num_images_per_distribution:
+#                         return
+#     end_time = time.time()
+
+#     show_summary(
+#         total_time=end_time - time_before_initialization,
+#         partial_time=end_time - time_after_initialization,
+#         total_images=total_images,
+#         output_dir=output_dir
+#     )
+
+# def generate_images(
+#     prompt_prefix: str="A woman with flowers in her hair in a courtyard, in the style of",
+#     artist_file: str=os.path.abspath('./input/artists.txt'),
+#     output_dir: str=OUTPUT_DIR,
+#     checkpoint_path: str=os.path.abspath('./input/model/sd-v1-4.ckpt'),
+#     sampler_name: str='ddim',
+#     n_steps: int=20,
+#     batch_size: int=1,
+#     noise_fn= torch.randn,
+# ):
+#     time_before_initialization = time.time()
+    
+#     txt2img = init_txt2img(checkpoint_path, sampler_name, n_steps)
+
+#     time_after_initialization = time.time()
+
+#     total_images, prompts = get_all_prompts(prompt_prefix, artist_file)
+
+#     with torch.no_grad():
+#         with tqdm(total=total_images, desc='Generating images', ) as pbar:
+#             for prompt_index, prompt in enumerate(prompts):
+#                 for seed_index, noise_seed in enumerate(noise_seeds):
+#                     p_bar_description = f"Generating image {seed_index+prompt_index+1} of {total_images}"
+#                     pbar.set_description(p_bar_description)
+
+#                     image_name = f"n{noise_seed:04d}_a{prompt_index+1:04d}.jpg"
+#                     dest_path = os.path.join(output_dir, image_name)
+                    
+#                     images = txt2img.generate_images(
+#                         batch_size=batch_size,
+#                         prompt=prompt,
+#                         seed=noise_seed,
+#                         noise_fn = noise_fn,
+#                     )
+
+#                     save_images(images, dest_path=dest_path)
+                    
+#                     pbar.update(1)
+
+#     end_time = time.time()
+
+#     show_summary(
+#         total_time=end_time - time_before_initialization,
+#         partial_time=end_time - time_after_initialization,
+#         total_images=total_images,
+#         output_dir=output_dir
+#     )
+
+
+# main function, called when the script is run
 
 
 def main():
-    generate_images()
+    generate_images_from_custom_noise(DISTRIBUTIONS)
 
 if __name__ == "__main__":
     main()
