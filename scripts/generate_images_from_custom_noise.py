@@ -9,23 +9,25 @@ import torch
 import time
 import shutil
 from tqdm import tqdm
-
+import torchvision
 from stable_diffusion.utils.model import save_images
 from cli_builder import CLI
 
+# noise_seeds = [
+#     2982,
+#     4801,
+#     1995,
+#     3598,
+#     987,
+#     3688,
+#     8872,
+#     762
+# ]
 noise_seeds = [
     2982,
-    4801,
-    1995,
-    3598,
-    987,
-    3688,
-    8872,
+    2,
     762
 ]
-# noise_seeds = [
-#     2982
-# ]
 #
 # CURRENTLY adding kwargs for custom noise function for the samplers
 # TODO adapt the script so that it creates a folder for the outputs of each kind of noise
@@ -46,9 +48,9 @@ if len(sys.argv) == 1:
         'Uniform': dict(low=0.0, high=1.0)
     }
 else:
-    VAR_RANGE = torch.linspace(0.75, 1.25, 50)
+    VAR_RANGE = torch.linspace(0.85, 1.15, 10)
     DISTRIBUTIONS = {f'Normal_{var.item():.4f}': dict(loc=0, scale=var.item()) for var in VAR_RANGE}
-TEMPERATURE = 1.2
+TEMPERATURE = 1.5
 OUTPUT_DIR = os.path.abspath('./output/noise-tests/')
 
 CLEAR_OUTPUT_DIR = True
@@ -134,7 +136,58 @@ def show_summary(total_time, partial_time, total_images, output_dir):
     print("Images generated successfully at", output_dir)
 
 # TODO add the same args and kwargs that `generate_images` have
+# import required library
+import torch
+import torchvision
+from torchvision.io import read_image
+from torchvision.utils import make_grid
+from types import FunctionType
+from typing import Any, BinaryIO, List, Optional, Tuple, Union
+import pathlib
+from PIL import Image, ImageColor, ImageDraw, ImageFont
+import numpy as np
+def save_image(
+    tensor: Union[torch.Tensor, List[torch.Tensor]],
+    fp: Union[str, pathlib.Path, BinaryIO],
+    format: Optional[str] = None,
+    **kwargs,
+) -> None:
+    """
+    Save a given Tensor into an image file.
 
+    Args:
+        tensor (Tensor or list): Image to be saved. If given a mini-batch tensor,
+            saves the tensor as a grid of images by calling ``make_grid``.
+        fp (string or file object): A filename or a file object
+        format(Optional):  If omitted, the format to use is determined from the filename extension.
+            If a file object was used instead of a filename, this parameter should always be used.
+        **kwargs: Other arguments are documented in ``make_grid``.
+    """
+
+    grid = make_grid(tensor, **kwargs)
+    # Add 0.5 after unnormalizing to [0, 255] to round to the nearest integer
+    ndarr = grid.mul(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to("cpu", torch.uint8).numpy()
+    im = Image.fromarray(ndarr)
+    im.save(fp, format=format)
+
+def norm_torch(x_all):
+    # runs unity norm on all timesteps of all samples
+    # input is (n_samples, 3,h,w), the torch image format
+    x = x_all.cpu().numpy()
+    xmax = x.max((2,3))
+    xmin = x.min((2,3))
+    xmax = np.expand_dims(xmax,(2,3)) 
+    xmin = np.expand_dims(xmin,(2,3))
+    nstore = (x - xmin)/(xmax - xmin)
+    return torch.from_numpy(nstore)
+
+def plot_grid(x,n_sample,n_rows,save_dir,w):
+    # x:(n_sample, 3, h, w)
+    ncols = n_sample//n_rows
+    grid = make_grid(norm_torch(x), nrow=ncols)  # curiously, nrow is number of columns.. or number of items in the row.
+    save_image(grid, save_dir + f"run_image_w{w}.png")
+    print('saved image at ' + save_dir + f"run_image_w{w}.png")
+    return grid
 
 def generate_images_from_custom_noise(
         distributions: dict[str, tuple[float, float]], 
@@ -166,7 +219,7 @@ def generate_images_from_custom_noise(
 
     total_images, prompts = get_all_prompts(prompt_prefix, artist_file)
     
-    num_prompts_per_distribution = 4
+    num_prompts_per_distribution = 3
 
     # Generate the images
     if len(sys.argv) > 1:
@@ -178,7 +231,9 @@ def generate_images_from_custom_noise(
                     counter = 0
                     print(f"Generating images for {distribution_name}")
                     noise_fn = lambda shape, device = None: get_torch_distribution_from_name('Normal')(**params).sample(shape).to(device)
+                    grid_columns = []
                     for prompt_index, prompt in enumerate(prompts):
+                        prompt_batch = []
                         if counter <= num_prompts_per_distribution:
                             for seed_index, noise_seed in enumerate(noise_seeds):
                                 p_bar_description = f"Generating image {seed_index+prompt_index+1} of {total_images} (distribution: {distribution_name}))"
@@ -193,6 +248,8 @@ def generate_images_from_custom_noise(
                                     noise_fn = noise_fn,
                                     temperature=TEMPERATURE,
                                 )
+                                # print("img shape: ", images.shape)
+                                # prompt_batch.append(images)
                                 save_images(images, dest_path=dest_path)
                                 
                                 pbar.update(1)
@@ -202,6 +259,13 @@ def generate_images_from_custom_noise(
                         else:
                             counter = 0
                             break
+                        # grid_columns.append(torch.cat(prompt_batch, dim=0))
+                        # print("grid_columns: ", [column.shape for column in grid_columns])
+                    # grid = torch.cat(grid_columns, dim=0)
+                    # print("grid: ", grid.shape)
+                    # grid = make_grid(grid_columns)
+                    # dest_path = os.path.join(os.path.join(output_dir, distribution_name), "grid.jpg")
+                    # save_images(grid_columns, dest_path)
     else:
         with torch.no_grad():
             with tqdm(total=total_images, desc='Generating images', ) as pbar:
@@ -210,7 +274,9 @@ def generate_images_from_custom_noise(
                     counter = 0
                     print(f"Generating images for {distribution_name}")
                     noise_fn = lambda shape, device = None: get_torch_distribution_from_name(distribution_name)(**params).sample(shape).to(device)
+                    
                     for prompt_index, prompt in enumerate(prompts):
+                        
                         if counter <= num_prompts_per_distribution:
                             for seed_index, noise_seed in enumerate(noise_seeds):
                                 p_bar_description = f"Generating image {seed_index+prompt_index+1} of {total_images} (distribution: {distribution_name}))"

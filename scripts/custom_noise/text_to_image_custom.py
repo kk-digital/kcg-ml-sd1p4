@@ -41,6 +41,7 @@ class Txt2Img(StableDiffusionBaseScript):
     ### Text to image class
     """
 
+
     @torch.no_grad()
     def generate_images(self, *,
                  seed: int = 0,
@@ -49,7 +50,8 @@ class Txt2Img(StableDiffusionBaseScript):
                  h: int = 512, w: int = 512,
                  uncond_scale: float = 7.5,
                  low_vram: bool = False,
-                 noise_fn = torch.randn
+                 noise_fn = torch.randn,
+                 temperature: float = 1.0,
                  ):
         """
         :param seed: the seed to use when generating the images
@@ -89,7 +91,8 @@ class Txt2Img(StableDiffusionBaseScript):
                                     shape=[batch_size, c, h // f, w // f],
                                     uncond_scale=uncond_scale,
                                     uncond_cond=un_cond,
-                                    noise_fn=noise_fn)
+                                    noise_fn=noise_fn,
+                                    temperature=temperature)
 
             return self.decode_image(x)
 
