@@ -13,19 +13,19 @@ from tqdm import tqdm
 from stable_diffusion.utils.model import save_images
 from cli_builder import CLI
 
-# noise_seeds = [
-#     2982,
-#     4801,
-#     1995,
-#     3598,
-#     987,
-#     3688,
-#     8872,
-#     762
-# ]
 noise_seeds = [
-    2982
+    2982,
+    4801,
+    1995,
+    3598,
+    987,
+    3688,
+    8872,
+    762
 ]
+# noise_seeds = [
+#     2982
+# ]
 #
 # CURRENTLY adding kwargs for custom noise function for the samplers
 # TODO adapt the script so that it creates a folder for the outputs of each kind of noise
@@ -46,9 +46,9 @@ if len(sys.argv) == 1:
         'Uniform': dict(low=0.0, high=1.0)
     }
 else:
-    VAR_RANGE = torch.linspace(0.9, 1.1, 10)
-    DISTRIBUTIONS = {f'Normal_{var.item():.2f}': dict(loc=0, scale=var.item()) for var in VAR_RANGE}
-
+    VAR_RANGE = torch.linspace(0.75, 1.25, 50)
+    DISTRIBUTIONS = {f'Normal_{var.item():.4f}': dict(loc=0, scale=var.item()) for var in VAR_RANGE}
+TEMPERATURE = 1.2
 OUTPUT_DIR = os.path.abspath('./output/noise-tests/')
 
 CLEAR_OUTPUT_DIR = True
@@ -101,8 +101,8 @@ def generate_prompt(prompt_prefix, artist):
     prompt = f"{prompt_prefix} {artist}"
     return prompt
 
-def init_txt2img(checkpoint_path, sampler_name, n_steps):
-    txt2img = Txt2Img(checkpoint_path=checkpoint_path, sampler_name=sampler_name, n_steps=n_steps)
+def init_txt2img(checkpoint_path, sampler_name, n_steps, ddim_eta=0.0):
+    txt2img = Txt2Img(checkpoint_path=checkpoint_path, sampler_name=sampler_name, n_steps=n_steps, ddim_eta=ddim_eta)
     txt2img.initialize_script()
     return txt2img
 
@@ -144,6 +144,7 @@ def generate_images_from_custom_noise(
         artist_file: str=os.path.abspath('./input/artists.txt'),
         checkpoint_path: str=os.path.abspath('./input/model/sd-v1-4.ckpt'),
         sampler_name: str='ddim',
+        ddim_eta: float=0.0,
         n_steps: int=20,
         batch_size: int=1,                                      
         ):
@@ -159,13 +160,13 @@ def generate_images_from_custom_noise(
 
     time_before_initialization = time.time()
     
-    txt2img = init_txt2img(checkpoint_path, sampler_name, n_steps)
+    txt2img = init_txt2img(checkpoint_path, sampler_name, n_steps, ddim_eta=ddim_eta)
 
     time_after_initialization = time.time()
 
     total_images, prompts = get_all_prompts(prompt_prefix, artist_file)
     
-    num_prompts_per_distribution = 1
+    num_prompts_per_distribution = 4
 
     # Generate the images
     if len(sys.argv) > 1:
@@ -190,6 +191,7 @@ def generate_images_from_custom_noise(
                                     prompt=prompt,
                                     seed=noise_seed,
                                     noise_fn = noise_fn,
+                                    temperature=TEMPERATURE,
                                 )
                                 save_images(images, dest_path=dest_path)
                                 
