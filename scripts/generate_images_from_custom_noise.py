@@ -25,20 +25,10 @@ from cli_builder import CLI
 # ]
 noise_seeds = [
     2982,
-    2,
     762
 ]
 #
-# CURRENTLY adding kwargs for custom noise function for the samplers
-# TODO adapt the script so that it creates a folder for the outputs of each kind of noise
-# TODO adapt the script so that it generates images for each kind of noise
-# TODO add kwargs for some samplers' parameters
-print(len(sys.argv))
-def log_normal(shape, device, mu=0.0, sigma=0.25):
-    return torch.exp(mu + sigma*torch.randn(shape, device=device))
 
-def normal(shape, device='cuda:0', mu=0.0, sigma=1.0):
-    return torch.normal(mu, sigma, size=shape, device=device)
 if len(sys.argv) == 1:
     DISTRIBUTIONS = {
         'Normal': dict(loc=0.0, scale=1.0),
@@ -48,9 +38,11 @@ if len(sys.argv) == 1:
         'Uniform': dict(low=0.0, high=1.0)
     }
 else:
-    VAR_RANGE = torch.linspace(0.85, 1.15, 10)
+    VAR_RANGE = torch.linspace(0.95, 1.05, 10)
     DISTRIBUTIONS = {f'Normal_{var.item():.4f}': dict(loc=0, scale=var.item()) for var in VAR_RANGE}
+
 TEMPERATURE = 1.5
+DDIM_ETA = -0.25
 OUTPUT_DIR = os.path.abspath('./output/noise-tests/')
 
 CLEAR_OUTPUT_DIR = True
@@ -135,8 +127,7 @@ def show_summary(total_time, partial_time, total_images, output_dir):
 
     print("Images generated successfully at", output_dir)
 
-# TODO add the same args and kwargs that `generate_images` have
-# import required library
+
 import torch
 import torchvision
 from torchvision.io import read_image
@@ -146,6 +137,7 @@ from typing import Any, BinaryIO, List, Optional, Tuple, Union
 import pathlib
 from PIL import Image, ImageColor, ImageDraw, ImageFont
 import numpy as np
+
 def save_image(
     tensor: Union[torch.Tensor, List[torch.Tensor]],
     fp: Union[str, pathlib.Path, BinaryIO],
@@ -197,9 +189,10 @@ def generate_images_from_custom_noise(
         artist_file: str=os.path.abspath('./input/artists.txt'),
         checkpoint_path: str=os.path.abspath('./input/model/sd-v1-4.ckpt'),
         sampler_name: str='ddim',
-        ddim_eta: float=0.0,
         n_steps: int=20,
-        batch_size: int=1,                                      
+        batch_size: int=1,
+        ddim_eta: float=0.0,
+        temperature: float=1.0,                                      
         ):
 
 
@@ -219,7 +212,7 @@ def generate_images_from_custom_noise(
 
     total_images, prompts = get_all_prompts(prompt_prefix, artist_file)
     
-    num_prompts_per_distribution = 3
+    num_prompts_per_distribution = 2
 
     # Generate the images
     if len(sys.argv) > 1:
@@ -246,17 +239,26 @@ def generate_images_from_custom_noise(
                                     prompt=prompt,
                                     seed=noise_seed,
                                     noise_fn = noise_fn,
-                                    temperature=TEMPERATURE,
+                                    temperature=temperature,
                                 )
                                 # print("img shape: ", images.shape)
-                                # prompt_batch.append(images)
+                                prompt_batch.append(images)
+                                # print("len prompt batch: ", len(prompt_batch))
                                 save_images(images, dest_path=dest_path)
                                 
                                 pbar.update(1)
                                 # TODO adjust this loop so that it generates a fixed number of images per distribution instead of all images, less uglily
                             counter += 1
+                            image_name = f"grid_a{prompt_index+1:04d}.jpg"
+                            dest_path = os.path.join(os.path.join(output_dir, distribution_name), image_name)
+                            print("len prompt batch: ", len(prompt_batch))
+                            print([img.shape for img in prompt_batch])
+                            column = torch.cat(prompt_batch, dim=0)
+                            print("col shape: ", column.shape)
+                            save_image(column, dest_path)
                             print("counter: ", counter)
                         else:
+
                             counter = 0
                             break
                         # grid_columns.append(torch.cat(prompt_batch, dim=0))
@@ -310,7 +312,7 @@ def generate_images_from_custom_noise(
  
 
 def main():
-    generate_images_from_custom_noise(DISTRIBUTIONS)
+    generate_images_from_custom_noise(DISTRIBUTIONS, ddim_eta=DDIM_ETA, temperature=TEMPERATURE)
 
 if __name__ == "__main__":
     main()
