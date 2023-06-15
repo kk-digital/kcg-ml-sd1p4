@@ -1,10 +1,24 @@
-# Training a LoRa using the notebook
+# Training a LoRa using a script
 
-## Setting up variables
-Open up the notebook [here](../notebooks/lora_train.ipynb)
+## Setting up environment
+### Cloning additional repo (Kohya's sd-scripts)
+```bash
+pushd train
+wget "https://github.com/kohya-ss/sd-scripts/archive/refs/heads/main.zip"
+unzip main.zip
+mv sd-scripts-main sd-scripts
+popd
+```
+### Running the script
+```bash
+python3 train/lora_train.py
+### Put your arguments on here ^^
+```
 
-### What each variable does
-```python3
+The script, if ran by itself, will train a LoRa with a sample dataset (of Waifus) gathered from pinterest.
+
+## Arguments for the script
+```python
 project_name: Specifies the name of the directory to store the logs, output, config and dataset on by default
 *_folder: directories on where to store certain files, stemming from project_name
 
@@ -46,3 +60,4 @@ network_alpha: Alpha parameter used in the network.
 network_module: Module for the LoRa network.
 network_args: Additional arguments or configuration specific to the LoRa network.
 ```
+If you need a more detailed description of the arguments run `python3 train/lora_train.py --help`
