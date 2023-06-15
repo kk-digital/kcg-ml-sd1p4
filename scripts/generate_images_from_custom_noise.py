@@ -257,6 +257,7 @@ def generate_images_from_custom_noise(
                             print("col shape: ", column.shape)
                             save_image(column, dest_path)
                             print("counter: ", counter)
+                            grid_columns.append(column)
                         else:
 
                             counter = 0
@@ -266,8 +267,11 @@ def generate_images_from_custom_noise(
                     # grid = torch.cat(grid_columns, dim=0)
                     # print("grid: ", grid.shape)
                     # grid = make_grid(grid_columns)
-                    # dest_path = os.path.join(os.path.join(output_dir, distribution_name), "grid.jpg")
-                    # save_images(grid_columns, dest_path)
+                    dest_path = os.path.join(os.path.join(output_dir, distribution_name), "grid.jpg")
+                    print("grid_columns: ", [column.shape for column in grid_columns])
+                    grid = torch.cat(grid_columns, dim=0)
+                    print("grid shape: ", grid.shape)
+                    save_image(grid, dest_path, nrow=num_prompts_per_distribution+1)
     else:
         with torch.no_grad():
             with tqdm(total=total_images, desc='Generating images', ) as pbar:
