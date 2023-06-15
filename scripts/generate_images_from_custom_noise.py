@@ -2,6 +2,7 @@
 
 
 import os
+import sys
 from typing import Callable
 from custom_noise.text_to_image_custom import Txt2Img
 import torch
@@ -12,35 +13,41 @@ from tqdm import tqdm
 from stable_diffusion.utils.model import save_images
 from cli_builder import CLI
 
+# noise_seeds = [
+#     2982,
+#     4801,
+#     1995,
+#     3598,
+#     987,
+#     3688,
+#     8872,
+#     762
+# ]
 noise_seeds = [
-    2982,
-    4801,
-    1995,
-    3598,
-    987,
-    3688,
-    8872,
-    762
+    2982
 ]
 #
 # CURRENTLY adding kwargs for custom noise function for the samplers
 # TODO adapt the script so that it creates a folder for the outputs of each kind of noise
 # TODO adapt the script so that it generates images for each kind of noise
 # TODO add kwargs for some samplers' parameters
-
+print(len(sys.argv))
 def log_normal(shape, device, mu=0.0, sigma=0.25):
     return torch.exp(mu + sigma*torch.randn(shape, device=device))
 
 def normal(shape, device='cuda:0', mu=0.0, sigma=1.0):
     return torch.normal(mu, sigma, size=shape, device=device)
-
-DISTRIBUTIONS = {
-    'Normal': dict(loc=0.0, scale=1.0),
-    'Cauchy': dict(loc=0.0, scale=1.0), 
-    'Gumbel': dict(loc=1.0, scale=2.0), 
-    'Laplace': dict(loc=0.0, scale=1.0), 
-    'Uniform': dict(low=0.0, high=1.0)
-}
+if len(sys.argv) == 1:
+    DISTRIBUTIONS = {
+        'Normal': dict(loc=0.0, scale=1.0),
+        'Cauchy': dict(loc=0.0, scale=1.0), 
+        'Gumbel': dict(loc=1.0, scale=2.0), 
+        'Laplace': dict(loc=0.0, scale=1.0), 
+        'Uniform': dict(low=0.0, high=1.0)
+    }
+else:
+    VAR_RANGE = torch.linspace(0.9, 1.1, 10)
+    DISTRIBUTIONS = {f'Normal_{var.item():.2f}': dict(loc=0, scale=var.item()) for var in VAR_RANGE}
 
 OUTPUT_DIR = os.path.abspath('./output/noise-tests/')
 
@@ -68,9 +75,19 @@ def build_noise_samplers(distributions: dict[str, dict[str, float]]) -> dict[str
     return noise_samplers
 
 def create_folder_structure(distributions_dict: dict[str, dict[str, float]], root_dir: str = OUTPUT_DIR) -> None:
-    for distribution_name in distributions_dict.keys():
+    for i, distribution_name in enumerate(distributions_dict.keys()):
         
-        distribution_outputs = os.path.join(root_dir, distribution_name)
+        if len(sys.argv) > 1:
+            # for var in VAR_RANGE:
+            #     distribution_outputs = os.path.join(root_dir, distribution_name+f'-mu0-sigma{var.item():.2f}')
+            #     try:
+            #         os.makedirs(distribution_outputs, exist_ok=True)
+            #     except Exception as e:
+            #         print(e)
+            # distribution_outputs = os.path.join(root_dir, distribution_name+f'-mu0-sigma{VAR_RANGE[i].item():.2f}')
+            distribution_outputs = os.path.join(root_dir, distribution_name)
+        else:
+            distribution_outputs = os.path.join(root_dir, distribution_name)
         try:
             os.makedirs(distribution_outputs, exist_ok=True)
         except Exception as e:
@@ -151,36 +168,69 @@ def generate_images_from_custom_noise(
     num_prompts_per_distribution = 1
 
     # Generate the images
-
-    with torch.no_grad():
-        with tqdm(total=total_images, desc='Generating images', ) as pbar:
-            for distribution_name, params in distributions.items():
-                counter = 0
-                print(f"Generating images for {distribution_name}")
-                noise_fn = lambda shape, device = None: get_torch_distribution_from_name(distribution_name)(**params).sample(shape).to(device)
-                for prompt_index, prompt in enumerate(prompts):
-                    if counter <= num_prompts_per_distribution:
-                        for seed_index, noise_seed in enumerate(noise_seeds):
-                            p_bar_description = f"Generating image {seed_index+prompt_index+1} of {total_images} (distribution: {distribution_name}))"
-                            pbar.set_description(p_bar_description)
-                            image_name = f"n{noise_seed:04d}_a{prompt_index+1:04d}.jpg"
-                            dest_path = os.path.join(os.path.join(output_dir, distribution_name), image_name)
-                            
-                            images = txt2img.generate_images(
-                                batch_size=batch_size,
-                                prompt=prompt,
-                                seed=noise_seed,
-                                noise_fn = noise_fn,
-                            )
-                            save_images(images, dest_path=dest_path)
-                            
-                            pbar.update(1)
-                            # TODO adjust this loop so that it generates a fixed number of images per distribution instead of all images, less uglily
-                        counter += 1
-                        print("counter: ", counter)
-                    else:
-                        counter = 0
-                        break
+    if len(sys.argv) > 1:
+        with torch.no_grad():
+            with tqdm(total=total_images, desc='Generating images', ) as pbar:
+                print("distributions itens: ", len(distributions.items()), list(distributions.items()))
+                for distribution_name, params in distributions.items():
+                    print(distribution_name, params)
+                    counter = 0
+                    print(f"Generating images for {distribution_name}")
+                    noise_fn = lambda shape, device = None: get_torch_distribution_from_name('Normal')(**params).sample(shape).to(device)
+                    for prompt_index, prompt in enumerate(prompts):
+                        if counter <= num_prompts_per_distribution:
+                            for seed_index, noise_seed in enumerate(noise_seeds):
+                                p_bar_description = f"Generating image {seed_index+prompt_index+1} of {total_images} (distribution: {distribution_name}))"
+                                pbar.set_description(p_bar_description)
+                                image_name = f"n{noise_seed:04d}_a{prompt_index+1:04d}.jpg"
+                                dest_path = os.path.join(os.path.join(output_dir, distribution_name), image_name)
+                                
+                                images = txt2img.generate_images(
+                                    batch_size=batch_size,
+                                    prompt=prompt,
+                                    seed=noise_seed,
+                                    noise_fn = noise_fn,
+                                )
+                                save_images(images, dest_path=dest_path)
+                                
+                                pbar.update(1)
+                                # TODO adjust this loop so that it generates a fixed number of images per distribution instead of all images, less uglily
+                            counter += 1
+                            print("counter: ", counter)
+                        else:
+                            counter = 0
+                            break
+    else:
+        with torch.no_grad():
+            with tqdm(total=total_images, desc='Generating images', ) as pbar:
+                print("distributions itens: ", len(distributions.items()))
+                for distribution_name, params in distributions.items():
+                    counter = 0
+                    print(f"Generating images for {distribution_name}")
+                    noise_fn = lambda shape, device = None: get_torch_distribution_from_name(distribution_name)(**params).sample(shape).to(device)
+                    for prompt_index, prompt in enumerate(prompts):
+                        if counter <= num_prompts_per_distribution:
+                            for seed_index, noise_seed in enumerate(noise_seeds):
+                                p_bar_description = f"Generating image {seed_index+prompt_index+1} of {total_images} (distribution: {distribution_name}))"
+                                pbar.set_description(p_bar_description)
+                                image_name = f"n{noise_seed:04d}_a{prompt_index+1:04d}.jpg"
+                                dest_path = os.path.join(os.path.join(output_dir, distribution_name), image_name)
+                                
+                                images = txt2img.generate_images(
+                                    batch_size=batch_size,
+                                    prompt=prompt,
+                                    seed=noise_seed,
+                                    noise_fn = noise_fn,
+                                )
+                                save_images(images, dest_path=dest_path)
+                                
+                                pbar.update(1)
+                                # TODO adjust this loop so that it generates a fixed number of images per distribution instead of all images, less uglily
+                            counter += 1
+                            print("counter: ", counter)
+                        else:
+                            counter = 0
+                            break
     end_time = time.time()
 
     show_summary(
