@@ -271,7 +271,7 @@ def generate_images_from_custom_noise(
                     print("grid_columns: ", [column.shape for column in grid_columns])
                     grid = torch.cat(grid_columns, dim=0)
                     print("grid shape: ", grid.shape)
-                    save_image(grid, dest_path, nrow=num_prompts_per_distribution+1)
+                    save_image(grid, dest_path, nrow=num_prompts_per_distribution+1, normalize=True, scale_each=True)
     else:
         with torch.no_grad():
             with tqdm(total=total_images, desc='Generating images', ) as pbar:
