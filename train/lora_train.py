@@ -140,15 +140,6 @@ def main(args):
     print(f"Dataset directory: {args.dataset}")
 
     # Patch kohya for minor stuff
-    if COLAB:
-        model_util_file = os.path.join(args.repo_dir, "library", "model_util.py")
-        with open(model_util_file, "r+") as f:
-            content = f.read()
-            content = re.sub(r"cpu", "cuda", content)
-            f.seek(0)
-            f.write(content)
-            f.truncate()
-
     train_util_file = os.path.join(args.repo_dir, "library", "train_util.py")
     with open(train_util_file, "r+") as f:
         content = f.read()
