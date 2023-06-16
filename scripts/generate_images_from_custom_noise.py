@@ -25,7 +25,9 @@ from cli_builder import CLI
 # ]
 noise_seeds = [
     2982,
-    762
+    762,
+    4801,
+    8872
 ]
 #
 
@@ -100,11 +102,15 @@ def init_txt2img(checkpoint_path, sampler_name, n_steps, ddim_eta=0.0):
     txt2img.initialize_script()
     return txt2img
 
-def get_all_prompts(prompt_prefix, artist_file):
+def get_all_prompts(prompt_prefix, artist_file, num_artists = None):
+
     with open(artist_file, 'r') as f:
         artists = f.readlines()
 
     num_seeds = len(noise_seeds)
+    if num_artists is not None:
+        artists = artists[:num_artists]
+    
     number_of_artists = len(artists)
     total_images = num_seeds * number_of_artists
 
@@ -162,24 +168,24 @@ def save_image(
     im = Image.fromarray(ndarr)
     im.save(fp, format=format)
 
-def norm_torch(x_all):
-    # runs unity norm on all timesteps of all samples
-    # input is (n_samples, 3,h,w), the torch image format
-    x = x_all.cpu().numpy()
-    xmax = x.max((2,3))
-    xmin = x.min((2,3))
-    xmax = np.expand_dims(xmax,(2,3)) 
-    xmin = np.expand_dims(xmin,(2,3))
-    nstore = (x - xmin)/(xmax - xmin)
-    return torch.from_numpy(nstore)
+# def norm_torch(x_all):
+#     # runs unity norm on all timesteps of all samples
+#     # input is (n_samples, 3,h,w), the torch image format
+#     x = x_all.cpu().numpy()
+#     xmax = x.max((2,3))
+#     xmin = x.min((2,3))
+#     xmax = np.expand_dims(xmax,(2,3)) 
+#     xmin = np.expand_dims(xmin,(2,3))
+#     nstore = (x - xmin)/(xmax - xmin)
+#     return torch.from_numpy(nstore)
 
-def plot_grid(x,n_sample,n_rows,save_dir,w):
-    # x:(n_sample, 3, h, w)
-    ncols = n_sample//n_rows
-    grid = make_grid(norm_torch(x), nrow=ncols)  # curiously, nrow is number of columns.. or number of items in the row.
-    save_image(grid, save_dir + f"run_image_w{w}.png")
-    print('saved image at ' + save_dir + f"run_image_w{w}.png")
-    return grid
+# def plot_grid(x,n_sample,n_rows,save_dir,w):
+#     # x:(n_sample, 3, h, w)
+#     ncols = n_sample//n_rows
+#     grid = make_grid(norm_torch(x), nrow=ncols)  # curiously, nrow is number of columns.. or number of items in the row.
+#     save_image(grid, save_dir + f"run_image_w{w}.png")
+#     print('saved image at ' + save_dir + f"run_image_w{w}.png")
+#     return grid
 
 def generate_images_from_custom_noise(
         distributions: dict[str, tuple[float, float]], 
@@ -209,69 +215,69 @@ def generate_images_from_custom_noise(
     txt2img = init_txt2img(checkpoint_path, sampler_name, n_steps, ddim_eta=ddim_eta)
 
     time_after_initialization = time.time()
-
-    total_images, prompts = get_all_prompts(prompt_prefix, artist_file)
     
-    num_prompts_per_distribution = 2
+    num_prompts_per_distribution = 4
 
+    total_images, prompts = get_all_prompts(prompt_prefix, artist_file, num_artists = num_prompts_per_distribution)
+    
+    num_distributions = len(distributions)
+    print("num_distributions:", num_distributions)
     # Generate the images
     if len(sys.argv) > 1:
         with torch.no_grad():
-            with tqdm(total=total_images, desc='Generating images', ) as pbar:
+            with tqdm(total=total_images*num_distributions, desc='Generating images', ) as pbar:
                 print("distributions itens: ", len(distributions.items()), list(distributions.items()))
-                for distribution_name, params in distributions.items():
+                for distribution_index, (distribution_name, params) in enumerate(distributions.items()):
                     print(distribution_name, params)
                     counter = 0
                     print(f"Generating images for {distribution_name}")
                     noise_fn = lambda shape, device = None: get_torch_distribution_from_name('Normal')(**params).sample(shape).to(device)
-                    grid_columns = []
+                    grid_rows = []
                     for prompt_index, prompt in enumerate(prompts):
+                        print(prompt_index, prompt)
                         prompt_batch = []
-                        if counter <= num_prompts_per_distribution:
-                            for seed_index, noise_seed in enumerate(noise_seeds):
-                                p_bar_description = f"Generating image {seed_index+prompt_index+1} of {total_images} (distribution: {distribution_name}))"
-                                pbar.set_description(p_bar_description)
-                                image_name = f"n{noise_seed:04d}_a{prompt_index+1:04d}.jpg"
-                                dest_path = os.path.join(os.path.join(output_dir, distribution_name), image_name)
-                                
-                                images = txt2img.generate_images(
-                                    batch_size=batch_size,
-                                    prompt=prompt,
-                                    seed=noise_seed,
-                                    noise_fn = noise_fn,
-                                    temperature=temperature,
-                                )
-                                # print("img shape: ", images.shape)
-                                prompt_batch.append(images)
-                                # print("len prompt batch: ", len(prompt_batch))
-                                save_images(images, dest_path=dest_path)
-                                
-                                pbar.update(1)
-                                # TODO adjust this loop so that it generates a fixed number of images per distribution instead of all images, less uglily
-                            counter += 1
-                            image_name = f"grid_a{prompt_index+1:04d}.jpg"
-                            dest_path = os.path.join(os.path.join(output_dir, distribution_name), image_name)
-                            print("len prompt batch: ", len(prompt_batch))
-                            print([img.shape for img in prompt_batch])
-                            column = torch.cat(prompt_batch, dim=0)
-                            print("col shape: ", column.shape)
-                            save_image(column, dest_path)
-                            print("counter: ", counter)
-                            grid_columns.append(column)
-                        else:
 
-                            counter = 0
-                            break
+                        for seed_index, noise_seed in enumerate(noise_seeds):
+                            print(seed_index, noise_seed)
+                            p_bar_description = f"Generating image {distribution_index+seed_index+prompt_index+1} of {total_images} (distribution: {distribution_name}))"
+                            pbar.set_description(p_bar_description)
+                            image_name = f"n{noise_seed:04d}_a{prompt_index+1:04d}.jpg"
+                            dest_path = os.path.join(os.path.join(output_dir, distribution_name), image_name)
+                            
+                            images = txt2img.generate_images(
+                                batch_size=batch_size,
+                                prompt=prompt,
+                                seed=noise_seed,
+                                noise_fn = noise_fn,
+                                temperature=temperature,
+                            )
+                            # print("img shape: ", images.shape)
+                            prompt_batch.append(images)
+                            # print("len prompt batch: ", len(prompt_batch))
+                            save_images(images, dest_path=dest_path)
+                            
+                            pbar.update(1)
+                            # TODO adjust this loop so that it generates a fixed number of images per distribution instead of all images, less uglily
+                        
+                        image_name = f"row_a{prompt_index+1:04d}.jpg"
+                        dest_path = os.path.join(os.path.join(output_dir, distribution_name), image_name)
+                        print("len prompt batch: ", len(prompt_batch))
+                        print([img.shape for img in prompt_batch])
+                        row = torch.cat(prompt_batch, dim=0)
+                        print("row shape: ", row.shape)
+                        save_image(row, dest_path)
+                        grid_rows.append(row)
+
                         # grid_columns.append(torch.cat(prompt_batch, dim=0))
                         # print("grid_columns: ", [column.shape for column in grid_columns])
                     # grid = torch.cat(grid_columns, dim=0)
                     # print("grid: ", grid.shape)
                     # grid = make_grid(grid_columns)
                     dest_path = os.path.join(os.path.join(output_dir, distribution_name), "grid.jpg")
-                    print("grid_columns: ", [column.shape for column in grid_columns])
-                    grid = torch.cat(grid_columns, dim=0)
+                    print("grid_rows: ", [row.shape for row in grid_rows])
+                    grid = torch.cat(grid_rows, dim=0)
                     print("grid shape: ", grid.shape)
-                    save_image(grid, dest_path, nrow=num_prompts_per_distribution+1, normalize=True, scale_each=True)
+                    save_image(grid, dest_path, nrow=num_prompts_per_distribution, normalize=True, scale_each=True)
     else:
         with torch.no_grad():
             with tqdm(total=total_images, desc='Generating images', ) as pbar:
