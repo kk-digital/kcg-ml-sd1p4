@@ -17,22 +17,22 @@ from typing import BinaryIO, List, Optional, Union
 import pathlib
 from PIL import Image
 
-# noise_seeds = [
-#     2982,
-#     4801,
-#     1995,
-#     3598,
-#     987,
-#     3688,
-#     8872,
-#     762
-# ]
 noise_seeds = [
     2982,
-    762,
-    4801
+    4801,
+    1995,
+    3598,
+    # 987,
+    # 3688,
+    # 8872,
+    # 762
 ]
+# noise_seeds = [
+#     2982,
+# ]
 #
+
+NUM_SEEDS = len(noise_seeds)
 
 if len(sys.argv) > 1:
     dist_name_index = int(sys.argv[1])
@@ -40,26 +40,28 @@ if len(sys.argv) > 1:
     DISTRIBUTIONS = {
         'Normal': dict(loc=0.0, scale=1.0),
         'Cauchy': dict(loc=0.0, scale=1.0), 
-        # 'Gumbel': dict(loc=1.0, scale=2.0), 
-        'Laplace': dict(loc=0.0, scale=1.0), 
+        'Gumbel': dict(loc=1.0, scale=2.0), 
+        'Laplace': dict(loc=0.0, scale=1.0), #there's some stuff here for scale \in (0.6, 0.8)
+        'Logistic': dict(loc=0.0, scale=1.0),
         # 'Uniform': dict(low=0.0, high=1.0)
     }
     
     dist_names = list(DISTRIBUTIONS.keys())
     DIST_NAME = dist_names[dist_name_index]
-    VAR_RANGE = torch.linspace(0.90, 1.1, 10) #args here should be given as command line arguments
-    DISTRIBUTIONS = {f'{DIST_NAME}_{var.item():.4f}': dict(loc=0, scale=var.item()) for var in VAR_RANGE}
+    #VAR_RANGE = torch.linspace(0.6, 0.8, 10) #args here should be given as command line arguments
+    VAR_RANGE = torch.linspace(0.49, 0.54, 20) #args here should be given as command line arguments
+    DISTRIBUTIONS = {f'{DIST_NAME}_{var.item():.4f}': dict(loc=0.0, scale=var.item()) for var in VAR_RANGE}
 else:
     DIST_NAME = 'Normal'
-    VAR_RANGE = torch.linspace(0.90, 1.1, 10)
+    VAR_RANGE = torch.linspace(0.90, 1.1, 5)
     DISTRIBUTIONS = {f'{DIST_NAME}_{var.item():.4f}': dict(loc=0, scale=var.item()) for var in VAR_RANGE}
 
-TEMPERATURE = 1.5 #should be cli argument
-DDIM_ETA = 0.25 #should be cli argument
+TEMPERATURE = 1.0 #should be cli argument
+DDIM_ETA = 0.0 #should be cli argument
 OUTPUT_DIR = os.path.abspath('./output/noise-tests/')
 
 CLEAR_OUTPUT_DIR = True
-
+NUM_ARTISTS = 1
 def get_all_torch_distributions() -> tuple[list[str], list[type]]:
     
     torch_distributions_names = torch.distributions.__all__
@@ -72,6 +74,13 @@ def get_all_torch_distributions() -> tuple[list[str], list[type]]:
     return torch_distributions_names, torch_distributions
 
 def get_torch_distribution_from_name(name: str) -> type:
+    if name == 'Logistic':
+        def logistic_distribution(loc, scale):
+            base_distribution = torch.distributions.Uniform(0, 1)
+            transforms = [torch.distributions.transforms.SigmoidTransform().inv, torch.distributions.transforms.AffineTransform(loc=loc, scale=scale)]
+            logistic = torch.distributions.TransformedDistribution(base_distribution, transforms)
+            return logistic
+        return logistic_distribution
     return torch.distributions.__dict__[name]
 
 def build_noise_samplers(distributions: dict[str, dict[str, float]]) -> dict[str, Callable]:
@@ -216,11 +225,12 @@ def generate_images_from_dist(
                 print("row shape: ", row.shape)
                 save_image(row, dest_path, normalize=True, scale_each=True)
                 grid_rows.append(row)
-            dest_path = os.path.join(os.path.join(output_dir, dist_name), "grid.jpg")
+            dest_path = os.path.join(os.path.join(output_dir, dist_name), f"grid_{dist_name}.jpg")
             print("grid_rows: ", [row.shape for row in grid_rows])
             grid = torch.cat(grid_rows, dim=0)
             print("grid shape: ", grid.shape)
-            save_image(grid, dest_path, nrow=num_artists, normalize=True, scale_each=True)    
+            save_image(grid, dest_path, nrow=num_artists, normalize=True, scale_each=True)
+            return grid    
             # save_image(grid_rows, dest_path, nrow=num_artists, normalize=True, scale_each=True)    
 
 def generate_images_from_dist_dict(
@@ -246,15 +256,22 @@ def generate_images_from_dist_dict(
     num_distributions = len(distributions)
     print("num_distributions:", num_distributions)
     # Generate the images
-
+    img_grids = []
     for distribution_index, (distribution_name, params) in enumerate(distributions.items()):
-        generate_images_from_dist(txt2img, (distribution_name, params), prompt_prefix=prompt_prefix, artist_file=artist_file, num_artists=num_artists, batch_size=batch_size, temperature=temperature)
+       grid = generate_images_from_dist(txt2img, (distribution_name, params), prompt_prefix=prompt_prefix, artist_file=artist_file, num_artists=num_artists, batch_size=batch_size, temperature=temperature)
+       img_grids.append(grid)
+    
+    dest_path = os.path.join(output_dir, f"grid_all.jpg")
+    
+    grid = torch.cat(img_grids, dim=0)
+    print("grid shape: ", grid.shape)
+    save_image(grid, dest_path, nrow=NUM_SEEDS, normalize=True, scale_each=True)
   
       
 
 def main():
     txt2img = init_txt2img(ddim_eta=DDIM_ETA)
-    generate_images_from_dist_dict(DISTRIBUTIONS, txt2img, num_artists=3, batch_size=1, temperature=TEMPERATURE)
+    generate_images_from_dist_dict(DISTRIBUTIONS, txt2img, num_artists=NUM_ARTISTS, batch_size=1, temperature=TEMPERATURE)
 
 if __name__ == "__main__":
     main()
