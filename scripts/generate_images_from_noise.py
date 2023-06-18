@@ -18,12 +18,72 @@ noise_seeds = [
     8872,
     762
 ]
-
+def load_embeddings(path= os.path.abspath('C:\\Users\\igor-\\.cloned\\kcg-ml-sd1p4\\stable_diffusion\\prompt_embeddings.pt')):
+    return torch.load(path)
 # Function to generate a prompt
+def generate_images_from_embeddings(
+    embeddings_path: str='prompt_embeddings.pt',
+    output_dir: str='./output/noise-tests/',
+    checkpoint_path: str='./input/model/sd-v1-4.ckpt',
+    sampler_name: str='ddim',
+    n_steps: int=20,
+    batch_size: int=1,
+):
+    time_before_initialization = time.time()
+    embeddings = load_embeddings()
+    print(embeddings[0].shape)
+
+    for embedding in embeddings:
+        print(embedding.shape)
+    
+    txt2img = init_txt2img(checkpoint_path, sampler_name, n_steps)
+
+    time_after_initialization = time.time()
+
+    total_images = len(noise_seeds) * len(embeddings)
+    with torch.no_grad():
+        with tqdm(total=total_images, desc='Generating images', ) as pbar:
+            for prompt_index, prompt in enumerate(embeddings):
+                
+                for seed_index, noise_seed in enumerate(noise_seeds):
+                    p_bar_description = f"Generating image {seed_index+prompt_index+1} of {total_images}"
+                    pbar.set_description(p_bar_description)
+
+                    image_name = f"n{noise_seed:04d}_a{prompt_index+1:04d}.jpg"
+                    dest_path = os.path.join(output_dir, image_name)
+                    
+                    images = txt2img.generate_images_from_embeddings(
+                        batch_size=batch_size,
+                        embedded_prompt=prompt,
+                        null_prompt=embeddings[0],
+                        seed=noise_seed
+                    )
+
+                    save_images(images, dest_path=dest_path)
+                    
+                    pbar.update(1)
+
+    end_time = time.time()
+
+    show_summary(
+        total_time=end_time - time_before_initialization,
+        partial_time=end_time - time_after_initialization,
+        total_images=total_images,
+        output_dir=output_dir
+    )
+
+
+
+
+
+
+
 def generate_prompt(prompt_prefix, artist):
     # Generate the prompt
     prompt = f"{prompt_prefix} {artist}"
     return prompt
+
+
 
 def init_txt2img(checkpoint_path, sampler_name, n_steps):
     txt2img = Txt2Img(checkpoint_path=checkpoint_path, sampler_name=sampler_name, n_steps=n_steps)
@@ -105,24 +165,26 @@ def generate_images(
     )
 
 def main():
-    args = CLI('Generate images from noise seeds.') \
-        .prompt_prefix() \
-        .artist_file() \
-        .output() \
-        .checkpoint_path() \
-        .sampler() \
-        .steps() \
-        .batch_size() \
-        .parse()
+    # args = CLI('Generate images from noise seeds.') \
+    #     .prompt_prefix() \
+    #     .artist_file() \
+    #     .output() \
+    #     .checkpoint_path() \
+    #     .sampler() \
+    #     .steps() \
+    #     .batch_size() \
+    #     .parse()
 
-    generate_images(
-        prompt_prefix=args.prompt_prefix,
-        artist_file=args.artist_file,
-        output_dir=args.output,
-        checkpoint_path=args.checkpoint_path,
-        sampler_name=args.sampler,
-        n_steps=args.steps,
-    )
+    # generate_images(
+    #     prompt_prefix=args.prompt_prefix,
+    #     artist_file=args.artist_file,
+    #     output_dir=args.output,
+    #     checkpoint_path=args.checkpoint_path,
+    #     sampler_name=args.sampler,
+    #     n_steps=args.steps,
+    # )
+    generate_images()
+    # generate_images_from_embeddings()
 
 if __name__ == "__main__":
     main()

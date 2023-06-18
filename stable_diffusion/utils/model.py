@@ -94,6 +94,8 @@ def load_model(path: Union[str, Path] = '', device = 'cuda:0', autoencoder = Non
     
     if clip_text_embedder is None:
         clip_text_embedder = initialize_clip_embedder(device)
+        # print('No clip embedder passed. You must provide the embedded prompts.')
+        # pass
     
     if unet_model is None:
         unet_model = initialize_unet(device)
