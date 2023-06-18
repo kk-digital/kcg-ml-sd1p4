@@ -1,27 +1,20 @@
-#%%
-
-
 import os
 import sys
-from typing import Callable
-from custom_noise.text_to_image_custom import Txt2Img
 import torch
-import time
 import shutil
+
+from typing import Callable
 from tqdm import tqdm
-import torchvision
-from stable_diffusion.utils.model import save_images
-from cli_builder import CLI
-from torchvision.utils import make_grid
-from typing import BinaryIO, List, Optional, Union
-import pathlib
-from PIL import Image
+
+from stable_diffusion.utils.model import save_images, save_image_grid
+from custom_noise.text_to_image_custom import Txt2Img
+
 
 noise_seeds = [
     2982,
     4801,
-    1995,
-    3598,
+    # 1995,
+    # 3598,
     # 987,
     # 3688,
     # 8872,
@@ -61,7 +54,7 @@ DDIM_ETA = 0.0 #should be cli argument
 OUTPUT_DIR = os.path.abspath('./output/noise-tests/')
 
 CLEAR_OUTPUT_DIR = True
-NUM_ARTISTS = 1
+NUM_ARTISTS = 2
 def get_all_torch_distributions() -> tuple[list[str], list[type]]:
     
     torch_distributions_names = torch.distributions.__all__
@@ -149,32 +142,6 @@ def show_summary(total_time, partial_time, total_images, output_dir):
     print("Images generated successfully at", output_dir)
 
 
-
-def save_image(
-    tensor: Union[torch.Tensor, List[torch.Tensor]],
-    fp: Union[str, pathlib.Path, BinaryIO],
-    format: Optional[str] = None,
-    **kwargs,
-) -> None:
-    """
-    Save a given Tensor into an image file.
-
-    Args:
-        tensor (Tensor or list): Image to be saved. If given a mini-batch tensor,
-            saves the tensor as a grid of images by calling ``make_grid``.
-        fp (string or file object): A filename or a file object
-        format(Optional):  If omitted, the format to use is determined from the filename extension.
-            If a file object was used instead of a filename, this parameter should always be used.
-        **kwargs: Other arguments are documented in ``make_grid``.
-    """
-
-    grid = make_grid(tensor, **kwargs)
-    # Add 0.5 after unnormalizing to [0, 255] to round to the nearest integer
-    ndarr = grid.mul(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to("cpu", torch.uint8).numpy()
-    im = Image.fromarray(ndarr)
-    im.save(fp, format=format)
-
-
 def generate_images_from_dist( 
         txt2img: Txt2Img,         
         distribution: tuple[str, dict[str, float]],                             
@@ -223,15 +190,15 @@ def generate_images_from_dist(
                 print([img.shape for img in prompt_batch])
                 row = torch.cat(prompt_batch, dim=0)
                 print("row shape: ", row.shape)
-                save_image(row, dest_path, normalize=True, scale_each=True)
+                save_image_grid(row, dest_path, normalize=True, scale_each=True)
                 grid_rows.append(row)
             dest_path = os.path.join(os.path.join(output_dir, dist_name), f"grid_{dist_name}.jpg")
             print("grid_rows: ", [row.shape for row in grid_rows])
             grid = torch.cat(grid_rows, dim=0)
             print("grid shape: ", grid.shape)
-            save_image(grid, dest_path, nrow=num_artists, normalize=True, scale_each=True)
+            save_image_grid(grid, dest_path, nrow=num_artists, normalize=True, scale_each=True)
             return grid    
-            # save_image(grid_rows, dest_path, nrow=num_artists, normalize=True, scale_each=True)    
+            # save_image_grid(grid_rows, dest_path, nrow=num_artists, normalize=True, scale_each=True)    
 
 def generate_images_from_dist_dict(
         distributions: dict[str, dict[str, float]], 
@@ -265,7 +232,7 @@ def generate_images_from_dist_dict(
     
     grid = torch.cat(img_grids, dim=0)
     print("grid shape: ", grid.shape)
-    save_image(grid, dest_path, nrow=NUM_SEEDS, normalize=True, scale_each=True)
+    save_image_grid(grid, dest_path, nrow=NUM_SEEDS, normalize=True, scale_each=True)
   
       
 
