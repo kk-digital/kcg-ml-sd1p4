@@ -133,29 +133,40 @@ def load_img(path: str):
     # Convert to torch
     return torch.from_numpy(image)
 
+def save_image(image: torch.Tensor, dest_path: str, img_format: str = 'jpeg'):
+    """
+    ### Save an image
+
+    :param image: is the tensor with image of shape `[batch_size, channels, height, width]`
+    :param dest_path: is the path and filename to save images in
+    :param img_format: is the image format
+    """
+
+    # Map images to `[0, 1]` space and clip
+    image = torch.clamp((image + 1.0) / 2.0, min=0.0, max=1.0)
+    # Transpose to `[batch_size, height, width, channels]` and convert to numpy
+    image = image.cpu()
+    image = image.permute(0, 2, 3, 1)
+    image = image.float().numpy()
+
+    img = Image.fromarray((255. * image).astype(np.uint8))
+    img.save(os.path.join(dest_path, dest_path), format=img_format)
 
 def save_images(images: torch.Tensor, dest_path: str, img_format: str = 'jpeg'):
     """
-    ### Save a images
+    ### Save images
 
     :param images: is the tensor with images of shape `[batch_size, channels, height, width]`
     :param dest_path: is the folder to save images in
     :param img_format: is the image format
     """
 
-    # Map images to `[0, 1]` space and clip
-    images = torch.clamp((images + 1.0) / 2.0, min=0.0, max=1.0)
-    # Transpose to `[batch_size, height, width, channels]` and convert to numpy
-    images = images.cpu()
-    images = images.permute(0, 2, 3, 1)
-    images = images.float().numpy()
-
     # Save images
     for i, img in enumerate(images):
-        img = Image.fromarray((255. * img).astype(np.uint8))
-
-        filename = "{0}.jpeg".format(i).zfill(5)
-        img.save(os.path.join(dest_path, filename), format=img_format)
+        filename = "{0}".format(i).zfill(5)
+        filename = "{0}.jpeg".format(filename)
+        dest_path = os.path.join(dest_path, filename)
+        save_image(img, dest_path, img_format)
 
 def get_device(force_cpu: bool = False, cuda_fallback: str = 'cuda:0'):
     """
