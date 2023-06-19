@@ -160,6 +160,9 @@ def save_images(images: torch.Tensor, dest_path: str, img_format: str = 'jpeg'):
     :param dest_path: is the folder to save images in
     :param img_format: is the image format
     """
+    if not os.path.exists(dest_path):
+        # If it doesn't exist, create it
+        os.makedirs(dest_path)
 
     # Save images
     for i, img in enumerate(images):
