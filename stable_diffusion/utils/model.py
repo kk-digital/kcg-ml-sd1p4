@@ -7,8 +7,9 @@ summary: >
 
 # Utility functions for [stable diffusion](index.html)
 """
-
+import os.path
 import random
+import string
 from pathlib import Path
 from typing import Union
 
@@ -152,7 +153,9 @@ def save_images(images: torch.Tensor, dest_path: str, img_format: str = 'jpeg'):
     # Save images
     for i, img in enumerate(images):
         img = Image.fromarray((255. * img).astype(np.uint8))
-        img.save(dest_path, format=img_format)
+
+        filename = "{0}.jpeg".format(i).zfill(5)
+        img.save(os.path.join(dest_path, filename), format=img_format)
 
 def get_device(force_cpu: bool = False, cuda_fallback: str = 'cuda:0'):
     """
