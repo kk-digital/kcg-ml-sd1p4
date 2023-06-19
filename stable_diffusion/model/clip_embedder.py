@@ -14,7 +14,7 @@ It uses HuggingFace Transformers CLIP model.
 from typing import List
 
 from torch import nn
-from transformers import CLIPTokenizer, CLIPTextModel
+from transformers import CLIPTokenizer, CLIPTextModel, CLIPTextConfig
 
 
 class CLIPTextEmbedder(nn.Module):
@@ -32,7 +32,10 @@ class CLIPTextEmbedder(nn.Module):
         # Load the tokenizer
         self.tokenizer = CLIPTokenizer.from_pretrained(version)
         # Load the CLIP transformer
-        self.transformer = CLIPTextModel.from_pretrained(version).eval()
+        configuration = CLIPTextConfig()
+        clip_text_model = CLIPTextModel(configuration)
+        self.transformer_config = clip_text_model.config
+        self.transformer = clip_text_model.from_pretrained(version).eval()
 
         self.device = device
         self.max_length = max_length

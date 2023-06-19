@@ -76,6 +76,13 @@ class StableDiffusionBaseScript:
 
         return t_index
 
+    def clip_skip(self, clip_skip):
+        num_hidden_state = 12 - clip_skip
+        if num_hidden_state < 2 :
+            raise Exception("clip_skip must be in range 1 to 10")
+        print(f"running clip skip with number of hidden layers :{num_hidden_state}")
+        self.model.cond_stage_model.transformer_config.num_hidden_state = num_hidden_state
+
     def get_text_conditioning(self, uncond_scale: float, prompts: list, batch_size: int = 1):
         # In unconditional scaling is not $1$ get the embeddings for empty prompts (no conditioning).
         if uncond_scale != 1.0:
