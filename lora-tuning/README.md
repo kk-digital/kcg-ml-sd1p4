@@ -1,15 +1,5 @@
 # Training a LoRa using a script
 
-## Setting up environment
-### Cloning additional repo (Kohya's sd-scripts)
-```bash
-pushd train
-wget "https://github.com/kohya-ss/sd-scripts/archive/refs/heads/main.zip"
-unzip main.zip
-mv sd-scripts-main sd-scripts
-popd
-```
-
 ## Usage
 `lora_train.py` will train a LoRa, provided a tagged image dataset, a stable diffusion model, and parameters to create the network.
 
