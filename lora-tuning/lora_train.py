@@ -182,7 +182,7 @@ def main(args):
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset", default="./test-images/chibi-waifu-pixelart.zip", help="Path to the dataset directory or ZIP file.")
+    parser.add_argument("--dataset", default="./test/zip/chibi-waifu-pixelart.zip", help="Path to the dataset directory or ZIP file.")
     parser.add_argument("--repo_dir", default=None, help="Directory to clone sd-scripts repository.")
     parser.add_argument("--activation_tags", type=int, default=1, help="The number of activation tags in each txt file on the dataset.")
     parser.add_argument("--num_repeats", default=10, help="Number of times to repeat per image.")
@@ -212,7 +212,7 @@ def parse_arguments():
 
 def set_defaults(args):
     if args.repo_dir is None:
-        args.repo_dir = os.path.abspath(os.path.join("./", "train/sd-scripts"))
+        args.repo_dir = os.path.abspath(os.path.join("./", "lora-tuning/sd-scripts"))
     repo_dir = os.path.abspath(args.repo_dir)
     if args.config_dir is None:
         args.config_dir = os.path.join(repo_dir, "config")
