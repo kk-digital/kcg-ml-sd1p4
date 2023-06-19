@@ -177,10 +177,10 @@ def save_images(images: torch.Tensor, dest_path: str, img_format: str = 'jpeg'):
     for i, img in enumerate(images):
         filename = "{0}".format(i).zfill(5)
         filename = "{0}.jpeg".format(filename)
-        dest_path = os.path.join(dest_path, filename)
-
+        final_path = os.path.join(dest_path, filename)
         img = Image.fromarray((255. * img).astype(np.uint8))
-        img.save(dest_path, format=img_format)
+
+        img.save(final_path, format=img_format)
 
 def get_device(force_cpu: bool = False, cuda_fallback: str = 'cuda:0'):
     """
