@@ -5,7 +5,7 @@ import torch
 
 from stable_diffusion.sampler.ddim import DDIMSampler
 from stable_diffusion.sampler.ddpm import DDPMSampler
-from stable_diffusion.utils.model import load_model, initialize_autoencoder, initialize_clip_embedder, initialize_unet, get_device
+from stable_diffusion.utils.model_custom import load_model, initialize_autoencoder, initialize_clip_embedder, initialize_unet, get_device
 from stable_diffusion.latent_diffusion import LatentDiffusion
 from stable_diffusion.sampler import DiffusionSampler
 
