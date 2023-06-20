@@ -83,7 +83,27 @@ def load_model(path: Union[str, Path] = '', device = 'cuda:0') -> LatentDiffusio
                                n_heads=8,
                                tf_layers=1,
                                d_cond=768)
+<<<<<<< HEAD
+    return unet_model
+
+def load_model(path: Union[str, Path] = '', device = 'cuda:0', autoencoder = None, clip_text_embedder = None, unet_model = None) -> LatentDiffusion:
+    """
+    ### Load [`LatentDiffusion` model](latent_diffusion.html)
+    """
+
+    if autoencoder is None:
+        autoencoder = initialize_autoencoder(device)
+    
+    if clip_text_embedder is None:
+        clip_text_embedder = initialize_clip_embedder(device)
+        # print('No clip embedder passed. You must provide the embedded prompts.')
+        # pass
+    
+    if unet_model is None:
+        unet_model = initialize_unet(device)
+=======
         
+>>>>>>> origin/main
 
     # Initialize the Latent Diffusion model
     with monit.section('Initialize Latent Diffusion model'):
