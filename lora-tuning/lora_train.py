@@ -62,6 +62,7 @@ def generate_config(config_file, dataset_config_file, model_file, activation_tag
             "noise_offset": None,
             "clip_skip": 2,
             "min_snr_gamma": 5.0,
+            "output_dir": output_dir,
             "weighted_captions": None,
             "seed": 42,
             "max_token_length": 225,
