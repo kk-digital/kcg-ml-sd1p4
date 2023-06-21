@@ -113,6 +113,22 @@ class StableDiffusionBaseScript:
                                 uncond_cond=un_cond)
         
         return x
+    def initialize_from_saved(self, model_path):
+        """You can initialize the autoencoder, CLIP and UNet models externally and pass them to the script.
+        Use the methods: 
+            stable_diffusion.utils.model.initialize_autoencoder,
+            stable_diffusion.utils.model.initialize_clip_embedder and 
+            stable_diffusion.utils.model.initialize_unet to initialize them.
+        for that.
+        If you don't initialize them externally, the script will initialize them internally.
+        Args:
+            autoencoder (Autoencoder, optional): the externally initialized autoencoder. Defaults to None.
+            clip_text_embedder (CLIPTextEmbedder, optional): the externally initialized autoencoder. Defaults to None.
+            unet_model (UNetModel, optional): the externally initialized autoencoder. Defaults to None.
+        """
+        self.model = torch.load(model_path).to(self.device)
+        self.model.eval()
+        self.initialize_sampler()    
 
     def initialize_script(self, autoencoder = None, clip_text_embedder = None, unet_model = None):
         """You can initialize the autoencoder, CLIP and UNet models externally and pass them to the script.
