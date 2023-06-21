@@ -9,6 +9,7 @@ summary: >
 """
 
 import random
+import os
 from pathlib import Path
 from typing import Union
 
@@ -133,4 +134,12 @@ def load_model(path: Union[str, Path] = '', device = 'cuda:0', autoencoder = Non
     return model
 
 if __name__ == '__main__':
-    load_model(path='./input/model/sd-v1-4.ckpt', device='cuda:0')
+    
+    if int(os.sys.argv[1]) == 1:
+        initialize_clip_embedder()
+    elif int(os.sys.argv[1]) == 2:
+        initialize_autoencoder()
+    elif int(os.sys.argv[1]) == 3:
+        initialize_unet()
+    else:
+        load_model(path='./input/model/sd-v1-4.ckpt', device='cuda:0')

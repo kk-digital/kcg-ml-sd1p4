@@ -16,6 +16,8 @@ from PIL import Image
 import torchvision
 import numpy as np
 
+CHECKPOINT_PATH = os.path.abspath('./input/model/v1-5-pruned-emaonly.ckpt')
+
 def save_images(images: torch.Tensor, dest_path: str, img_format: str = 'jpeg'):
     """
     ### Save a images
@@ -77,6 +79,7 @@ noise_seeds = [
 #
 
 NUM_SEEDS = len(noise_seeds)
+NUM_DISTRIBUTIONS = 3
 
 if len(sys.argv) > 1:
     dist_name_index = int(sys.argv[1])
@@ -93,7 +96,7 @@ if len(sys.argv) > 1:
     dist_names = list(DISTRIBUTIONS.keys())
     DIST_NAME = dist_names[dist_name_index]
     #VAR_RANGE = torch.linspace(0.6, 0.8, 10) #args here should be given as command line arguments
-    VAR_RANGE = torch.linspace(0.49, 0.54, 8) #args here should be given as command line arguments
+    VAR_RANGE = torch.linspace(0.49, 0.54, NUM_DISTRIBUTIONS) #args here should be given as command line arguments
     DISTRIBUTIONS = {f'{DIST_NAME}_{var.item():.4f}': dict(loc=0.0, scale=var.item()) for var in VAR_RANGE}
 else:
     DIST_NAME = 'Normal'
@@ -106,7 +109,8 @@ DDIM_ETA = 0.0 #should be cli argument
 OUTPUT_DIR = os.path.abspath('./output/noise-tests/')
 
 CLEAR_OUTPUT_DIR = True
-NUM_ARTISTS = 1
+NUM_ARTISTS = 3
+
 def get_all_torch_distributions() -> tuple[list[str], list[type]]:
     
     torch_distributions_names = torch.distributions.__all__
@@ -153,13 +157,19 @@ def generate_prompt(prompt_prefix, artist):
     return prompt
 
 def init_txt2img(
-        checkpoint_path: str=os.path.abspath('./input/model/sd-v1-4.ckpt'),
+        checkpoint_path: str=os.path.abspath(CHECKPOINT_PATH),
         sampler_name: str='ddim',
         n_steps: int=20,
         ddim_eta: float=0.0,                                   
         ):
+    
+    
+    clip_text_embedder_model = torch.load('./input/model/clip_embedder.pt')
+    clip_text_embedder_model.eval()
+    
     txt2img = Txt2Img(checkpoint_path=checkpoint_path, sampler_name=sampler_name, n_steps=n_steps, ddim_eta=ddim_eta)
-    txt2img.initialize_script()
+    txt2img.initialize_script(clip_text_embedder=clip_text_embedder_model)
+    # txt2img.initialize_script()
     return txt2img
 
 def get_all_prompts(prompt_prefix, artist_file, num_artists = None):
@@ -285,7 +295,7 @@ def generate_images_from_dist_dict(
     
     grid = torch.cat(img_grids, dim=0)
     print("grid shape: ", grid.shape)
-    save_image_grid(grid, dest_path, nrow=NUM_SEEDS, normalize=True, scale_each=True)
+    save_image_grid(grid, dest_path, nrow=NUM_ARTISTS, normalize=True, scale_each=True)
 
 def generate_images_from_temp_range(
         distributions: dict[str, dict[str, float]], 
@@ -348,8 +358,8 @@ def generate_images_from_temp_range(
 
 def main():
     txt2img = init_txt2img(ddim_eta=DDIM_ETA)
-    generate_images_from_temp_range(DISTRIBUTIONS, txt2img, num_artists=NUM_ARTISTS, batch_size=1, temperature_range=TEMP_RANGE)
-    # generate_images_from_dist_dict(DISTRIBUTIONS, txt2img, num_artists=NUM_ARTISTS, batch_size=1, temperature=TEMPERATURE)
+    # generate_images_from_temp_range(DISTRIBUTIONS, txt2img, num_artists=NUM_ARTISTS, batch_size=1, temperature_range=TEMP_RANGE)
+    generate_images_from_dist_dict(DISTRIBUTIONS, txt2img, num_artists=NUM_ARTISTS, batch_size=1, temperature=TEMPERATURE)
 
 if __name__ == "__main__":
     main()

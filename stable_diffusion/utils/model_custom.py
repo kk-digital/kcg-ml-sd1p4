@@ -69,7 +69,7 @@ def initialize_clip_embedder(device = 'cuda:0', model_path = None) -> CLIPTextEm
             )
         return clip_text_embedder
     else:
-        with monit.section('Initialize CLIP Embedder'):
+        with monit.section('Load clip CLIP Embedder'):
             clip_text_embedder = torch.load(model_path)
             clip_text_embedder.eval()
         return clip_text_embedder
@@ -107,7 +107,7 @@ def load_model(path: Union[str, Path] = '', device = 'cuda:0', autoencoder = Non
         clip_text_embedder = initialize_clip_embedder(device=device, model_path=clip_text_embedder)
     elif type(clip_text_embedder) == CLIPTextEmbedder:
         clip_text_embedder = clip_text_embedder
-    
+        print('CLIP loaded from disk.')
     if unet_model is None:
         unet_model = initialize_unet(device)
 
