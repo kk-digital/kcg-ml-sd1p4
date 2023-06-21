@@ -52,7 +52,7 @@ class CLIPTextEmbedder(nn.Module):
 
 if __name__ == "__main__":
     embedder = CLIPTextEmbedder()
-    prompts = ["", "A painting of a cat", "A photo of a cat"]
+    prompts = ["", "A painting of a computer virus", "A photo of a computer virus"]
     embeddings = embedder(prompts)
-    save(embedder, "clip_embedder.pt")
-    save(embeddings, 'prompt_embeddings.pt')
+    save(embedder, "./input/model/clip_embedder.pt")
+    save(embeddings, './input/prompt_embeddings.pt')

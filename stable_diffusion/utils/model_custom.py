@@ -58,15 +58,20 @@ def initialize_autoencoder(device = 'cuda:0') -> Autoencoder:
         
         return autoencoder
 
-def initialize_clip_embedder(device = 'cuda:0') -> CLIPTextEmbedder:
+def initialize_clip_embedder(device = 'cuda:0', model_path = None) -> CLIPTextEmbedder:
 
     # Initialize the CLIP text embedder
-    
-    with monit.section('Initialize CLIP Embedder'):
-        clip_text_embedder = CLIPTextEmbedder(
-            device=device,
-        )
-    return clip_text_embedder
+    if model_path is None:
+        with monit.section('Initialize CLIP Embedder'):
+            clip_text_embedder = CLIPTextEmbedder(
+                device=device,
+            )
+        return clip_text_embedder
+    else:
+        with monit.section('Initialize CLIP Embedder'):
+            clip_text_embedder = torch.load(model_path)
+            clip_text_embedder.eval()
+        return clip_text_embedder
 
 def initialize_unet(device = 'cuda:0') -> UNetModel:
     
@@ -93,9 +98,14 @@ def load_model(path: Union[str, Path] = '', device = 'cuda:0', autoencoder = Non
         autoencoder = initialize_autoencoder(device)
     
     if clip_text_embedder is None:
-        clip_text_embedder = initialize_clip_embedder(device)
-        # print('No clip embedder passed. You must provide the embedded prompts.')
+        clip_text_embedder = initialize_clip_embedder(device=device, model_path=clip_text_embedder)
+        # clip_text_embedder = initialize_clip_embedder(device)
+        print('No clip embedder passed. You must provide the embedded prompts.')
         # pass
+    elif type(clip_text_embedder) == str:
+        clip_text_embedder = initialize_clip_embedder(device=device, model_path=clip_text_embedder)
+    elif type(clip_text_embedder) == CLIPTextEmbedder:
+        clip_text_embedder = clip_text_embedder
     
     if unet_model is None:
         unet_model = initialize_unet(device)
