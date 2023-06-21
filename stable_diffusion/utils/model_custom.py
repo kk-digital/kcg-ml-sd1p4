@@ -34,6 +34,7 @@ def set_seed(seed: int):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
+
 def initialize_autoencoder(device = 'cuda:0') -> Autoencoder:
 
     # Initialize the autoencoder
