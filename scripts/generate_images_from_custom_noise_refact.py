@@ -2,7 +2,7 @@ import os
 import sys
 import torch
 import shutil
-
+import time
 from typing import Callable
 from tqdm import tqdm
 
@@ -15,6 +15,8 @@ from PIL import Image
 
 import torchvision
 import numpy as np
+from constants import CHECKPOINT_PATH
+# CHECKPOINT_PATH = os.path.abspath('./input/model/v1-5-pruned-emaonly.ckpt')
 
 def save_images(images: torch.Tensor, dest_path: str, img_format: str = 'jpeg'):
     """
@@ -61,27 +63,36 @@ def save_image_grid(
     im = Image.fromarray(ndarr)
     im.save(fp, format=format)
 
-noise_seeds = [
-    # 2982,
+NOISE_SEEDS = [
+    2982,
     4801,
-    # 1995,
-    # 3598,
-    # 987,
-    # 3688,
-    # 8872,
-    # 762
+    1995,
+    3598,
+    987,
+    3688,
+    8872,
+    762
 ]
-# noise_seeds = [
+# NOISE_SEEDS = [
 #     2982,
 # ]
 #
 
-NUM_SEEDS = len(noise_seeds)
+NUM_SEEDS = 3
+NOISE_SEEDS = NOISE_SEEDS[:NUM_SEEDS]
+NUM_DISTRIBUTIONS = 3
+NUM_ARTISTS = 1
+TEMPERATURE = 1.0 #should be cli argument
+TEMP_RANGE = torch.linspace(1, 4, 8)
+DDIM_ETA = 0.0 #should be cli argument
+OUTPUT_DIR = os.path.abspath('./output/noise-tests/')
+FROM_DISK = os.sys.argv[2] == 'True' if len(sys.argv) > 2 else False
 
+CLEAR_OUTPUT_DIR = True
 if len(sys.argv) > 1:
     dist_name_index = int(sys.argv[1])
 
-    DISTRIBUTIONS = {
+    _DISTRIBUTIONS = {
         'Normal': dict(loc=0.0, scale=1.0),
         'Cauchy': dict(loc=0.0, scale=1.0), 
         'Gumbel': dict(loc=1.0, scale=2.0), 
@@ -90,23 +101,19 @@ if len(sys.argv) > 1:
         # 'Uniform': dict(low=0.0, high=1.0)
     }
     
-    dist_names = list(DISTRIBUTIONS.keys())
+    dist_names = list(_DISTRIBUTIONS.keys())
     DIST_NAME = dist_names[dist_name_index]
     #VAR_RANGE = torch.linspace(0.6, 0.8, 10) #args here should be given as command line arguments
-    VAR_RANGE = torch.linspace(0.49, 0.54, 8) #args here should be given as command line arguments
+    VAR_RANGE = torch.linspace(0.49, 0.54, NUM_DISTRIBUTIONS) #args here should be given as command line arguments
     DISTRIBUTIONS = {f'{DIST_NAME}_{var.item():.4f}': dict(loc=0.0, scale=var.item()) for var in VAR_RANGE}
 else:
     DIST_NAME = 'Normal'
     VAR_RANGE = torch.linspace(0.90, 1.1, 5)
     DISTRIBUTIONS = {f'{DIST_NAME}_{var.item():.4f}': dict(loc=0, scale=var.item()) for var in VAR_RANGE}
 
-TEMPERATURE = 1.0 #should be cli argument
-TEMP_RANGE = torch.linspace(1, 4, 8)
-DDIM_ETA = 0.0 #should be cli argument
-OUTPUT_DIR = os.path.abspath('./output/noise-tests/')
 
-CLEAR_OUTPUT_DIR = True
-NUM_ARTISTS = 1
+
+
 def get_all_torch_distributions() -> tuple[list[str], list[type]]:
     
     torch_distributions_names = torch.distributions.__all__
@@ -153,13 +160,34 @@ def generate_prompt(prompt_prefix, artist):
     return prompt
 
 def init_txt2img(
-        checkpoint_path: str=os.path.abspath('./input/model/sd-v1-4.ckpt'),
+        checkpoint_path: str=os.path.abspath(CHECKPOINT_PATH),
         sampler_name: str='ddim',
         n_steps: int=20,
-        ddim_eta: float=0.0,                                   
+        ddim_eta: float=0.0,
+        autoencoder = None,
+        unet_model = None,
+        clip_text_embedder = None                                   
         ):
+    
+    # compute loading time
+    if FROM_DISK:
+        t0_clip = time.time()
+        autoencoder = torch.load('./input/model/autoencoder.ckpt')
+        autoencoder.eval()
+        clip_text_embedder = torch.load('./input/model/clip_embedder.ckpt')
+        clip_text_embedder.eval()
+        unet_model = torch.load('./input/model/unet.ckpt')
+        unet_model.eval()
+        t1_clip = time.time()
+        print("Time to load load the whole thing from disk: %.2f seconds" % (t1_clip-t0_clip))
+
+    t0_clip = time.time()
     txt2img = Txt2Img(checkpoint_path=checkpoint_path, sampler_name=sampler_name, n_steps=n_steps, ddim_eta=ddim_eta)
+    # txt2img.initialize_script(autoencoder= autoencoder, unet_model = unet_model, clip_text_embedder=clip_text_embedder)
     txt2img.initialize_script()
+    t1_clip = time.time()
+    print("Time to run the init script: %.2f seconds" % (t1_clip-t0_clip))
+    # txt2img.initialize_script()
     return txt2img
 
 def get_all_prompts(prompt_prefix, artist_file, num_artists = None):
@@ -167,7 +195,7 @@ def get_all_prompts(prompt_prefix, artist_file, num_artists = None):
     with open(artist_file, 'r') as f:
         artists = f.readlines()
 
-    num_seeds = len(noise_seeds)
+    num_seeds = len(NOISE_SEEDS)
     if num_artists is not None:
         artists = artists[:num_artists]
     
@@ -217,7 +245,7 @@ def generate_images_from_dist(
             img_counter = 0
             for prompt_index, prompt in enumerate(prompts):
                 prompt_batch = []
-                for seed_index, noise_seed in enumerate(noise_seeds):
+                for seed_index, noise_seed in enumerate(NOISE_SEEDS):
                     p_bar_description = f"Generating image {img_counter+1} of {total_images}. Distribution: {DIST_NAME}{params}"
                     pbar.set_description(p_bar_description)
 
@@ -280,8 +308,11 @@ def generate_images_from_dist_dict(
     for distribution_index, (distribution_name, params) in enumerate(distributions.items()):
        grid = generate_images_from_dist(txt2img, (distribution_name, params), prompt_prefix=prompt_prefix, artist_file=artist_file, num_artists=num_artists, batch_size=batch_size, temperature=temperature)
        img_grids.append(grid)
-    
-    dest_path = os.path.join(output_dir, f"grid_all.jpg")
+       
+    if FROM_DISK:
+        dest_path = os.path.join(output_dir, f"grid_all_{DIST_NAME}{VAR_RANGE[0].item():.2f}_{VAR_RANGE[-1].item():.2f}_from_disk.jpg")
+    else:
+        dest_path = os.path.join(output_dir, f"grid_all_{DIST_NAME}{VAR_RANGE[0].item():.2f}_{VAR_RANGE[-1].item():.2f}.jpg")
     
     grid = torch.cat(img_grids, dim=0)
     print("grid shape: ", grid.shape)
@@ -309,7 +340,7 @@ def generate_images_from_temp_range(
     num_distributions = len(distributions)
     prompts = list(prompts)
     print("num_distributions:", num_distributions)
-    noise_seed = noise_seeds[0]
+    noise_seed = NOISE_SEEDS[0]
     prompt = prompts[0]
 
     # Generate the images
@@ -348,8 +379,8 @@ def generate_images_from_temp_range(
 
 def main():
     txt2img = init_txt2img(ddim_eta=DDIM_ETA)
-    generate_images_from_temp_range(DISTRIBUTIONS, txt2img, num_artists=NUM_ARTISTS, batch_size=1, temperature_range=TEMP_RANGE)
-    # generate_images_from_dist_dict(DISTRIBUTIONS, txt2img, num_artists=NUM_ARTISTS, batch_size=1, temperature=TEMPERATURE)
+    # generate_images_from_temp_range(DISTRIBUTIONS, txt2img, num_artists=NUM_ARTISTS, batch_size=1, temperature_range=TEMP_RANGE)
+    generate_images_from_dist_dict(DISTRIBUTIONS, txt2img, num_artists=NUM_ARTISTS, batch_size=1, temperature=TEMPERATURE)
 
 if __name__ == "__main__":
     main()
