@@ -16,7 +16,9 @@ from PIL import Image
 import torchvision
 import numpy as np
 from constants import CHECKPOINT_PATH
+
 # CHECKPOINT_PATH = os.path.abspath('./input/model/v1-5-pruned-emaonly.ckpt')
+CHECKPOINT_PATH = os.path.abspath('./input/model/v1-5-pruned-emaonly.ckpt')
 
 def save_images(images: torch.Tensor, dest_path: str, img_format: str = 'jpeg'):
     """
@@ -183,11 +185,12 @@ def init_txt2img(
 
     t0_clip = time.time()
     txt2img = Txt2Img(checkpoint_path=checkpoint_path, sampler_name=sampler_name, n_steps=n_steps, ddim_eta=ddim_eta)
-    # txt2img.initialize_script(autoencoder= autoencoder, unet_model = unet_model, clip_text_embedder=clip_text_embedder)
-    txt2img.initialize_script()
     t1_clip = time.time()
     print("Time to run the init script: %.2f seconds" % (t1_clip-t0_clip))
+    txt2img.initialize_script(autoencoder= autoencoder, unet_model = unet_model, clip_text_embedder=clip_text_embedder)
     # txt2img.initialize_script()
+    t1_clip = time.time()
+    print("Time to run the init script: %.2f seconds" % (t1_clip-t0_clip))
     return txt2img
 
 def get_all_prompts(prompt_prefix, artist_file, num_artists = None):
