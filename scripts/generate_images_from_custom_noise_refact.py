@@ -18,7 +18,7 @@ import numpy as np
 from constants import CHECKPOINT_PATH
 
 # CHECKPOINT_PATH = os.path.abspath('./input/model/v1-5-pruned-emaonly.ckpt')
-CHECKPOINT_PATH = os.path.abspath('./input/model/v1-5-pruned-emaonly.ckpt')
+
 
 def save_images(images: torch.Tensor, dest_path: str, img_format: str = 'jpeg'):
     """
@@ -171,6 +171,7 @@ def init_txt2img(
         clip_text_embedder = None                                   
         ):
     
+    txt2img = Txt2Img(checkpoint_path=checkpoint_path, sampler_name=sampler_name, n_steps=n_steps, ddim_eta=ddim_eta)
     # compute loading time
     if FROM_DISK:
         t0_clip = time.time()
@@ -183,10 +184,8 @@ def init_txt2img(
         t1_clip = time.time()
         print("Time to load load the whole thing from disk: %.2f seconds" % (t1_clip-t0_clip))
 
+    
     t0_clip = time.time()
-    txt2img = Txt2Img(checkpoint_path=checkpoint_path, sampler_name=sampler_name, n_steps=n_steps, ddim_eta=ddim_eta)
-    t1_clip = time.time()
-    print("Time to run the init script: %.2f seconds" % (t1_clip-t0_clip))
     txt2img.initialize_script(autoencoder= autoencoder, unet_model = unet_model, clip_text_embedder=clip_text_embedder)
     # txt2img.initialize_script()
     t1_clip = time.time()
@@ -318,6 +317,7 @@ def generate_images_from_dist_dict(
         dest_path = os.path.join(output_dir, f"grid_all_{DIST_NAME}{VAR_RANGE[0].item():.2f}_{VAR_RANGE[-1].item():.2f}.jpg")
     
     grid = torch.cat(img_grids, dim=0)
+    torch.save(grid, dest_path.replace('.jpg', '.pt'))
     print("grid shape: ", grid.shape)
     save_image_grid(grid, dest_path, nrow=NUM_SEEDS, normalize=True, scale_each=True)
 
