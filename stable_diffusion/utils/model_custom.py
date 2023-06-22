@@ -97,11 +97,14 @@ def load_model(path: Union[str, Path] = '', device = 'cuda:0', autoencoder = Non
 
     if autoencoder is None:
         autoencoder = initialize_autoencoder(device)
+    elif type(autoencoder) == Autoencoder:
+        autoencoder = autoencoder
+        print('Autoencoder loaded from disk.')        
     
     if clip_text_embedder is None:
         clip_text_embedder = initialize_clip_embedder(device=device, model_path=clip_text_embedder)
         # clip_text_embedder = initialize_clip_embedder(device)
-        print('No clip embedder passed. You must provide the embedded prompts.')
+        # print('No clip embedder passed. You must provide the embedded prompts.')
         # pass
     elif type(clip_text_embedder) == str:
         clip_text_embedder = initialize_clip_embedder(device=device, model_path=clip_text_embedder)
@@ -110,6 +113,9 @@ def load_model(path: Union[str, Path] = '', device = 'cuda:0', autoencoder = Non
         print('CLIP loaded from disk.')
     if unet_model is None:
         unet_model = initialize_unet(device)
+    elif type(unet_model) == UNetModel:
+        unet_model = unet_model
+        print('UNet loaded from disk.')          
 
     # Initialize the Latent Diffusion model
     with monit.section('Initialize Latent Diffusion model'):

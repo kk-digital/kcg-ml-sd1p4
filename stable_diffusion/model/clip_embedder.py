@@ -50,9 +50,9 @@ class CLIPTextEmbedder(nn.Module):
         # Get CLIP embeddings
         return self.transformer(input_ids=tokens).last_hidden_state
 
-if __name__ == "__main__":
-    embedder = CLIPTextEmbedder()
-    prompts = ["", "A painting of a computer virus", "A photo of a computer virus"]
-    embeddings = embedder(prompts)
-    save(embedder, "./input/model/clip_embedder.pt")
-    save(embeddings, './input/prompt_embeddings.pt')
+# if __name__ == "__main__":
+#     embedder = CLIPTextEmbedder()
+#     prompts = ["", "A painting of a computer virus", "A photo of a computer virus"]
+#     embeddings = embedder(prompts)
+#     save(embedder, "./input/model/clip_embedder.pt")
+#     save(embeddings, './input/prompt_embeddings.pt')

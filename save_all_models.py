@@ -48,7 +48,7 @@ def initialize_autoencoder(device = 'cuda:0', model_path = None) -> Autoencoder:
                                     decoder=decoder,
                                     z_channels=4)
             
-            torch.save(autoencoder, './input/model/autoencoder.pt')
+            torch.save(autoencoder, './input/model/autoencoder.ckpt')
             
             return autoencoder
     else:
@@ -65,7 +65,7 @@ def initialize_clip_embedder(device = 'cuda:0', model_path = None) -> CLIPTextEm
             clip_text_embedder = CLIPTextEmbedder(
                 device=device,
             )
-            torch.save(clip_text_embedder, './input/model/clip_embedder.pt')
+            torch.save(clip_text_embedder, './input/model/clip_embedder.ckpt')
             return clip_text_embedder
     else:
         with monit.section('Initialize CLIP Embedder'):
@@ -87,7 +87,7 @@ def initialize_unet(device = 'cuda:0', model_path = None) -> UNetModel:
                                 n_heads=8,
                                 tf_layers=1,
                                 d_cond=768)
-            torch.save(unet_model, './input/model/unet.pt')
+            torch.save(unet_model, './input/model/unet.ckpt')
             return unet_model
     else:
         with monit.section('Initialize U-Net'):
@@ -130,7 +130,7 @@ def load_model(path: Union[str, Path] = '', device = 'cuda:0', autoencoder = Non
 
     #
     model.eval()
-    torch.save(model, './input/model/model.pt')
+    torch.save(model, './input/model/model.ckpt')
     return model
 
 if __name__ == '__main__':
@@ -141,5 +141,9 @@ if __name__ == '__main__':
         initialize_autoencoder()
     elif int(os.sys.argv[1]) == 3:
         initialize_unet()
+    elif int(os.sys.argv[1]) == 0:
+        initialize_clip_embedder()
+        initialize_autoencoder()
+        initialize_unet()
     else:
-        load_model(path='./input/model/sd-v1-4.ckpt', device='cuda:0')
+        load_model(path='./input/model/v1-5-pruned-emaonly.ckpt', device='cuda:0')
