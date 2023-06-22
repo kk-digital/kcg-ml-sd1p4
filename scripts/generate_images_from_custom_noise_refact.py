@@ -307,8 +307,11 @@ def generate_images_from_dist_dict(
     for distribution_index, (distribution_name, params) in enumerate(distributions.items()):
        grid = generate_images_from_dist(txt2img, (distribution_name, params), prompt_prefix=prompt_prefix, artist_file=artist_file, num_artists=num_artists, batch_size=batch_size, temperature=temperature)
        img_grids.append(grid)
-    
-    dest_path = os.path.join(output_dir, f"grid_all_{DIST_NAME}{VAR_RANGE[0].item():.2f}_{VAR_RANGE[-1].item():.2f}.jpg")
+       
+    if FROM_DISK:
+        dest_path = os.path.join(output_dir, f"grid_all_{DIST_NAME}{VAR_RANGE[0].item():.2f}_{VAR_RANGE[-1].item():.2f}_from_disk.jpg")
+    else:
+        dest_path = os.path.join(output_dir, f"grid_all_{DIST_NAME}{VAR_RANGE[0].item():.2f}_{VAR_RANGE[-1].item():.2f}.jpg")
     
     grid = torch.cat(img_grids, dim=0)
     print("grid shape: ", grid.shape)
