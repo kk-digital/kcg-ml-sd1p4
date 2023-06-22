@@ -16,6 +16,7 @@ from PIL import Image
 import torchvision
 import numpy as np
 from constants import CHECKPOINT_PATH
+import safetensors.torch as st
 
 # CHECKPOINT_PATH = os.path.abspath('./input/model/v1-5-pruned-emaonly.ckpt')
 
@@ -318,6 +319,7 @@ def generate_images_from_dist_dict(
     
     grid = torch.cat(img_grids, dim=0)
     torch.save(grid, dest_path.replace('.jpg', '.pt'))
+    st.save_file({"img_grid": grid}, dest_path.replace('.jpg', '.safetensors'))
     print("grid shape: ", grid.shape)
     save_image_grid(grid, dest_path, nrow=NUM_SEEDS, normalize=True, scale_each=True)
 
