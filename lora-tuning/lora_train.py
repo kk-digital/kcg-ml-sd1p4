@@ -242,7 +242,7 @@ def set_defaults(args):
     if args.output_dir is None:
         args.output_dir = os.path.abspath(os.path.join("./output/LoRa/", args.project_name, "output"))
 
-    args.dataset = check_dataset()
+    args.dataset = check_dataset(args.dataset)
     if args.num_repeats is None:
         total_image_files = len([file for file in os.listdir(args.dataset) if file.endswith((".png", ".jpg", ".jpeg"))])
         args.num_repeats = round(300/ total_files)
