@@ -207,7 +207,7 @@ def parse_arguments():
     parser.add_argument("--network_dim", type=int, default=512, help="Dimension of the network.")
     parser.add_argument("--network_alpha", type=int, help="Alpha value for the network.")
     parser.add_argument("--batch_size", type=int, default=3, help="Number of images to use per epoch.")
-    parser.add_argument("--lowram", type=bool, default=false, help="Supply this argument if running on a system with a low amount of RAM (<20GB)")
+    parser.add_argument("--lowram", type=bool, default=False, help="Supply this argument if running on a system with a low amount of RAM (<20GB)")
     parser.add_argument("--caption_extension", type=str, default=None, help="Do not specify if there are no captions for the image, if there are, specify the extension of the captions (eg. txt) here.")
     parser.add_argument("--resolution", type=int, default=512, help="Resolution of the images. Must be square aspect ratio (1:1).")
     parser.add_argument("--project_name", type=str, default="Test", help="Put the project name here. Will dictate the filenames of the LoRa models produced, amongst other things.")
