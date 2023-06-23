@@ -24,15 +24,14 @@ class Txt2ImgLoRa:
         self.pipe = None
 
     def set_scheduler(self):
-        match self.sampler:
-            case "euler":
-                self.pipe.scheduler = EulerDiscreteScheduler.from_config(self.pipe.scheduler.config)
-            case "dpm":
-                self.pipe.scheduler = DPMSolverMultistepScheduler.from_config(self.pipe.scheduler.config)
-            case "lms":
-                self.pipe.scheduler = LMSDiscreteScheduler.from_config(self.pipe.scheduler.config)
-            case "ddim":
-                self.pipe.scheduler = DDIMScheduler.from_config(self.pipe.scheduler.config)
+        if self.sampler == "euler":
+            self.pipe.scheduler = EulerDiscreteScheduler.from_config(self.pipe.scheduler.config)
+        elif self.sampler == "dpm":
+            self.pipe.scheduler = DPMSolverMultistepScheduler.from_config(self.pipe.scheduler.config)
+        elif self.sampler == "lms":
+            self.pipe.scheduler = LMSDiscreteScheduler.from_config(self.pipe.scheduler.config)
+        elif self.sampler == "ddim":
+            self.pipe.scheduler = DDIMScheduler.from_config(self.pipe.scheduler.config)
 
     def initialize_pipeline(self):
         torch_dtype = torch.float32 if self.force_cpu else torch.float16
