@@ -28,7 +28,7 @@ def check_dataset(dataset_dir):
 
     raise ValueError("Invalid dataset path.")
 
-def generate_config(config_file, dataset_config_file, model_file, activation_tags, max_train_epochs, save_every_n_epochs, unet_lr, text_encoder_lr,
+def generate_config(config_file, dataset_config_file, model_file, activation_tags, max_train_epochs, save_every_n_epochs, unet_lr, text_encoder_lr, lowram,
                     network_dim, network_alpha, batch_size, caption_extension, config_dir, log_dir, repo_dir, output_dir, accelerate_config_file,
                     continue_from_lora, resolution,
                     num_repeats, dataset, project_name):
