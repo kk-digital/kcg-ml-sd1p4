@@ -136,7 +136,6 @@ def main(args):
         os.makedirs(dir)
 
     # Check dataset and extract if necessary
-    args.dataset = check_dataset(args.dataset)
     print(f"Dataset directory: {args.dataset}")
 
     # Patch kohya for minor stuff
@@ -243,11 +242,11 @@ def set_defaults(args):
     if args.output_dir is None:
         args.output_dir = os.path.abspath(os.path.join("./output/LoRa/", args.project_name, "output"))
 
+    args.dataset = check_dataset()
     if args.num_repeats is None:
         total_image_files = len([file for file in os.listdir(args.dataset) if file.endswith((".png", ".jpg", ".jpeg"))])
         args.num_repeats = round(300/ total_files)
         print("Num_repeats not specified, calculating an automatic "+args.num_repeats+" repeats for best results.")
-    # Make directories if they don't exist
 
 if __name__ == '__main__':
     global COLAB
