@@ -5,74 +5,13 @@ from diffusers import StableDiffusionPipeline
 from safetensors.torch import load_file
 from collections import defaultdict
 from diffusers.loaders import LoraLoaderMixin
-
-def load_lora_weights(pipeline, checkpoint_path):
-    # load base model
-    pipeline.to("cuda")
-    LORA_PREFIX_UNET = "lora_unet"
-    LORA_PREFIX_TEXT_ENCODER = "lora_te"
-    alpha = 0.75
-    # load LoRA weight from .safetensors
-    state_dict = load_file(checkpoint_path, device="cuda")
-    visited = []
-
-    # directly update weight in diffusers model
-    for key in state_dict:
-        # it is suggested to print out the key, it usually will be something like below
-        # "lora_te_text_model_encoder_layers_0_self_attn_k_proj.lora_down.weight"
-
-        # as we have set the alpha beforehand, so just skip
-        if ".alpha" in key or key in visited:
-            continue
-
-        if "text" in key:
-            layer_infos = key.split(".")[0].split(LORA_PREFIX_TEXT_ENCODER + "_")[-1].split("_")
-            curr_layer = pipeline.text_encoder
-        else:
-            layer_infos = key.split(".")[0].split(LORA_PREFIX_UNET + "_")[-1].split("_")
-            curr_layer = pipeline.unet
-
-        # find the target layer
-        temp_name = layer_infos.pop(0)
-        while len(layer_infos) > -1:
-            try:
-                curr_layer = curr_layer.__getattr__(temp_name)
-                if len(layer_infos) > 0:
-                    temp_name = layer_infos.pop(0)
-                elif len(layer_infos) == 0:
-                    break
-            except Exception:
-                if len(temp_name) > 0:
-                    temp_name += "_" + layer_infos.pop(0)
-                else:
-                    temp_name = layer_infos.pop(0)
-
-        pair_keys = []
-        if "lora_down" in key:
-            pair_keys.append(key.replace("lora_down", "lora_up"))
-            pair_keys.append(key)
-        else:
-            pair_keys.append(key)
-            pair_keys.append(key.replace("lora_up", "lora_down"))
-
-        # update weight
-        if len(state_dict[pair_keys[0]].shape) == 4:
-            weight_up = state_dict[pair_keys[0]].squeeze(3).squeeze(2).to(torch.float32)
-            weight_down = state_dict[pair_keys[1]].squeeze(3).squeeze(2).to(torch.float32)
-            curr_layer.weight.data += alpha * torch.mm(weight_up, weight_down).unsqueeze(2).unsqueeze(3)
-        else:
-            weight_up = state_dict[pair_keys[0]].to(torch.float32)
-            weight_down = state_dict[pair_keys[1]].to(torch.float32)
-            curr_layer.weight.data += alpha * torch.mm(weight_up, weight_down)
-
-        # update visited list
-        for item in pair_keys:
-            visited.append(item)
-
-    return pipeline
+from diffusers import DPMSolverMultistepScheduler
+from diffusers import DDIMScheduler
+from diffusers import EulerAncestralDiscreteScheduler
+from diffusers import LMSDiscreteScheduler
 
 class Txt2ImgLoRa:
-    def __init__(self, prompt, output, checkpoint_path, lora_path, steps, scale, force_cpu):
+    def __init__(self, prompt, output, checkpoint_path, lora_path, steps, scale, force_cpu, sampler):
         self.prompt = prompt
         self.output = output
         self.checkpoint_path = os.path.abspath(checkpoint_path)
@@ -80,21 +19,36 @@ class Txt2ImgLoRa:
         self.steps = steps
         self.scale = scale
         self.force_cpu = force_cpu
+        self.sampler = sampler
 
         self.pipe = None
+
+    def set_scheduler(self):
+        match self.sampler:
+            case "euler":
+                self.pipe.scheduler = EulerDiscreteScheduler.from_config(self.pipe.scheduler.config)
+            case "dpm":
+                self.pipe.scheduler = DPMSolverMultistepScheduler.from_config(self.pipe.scheduler.config)
+            case "lms":
+                self.pipe.scheduler = LMSDiscreteScheduler.from_config(self.pipe.scheduler.config)
+            case "ddim":
+                self.pipe.scheduler = DDIMScheduler.from_config(self.pipe.scheduler.config)
 
     def initialize_pipeline(self):
         torch_dtype = torch.float32 if self.force_cpu else torch.float16
         self.pipe = StableDiffusionPipeline.from_ckpt(self.checkpoint_path, torch_dtype=torch_dtype,
                                                       safety_checker = None, requires_safety_checker = False)
-        self.pipe = load_lora_weights(self.pipe, self.lora_path)
-        self.pipe.safety_checker = None
-
+        lora_path = os.path.abspath(self.lora_path)
         if not self.force_cpu:
             self.pipe.to("cuda")
             cuda = "cuda"
         else:
             cuda = "cpu"
+
+        self.pipe.load_lora_weights(lora_path, lora_weight=0.6)
+        #self.pipe = load_lora_weights(self.pipe, self.lora_path)
+        self.pipe.safety_checker = None
+        self.set_scheduler()
 
     def generate_image(self):
         image = self.pipe(self.prompt, num_inference_steps=self.steps,
@@ -114,6 +68,7 @@ if __name__ == "__main__":
     parser.add_argument("--steps", type=int, default=25, help="Number of inference steps. Default: 30")
     parser.add_argument("--scale", type=float, default=7.5, help="Guidance scale. Default: 7.5")
     parser.add_argument("--force_cpu", action="store_true", help="Force CPU usage instead of GPU.")
+    parser.add_argument("--sampler", type=str, choices = ['euler', 'dpm', 'lms', 'ddim'], default="dpm", help="Sampler to use when generating the image")
 
     args = parser.parse_args()
 
@@ -124,6 +79,7 @@ if __name__ == "__main__":
         args.lora_path,
         args.steps,
         args.scale,
-        args.force_cpu
+        args.force_cpu,
+        args.sampler
     )
     txt2img.run()
