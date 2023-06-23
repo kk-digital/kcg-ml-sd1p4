@@ -67,7 +67,7 @@ def generate_config(config_file, dataset_config_file, model_file, activation_tag
             "seed": 42,
             "max_token_length": 225,
             "xformers": True,
-            "lowram": COLAB,
+            "lowram": lowram,
             "max_data_loader_n_workers": 8,
             "persistent_data_loader_workers": True,
             "save_precision": "fp16",
@@ -139,7 +139,7 @@ def main(args):
     print(f"Dataset directory: {args.dataset}")
 
     # Patch kohya for minor stuff
-    if COLAB:
+    if args.lowram:
         model_util_file = os.path.join(args.repo_dir, "library", "model_util.py")
         with open(model_util_file, "r+") as f:
             content = f.read()
@@ -207,6 +207,7 @@ def parse_arguments():
     parser.add_argument("--network_dim", type=int, default=512, help="Dimension of the network.")
     parser.add_argument("--network_alpha", type=int, help="Alpha value for the network.")
     parser.add_argument("--batch_size", type=int, default=3, help="Number of images to use per epoch.")
+    parser.add_argument("--lowram", type=bool, default=false, help="Supply this argument if running on a system with a low amount of RAM (<20GB)")
     parser.add_argument("--caption_extension", type=str, default=None, help="Do not specify if there are no captions for the image, if there are, specify the extension of the captions (eg. txt) here.")
     parser.add_argument("--resolution", type=int, default=512, help="Resolution of the images. Must be square aspect ratio (1:1).")
     parser.add_argument("--project_name", type=str, default="Test", help="Put the project name here. Will dictate the filenames of the LoRa models produced, amongst other things.")
@@ -249,7 +250,5 @@ def set_defaults(args):
         print("Num_repeats not specified, calculating an automatic " + str(args.num_repeats) + " repeats for best results.")
 
 if __name__ == '__main__':
-    global COLAB
-    COLAB = 'google.colab' in sys.modules
     args = parse_arguments()
     main(args)
