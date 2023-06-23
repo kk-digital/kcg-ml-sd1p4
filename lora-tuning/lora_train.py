@@ -245,8 +245,8 @@ def set_defaults(args):
     args.dataset = check_dataset(args.dataset)
     if args.num_repeats is None:
         total_image_files = len([file for file in os.listdir(args.dataset) if file.endswith((".png", ".jpg", ".jpeg"))])
-        args.num_repeats = round(300/ total_files)
-        print("Num_repeats not specified, calculating an automatic "+args.num_repeats+" repeats for best results.")
+        args.num_repeats = round(300/ total_image_files)
+        print("Num_repeats not specified, calculating an automatic " + str(args.num_repeats) + " repeats for best results.")
 
 if __name__ == '__main__':
     global COLAB
