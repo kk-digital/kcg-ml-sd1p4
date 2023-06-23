@@ -194,8 +194,8 @@ def parse_arguments():
     parser.add_argument("--dataset", default="./test-images/chibi-waifu-pixelart.zip", help="Path to the dataset directory or ZIP file.")
     parser.add_argument("--repo_dir", default=None, help="Directory to clone sd-scripts repository.")
     parser.add_argument("--activation_tags", type=int, default=1, help="The number of activation tags in each txt file on the dataset.")
-    parser.add_argument("--num_repeats", default=10, help="Number of times to repeat per image.")
-    parser.add_argument("--max_train_epochs", default=10, help="How many epochs to train for.")
+    parser.add_argument("--num_repeats", type=int, default=None, help="Number of times to repeat per image.")
+    parser.add_argument("--max_train_epochs", type=int, default=10, help="How many epochs to train for.")
     parser.add_argument("--save_every_n_epochs", default=1, help="How frequently should we save the LoRa model.")
     parser.add_argument("--config_file", default=None, help="Path to the training configuration file.")
     parser.add_argument("--config_dir", default=None, help="Path to store all of the generated config files.")
@@ -243,6 +243,10 @@ def set_defaults(args):
     if args.output_dir is None:
         args.output_dir = os.path.abspath(os.path.join("./output/LoRa/", args.project_name, "output"))
 
+    if args.num_repeats is None:
+        total_image_files = len([file for file in os.listdir(args.dataset) if file.endswith((".png", ".jpg", ".jpeg"))])
+        args.num_repeats = round(300/ total_files)
+        print("Num_repeats not specified, calculating an automatic "+args.num_repeats+" repeats for best results.")
     # Make directories if they don't exist
 
 if __name__ == '__main__':
