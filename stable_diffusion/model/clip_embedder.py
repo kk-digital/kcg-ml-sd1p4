@@ -22,7 +22,7 @@ class CLIPTextEmbedder(nn.Module):
     ## CLIP Text Embedder
     """
 
-    def __init__(self, version: str = "openai/clip-vit-large-patch14", device="cuda:0", max_length: int = 77):
+    def __init__(self, version: str = "openai/clip-vit-large-patch14", device="cuda:0", max_length: int = 77, clip_skip: int = 1):
         """
         :param version: is the model version
         :param device: is the device
@@ -32,13 +32,11 @@ class CLIPTextEmbedder(nn.Module):
         # Load the tokenizer
         self.tokenizer = CLIPTokenizer.from_pretrained(version)
         # Load the CLIP transformer
-        configuration = CLIPTextConfig()
-        clip_text_model = CLIPTextModel(configuration)
-        self.transformer_config = clip_text_model.config
-        self.transformer = clip_text_model.from_pretrained(version).eval()
+        self.transformer = CLIPTextModel.from_pretrained(version).eval()
 
         self.device = device
         self.max_length = max_length
+        self.clip_skip = clip_skip
 
     def forward(self, prompts: List[str]):
         """
@@ -50,4 +48,12 @@ class CLIPTextEmbedder(nn.Module):
         # Get token ids
         tokens = batch_encoding["input_ids"].to(self.device)
         # Get CLIP embeddings
-        return self.transformer(input_ids=tokens).last_hidden_state
+        outputs = self.transformer(input_ids=tokens, output_hidden_states=self.clip_skip)
+
+        if self.clip_skip > 1:
+            z = outputs.hidden_states[-self.clip_skip]
+            z = self.transformer.text_model.final_layer_norm(z)
+        else:
+            z = outputs.last_hidden_state
+
+        return z

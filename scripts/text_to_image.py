@@ -49,6 +49,7 @@ class Txt2Img(StableDiffusionBaseScript):
                  h: int = 512, w: int = 512,
                  uncond_scale: float = 7.5,
                  low_vram: bool = False,
+                 clip_skip,
                  ):
         """
         :param seed: the seed to use when generating the images
@@ -80,6 +81,9 @@ class Txt2Img(StableDiffusionBaseScript):
         # AMP auto casting
         autocast = get_autocast()
         with autocast:
+            #set clip skip to ignore last layers of CLIP network
+            if clip_skip:
+                self.clip_skip(clip_skip)
             un_cond, cond = self.get_text_conditioning(uncond_scale, prompts, batch_size)
 
             # [Sample in the latent space](../sampler/index.html).
@@ -104,6 +108,7 @@ def main():
         .steps() \
         .scale() \
         .low_vram() \
+        .clip_skip() \
         .force_cpu() \
         .cuda_device() \
         .parse()
@@ -132,7 +137,8 @@ def main():
                 batch_size=opt.batch_size,
                 prompt=opt.prompt,
                 uncond_scale=opt.scale,
-                low_vram=opt.low_vram
+                low_vram=opt.low_vram,
+                clip_skip=opt.clip_skip,
             )
 
             save_images(images, filename)

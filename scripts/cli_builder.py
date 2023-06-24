@@ -235,6 +235,16 @@ class CLI:
 
         return self
 
+    def clip_skip(self):
+        self.parser.add_argument(
+            "--clip_skip",
+            type=int,
+            nargs="?",
+            help="clip skip usage"
+        )
+
+        return self
+
     def parse(self):
         args = self.parser.parse_args()
 
