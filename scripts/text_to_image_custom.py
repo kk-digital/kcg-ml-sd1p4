@@ -13,7 +13,7 @@ import os
 import torch
 from labml import monit
 from datetime import datetime
-from stable_diffusion_base_script import StableDiffusionBaseScript
+from stable_diffusion_base_script_custom import StableDiffusionBaseScript
 from stable_diffusion.utils.model import save_images, set_seed, get_autocast
 from stable_diffusion.model.unet_attention import CrossAttention
 from cli_builder import CLI
@@ -81,7 +81,8 @@ class Txt2Img(StableDiffusionBaseScript):
         autocast = get_autocast()
         with autocast:
             un_cond, cond = self.get_text_conditioning(uncond_scale, prompts, batch_size)
-
+            print("gettextcond shape: ", cond.shape)
+            print(un_cond.shape)
             # [Sample in the latent space](../sampler/index.html).
             # `x` will be of shape `[batch_size, c, h / f, w / f]`
             x = self.sampler.sample(cond=cond,
@@ -125,13 +126,17 @@ class Txt2Img(StableDiffusionBaseScript):
             batch_size = 1
 
         # Make a batch of prompts
-        prompts = batch_size * [embedded_prompt]
-        cond = torch.cat(prompts, dim=0)
+        # prompts = batch_size * [embedded_prompt]
+        # cond = torch.cat(prompts, dim=1)
+        cond = embedded_prompt.unsqueeze(0)
+        print("cond shape: ", cond.shape)
+        print("uncond shape: ", null_prompt.shape)
+        prompt_list = ["a painting of a virus monster playing guitar", "a painting of a computer virus "]
         # AMP auto casting
         autocast = get_autocast()
         with autocast:
-            # un_cond, cond = self.get_text_conditioning(uncond_scale, prompts, batch_size)
-            # print(cond.shape)
+            # un_cond, cond = self.get_text_conditioning(uncond_scale, prompt_list, batch_size)
+            # print("gettextcond shape: ", cond.shape)
             # print(un_cond.shape)
 
             # [Sample in the latent space](../sampler/index.html).

@@ -13,7 +13,8 @@ It uses HuggingFace Transformers CLIP model.
 
 from typing import List
 
-from torch import nn
+from torch import nn, save
+from os.path import join
 from transformers import CLIPTokenizer, CLIPTextModel
 
 
@@ -32,7 +33,7 @@ class CLIPTextEmbedder(nn.Module):
         # Load the tokenizer
         self.tokenizer = CLIPTokenizer.from_pretrained(version)
         # Load the CLIP transformer
-        self.transformer = CLIPTextModel.from_pretrained(version).eval()
+        self.transformer = CLIPTextModel.from_pretrained(version).eval().to(device)
 
         self.device = device
         self.max_length = max_length
@@ -48,3 +49,10 @@ class CLIPTextEmbedder(nn.Module):
         tokens = batch_encoding["input_ids"].to(self.device)
         # Get CLIP embeddings
         return self.transformer(input_ids=tokens).last_hidden_state
+
+# if __name__ == "__main__":
+#     embedder = CLIPTextEmbedder()
+#     prompts = ["", "A painting of a computer virus", "A photo of a computer virus"]
+#     embeddings = embedder(prompts)
+#     save(embedder, "./input/model/clip_embedder.pt")
+#     save(embeddings, './input/prompt_embeddings.pt')
