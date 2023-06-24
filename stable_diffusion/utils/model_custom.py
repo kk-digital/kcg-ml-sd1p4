@@ -7,14 +7,10 @@ summary: >
 
 # Utility functions for [stable diffusion](index.html)
 """
-import os.path
+
 import random
-import string
 from pathlib import Path
 from typing import Union
-from typing import BinaryIO, List, Optional, Union
-
-import torchvision
 
 import PIL
 import numpy as np
@@ -38,10 +34,8 @@ def set_seed(seed: int):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
-def load_model(path: Union[str, Path] = '', device = 'cuda:0') -> LatentDiffusion:
-    """
-    ### Load [`LatentDiffusion` model](latent_diffusion.html)
-    """
+
+def initialize_autoencoder(device = 'cuda:0') -> Autoencoder:
 
     # Initialize the autoencoder
     
@@ -62,15 +56,25 @@ def load_model(path: Union[str, Path] = '', device = 'cuda:0') -> LatentDiffusio
                                   encoder=encoder,
                                   decoder=decoder,
                                   z_channels=4)
-    
-    
-    # Initialize the CLIP text embedder
+        
+        return autoencoder
 
-    with monit.section('Initialize CLIP Embedder'):
-        clip_text_embedder = CLIPTextEmbedder(
-            device=device,
-        )
-    
+def initialize_clip_embedder(device = 'cuda:0', model_path = None) -> CLIPTextEmbedder:
+
+    # Initialize the CLIP text embedder
+    if model_path is None:
+        with monit.section('Initialize CLIP Embedder'):
+            clip_text_embedder = CLIPTextEmbedder(
+                device=device,
+            )
+        return clip_text_embedder
+    else:
+        with monit.section('Load clip CLIP Embedder'):
+            clip_text_embedder = torch.load(model_path)
+            clip_text_embedder.eval()
+        return clip_text_embedder
+
+def initialize_unet(device = 'cuda:0') -> UNetModel:
     
     # Initialize the U-Net
 
@@ -84,7 +88,34 @@ def load_model(path: Union[str, Path] = '', device = 'cuda:0') -> LatentDiffusio
                                n_heads=8,
                                tf_layers=1,
                                d_cond=768)
-        
+    return unet_model
+
+def load_model(path: Union[str, Path] = '', device = 'cuda:0', autoencoder = None, clip_text_embedder = None, unet_model = None) -> LatentDiffusion:
+    """
+    ### Load [`LatentDiffusion` model](latent_diffusion.html)
+    """
+
+    if autoencoder is None:
+        autoencoder = initialize_autoencoder(device)
+    elif type(autoencoder) == Autoencoder:
+        autoencoder = autoencoder
+        print('Autoencoder loaded from disk.')        
+    
+    if clip_text_embedder is None:
+        clip_text_embedder = initialize_clip_embedder(device=device, model_path=clip_text_embedder)
+        # clip_text_embedder = initialize_clip_embedder(device)
+        # print('No clip embedder passed. You must provide the embedded prompts.')
+        # pass
+    elif type(clip_text_embedder) == str:
+        clip_text_embedder = initialize_clip_embedder(device=device, model_path=clip_text_embedder)
+    elif type(clip_text_embedder) == CLIPTextEmbedder:
+        clip_text_embedder = clip_text_embedder
+        print('CLIP loaded from disk.')
+    if unet_model is None:
+        unet_model = initialize_unet(device)
+    elif type(unet_model) == UNetModel:
+        unet_model = unet_model
+        print('UNet loaded from disk.')          
 
     # Initialize the Latent Diffusion model
     with monit.section('Initialize Latent Diffusion model'):
@@ -136,12 +167,13 @@ def load_img(path: str):
     # Convert to torch
     return torch.from_numpy(image)
 
-def save_image(images: torch.Tensor, dest_path: str, img_format: str = 'jpeg'):
-    """
-    ### Save an image
 
-    :param images: is the tensor with image of shape `[batch_size, channels, height, width]`
-    :param dest_path: is the path and filename to save images in
+def save_images(images: torch.Tensor, dest_path: str, img_format: str = 'jpeg'):
+    """
+    ### Save a images
+
+    :param images: is the tensor with images of shape `[batch_size, channels, height, width]`
+    :param dest_path: is the folder to save images in
     :param img_format: is the image format
     """
 
@@ -156,58 +188,6 @@ def save_image(images: torch.Tensor, dest_path: str, img_format: str = 'jpeg'):
     for i, img in enumerate(images):
         img = Image.fromarray((255. * img).astype(np.uint8))
         img.save(dest_path, format=img_format)
-
-def save_images(images: torch.Tensor, dest_path: str, img_format: str = 'jpeg'):
-    """
-    ### Save images
-
-    :param images: is the tensor with images of shape `[batch_size, channels, height, width]`
-    :param dest_path: is the folder to save images in
-    :param img_format: is the image format
-    """
-    if not os.path.exists(dest_path):
-        # If it doesn't exist, create it
-        os.makedirs(dest_path)
-
-    # Map images to `[0, 1]` space and clip
-    images = torch.clamp((images + 1.0) / 2.0, min=0.0, max=1.0)
-    # Transpose to `[batch_size, height, width, channels]` and convert to numpy
-    images = images.cpu()
-    images = images.permute(0, 2, 3, 1)
-    images = images.float().numpy()
-
-    # Save images
-    for i, img in enumerate(images):
-        filename = "{0}".format(i).zfill(5)
-        filename = "{0}.jpeg".format(filename)
-        final_path = os.path.join(dest_path, filename)
-        img = Image.fromarray((255. * img).astype(np.uint8))
-
-        img.save(final_path, format=img_format)
-
-def save_image_grid(
-    tensor: Union[torch.Tensor, List[torch.Tensor]],
-    fp: Union[str, Path, BinaryIO],
-    format: Optional[str] = None,
-    **kwargs,
-) -> None:
-    """
-    Save a given Tensor into an image file.
-
-    Args:
-        tensor (Tensor or list): Image to be saved. If given a mini-batch tensor,
-            saves the tensor as a grid of images by calling ``make_grid``.
-        fp (string or file object): A filename or a file object
-        format(Optional):  If omitted, the format to use is determined from the filename extension.
-            If a file object was used instead of a filename, this parameter should always be used.
-        **kwargs: Other arguments are documented in ``make_grid``.
-    """
-
-    grid = torchvision.utils.make_grid(tensor, **kwargs)
-    # Add 0.5 after unnormalizing to [0, 255] to round to the nearest integer
-    ndarr = grid.mul(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to("cpu", torch.uint8).numpy()
-    im = Image.fromarray(ndarr)
-    im.save(fp, format=format)
 
 def get_device(force_cpu: bool = False, cuda_fallback: str = 'cuda:0'):
     """

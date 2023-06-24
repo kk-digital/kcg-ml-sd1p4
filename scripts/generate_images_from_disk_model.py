@@ -1,80 +1,27 @@
 import os
 
-from text_to_image import Txt2Img
+from text_to_image_custom import Txt2Img
 import torch
 import time
 from tqdm import tqdm
 
-from stable_diffusion.utils.model import save_images
+from stable_diffusion.utils.model_custom import save_images, initialize_autoencoder, initialize_clip_embedder, initialize_unet
+from stable_diffusion.model.autoencoder import Encoder, Decoder, Autoencoder
+from stable_diffusion.model.clip_embedder import CLIPTextEmbedder
+from stable_diffusion.model.unet import UNetModel
 from cli_builder import CLI
 
 noise_seeds = [
     2982,
-    4801,
-    1995,
-    3598,
-    987,
-    3688,
-    8872,
-    762
+    # 4801,
+    # 1995,
+    # 3598,
+    # 987,
+    # 3688,
+    # 8872,
+    # 762
 ]
-def load_embeddings(path= os.path.abspath('C:\\Users\\igor-\\.cloned\\kcg-ml-sd1p4\\stable_diffusion\\prompt_embeddings.pt')):
-    return torch.load(path)
-# Function to generate a prompt
-def generate_images_from_embeddings(
-    embeddings_path: str='prompt_embeddings.pt',
-    output_dir: str='./output/noise-tests/',
-    checkpoint_path: str='./input/model/sd-v1-4.ckpt',
-    sampler_name: str='ddim',
-    n_steps: int=20,
-    batch_size: int=1,
-):
-    time_before_initialization = time.time()
-    embeddings = load_embeddings()
-    print(embeddings[0].shape)
-
-    for embedding in embeddings:
-        print(embedding.shape)
-    
-    txt2img = init_txt2img(checkpoint_path, sampler_name, n_steps)
-
-    time_after_initialization = time.time()
-
-    total_images = len(noise_seeds) * len(embeddings)
-    with torch.no_grad():
-        with tqdm(total=total_images, desc='Generating images', ) as pbar:
-            for prompt_index, prompt in enumerate(embeddings):
-                
-                for seed_index, noise_seed in enumerate(noise_seeds):
-                    p_bar_description = f"Generating image {seed_index+prompt_index+1} of {total_images}"
-                    pbar.set_description(p_bar_description)
-
-                    image_name = f"n{noise_seed:04d}_a{prompt_index+1:04d}.jpg"
-                    dest_path = os.path.join(output_dir, image_name)
-                    
-                    images = txt2img.generate_images_from_embeddings(
-                        batch_size=batch_size,
-                        embedded_prompt=prompt,
-                        null_prompt=embeddings[0],
-                        seed=noise_seed
-                    )
-
-                    save_images(images, dest_path=dest_path)
-                    
-                    pbar.update(1)
-
-    end_time = time.time()
-
-    show_summary(
-        total_time=end_time - time_before_initialization,
-        partial_time=end_time - time_after_initialization,
-        total_images=total_images,
-        output_dir=output_dir
-    )
-
-
-
-
+DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 
 
@@ -85,9 +32,20 @@ def generate_prompt(prompt_prefix, artist):
 
 
 
-def init_txt2img(checkpoint_path, sampler_name, n_steps):
+def init_txt2img(checkpoint_path, sampler_name, n_steps, model_path):
+    
+    
+    # clip_text_embedder_model = torch.load('./input/clip_embedder.pt')
+    
+    # print("Time to load CLIP from disk: %.2f seconds" % (t1_clip-t0_clip))
+    # print("CLIP model: ", clip_text_embedder_model, type(clip_text_embedder_model))
+    t0_clip = time.time()
     txt2img = Txt2Img(checkpoint_path=checkpoint_path, sampler_name=sampler_name, n_steps=n_steps)
-    txt2img.initialize_script()
+    # txt2img.initialize_script(clip_text_embedder=clip_text_embedder_model)
+    txt2img.initialize_from_saved(model_path)
+    t1_clip = time.time()
+    print("Time to load load the whole thing from disk: %.2f seconds" % (t1_clip-t0_clip))
+    # txt2img.initialize_script()
     return txt2img
 
 def get_all_prompts(prompt_prefix, artist_file):
@@ -120,16 +78,17 @@ def show_summary(total_time, partial_time, total_images, output_dir):
 # main function, called when the script is run
 def generate_images(
     prompt_prefix: str="A woman with flowers in her hair in a courtyard, in the style of",
-    artist_file: str='./input/prompts/artists.txt',
+    artist_file: str='./input/artists.txt',
     output_dir: str='./output/noise-tests/',
     checkpoint_path: str='./input/model/sd-v1-4.ckpt',
+    model_path: str='./input/model/model.pt',
     sampler_name: str='ddim',
     n_steps: int=20,
     batch_size: int=1,
 ):
     time_before_initialization = time.time()
     
-    txt2img = init_txt2img(checkpoint_path, sampler_name, n_steps)
+    txt2img = init_txt2img(checkpoint_path, sampler_name, n_steps, model_path)
 
     time_after_initialization = time.time()
 
@@ -183,7 +142,8 @@ def main():
     #     sampler_name=args.sampler,
     #     n_steps=args.steps,
     # )
-    generate_images()
+    artists_file = os.path.abspath('./input/artists.txt')
+    generate_images(artist_file=artists_file)
     # generate_images_from_embeddings()
 
 if __name__ == "__main__":
