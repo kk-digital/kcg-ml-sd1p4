@@ -20,7 +20,10 @@ import torch
 from torch import nn, save
 from os.path import join
 from transformers import CLIPTokenizer, CLIPTextModel
-from stable_diffusion2.constants import TOKENIZER_PATH, TRANSFORMER_PATH
+import os
+EMBEDDER_PATH = os.path.abspath('./input/model/clip/clip_embedder.ckpt')
+TOKENIZER_PATH = os.path.abspath('./input/model/clip/clip_tokenizer.ckpt')
+TRANSFORMER_PATH = os.path.abspath('./input/model/clip/clip_transformer.ckpt')
 class CLIPTextEmbedder(nn.Module):
     """
     ## CLIP Text Embedder
@@ -34,7 +37,7 @@ class CLIPTextEmbedder(nn.Module):
         """
         super().__init__()
         self.version = version
-        self.model = None
+        # self.model = None
         self.tokenizer = None
         self.transformer = None
         self.device = device
@@ -43,7 +46,8 @@ class CLIPTextEmbedder(nn.Module):
     def save(self, tokenizer_path: str = TOKENIZER_PATH, transformer_path: str = TRANSFORMER_PATH):
         torch.save(self.tokenizer, tokenizer_path)
         torch.save(self.transformer, transformer_path)
-    
+        torch.save(self, EMBEDDER_PATH)
+
     def load(self, tokenizer_path: str = TOKENIZER_PATH, transformer_path: str = TRANSFORMER_PATH):
         self.tokenizer = torch.load(tokenizer_path, map_location=self.device)
         self.transformer = torch.load(transformer_path, map_location=self.device)        
@@ -82,7 +86,7 @@ if __name__ == "__main__":
 
 
     clip.load_from_lib()
-    embbedings1 = clip(prompts)
+    embeddings1 = clip(prompts)
 
     clip.save()  
 
@@ -92,5 +96,11 @@ if __name__ == "__main__":
 
     embeddings2 = clip(prompts)
 
-    assert torch.allclose(embbedings1, embeddings2)
+    assert torch.allclose(embeddings1, embeddings2)
+
+    clip = torch.load(EMBEDDER_PATH, map_location="cuda:0")
+    print(clip)
+    embeddings3 = clip(prompts)
+    assert torch.allclose(embeddings1, embeddings3)
+    assert torch.allclose(embeddings2, embeddings3)
 # %%

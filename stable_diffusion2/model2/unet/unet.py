@@ -17,14 +17,14 @@ so that we can load the checkpoints directly.
 
 import math
 from typing import List
-
+import os
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from stable_diffusion.model.unet_attention import SpatialTransformer
-
+from unet_attention import SpatialTransformer
+UNET_PATH = os.path.abspath('./input/model/unet/unet.ckpt')
 
 class UNetModel(nn.Module):
     """
@@ -133,6 +133,8 @@ class UNetModel(nn.Module):
             nn.SiLU(),
             nn.Conv2d(channels, out_channels, 3, padding=1),
         )
+    def save(self, unet_path = UNET_PATH):
+        torch.save(self, unet_path)
 
     def time_step_embedding(self, time_steps: torch.Tensor, max_period: int = 10000):
         """
@@ -339,4 +341,14 @@ def _test_time_embeddings():
 
 #
 if __name__ == '__main__':
-    _test_time_embeddings()
+    # _test_time_embeddings()
+    unet_model = UNetModel(in_channels=4,
+                            out_channels=4,
+                            channels=320,
+                            attention_levels=[0, 1, 2],
+                            n_res_blocks=2,
+                            channel_multipliers=[1, 2, 4, 4],
+                            n_heads=8,
+                            tf_layers=1,
+                            d_cond=768)
+    unet_model.save()
