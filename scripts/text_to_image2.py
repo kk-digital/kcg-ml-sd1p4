@@ -13,9 +13,9 @@ import os
 import torch
 from labml import monit
 from datetime import datetime
-from .stable_diffusion_base_script_custom import StableDiffusionBaseScript
-from stable_diffusion.utils.model import save_images, set_seed, get_autocast
-from stable_diffusion.model.unet_attention import CrossAttention
+from stable_diffusion_base_script2 import StableDiffusionBaseScript
+from stable_diffusion2.utils.model import save_images, set_seed, get_autocast
+from stable_diffusion2.model.unet_attention import CrossAttention
 from scripts.cli_builder import CLI
 
 def get_prompts(prompt, prompts_file):
@@ -95,6 +95,67 @@ class Txt2Img(StableDiffusionBaseScript):
                                     temperature=temperature)
 
             return self.decode_image(x)
+
+    @torch.no_grad()
+    def generate_images_from_embeddings(self, *,
+                 seed: int = 0,
+                 batch_size: int = 1,
+                 embedded_prompt: torch.Tensor,
+                 null_prompt: torch.Tensor,
+                 h: int = 512, w: int = 512,
+                 uncond_scale: float = 7.5,
+                 low_vram: bool = False,
+                 noise_fn = torch.randn,
+                 temperature: float = 1.0,                 
+                 ):
+        """
+        :param seed: the seed to use when generating the images
+        :param dest_path: is the path to store the generated images
+        :param batch_size: is the number of images to generate in a batch
+        :param prompt: is the prompt to generate images with
+        :param h: is the height of the image
+        :param w: is the width of the image
+        :param uncond_scale: is the unconditional guidance scale $s$. This is used for
+            $\epsilon_\theta(x_t, c) = s\epsilon_\text{cond}(x_t, c) + (s - 1)\epsilon_\text{cond}(x_t, c_u)$
+        :param low_vram: whether to limit VRAM usage
+        """
+        # Number of channels in the image
+        c = 4
+        # Image to latent space resolution reduction
+        f = 8
+
+        if seed == 0:
+            seed = time.time_ns() % 2**32
+
+        set_seed(seed)
+        # Adjust batch size based on VRAM availability
+        if low_vram:
+            batch_size = 1
+
+        # Make a batch of prompts
+        # prompts = batch_size * [embedded_prompt]
+        # cond = torch.cat(prompts, dim=1)
+        cond = embedded_prompt.unsqueeze(0)
+        print("cond shape: ", cond.shape)
+        print("uncond shape: ", null_prompt.shape)
+        prompt_list = ["a painting of a virus monster playing guitar", "a painting of a computer virus "]
+        # AMP auto casting
+        autocast = get_autocast()
+        with autocast:
+            # un_cond, cond = self.get_text_conditioning(uncond_scale, prompt_list, batch_size)
+            # print("gettextcond shape: ", cond.shape)
+            # print(un_cond.shape)
+
+            # [Sample in the latent space](../sampler/index.html).
+            # `x` will be of shape `[batch_size, c, h / f, w / f]`
+            x = self.sampler.sample(cond=cond,
+                                    shape=[batch_size, c, h // f, w // f],
+                                    uncond_scale=uncond_scale,
+                                    uncond_cond=null_prompt,
+                                    noise_fn=noise_fn,
+                                    temperature=temperature)                                    
+
+            return self.decode_image(x)        
 
 
 def main():

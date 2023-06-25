@@ -4,13 +4,14 @@
 import os
 import sys
 from typing import Callable
-from text_to_image2 import Txt2Img
+from text_to_image import Txt2Img
 import torch
 import time
 import shutil
 from tqdm import tqdm
 import torchvision
 from stable_diffusion2.utils.model import save_images
+from constants import CHECKPOINT_PATH
 from cli_builder import CLI
 
 # noise_seeds = [
@@ -40,7 +41,7 @@ if len(sys.argv) == 1:
         'Uniform': dict(low=0.0, high=1.0)
     }
 else:
-    VAR_RANGE = torch.linspace(0.95, 1.05, 10)
+    VAR_RANGE = torch.linspace(0.95, 1.05, 5)
     DISTRIBUTIONS = {f'Normal_{var.item():.4f}': dict(loc=0, scale=var.item()) for var in VAR_RANGE}
 
 TEMPERATURE = 1.5
@@ -193,7 +194,7 @@ def generate_images_from_custom_noise(
         clear_output_dir: bool = CLEAR_OUTPUT_DIR,
         prompt_prefix: str="A woman with flowers in her hair in a courtyard, in the style of",
         artist_file: str=os.path.abspath('./input/artists.txt'),
-        checkpoint_path: str=os.path.abspath('./input/model/sd-v1-4.ckpt'),
+        checkpoint_path: str=CHECKPOINT_PATH,
         sampler_name: str='ddim',
         n_steps: int=20,
         batch_size: int=1,

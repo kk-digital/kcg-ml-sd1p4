@@ -5,9 +5,9 @@ import torch
 import time
 from tqdm import tqdm
 
-from stable_diffusion.utils.model import save_images
+from stable_diffusion2.utils.model import save_images
 from cli_builder import CLI
-
+from constants import CHECKPOINT_PATH
 noise_seeds = [
     2982,
     4801,
@@ -63,7 +63,7 @@ def generate_images(
     prompt_prefix: str="A woman with flowers in her hair in a courtyard, in the style of",
     artist_file: str='./input/prompts/artists.txt',
     output_dir: str='./output/noise-tests/',
-    checkpoint_path: str='./input/model/sd-v1-4.ckpt',
+    checkpoint_path: str=CHECKPOINT_PATH,
     sampler_name: str='ddim',
     n_steps: int=20,
     batch_size: int=1,

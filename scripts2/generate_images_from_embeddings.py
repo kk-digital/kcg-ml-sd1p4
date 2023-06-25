@@ -1,11 +1,11 @@
 import os
 
-from text_to_image2 import Txt2Img
+from text_to_image import Txt2Img
 import torch
 import time
 from tqdm import tqdm
-# from stable_diffusion2.scripts.text_to_image import Txt2Img
-from stable_diffusion2.utils.model import save_images, initialize_autoencoder, initialize_clip_embedder, initialize_unet
+
+from stable_diffusion2.utils.model import save_images, save_image_grid
 from stable_diffusion2.model.autoencoder import Encoder, Decoder, Autoencoder
 from stable_diffusion2.model.clip_embedder import CLIPTextEmbedder
 from stable_diffusion2.model.unet import UNetModel
