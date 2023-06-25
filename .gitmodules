@@ -1,6 +1,3 @@
-[submodule "train/--force"]
-	path = train/sd-scripts
-	url = https://github.com/kohya-ss/sd-scripts.git
-[submodule "train/sd-scripts"]
-	path = train/sd-scripts
-	url = https://github.com/kohya-ss/sd-scripts.git
+[submodule "lora-tuning/sd-scripts"]
+	path = lora-tuning/sd-scripts
+	url = https://github.com/kohya-ss/sd-scripts

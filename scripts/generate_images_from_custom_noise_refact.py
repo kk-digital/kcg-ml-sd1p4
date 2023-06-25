@@ -66,15 +66,25 @@ def save_image_grid(
     im = Image.fromarray(ndarr)
     im.save(fp, format=format)
 
+<<<<<<< HEAD
 NOISE_SEEDS = [
+=======
+noise_seeds = [
+>>>>>>> 5a1099c27585b1373a0b366b783373cd3254ee60
     2982,
     4801,
     1995,
     3598,
     987,
+<<<<<<< HEAD
     3688,
     8872,
     762
+=======
+    # 3688,
+    # 8872,
+    # 762
+>>>>>>> 5a1099c27585b1373a0b366b783373cd3254ee60
 ]
 # NOISE_SEEDS = [
 #     2982,
@@ -107,7 +117,11 @@ if len(sys.argv) > 1:
     dist_names = list(_DISTRIBUTIONS.keys())
     DIST_NAME = dist_names[dist_name_index]
     #VAR_RANGE = torch.linspace(0.6, 0.8, 10) #args here should be given as command line arguments
+<<<<<<< HEAD
     VAR_RANGE = torch.linspace(0.49, 0.54, NUM_DISTRIBUTIONS) #args here should be given as command line arguments
+=======
+    VAR_RANGE = torch.linspace(0.49, 0.54, 5) #args here should be given as command line arguments
+>>>>>>> 5a1099c27585b1373a0b366b783373cd3254ee60
     DISTRIBUTIONS = {f'{DIST_NAME}_{var.item():.4f}': dict(loc=0.0, scale=var.item()) for var in VAR_RANGE}
 else:
     DIST_NAME = 'Normal'
