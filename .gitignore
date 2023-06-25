@@ -135,10 +135,10 @@ dmypy.json
 /output
 
 # Ignore input/model
-# /input/model/
-/input/model/autoencoder/
-/input/model/clip/
-/input/model/unet/
+# /input/model
+/input/model/autoencoder
+/input/model/clip
+/input/model/unet
 # Ignore all downloaded models, we don't have enough storage for that!
 *.ckpt
 *.safetensors
