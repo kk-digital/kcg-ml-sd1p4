@@ -20,8 +20,7 @@ import torch
 from torch import nn, save
 from os.path import join
 from transformers import CLIPTokenizer, CLIPTextModel
-from safetensors.torch import save_model, load_model, load_file
-
+from stable_diffusion2.constants import TOKENIZER_PATH, TRANSFORMER_PATH
 class CLIPTextEmbedder(nn.Module):
     """
     ## CLIP Text Embedder
@@ -41,18 +40,14 @@ class CLIPTextEmbedder(nn.Module):
         self.device = device
         self.max_length = max_length
     
-    def save(self, tokenizer_path: str = "./clip_tokenizer.ckpt", transformer_path: str = "./clip_transformer.ckpt"):
+    def save(self, tokenizer_path: str = TOKENIZER_PATH, transformer_path: str = TRANSFORMER_PATH):
         torch.save(self.tokenizer, tokenizer_path)
         torch.save(self.transformer, transformer_path)
-        # save_model(self.tokenizer, tokenizer_path)
-        # save_model(self.transformer, transformer_path)
     
-    def load(self, tokenizer_path: str = "./clip_tokenizer.ckpt", transformer_path: str = "./clip_transformer.ckpt"):
+    def load(self, tokenizer_path: str = TOKENIZER_PATH, transformer_path: str = TRANSFORMER_PATH):
         self.tokenizer = torch.load(tokenizer_path, map_location=self.device)
         self.transformer = torch.load(transformer_path, map_location=self.device)        
-        # self.tokenizer = load_model(tokenizer_path, map_location=self.device)
-        # self.transformer = load_model(transformer_path, map_location=self.device)
-    
+
     def unload(self):        
         del self.tokenizer
         del self.transformer
@@ -60,7 +55,7 @@ class CLIPTextEmbedder(nn.Module):
         self.tokenizer = None
         self.transformer = None
 
-    def hugload(self):
+    def load_from_lib(self):
         self.tokenizer = CLIPTokenizer.from_pretrained(self.version)
         # Load the CLIP transformer
         self.transformer = CLIPTextModel.from_pretrained(self.version).eval().to(self.device)
@@ -76,24 +71,26 @@ class CLIPTextEmbedder(nn.Module):
         tokens = batch_encoding["input_ids"].to(self.device)
         # Get CLIP embeddings
         return self.transformer(input_ids=tokens).last_hidden_state
-# %%
-prompts = ["", "A painting of a computer virus", "A photo of a computer virus"]
-
-clip = CLIPTextEmbedder()
-
-
-# %%
-clip.hugload()
-embbedings1 = clip(prompts)
 #%%
+#tests, to be (re)moved
 
-clip.save()  
-# %%
-clip.unload()
-# %%
-clip.load()
-# %%
-embeddings2 = clip(prompts)
-# %%
-torch.allclose(embbedings1, embeddings2)
+if __name__ == "__main__":
+    prompts = ["", "A painting of a computer virus", "A photo of a computer virus"]
+
+    clip = CLIPTextEmbedder()
+
+
+
+    clip.load_from_lib()
+    embbedings1 = clip(prompts)
+
+    clip.save()  
+
+    clip.unload()
+
+    clip.load()
+
+    embeddings2 = clip(prompts)
+
+    assert torch.allclose(embbedings1, embeddings2)
 # %%

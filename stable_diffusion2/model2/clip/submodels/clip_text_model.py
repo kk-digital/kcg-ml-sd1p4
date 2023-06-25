@@ -1,3 +1,6 @@
+#%%
+
+
 """
 ---
 title: CLIP Text Embedder
@@ -49,7 +52,7 @@ class CLIPTextModel(nn.Module):
 
         # return self.transformer
 
-    def forward(self, input_ids: torch.Tensor):
+    def forward(self, input_ids: torch.Tensor = None):
         """
         :param tokenized_prompts: a batch of embedded prompts; tensor of shape (batch_size, max_length, 768)
         """
@@ -63,3 +66,4 @@ class CLIPTextModel(nn.Module):
 #     save(embedder, "./input/model/clip_embedder.pt")
 #     save(embeddings, './input/prompt_embeddings.pt')
 prompts = ["", "A painting of a computer virus", "A photo of a computer virus"]
+# %%
