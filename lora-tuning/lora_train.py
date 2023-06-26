@@ -284,10 +284,12 @@ def set_defaults(args):
         args.output_dir = os.path.abspath(os.path.join("./output/LoRa/", args.project_name, "output"))
 
     args.dataset = check_dataset(args.dataset)
-    args.dataset_reg = check_dataset(args.dataset_reg)
+    args.dataset = os.path.abspath(args.dataset)
+    if args.dataset_reg is not None:
+        args.dataset_reg = check_dataset(args.dataset_reg)
     if args.num_repeats is None:
         total_image_files = len([file for file in os.listdir(args.dataset) if file.endswith((".png", ".jpg", ".jpeg"))])
-        args.num_repeats = round(300/ total_image_files)
+        args.num_repeats = round(300 / total_image_files)
         print("Num_repeats not specified, calculating an automatic " + str(args.num_repeats) + " repeats for best results.")
 
 if __name__ == '__main__':
