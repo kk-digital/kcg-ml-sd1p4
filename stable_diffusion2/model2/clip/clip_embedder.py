@@ -14,16 +14,20 @@ summary: >
 This is used to get prompt embeddings for [stable diffusion](../index.html).
 It uses HuggingFace Transformers CLIP model.
 """
+import os
+import sys
+sys.path.insert(0, os.getcwd())
 
 from typing import List
 import torch
 from torch import nn, save
 from os.path import join
 from transformers import CLIPTokenizer, CLIPTextModel
-import os
-EMBEDDER_PATH = os.path.abspath('./input/model/clip/clip_embedder.ckpt')
-TOKENIZER_PATH = os.path.abspath('./input/model/clip/clip_tokenizer.ckpt')
-TRANSFORMER_PATH = os.path.abspath('./input/model/clip/clip_transformer.ckpt')
+from stable_diffusion2.constants import EMBEDDER_PATH, TOKENIZER_PATH, TRANSFORMER_PATH
+
+# EMBEDDER_PATH = os.path.abspath('./input/model/clip/clip_embedder.ckpt')
+# TOKENIZER_PATH = os.path.abspath('./input/model/clip/clip_tokenizer.ckpt')
+# TRANSFORMER_PATH = os.path.abspath('./input/model/clip/clip_transformer.ckpt')
 class CLIPTextEmbedder(nn.Module):
     """
     ## CLIP Text Embedder
@@ -101,6 +105,7 @@ if __name__ == "__main__":
     clip = torch.load(EMBEDDER_PATH, map_location="cuda:0")
     print(clip)
     embeddings3 = clip(prompts)
-    assert torch.allclose(embeddings1, embeddings3)
-    assert torch.allclose(embeddings2, embeddings3)
+    assert torch.allclose(embeddings1, embeddings3), "embeddings1 != embeddings3"
+    assert torch.allclose(embeddings2, embeddings3), "embeddings2 != embeddings3"
+    print(os.getcwd())
 # %%

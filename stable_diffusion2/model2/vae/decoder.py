@@ -21,6 +21,10 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 from auxiliary_classes import *
+import os
+import sys
+sys.path.insert(0, os.getcwd())
+from stable_diffusion2.constants import DECODER_PATH
 
 class Decoder(nn.Module):
     """
@@ -82,6 +86,9 @@ class Decoder(nn.Module):
         # Map to image space with a $3 \times 3$ convolution
         self.norm_out = normalization(channels)
         self.conv_out = nn.Conv2d(channels, out_channels, 3, stride=1, padding=1)
+
+    def save(self, decoder_path: str = DECODER_PATH):
+        torch.save(self, decoder_path)
 
     def forward(self, z: torch.Tensor):
         """

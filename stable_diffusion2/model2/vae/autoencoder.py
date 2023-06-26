@@ -24,10 +24,13 @@ from torch import nn
 from auxiliary_classes import *
 from encoder import Encoder
 from decoder import Decoder
-
-ENCODER_PATH = os.path.abspath('./input/model/autoencoder/encoder.ckpt')
-DECODER_PATH = os.path.abspath('./input/model/autoencoder/decoder.ckpt')
-AUTOENCODER_PATH = os.path.abspath('./input/model/autoencoder/autoencoder.ckpt')
+import os
+import sys
+sys.path.insert(0, os.getcwd())
+from stable_diffusion2.constants import ENCODER_PATH, DECODER_PATH, AUTOENCODER_PATH
+# ENCODER_PATH = os.path.abspath('./input/model/autoencoder/encoder.ckpt')
+# DECODER_PATH = os.path.abspath('./input/model/autoencoder/decoder.ckpt')
+# AUTOENCODER_PATH = os.path.abspath('./input/model/autoencoder/autoencoder.ckpt')
 
 class Autoencoder(nn.Module):
     """
@@ -75,16 +78,22 @@ class Autoencoder(nn.Module):
                             channels=128,
                             channel_multipliers=[1, 2, 4, 4],
                             n_resnet_blocks=2)
-        
-    def save(self, encoder_path = ENCODER_PATH, decoder_path = DECODER_PATH):
+    def save_submodels(self, encoder_path = ENCODER_PATH, decoder_path = DECODER_PATH):
         """
         ### Save the model to a checkpoint
         """
-        torch.save(self.encoder, encoder_path)
-        torch.save(self.decoder, decoder_path)
-        torch.save(self, AUTOENCODER_PATH)
+        self.encoder.save(encoder_path)
+        self.decoder.save(decoder_path)
+        # torch.save(self.encoder, encoder_path)
+        # torch.save(self.decoder, decoder_path)
 
-    def load(self, encoder_path = ENCODER_PATH, decoder_path = DECODER_PATH, device = "cuda:0"):
+    def save(self, autoencoder_path = AUTOENCODER_PATH):
+        """
+        ### Save the model to a checkpoint
+        """
+        torch.save(self, autoencoder_path)
+
+    def load_submodels(self, encoder_path = ENCODER_PATH, decoder_path = DECODER_PATH, device = "cuda:0"):
         
         """
         ### Load the model from a checkpoint
@@ -92,9 +101,7 @@ class Autoencoder(nn.Module):
         self.encoder = torch.load(encoder_path, map_location=device)
         self.decoder = torch.load(decoder_path, map_location=device)
 
-
-
-    def unload(self):
+    def unload_submodels(self):
         del self.encoder
         del self.decoder
         torch.cuda.empty_cache()
@@ -135,10 +142,10 @@ if __name__ == "__main__":
     # embeddings1 = vae(prompts)
 
     vae.save()  
+    vae.save_submodels()  
+    vae.unload_submodels()
 
-    vae.unload()
-
-    vae.load()
+    vae.load_submodels()
 
     # embeddings2 = vae(prompts)
 

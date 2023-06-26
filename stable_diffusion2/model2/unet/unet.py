@@ -24,7 +24,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from unet_attention import SpatialTransformer
-UNET_PATH = os.path.abspath('./input/model/unet/unet.ckpt')
+
+import os
+import sys
+sys.path.insert(0, os.getcwd())
+from stable_diffusion2.constants import UNET_PATH
+
+# UNET_PATH = os.path.abspath('./input/model/unet/unet.ckpt')
 
 class UNetModel(nn.Module):
     """
