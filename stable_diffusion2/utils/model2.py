@@ -22,7 +22,7 @@ from PIL import Image
 
 from labml import monit
 from labml.logger import inspect
-
+from stable_diffusion2.utils.utils import SectionManager as section
 from stable_diffusion2.latent_diffusion import LatentDiffusion
 from stable_diffusion2.model2.vae.encoder import Encoder
 from stable_diffusion2.model2.vae.decoder import Decoder

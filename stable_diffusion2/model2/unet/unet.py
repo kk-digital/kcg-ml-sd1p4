@@ -23,7 +23,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from unet_attention import SpatialTransformer
+from .unet_attention import SpatialTransformer
 
 import os
 import sys
@@ -346,15 +346,15 @@ def _test_time_embeddings():
 
 
 #
-if __name__ == '__main__':
+# if __name__ == '__main__':
     # _test_time_embeddings()
-    unet_model = UNetModel(in_channels=4,
-                            out_channels=4,
-                            channels=320,
-                            attention_levels=[0, 1, 2],
-                            n_res_blocks=2,
-                            channel_multipliers=[1, 2, 4, 4],
-                            n_heads=8,
-                            tf_layers=1,
-                            d_cond=768)
-    unet_model.save()
+    # unet_model = UNetModel(in_channels=4,
+    #                         out_channels=4,
+    #                         channels=320,
+    #                         attention_levels=[0, 1, 2],
+    #                         n_res_blocks=2,
+    #                         channel_multipliers=[1, 2, 4, 4],
+    #                         n_heads=8,
+    #                         tf_layers=1,
+    #                         d_cond=768)
+    # unet_model.save()

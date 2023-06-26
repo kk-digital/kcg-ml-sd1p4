@@ -21,9 +21,9 @@ import torch
 import os
 import torch.nn.functional as F
 from torch import nn
-from auxiliary_classes import *
-from encoder import Encoder
-from decoder import Decoder
+from .auxiliary_classes import *
+from .encoder import Encoder
+from .decoder import Decoder
 import os
 import sys
 sys.path.insert(0, os.getcwd())
@@ -39,7 +39,7 @@ class Autoencoder(nn.Module):
     This consists of the encoder and decoder modules.
     """
 
-    def __init__(self, emb_channels: int, z_channels: int):
+    def __init__(self, emb_channels: int, z_channels: int, encoder = None, decoder = None):
         """
         :param encoder: is the encoder
         :param decoder: is the decoder
@@ -47,8 +47,8 @@ class Autoencoder(nn.Module):
         :param z_channels: is the number of channels in the embedding space
         """
         super().__init__()
-        self.encoder = None
-        self.decoder = None
+        self.encoder = encoder
+        self.decoder = decoder
         self.z_channels = z_channels
         self.emb_channels = emb_channels
         # Convolution to map from embedding space to

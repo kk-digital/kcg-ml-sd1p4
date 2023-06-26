@@ -12,7 +12,7 @@ from auxiliary_functions import save_images, save_image_grid
 from text_to_image import Txt2Img
 
 
-from constants import CHECKPOINT_PATH
+from constants import CHECKPOINT_PATH, AUTOENCODER_PATH, UNET_PATH, EMBEDDER_PATH
 import safetensors.torch as st
 
 # CHECKPOINT_PATH = os.path.abspath('./input/model/v1-5-pruned-emaonly.ckpt')
@@ -130,11 +130,11 @@ def init_txt2img(
     # compute loading time
     if FROM_DISK:
         t0_clip = time.time()
-        autoencoder = torch.load('./input/model/autoencoder.ckpt')
+        autoencoder = torch.load(AUTOENCODER_PATH)
         autoencoder.eval()
-        clip_text_embedder = torch.load('./input/model/clip_embedder.ckpt')
+        clip_text_embedder = torch.load(EMBEDDER_PATH)
         clip_text_embedder.eval()
-        unet_model = torch.load('./input/model/unet.ckpt')
+        unet_model = torch.load(UNET_PATH)
         unet_model.eval()
         t1_clip = time.time()
         print("Time to load load the whole thing from disk: %.2f seconds" % (t1_clip-t0_clip))

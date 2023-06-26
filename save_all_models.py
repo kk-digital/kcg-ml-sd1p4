@@ -19,18 +19,28 @@ import torch
 from PIL import Image
 
 from labml import monit
-from labml.logger import inspect
-from stable_diffusion.latent_diffusion import LatentDiffusion
-from stable_diffusion.model.autoencoder import Encoder, Decoder, Autoencoder
-from stable_diffusion.model.clip_embedder import CLIPTextEmbedder
-from stable_diffusion.model.unet import UNetModel
+# from labml.logger import inspect
 
+
+from stable_diffusion2.constants import AUTOENCODER_PATH, ENCODER_PATH, DECODER_PATH
+from stable_diffusion2.constants import EMBEDDER_PATH, TOKENIZER_PATH, TRANSFORMER_PATH
+from stable_diffusion2.constants import UNET_PATH
+
+from stable_diffusion2.utils.utils import SectionManager as section
+
+from stable_diffusion2.latent_diffusion import LatentDiffusion
+from stable_diffusion2.model2.vae.encoder import Encoder
+from stable_diffusion2.model2.vae.decoder import Decoder
+from stable_diffusion2.model2.vae.autoencoder import Autoencoder
+from stable_diffusion2.model2.clip.clip_embedder import CLIPTextEmbedder
+from stable_diffusion2.model2.unet.unet import UNetModel
+# from stable_diffusion2.model.unet import UNetModel
 
 def initialize_autoencoder(device = 'cuda:0', model_path = None) -> Autoencoder:
 
     # Initialize the autoencoder
     if model_path is None:
-        with monit.section('Initialize autoencoder'):
+        with section('autoencoder initialization'):
             encoder = Encoder(z_channels=4,
                             in_channels=3,
                             channels=128,
@@ -48,11 +58,11 @@ def initialize_autoencoder(device = 'cuda:0', model_path = None) -> Autoencoder:
                                     decoder=decoder,
                                     z_channels=4)
             
-            torch.save(autoencoder, './input/model/autoencoder.ckpt')
+        autoencoder.save()
             
-            return autoencoder
+        return autoencoder
     else:
-        with monit.section('Initialize autoencoder'):
+        with section('autoencoder loading'):
             autoencoder = torch.load(model_path)
             autoencoder.eval()
             return autoencoder
@@ -61,14 +71,15 @@ def initialize_clip_embedder(device = 'cuda:0', model_path = None) -> CLIPTextEm
 
     # Initialize the CLIP text embedder
     if model_path is None:
-        with monit.section('Initialize CLIP Embedder'):
+        with section('CLIP Embedder initialization'):
             clip_text_embedder = CLIPTextEmbedder(
                 device=device,
             )
-            torch.save(clip_text_embedder, './input/model/clip_embedder.ckpt')
-            return clip_text_embedder
+            clip_text_embedder.load_from_lib()
+        clip_text_embedder.save()
+        return clip_text_embedder
     else:
-        with monit.section('Initialize CLIP Embedder'):
+        with section('CLIP Embedder loading'):
             clip_text_embedder = torch.load(model_path)
             clip_text_embedder.eval()
             return clip_text_embedder
@@ -77,7 +88,7 @@ def initialize_unet(device = 'cuda:0', model_path = None) -> UNetModel:
     
     # Initialize the U-Net
     if model_path is None:
-        with monit.section('Initialize U-Net'):
+        with section('U-Net initialization'):
             unet_model = UNetModel(in_channels=4,
                                 out_channels=4,
                                 channels=320,
@@ -87,10 +98,12 @@ def initialize_unet(device = 'cuda:0', model_path = None) -> UNetModel:
                                 n_heads=8,
                                 tf_layers=1,
                                 d_cond=768)
-            torch.save(unet_model, './input/model/unet.ckpt')
-            return unet_model
+            # unet_model.save()
+            # torch.save(unet_model, UNET_PATH)
+        unet_model.save()
+        return unet_model
     else:
-        with monit.section('Initialize U-Net'):
+        with monit.section('U-Net loading'):
             unet_model = torch.load(model_path)
             unet_model.eval()
             return unet_model
@@ -125,8 +138,8 @@ def load_model(path: Union[str, Path] = '', device = 'cuda:0', autoencoder = Non
         missing_keys, extra_keys = model.load_state_dict(checkpoint["state_dict"], strict=False)
 
     # Debugging output
-    inspect(global_step=checkpoint.get('global_step', -1), missing_keys=missing_keys, extra_keys=extra_keys,
-            _expand=True)
+    # inspect(global_step=checkpoint.get('global_step', -1), missing_keys=missing_keys, extra_keys=extra_keys,
+    #         _expand=True)
 
     #
     model.eval()

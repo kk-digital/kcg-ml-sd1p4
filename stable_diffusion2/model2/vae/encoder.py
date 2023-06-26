@@ -20,7 +20,7 @@ from typing import List
 import torch
 import torch.nn.functional as F
 from torch import nn
-from auxiliary_classes import *
+from .auxiliary_classes import *
 import os
 import sys
 sys.path.insert(0, os.getcwd())

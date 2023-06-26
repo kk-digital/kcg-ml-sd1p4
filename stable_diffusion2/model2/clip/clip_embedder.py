@@ -33,7 +33,7 @@ class CLIPTextEmbedder(nn.Module):
     ## CLIP Text Embedder
     """
 
-    def __init__(self, version: str = "openai/clip-vit-large-patch14", device="cuda:0", max_length: int = 77):
+    def __init__(self, version: str = "openai/clip-vit-large-patch14", device="cuda:0", max_length: int = 77, tokenizer = None, transformer = None):
         """
         :param version: is the model version
         :param device: is the device
@@ -42,21 +42,27 @@ class CLIPTextEmbedder(nn.Module):
         super().__init__()
         self.version = version
         # self.model = None
-        self.tokenizer = None
-        self.transformer = None
+        self.tokenizer = tokenizer
+        self.transformer = transformer
         self.device = device
         self.max_length = max_length
+
+    def save_submodels(self, tokenizer_path: str = TOKENIZER_PATH, transformer_path: str = TRANSFORMER_PATH):
+        self.tokenizer.save(tokenizer_path)
+        self.transformer.save(transformer_path)
+
+    def save(self, embedder_path: str = EMBEDDER_PATH):
+        torch.save(self, embedder_path)
     
-    def save(self, tokenizer_path: str = TOKENIZER_PATH, transformer_path: str = TRANSFORMER_PATH):
-        torch.save(self.tokenizer, tokenizer_path)
-        torch.save(self.transformer, transformer_path)
-        torch.save(self, EMBEDDER_PATH)
+    def load_submodels(self, tokenizer_path = TOKENIZER_PATH, transformer_path = TRANSFORMER_PATH, device = "cuda:0"):
+        
+        """
+        ### Load the model from a checkpoint
+        """
+        self.tokenizer = torch.load(tokenizer_path, map_location=device)
+        self.transformer = torch.load(transformer_path, map_location=device)
 
-    def load(self, tokenizer_path: str = TOKENIZER_PATH, transformer_path: str = TRANSFORMER_PATH):
-        self.tokenizer = torch.load(tokenizer_path, map_location=self.device)
-        self.transformer = torch.load(transformer_path, map_location=self.device)        
-
-    def unload(self):        
+    def unload_submodels(self):
         del self.tokenizer
         del self.transformer
         torch.cuda.empty_cache()
