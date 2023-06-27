@@ -5,7 +5,7 @@ import torch
 
 from stable_diffusion2.sampler.ddim import DDIMSampler
 from stable_diffusion2.sampler.ddpm import DDPMSampler
-from stable_diffusion2.utils.model import load_model, get_device
+from stable_diffusion2.utils.model2 import load_model, get_device
 from stable_diffusion2.latent_diffusion import LatentDiffusion
 from stable_diffusion2.sampler import DiffusionSampler
 from stable_diffusion.utils.model import load_img

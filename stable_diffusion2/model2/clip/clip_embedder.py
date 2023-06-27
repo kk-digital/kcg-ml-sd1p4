@@ -48,8 +48,8 @@ class CLIPTextEmbedder(nn.Module):
         self.max_length = max_length
 
     def save_submodels(self, tokenizer_path: str = TOKENIZER_PATH, transformer_path: str = TRANSFORMER_PATH):
-        self.tokenizer.save(tokenizer_path)
-        self.transformer.save(transformer_path)
+        torch.save(self.tokenizer, tokenizer_path)
+        torch.save(self.transformer, transformer_path)
 
     def save(self, embedder_path: str = EMBEDDER_PATH):
         torch.save(self, embedder_path)
@@ -69,9 +69,9 @@ class CLIPTextEmbedder(nn.Module):
         self.tokenizer = None
         self.transformer = None
 
-    def load_from_lib(self):
+    def load_tokenizer_from_lib(self):
         self.tokenizer = CLIPTokenizer.from_pretrained(self.version)
-        # Load the CLIP transformer
+    def load_transformer_from_lib(self):
         self.transformer = CLIPTextModel.from_pretrained(self.version).eval().to(self.device)
 
     def forward(self, prompts: List[str]):

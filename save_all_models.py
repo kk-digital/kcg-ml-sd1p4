@@ -18,7 +18,7 @@ import numpy as np
 import torch
 from PIL import Image
 
-from labml import monit
+# from labml import monit
 # from labml.logger import inspect
 
 
@@ -36,90 +36,129 @@ from stable_diffusion2.model2.clip.clip_embedder import CLIPTextEmbedder
 from stable_diffusion2.model2.unet.unet import UNetModel
 # from stable_diffusion2.model.unet import UNetModel
 
-def initialize_autoencoder(device = 'cuda:0', model_path = None) -> Autoencoder:
+def check_device(device):
+    if device is None:
+        device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        print(f'Using device: {device}. Slow on CPU.')
+    else:
+        device = torch.device(device)
+        print(f'Using device: {device}.')
+    return device
 
+
+def initialize_encoder(device = None, 
+                        z_channels=4,
+                        in_channels=3,
+                        channels=128,
+                        channel_multipliers=[1, 2, 4, 4],
+                        n_resnet_blocks=2) -> Encoder:
+    
+    device = check_device(device)
+    # Initialize the encoder
+    with section('encoder initialization'):
+        encoder = Encoder(z_channels=z_channels,
+                        in_channels=in_channels,
+                        channels=channels,
+                        channel_multipliers=channel_multipliers,
+                        n_resnet_blocks=n_resnet_blocks).to(device)
+    return encoder
+
+def initialize_decoder(device = None, 
+                        out_channels=3,
+                        z_channels=4,
+                        channels=128,
+                        channel_multipliers=[1, 2, 4, 4],
+                        n_resnet_blocks=2) -> Decoder:
+    
+    check_device(device)
+    with section('decoder initialization'):
+        decoder = Decoder(out_channels=out_channels,
+                        z_channels=z_channels,
+                        channels=channels,
+                        channel_multipliers=channel_multipliers,
+                        n_resnet_blocks=n_resnet_blocks).to(device)    
+    return decoder
+    # Initialize the autoencoder    
+
+    
+def initialize_autoencoder(device = None, encoder = None, decoder = None, emb_channels = 4, z_channels = 4) -> Autoencoder:
+    device = check_device(device)
     # Initialize the autoencoder
-    if model_path is None:
-        with section('autoencoder initialization'):
-            encoder = Encoder(z_channels=4,
-                            in_channels=3,
-                            channels=128,
-                            channel_multipliers=[1, 2, 4, 4],
-                            n_resnet_blocks=2)
-
-            decoder = Decoder(out_channels=3,
-                            z_channels=4,
-                            channels=128,
-                            channel_multipliers=[1, 2, 4, 4],
-                            n_resnet_blocks=2)
-
-            autoencoder = Autoencoder(emb_channels=4,
+    with section('autoencoder initialization'):
+        if encoder is None:
+            encoder = initialize_encoder(device=device, z_channels=z_channels)
+        if decoder is None:
+            decoder = initialize_decoder(device=device, z_channels=z_channels)
+        
+        autoencoder = Autoencoder(emb_channels=emb_channels,
                                     encoder=encoder,
                                     decoder=decoder,
-                                    z_channels=4)
-            
-        autoencoder.save()
-            
-        return autoencoder
-    else:
-        with section('autoencoder loading'):
-            autoencoder = torch.load(model_path)
-            autoencoder.eval()
-            return autoencoder
+                                    z_channels=z_channels).to(device)
+    return autoencoder
         
-def initialize_clip_embedder(device = 'cuda:0', model_path = None) -> CLIPTextEmbedder:
+def initialize_clip_embedder(device = None, tokenizer = None, transformer = None) -> CLIPTextEmbedder:
 
     # Initialize the CLIP text embedder
-    if model_path is None:
-        with section('CLIP Embedder initialization'):
-            clip_text_embedder = CLIPTextEmbedder(
+    device = check_device(device)
+    with section('CLIP Embedder initialization'):
+        clip_text_embedder = CLIPTextEmbedder(
                 device=device,
             )
-            clip_text_embedder.load_from_lib()
-        clip_text_embedder.save()
-        return clip_text_embedder
-    else:
-        with section('CLIP Embedder loading'):
-            clip_text_embedder = torch.load(model_path)
-            clip_text_embedder.eval()
-            return clip_text_embedder
+        if tokenizer is None:
+            clip_text_embedder.load_tokenizer_from_lib()
+        else:
+            clip_text_embedder.tokenizer = tokenizer
+        if transformer is None:
+            clip_text_embedder.load_transformer_from_lib()
+        else:
+            clip_text_embedder.transformer = transformer
+        
+        clip_text_embedder.to(device)
 
-def initialize_unet(device = 'cuda:0', model_path = None) -> UNetModel:
-    
+    return clip_text_embedder
+
+def initialize_unet(device = None, 
+                    in_channels=4,
+                    out_channels=4,
+                    channels=320,
+                    attention_levels=[0, 1, 2],
+                    n_res_blocks=2,
+                    channel_multipliers=[1, 2, 4, 4],
+                    n_heads=8,
+                    tf_layers=1,
+                    d_cond=768) -> UNetModel:
+
     # Initialize the U-Net
-    if model_path is None:
-        with section('U-Net initialization'):
-            unet_model = UNetModel(in_channels=4,
-                                out_channels=4,
-                                channels=320,
-                                attention_levels=[0, 1, 2],
-                                n_res_blocks=2,
-                                channel_multipliers=[1, 2, 4, 4],
-                                n_heads=8,
-                                tf_layers=1,
-                                d_cond=768)
+    device = check_device(device)
+    with section('U-Net initialization'):
+        unet_model = UNetModel(in_channels=in_channels,
+                                out_channels=out_channels,
+                                channels=channels,
+                                attention_levels=attention_levels,
+                                n_res_blocks=n_res_blocks,
+                                channel_multipliers=channel_multipliers,
+                                n_heads=n_heads,
+                                tf_layers=tf_layers,
+                                d_cond=d_cond).to(device)
             # unet_model.save()
             # torch.save(unet_model, UNET_PATH)
-        unet_model.save()
-        return unet_model
-    else:
-        with monit.section('U-Net loading'):
-            unet_model = torch.load(model_path)
-            unet_model.eval()
-            return unet_model
+    return unet_model
 
-def load_model(path: Union[str, Path] = '', device = 'cuda:0', autoencoder = None, clip_text_embedder = None, unet_model = None) -> LatentDiffusion:
+def load_model(path: Union[str, Path] = '', device = None, autoencoder = None, clip_text_embedder = None, unet_model = None) -> LatentDiffusion:
     """
     ### Load [`LatentDiffusion` model](latent_diffusion.html)
     """
-
-    
-    autoencoder = initialize_autoencoder(device=device, model_path=autoencoder)
-    clip_text_embedder = initialize_clip_embedder(device=device, model_path=clip_text_embedder)
-    unet_model = initialize_unet(device=device, model_path=unet_model)
+    device = check_device(device)
+    # Initialize the models, if not given
+    if autoencoder is None:
+        autoencoder = initialize_autoencoder(device=device)
+    if clip_text_embedder is None:
+        clip_text_embedder = initialize_clip_embedder(device=device)
+    if unet_model is None:
+        unet_model = initialize_unet(device=device)
 
     # Initialize the Latent Diffusion model
-    with monit.section('Initialize Latent Diffusion model'):
+    with section('Latent Diffusion model initialization'):
         model = LatentDiffusion(linear_start=0.00085,
                                 linear_end=0.0120,
                                 n_steps=1000,
@@ -130,11 +169,11 @@ def load_model(path: Union[str, Path] = '', device = 'cuda:0', autoencoder = Non
                                 unet_model=unet_model)
 
     # Load the checkpoint
-    with monit.section(f"Loading model from {path}"):
+    with section(f"Loading stable-diffusion checkpoint from {path}"):
         checkpoint = torch.load(path, map_location="cpu")
 
     # Set model state
-    with monit.section('Load state'):
+    with section('Loading model state'):
         missing_keys, extra_keys = model.load_state_dict(checkpoint["state_dict"], strict=False)
 
     # Debugging output
@@ -143,20 +182,35 @@ def load_model(path: Union[str, Path] = '', device = 'cuda:0', autoencoder = Non
 
     #
     model.eval()
-    torch.save(model, './input/model/model.ckpt')
+    
     return model
 
 if __name__ == '__main__':
-    
+    assert len(os.sys.argv) > 1, 'Please provide an argument.'
     if int(os.sys.argv[1]) == 1:
-        initialize_clip_embedder()
+        embedder = initialize_clip_embedder()
+        embedder.save_submodels()
+        embedder.save()
     elif int(os.sys.argv[1]) == 2:
-        initialize_autoencoder()
+        autoencoder = initialize_autoencoder()
+        autoencoder.save_submodels()
+        autoencoder.save()
     elif int(os.sys.argv[1]) == 3:
-        initialize_unet()
+        unet = initialize_unet()
+        unet.save()
     elif int(os.sys.argv[1]) == 0:
-        initialize_clip_embedder()
-        initialize_autoencoder()
-        initialize_unet()
+        
+        embedder = initialize_clip_embedder()
+        embedder.save_submodels()
+        embedder.save()
+        
+        autoencoder = initialize_autoencoder()
+        autoencoder.save_submodels()
+        autoencoder.save()
+        
+        unet = initialize_unet()
+        unet.save()
+    
     else:
-        load_model(path='./input/model/v1-5-pruned-emaonly.ckpt', device='cuda:0')
+        model = load_model(path='./input/model/v1-5-pruned-emaonly.ckpt')
+        print(type(model))
