@@ -228,7 +228,7 @@ def main(args):
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset", default="./test/images/chibi-waifu-pixelart.zip", help="Path to the dataset directory or ZIP file.")
+    parser.add_argument("--dataset", default="./test-images/chibi-waifu-pixelart.zip", help="Path to the dataset directory or ZIP file.")
     parser.add_argument("--repo_dir", default=None, help="Directory to clone sd-scripts repository.")
     parser.add_argument("--activation_tags", type=int, default=1, help="The number of activation tags in each txt file on the dataset.")
     parser.add_argument("--num_repeats", type=int, default=None, help="Number of times to repeat per image.")
