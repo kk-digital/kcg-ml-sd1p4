@@ -256,7 +256,10 @@ def generate_images_from_dist_dict(
        img_grids.append(grid)
        
     if FROM_DISK:
-        dest_path = os.path.join(output_dir, f"grid_all_{DIST_NAME}{VAR_RANGE[0].item():.2f}_{VAR_RANGE[-1].item():.2f}_from_disk.jpg")
+        if DISK_MODE == 1:
+            dest_path = os.path.join(output_dir, f"grid_all_{DIST_NAME}{VAR_RANGE[0].item():.2f}_{VAR_RANGE[-1].item():.2f}_from_disk_m{DISK_MODE}.jpg")
+        elif DISK_MODE == 2:
+            dest_path = os.path.join(output_dir, f"grid_all_{DIST_NAME}{VAR_RANGE[0].item():.2f}_{VAR_RANGE[-1].item():.2f}_from_disk_m{DISK_MODE}.jpg")
     else:
         dest_path = os.path.join(output_dir, f"grid_all_{DIST_NAME}{VAR_RANGE[0].item():.2f}_{VAR_RANGE[-1].item():.2f}.jpg")
     

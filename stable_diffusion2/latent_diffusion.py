@@ -135,8 +135,7 @@ class LatentDiffusion(nn.Module):
         self.first_stage_model.eval()
         self.cond_stage_model = torch.load(embedder_path, map_location=device)
         self.cond_stage_model.eval()
-        self.model = DiffusionWrapper(torch.load(unet_path, map_location=device))
-        self.model.eval()
+        self.model = DiffusionWrapper(torch.load(unet_path, map_location=device).eval())
 
     def unload_submodels(self):
         del self.first_stage_model
