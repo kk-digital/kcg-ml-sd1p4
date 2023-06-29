@@ -25,16 +25,11 @@ Classes with submodels have `load_submodels` and `save_submodels` functions.
 The current directory tree for the `stable_diffusion2` folder is as follows:
 
 ```bash
+├── README.md
 ├── __init__.py
 ├── constants.py
 ├── latent_diffusion.py
 ├── model
-│   ├── __init__.py
-│   ├── autoencoder.py
-│   ├── clip_embedder.py
-│   ├── unet.py
-│   └── unet_attention.py
-├── model2
 │   ├── __init__.py
 │   ├── clip
 │   │   ├── __init__.py
@@ -57,7 +52,6 @@ The current directory tree for the `stable_diffusion2` folder is as follows:
     ├── __init__.py
     ├── cli.py
     ├── model.py
-    ├── model2.py
     └── utils.py
 ```
 The folder structure of `model/` was refined (compare to `model2/`). Now there's one folder per model, which contains files where the model (and its corresponding submodels, when applicable) classes are defined.
