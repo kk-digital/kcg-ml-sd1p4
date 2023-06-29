@@ -1,18 +1,32 @@
 #### running
 The CLI isn't developed, but you can test the codes -- they will need some storage, ~8GB --, after switching to this branch (hence having the adequate folder structure) with:
 
-`python save_all_models.py 0` then `python save_all_models.py 5 True`
+
+`python save_all_models.py 0`, then `python save_all_models.py 5 True`
+
 and
+
+
 `python /scripts2/generate_images_from_noise.py 4`
+
+
 you might want to drag the outputs out of the `OUTPUT_DIR` since it gets cleaned
+
+
 then
+
+
 `python /scripts2/generate_images_from_noise.py 4 True 1`
-same thing, then
+
+
+again, you might want to drag the outputs out of the `OUTPUT_DIR`, then
+
+
 `python /scripts2/generate_images_from_noise.py 4 True 2`
+
 
 you get the ouputs of three different initalization procedures for the `LatentDiffusion` class.
 
-##### `save_all_models.py`
 
 #### design choices
 I aimed to find a common ground between the previous codebase and the new pipeline. So I kept everything that subclassed a `nn.Module` as a subclass of a `nn.Module`. That implies that, for those classes, a `load`/`unload` function, as a class instance method, is in general pointless*. For that we already have a `load_state_dict` function. Instead, I added `load_submodels`, `unload_submodels` and `save_submodels` methods, when applicable, and a `save` function, to save the whole `nn.Module` to disk (*there will be examples*).
