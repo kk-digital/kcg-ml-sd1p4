@@ -26,10 +26,10 @@ from typing import List
 import torch
 import torch.nn as nn
 
-from .model.autoencoder import Autoencoder
-from .model.clip_embedder import CLIPTextEmbedder
-from .model.unet import UNetModel
-
+from .model.vae.autoencoder import Autoencoder
+from .model.clip.clip_embedder import CLIPTextEmbedder
+from .model.unet.unet import UNetModel
+from .constants import AUTOENCODER_PATH, UNET_PATH, LATENT_DIFFUSION_PATH, EMBEDDER_PATH
 
 class DiffusionWrapper(nn.Module):
     """
@@ -109,6 +109,43 @@ class LatentDiffusion(nn.Module):
         ### Get model device
         """
         return next(iter(self.model.parameters())).device
+
+    def save_submodels(self, autoencoder_path = AUTOENCODER_PATH, embedder_path = EMBEDDER_PATH, unet_path = UNET_PATH):
+        """
+        ### Save the model to a checkpoint
+        """
+        self.first_stage_model.save(autoencoder_path=autoencoder_path)
+        self.cond_stage_model.save(embedder_path=embedder_path)
+        self.model.diffusion_model.save(unet_path=unet_path)
+        # torch.save(self.encoder, encoder_path)
+        # torch.save(self.decoder, decoder_path)
+
+    def save(self, latent_diffusion_path = LATENT_DIFFUSION_PATH):
+        """
+        ### Save the model to a checkpoint
+        """
+        torch.save(self, latent_diffusion_path)
+
+    def load_submodels(self,  autoencoder_path = AUTOENCODER_PATH, embedder_path = EMBEDDER_PATH, unet_path = UNET_PATH, device = "cuda:0"):
+        
+        """
+        ### Load the model from a checkpoint
+        """
+        self.first_stage_model = torch.load(autoencoder_path, map_location=device)
+        self.first_stage_model.eval()
+        self.cond_stage_model = torch.load(embedder_path, map_location=device)
+        self.cond_stage_model.eval()
+        self.model = DiffusionWrapper(torch.load(unet_path, map_location=device))
+        self.model.eval()
+
+    def unload_submodels(self):
+        del self.first_stage_model
+        del self.cond_stage_model
+        del self.model
+        torch.cuda.empty_cache()
+        self.first_stage_model = None
+        self.cond_stage_model = None    
+        self.model = None
 
     def get_text_conditioning(self, prompts: List[str]):
         """

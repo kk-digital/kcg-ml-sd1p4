@@ -5,11 +5,11 @@ import torch
 
 from stable_diffusion2.sampler.ddim import DDIMSampler
 from stable_diffusion2.sampler.ddpm import DDPMSampler
-from stable_diffusion2.utils.model2 import load_model, get_device
+from stable_diffusion2.utils.model import initialize_latent_diffusion, get_device, load_img
 from stable_diffusion2.latent_diffusion import LatentDiffusion
 from stable_diffusion2.sampler import DiffusionSampler
-from stable_diffusion.utils.model import load_img
-
+from stable_diffusion2.constants import LATENT_DIFFUSION_PATH
+from stable_diffusion2.utils.utils import SectionManager as section
 from typing import Union, Optional
 from pathlib import Path
 
@@ -114,54 +114,60 @@ class StableDiffusionBaseScript:
                                 uncond_cond=un_cond)
 
         return x
-    
-    def initialize_from_saved(self, model_path):
-        """You can initialize the autoencoder, CLIP and UNet models externally and pass them to the script.
-        Use the methods: 
-            stable_diffusion.utils.model.initialize_autoencoder,
-            stable_diffusion.utils.model.initialize_clip_embedder and 
-            stable_diffusion.utils.model.initialize_unet to initialize them.
-        for that.
-        If you don't initialize them externally, the script will initialize them internally.
-        Args:
-            autoencoder (Autoencoder, optional): the externally initialized autoencoder. Defaults to None.
-            clip_text_embedder (CLIPTextEmbedder, optional): the externally initialized autoencoder. Defaults to None.
-            unet_model (UNetModel, optional): the externally initialized autoencoder. Defaults to None.
-        """
-        self.model = torch.load(model_path).to(self.device)
-        self.model.eval()
-        self.initialize_sampler()        
 
-    def initialize_script(self, autoencoder = None, clip_text_embedder = None, unet_model = None):
+    def load_model(self, model_path = LATENT_DIFFUSION_PATH):
+        with section(f'Latent Diffusion model loading, from {model_path}'):
+            self.model = torch.load(model_path, map_location=self.device)
+            self.model.eval()
+
+    def unload_model(self):
+        del self.model
+        torch.cuda.empty_cache()
+
+    def save_model(self, model_path = LATENT_DIFFUSION_PATH):
+        with section(f'Latent Diffusion model saving, to {model_path}'):
+            torch.save(self.model, model_path)
+    
+    def initialize_from_model(self, model: LatentDiffusion):
+
+        self.model = model
+        self.initialize_sampler()  
+
+    def initialize_from_saved(self, model_path = LATENT_DIFFUSION_PATH):
+
+        self.load_model(model_path)
+        self.initialize_sampler()  
+
+    def initialize_script(self, autoencoder = None, clip_text_embedder = None, unet_model = None, force_submodels_init = True):
         """You can initialize the autoencoder, CLIP and UNet models externally and pass them to the script.
         Use the methods: 
             stable_diffusion.utils.model.initialize_autoencoder,
             stable_diffusion.utils.model.initialize_clip_embedder and 
             stable_diffusion.utils.model.initialize_unet to initialize them.
-        for that.
         If you don't initialize them externally, the script will initialize them internally.
         Args:
             autoencoder (Autoencoder, optional): the externally initialized autoencoder. Defaults to None.
             clip_text_embedder (CLIPTextEmbedder, optional): the externally initialized autoencoder. Defaults to None.
             unet_model (UNetModel, optional): the externally initialized autoencoder. Defaults to None.
         """
-        self.load_model(autoencoder, clip_text_embedder, unet_model)
+        self.initialize_latent_diffusion(autoencoder, clip_text_embedder, unet_model, force_submodels_init=force_submodels_init)
         self.initialize_sampler()
 
-    def load_model(self, autoencoder, clip_text_embedder, unet_model):
+    def initialize_latent_diffusion(self, autoencoder, clip_text_embedder, unet_model, force_submodels_init = True):
         try:
-            self.model = load_model(
+            self.model = initialize_latent_diffusion(
                 self.checkpoint_path,
                 self.device_id,
                 autoencoder,
                 clip_text_embedder,
-                unet_model
+                unet_model,
+                force_submodels_init=force_submodels_init
             )
 
             # Move the model to device
             self.model.to(self.device)
         except EOFError:
-                raise ModelLoadError("Stable Diffusion model couldn't be loaded. Check that the ckpt file exists in the specified location (path), and that it is not corrupted.")
+                raise ModelLoadError("Stable Diffusion model couldn't be loaded. Check that the .ckpt file exists in the specified location (path), and that it is not corrupted.")
 
     def initialize_sampler(self):
         if self.sampler_name == 'ddim':
@@ -171,6 +177,3 @@ class StableDiffusionBaseScript:
         elif self.sampler_name == 'ddpm':
             self.sampler = DDPMSampler(self.model)
 
-    def unload_model(self):
-        del self.model
-        torch.cuda.empty_cache()

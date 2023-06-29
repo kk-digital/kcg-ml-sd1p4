@@ -8,7 +8,6 @@ import torch
 import torchvision
 
 from PIL import Image
-from contextlib import contextmanager
 
 class SectionManager:
     def __init__(self, name: str):
@@ -25,19 +24,6 @@ class SectionManager:
     def __exit__(self, exception_type, exception_value, traceback):
         self.t1 = time.time()
         print(f"Finished {self.section_name} in {(self.t1 - self.t0):.2f} seconds")
-
-# @contextmanager
-# def section(section_name):
-#     print(f"Starting {section_name}")
-
-#     try:
-#         file = open(name, "w")
-#         yield file
-#     finally:
-#         file.close()
-
-# with my_open("example.txt") as file:
-#     file.write("hello world")
 
 def save_images(images: torch.Tensor, dest_path: str, img_format: str = 'jpeg'):
     """

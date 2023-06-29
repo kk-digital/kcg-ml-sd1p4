@@ -78,6 +78,7 @@ class Autoencoder(nn.Module):
                             channels=128,
                             channel_multipliers=[1, 2, 4, 4],
                             n_resnet_blocks=2)
+
     def save_submodels(self, encoder_path = ENCODER_PATH, decoder_path = DECODER_PATH):
         """
         ### Save the model to a checkpoint

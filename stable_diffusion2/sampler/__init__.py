@@ -19,7 +19,7 @@ from typing import Optional, List
 
 import torch
 
-from stable_diffusion.latent_diffusion import LatentDiffusion
+from stable_diffusion2.latent_diffusion import LatentDiffusion
 
 
 class DiffusionSampler:

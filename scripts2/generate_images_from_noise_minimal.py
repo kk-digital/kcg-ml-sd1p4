@@ -7,13 +7,12 @@ from typing import Callable
 from tqdm import tqdm
 
 # from stable_diffusion2.utils.model import save_images, save_image_grid
-from auxiliary_functions import save_images, save_image_grid, get_torch_distribution_from_name
+from auxiliary_functions import save_images, save_image_grid
 # from stable_diffusion2.utils.utils import save_images, save_image_grid
 from text_to_image import Txt2Img
 
-from stable_diffusion2.latent_diffusion import LatentDiffusion
+
 from stable_diffusion2.constants import CHECKPOINT_PATH, AUTOENCODER_PATH, UNET_PATH, EMBEDDER_PATH, LATENT_DIFFUSION_PATH
-from stable_diffusion2.utils.utils import SectionManager as section
 import safetensors.torch as st
 
 # CHECKPOINT_PATH = os.path.abspath('./input/model/v1-5-pruned-emaonly.ckpt')
@@ -45,10 +44,6 @@ TEMP_RANGE = torch.linspace(1, 4, 8)
 DDIM_ETA = 0.0 #should be cli argument
 OUTPUT_DIR = os.path.abspath('./output/noise-tests/')
 FROM_DISK = ((os.sys.argv[2] == 'True') if len(sys.argv) > 2 else False) 
-DISK_MODE = None #1 or 2
-if FROM_DISK:
-    if len(os.sys.argv) > 3:
-        DISK_MODE = int(os.sys.argv[3])
 
 CLEAR_OUTPUT_DIR = True
 if len(sys.argv) > 1:
@@ -73,6 +68,18 @@ else:
     VAR_RANGE = torch.linspace(0.90, 1.1, 5)
     DISTRIBUTIONS = {f'{DIST_NAME}_{var.item():.4f}': dict(loc=0, scale=var.item()) for var in VAR_RANGE}
 
+def get_torch_distribution_from_name(name: str) -> type:
+    if name == 'Logistic':
+        def logistic_distribution(loc, scale):
+            base_distribution = torch.distributions.Uniform(0, 1)
+            transforms = [torch.distributions.transforms.SigmoidTransform().inv, torch.distributions.transforms.AffineTransform(loc=loc, scale=scale)]
+            logistic = torch.distributions.TransformedDistribution(base_distribution, transforms)
+            return logistic
+        return logistic_distribution
+    return torch.distributions.__dict__[name]
+
+
+
 def create_folder_structure(distributions_dict: dict[str, dict[str, float]], root_dir: str = OUTPUT_DIR) -> None:
     for i, distribution_name in enumerate(distributions_dict.keys()):
         
@@ -89,7 +96,7 @@ def generate_prompt(prompt_prefix, artist):
     return prompt
 
 def init_txt2img(
-        checkpoint_path: str=CHECKPOINT_PATH,
+        checkpoint_path: str = CHECKPOINT_PATH,
         sampler_name: str='ddim',
         n_steps: int=20,
         ddim_eta: float=0.0,
@@ -100,41 +107,25 @@ def init_txt2img(
     
     txt2img = Txt2Img(checkpoint_path=checkpoint_path, sampler_name=sampler_name, n_steps=n_steps, ddim_eta=ddim_eta)
     # compute loading time
-     
-    latent_diffusion_model = LatentDiffusion(linear_start=0.00085,
-                                linear_end=0.0120,
-                                n_steps=1000,
-                                latent_scaling_factor=0.18215,
-                                autoencoder=autoencoder,
-                                clip_embedder=clip_text_embedder,
-                                unet_model=unet_model)
     if FROM_DISK:
-        if DISK_MODE == 1:
-            txt2img.initialize_from_saved(model_path=LATENT_DIFFUSION_PATH)
-        elif DISK_MODE == 2:
-            with section("to load all submodels from disk"):
-                # autoencoder = torch.load(AUTOENCODER_PATH)
-                # autoencoder.eval()
-                # clip_text_embedder = torch.load(EMBEDDER_PATH)
-                # clip_text_embedder.eval()
-                # unet_model = torch.load(UNET_PATH)
-                # unet_model.eval()
-                latent_diffusion_model.load_submodels()
-            with section(f"stable-diffusion checkpoint loading, from {CHECKPOINT_PATH}"):
-                checkpoint = torch.load(CHECKPOINT_PATH, map_location="cpu")
+        t0_clip = time.time()
+        autoencoder = torch.load(AUTOENCODER_PATH)
+        autoencoder.eval()
+        clip_text_embedder = torch.load(EMBEDDER_PATH)
+        clip_text_embedder.eval()
+        unet_model = torch.load(UNET_PATH)
+        unet_model.eval()
+        t1_clip = time.time()
+        print("Time to load all submodels from disk: %.2f seconds" % (t1_clip-t0_clip))
 
-            # Set model state
-            with section('model state loading'):
-                missing_keys, extra_keys = latent_diffusion_model.load_state_dict(checkpoint["state_dict"], strict=False)
-
-            txt2img.initialize_from_model(latent_diffusion_model)
-
-        return txt2img
-    else:
-        with section("to run `StableDiffusionBaseScript`'s initialization function"):
-            txt2img.initialize_script(autoencoder= autoencoder, unet_model = unet_model, clip_text_embedder=clip_text_embedder)
-        
-        return txt2img
+    
+    t0_clip = time.time()
+    # txt2img.initialize_script(autoencoder= autoencoder, unet_model = unet_model, clip_text_embedder=clip_text_embedder)
+    txt2img.initialize_from_saved(model_path=LATENT_DIFFUSION_PATH)
+    # txt2img.initialize_script()
+    t1_clip = time.time()
+    print("Time to run the init script: %.2f seconds" % (t1_clip-t0_clip))
+    return txt2img
 
 def get_all_prompts(prompt_prefix, artist_file, num_artists = None):
 
