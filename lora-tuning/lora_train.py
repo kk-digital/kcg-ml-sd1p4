@@ -68,6 +68,7 @@ def generate_config(config_file, dataset_config_file, model_file, activation_tag
             "max_token_length": 225,
             "xformers": True,
             "lowram": lowram,
+            "adaptive_noise_scale": None,
             "max_data_loader_n_workers": 8,
             "persistent_data_loader_workers": True,
             "save_precision": "fp16",
