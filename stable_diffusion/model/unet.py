@@ -24,7 +24,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from stable_diffusion.model.unet_attention import SpatialTransformer
-
+from torchinfo import summary
 
 class UNetModel(nn.Module):
     """
@@ -179,6 +179,19 @@ class UNetModel(nn.Module):
         # Final normalization and $3 \times 3$ convolution
         return self.out(x)
 
+    def PrintTorchInfo(self):
+        # Summary Unet Model
+        print("Printing Unet Layers for: ConvNet(nn.Module)")
+        unet_model = UNetModel(in_channels=4,
+                            out_channels=4,
+                            channels=320,
+                            attention_levels=[0, 1, 2],
+                            n_res_blocks=2,
+                            channel_multipliers=[1, 2, 4, 4],
+                            n_heads=8,
+                            tf_layers=1,
+                            d_cond=768)
+        summary(unet_model,num_groups=32, device="cpu")
 
 class TimestepEmbedSequential(nn.Sequential):
     """

@@ -25,4 +25,3 @@ libtorrent
 nbmake==1.4.1
 pytest
 pytest-xdist
-torchinfo==1.8.0
