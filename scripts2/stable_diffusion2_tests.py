@@ -5,19 +5,35 @@ import shutil
 import time
 from typing import Callable
 from tqdm import tqdm
-
+import argparse
 # from stable_diffusion2.utils.model import save_images, save_image_grid
-from auxiliary_functions import save_images, save_image_grid
+from auxiliary_functions import save_images, save_image_grid, get_torch_distribution_from_name
 # from stable_diffusion2.utils.utils import save_images, save_image_grid
 from text_to_image import Txt2Img
 
-
+from stable_diffusion2.latent_diffusion import LatentDiffusion
 from stable_diffusion2.constants import CHECKPOINT_PATH, AUTOENCODER_PATH, UNET_PATH, EMBEDDER_PATH, LATENT_DIFFUSION_PATH
+from stable_diffusion2.utils.utils import SectionManager as section
+from stable_diffusion2.utils.model import initialize_autoencoder, initialize_encoder, initialize_decoder 
+from stable_diffusion2.utils.model import initialize_clip_embedder, initialize_tokenizer, initialize_transformer 
+from stable_diffusion2.utils.model import initialize_unet, initialize_latent_diffusion
 import safetensors.torch as st
 
 # CHECKPOINT_PATH = os.path.abspath('./input/model/v1-5-pruned-emaonly.ckpt')
 
+CHECKPOINT_PATH = os.path.abspath('./input/model/v1-5-pruned-emaonly.ckpt')
 
+EMBEDDER_PATH = os.path.abspath('./input/model/clip/clip_embedder.ckpt')
+TOKENIZER_PATH = os.path.abspath('./input/model/clip/clip_tokenizer.ckpt')
+TRANSFORMER_PATH = os.path.abspath('./input/model/clip/clip_transformer.ckpt')
+
+UNET_PATH = os.path.abspath('./input/model/unet/unet.ckpt')
+
+AUTOENCODER_PATH = os.path.abspath('./input/model/autoencoder/autoencoder.ckpt')
+ENCODER_PATH = os.path.abspath('./input/model/autoencoder/encoder.ckpt')
+DECODER_PATH = os.path.abspath('./input/model/autoencoder/decoder.ckpt')
+
+LATENT_DIFFUSION_PATH = os.path.abspath('./input/model/latent_diffusion/latent_diffusion.ckpt')
 
 
 NOISE_SEEDS = [
@@ -43,13 +59,24 @@ TEMPERATURE = 1.0 #should be cli argument
 TEMP_RANGE = torch.linspace(1, 4, 8)
 DDIM_ETA = 0.0 #should be cli argument
 OUTPUT_DIR = os.path.abspath('./output/noise-tests/')
-FROM_DISK = ((os.sys.argv[2] == 'True') if len(sys.argv) > 2 else False) 
+TESTS_OUTPUT_DIR = os.path.abspath('./output/outputs_for_test/')
+parser = argparse.ArgumentParser(
+        description='sum the integers at the command line')
+parser.add_argument('--output_dir', type=str, default=OUTPUT_DIR)
+parser.add_argument('--vae_init_mode', type=int, default=0)
+parser.add_argument('--clip_init_mode', type=int, default=0)
+parser.add_argument('--latent_diffusion_init_mode', type=int, default=0)
+args = parser.parse_args()
+print(args)
+VAE_INIT_MODE = args.vae_init_mode
+CLIP_INIT_MODE = args.clip_init_mode
+LATENT_DIFFUSION_INIT_MODE = args.latent_diffusion_init_mode
+
+
 
 CLEAR_OUTPUT_DIR = True
-if len(sys.argv) > 1:
-    dist_name_index = int(sys.argv[1])
 
-    _DISTRIBUTIONS = {
+_DISTRIBUTIONS = {
         'Normal': dict(loc=0.0, scale=1.0),
         'Cauchy': dict(loc=0.0, scale=1.0), 
         'Gumbel': dict(loc=1.0, scale=2.0), 
@@ -58,26 +85,11 @@ if len(sys.argv) > 1:
         # 'Uniform': dict(low=0.0, high=1.0)
     }
     
-    dist_names = list(_DISTRIBUTIONS.keys())
-    DIST_NAME = dist_names[dist_name_index]
-    #VAR_RANGE = torch.linspace(0.6, 0.8, 10) #args here should be given as command line arguments
-    VAR_RANGE = torch.linspace(0.49, 0.54, NUM_DISTRIBUTIONS) #args here should be given as command line arguments
-    DISTRIBUTIONS = {f'{DIST_NAME}_{var.item():.4f}': dict(loc=0.0, scale=var.item()) for var in VAR_RANGE}
-else:
-    DIST_NAME = 'Normal'
-    VAR_RANGE = torch.linspace(0.90, 1.1, 5)
-    DISTRIBUTIONS = {f'{DIST_NAME}_{var.item():.4f}': dict(loc=0, scale=var.item()) for var in VAR_RANGE}
-
-def get_torch_distribution_from_name(name: str) -> type:
-    if name == 'Logistic':
-        def logistic_distribution(loc, scale):
-            base_distribution = torch.distributions.Uniform(0, 1)
-            transforms = [torch.distributions.transforms.SigmoidTransform().inv, torch.distributions.transforms.AffineTransform(loc=loc, scale=scale)]
-            logistic = torch.distributions.TransformedDistribution(base_distribution, transforms)
-            return logistic
-        return logistic_distribution
-    return torch.distributions.__dict__[name]
-
+dist_names = list(_DISTRIBUTIONS.keys())
+DIST_NAME = 'Logistic'
+#VAR_RANGE = torch.linspace(0.6, 0.8, 10) #args here should be given as command line arguments
+VAR_RANGE = torch.linspace(0.49, 0.54, NUM_DISTRIBUTIONS) #args here should be given as command line arguments
+DISTRIBUTIONS = {f'{DIST_NAME}_{var.item():.4f}': dict(loc=0.0, scale=var.item()) for var in VAR_RANGE}
 
 
 def create_folder_structure(distributions_dict: dict[str, dict[str, float]], root_dir: str = OUTPUT_DIR) -> None:
@@ -95,8 +107,54 @@ def generate_prompt(prompt_prefix, artist):
     prompt = f"{prompt_prefix} {artist}"
     return prompt
 
+def init_vae_from_mode(mode):
+    if mode == 0:
+        with section("to initialize autoencoder, then load encoder and decoder from disk"):
+            autoencoder = initialize_autoencoder(force_submodels_init=False)
+            autoencoder.load_submodels()
+            return autoencoder
+            
+    elif mode == 1:
+        with section("to initialize encoder and decoder, then initialize autoencoder from them"):
+            encoder = initialize_encoder()
+            decoder = initialize_decoder()
+            autoencoder = initialize_autoencoder(encoder=encoder, decoder=decoder)    
+            return autoencoder
+        
+def init_text_embedder_from_mode(mode):
+    if mode == 0:
+        with section("to initialize text embedder, then load tokenizer and transformer from disk"):
+            clip_embedder = initialize_clip_embedder(force_submodels_init=False)
+            clip_embedder.load_submodels()
+            return clip_embedder
+            
+    elif mode == 1:
+        with section("to initialize encoder and decoder, then initialize autoencoder from them"):
+            tokenizer = initialize_tokenizer()
+            transformer = initialize_transformer()
+            clip_embedder = initialize_clip_embedder(tokenizer = tokenizer, transformer=transformer)
+            return clip_embedder
+
+def init_latent_diffusion_from_mode(mode):
+    if mode == 0:
+        with section("to initialize latent diffusion, then load submodels from disk"):
+            latent_diffusion_model = initialize_latent_diffusion(path = CHECKPOINT_PATH, force_submodels_init=False)
+            latent_diffusion_model.load_submodels()
+            return latent_diffusion_model
+    if mode == 1:
+        with section("to initialize latent diffusion submodels, then initialize latent diffusion from them"):
+            autoencoder = init_vae_from_mode(VAE_INIT_MODE)
+            clip_text_embedder = init_text_embedder_from_mode(CLIP_INIT_MODE)
+            unet_model = initialize_unet()
+            latent_diffusion_model = initialize_latent_diffusion(path = CHECKPOINT_PATH, autoencoder=autoencoder, clip_text_embedder=clip_text_embedder, unet_model=unet_model)
+            return latent_diffusion_model
+    if mode == 2:
+        with section("to initialize latent diffusion forcing submodels initialization"):
+            latent_diffusion_model = initialize_latent_diffusion(path = CHECKPOINT_PATH, force_submodels_init=True)
+            return latent_diffusion_model
+
 def init_txt2img(
-        checkpoint_path: str = CHECKPOINT_PATH,
+        checkpoint_path: str=CHECKPOINT_PATH,
         sampler_name: str='ddim',
         n_steps: int=20,
         ddim_eta: float=0.0,
@@ -107,24 +165,9 @@ def init_txt2img(
     
     txt2img = Txt2Img(checkpoint_path=checkpoint_path, sampler_name=sampler_name, n_steps=n_steps, ddim_eta=ddim_eta)
     # compute loading time
-    if FROM_DISK:
-        t0_clip = time.time()
-        autoencoder = torch.load(AUTOENCODER_PATH)
-        autoencoder.eval()
-        clip_text_embedder = torch.load(EMBEDDER_PATH)
-        clip_text_embedder.eval()
-        unet_model = torch.load(UNET_PATH)
-        unet_model.eval()
-        t1_clip = time.time()
-        print("Time to load all submodels from disk: %.2f seconds" % (t1_clip-t0_clip))
-
-    
-    t0_clip = time.time()
-    # txt2img.initialize_script(autoencoder= autoencoder, unet_model = unet_model, clip_text_embedder=clip_text_embedder)
-    txt2img.initialize_from_saved(model_path=LATENT_DIFFUSION_PATH)
-    # txt2img.initialize_script()
-    t1_clip = time.time()
-    print("Time to run the init script: %.2f seconds" % (t1_clip-t0_clip))
+    latent_diffusion_model = init_latent_diffusion_from_mode(LATENT_DIFFUSION_INIT_MODE)
+    print(latent_diffusion_model)
+    txt2img.initialize_from_model(latent_diffusion_model)
     return txt2img
 
 def get_all_prompts(prompt_prefix, artist_file, num_artists = None):
@@ -246,14 +289,12 @@ def generate_images_from_dist_dict(
        grid = generate_images_from_dist(txt2img, (distribution_name, params), prompt_prefix=prompt_prefix, artist_file=artist_file, num_artists=num_artists, batch_size=batch_size, temperature=temperature)
        img_grids.append(grid)
        
-    if FROM_DISK:
-        dest_path = os.path.join(output_dir, f"grid_all_{DIST_NAME}{VAR_RANGE[0].item():.2f}_{VAR_RANGE[-1].item():.2f}_from_disk.jpg")
-    else:
-        dest_path = os.path.join(output_dir, f"grid_all_{DIST_NAME}{VAR_RANGE[0].item():.2f}_{VAR_RANGE[-1].item():.2f}.jpg")
+
+    dest_path = os.path.join(TESTS_OUTPUT_DIR, f"grid_all_{DIST_NAME}{VAR_RANGE[0].item():.2f}_{VAR_RANGE[-1].item():.2f}_{VAE_INIT_MODE}{CLIP_INIT_MODE}{LATENT_DIFFUSION_INIT_MODE}.jpg")
     
     grid = torch.cat(img_grids, dim=0)
     torch.save(grid, dest_path.replace('.jpg', '.pt'))
-    st.save_file({"img_grid": grid}, dest_path.replace('.jpg', '.safetensors'))
+    # st.save_file({"img_grid": grid}, dest_path.replace('.jpg', '.safetensors'))
     print("grid shape: ", grid.shape)
     save_image_grid(grid, dest_path, nrow=NUM_SEEDS, normalize=True, scale_each=True)
 

@@ -101,33 +101,49 @@ def init_txt2img(
     txt2img = Txt2Img(checkpoint_path=checkpoint_path, sampler_name=sampler_name, n_steps=n_steps, ddim_eta=ddim_eta)
     # compute loading time
      
-    latent_diffusion_model = LatentDiffusion(linear_start=0.00085,
+
+    if FROM_DISK:
+        if DISK_MODE == 1:
+            txt2img.initialize_from_saved(model_path=LATENT_DIFFUSION_PATH)
+        elif DISK_MODE == 2:
+            with section("to load all submodels from disk"):
+                autoencoder = torch.load(AUTOENCODER_PATH)
+                autoencoder.eval()
+                clip_text_embedder = torch.load(EMBEDDER_PATH)
+                clip_text_embedder.eval()
+                unet_model = torch.load(UNET_PATH)
+                unet_model.eval()
+
+                # latent_diffusion_model.load_submodels()
+
+            latent_diffusion_model = LatentDiffusion(linear_start=0.00085,
                                 linear_end=0.0120,
                                 n_steps=1000,
                                 latent_scaling_factor=0.18215,
                                 autoencoder=autoencoder,
                                 clip_embedder=clip_text_embedder,
                                 unet_model=unet_model)
-    if FROM_DISK:
-        if DISK_MODE == 1:
-            txt2img.initialize_from_saved(model_path=LATENT_DIFFUSION_PATH)
-        elif DISK_MODE == 2:
-            with section("to load all submodels from disk"):
-                # autoencoder = torch.load(AUTOENCODER_PATH)
-                # autoencoder.eval()
-                # clip_text_embedder = torch.load(EMBEDDER_PATH)
-                # clip_text_embedder.eval()
-                # unet_model = torch.load(UNET_PATH)
-                # unet_model.eval()
-                latent_diffusion_model.load_submodels()
+
             with section(f"stable-diffusion checkpoint loading, from {CHECKPOINT_PATH}"):
                 checkpoint = torch.load(CHECKPOINT_PATH, map_location="cpu")
 
             # Set model state
             with section('model state loading'):
                 missing_keys, extra_keys = latent_diffusion_model.load_state_dict(checkpoint["state_dict"], strict=False)
-
+            
             txt2img.initialize_from_model(latent_diffusion_model)
+
+        elif DISK_MODE == 3:
+            with section("to load latent diffusion saved model"):
+                autoencoder = torch.load(AUTOENCODER_PATH)
+                autoencoder.eval()
+                clip_text_embedder = torch.load(EMBEDDER_PATH)
+                clip_text_embedder.eval()
+                unet_model = torch.load(UNET_PATH)
+                unet_model.eval()
+                # print(type(latent_diffusion_model))
+                # latent_diffusion_model.load_submodels()
+            txt2img.initialize_script(autoencoder=autoencoder, unet_model = unet_model, clip_text_embedder=clip_text_embedder, force_submodels_init=False)
 
         return txt2img
     else:
@@ -256,9 +272,7 @@ def generate_images_from_dist_dict(
        img_grids.append(grid)
        
     if FROM_DISK:
-        if DISK_MODE == 1:
-            dest_path = os.path.join(output_dir, f"grid_all_{DIST_NAME}{VAR_RANGE[0].item():.2f}_{VAR_RANGE[-1].item():.2f}_from_disk_m{DISK_MODE}.jpg")
-        elif DISK_MODE == 2:
+        if type(DISK_MODE) is int:
             dest_path = os.path.join(output_dir, f"grid_all_{DIST_NAME}{VAR_RANGE[0].item():.2f}_{VAR_RANGE[-1].item():.2f}_from_disk_m{DISK_MODE}.jpg")
     else:
         dest_path = os.path.join(output_dir, f"grid_all_{DIST_NAME}{VAR_RANGE[0].item():.2f}_{VAR_RANGE[-1].item():.2f}.jpg")

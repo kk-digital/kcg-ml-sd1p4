@@ -1,4 +1,8 @@
 import os
+import sys
+
+base_directory = "../"
+sys.path.insert(0, base_directory)
 
 CHECKPOINT_PATH = os.path.abspath('./input/model/v1-5-pruned-emaonly.ckpt')
 

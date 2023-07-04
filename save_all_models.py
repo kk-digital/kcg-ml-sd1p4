@@ -43,6 +43,7 @@ from stable_diffusion2.model.vae.autoencoder import Autoencoder
 from stable_diffusion2.model.clip.clip_embedder import CLIPTextEmbedder
 from stable_diffusion2.model.unet.unet import UNetModel
 # from stable_diffusion2.model.unet import UNetModel
+from torchinfo import summary
 
 if __name__ == '__main__':
     assert len(os.sys.argv) > 1, 'Please provide an argument.'
@@ -50,13 +51,16 @@ if __name__ == '__main__':
         embedder = initialize_clip_embedder()
         embedder.save_submodels()
         embedder.save()
+        summary(embedder)
     elif int(os.sys.argv[1]) == 2:
         autoencoder = initialize_autoencoder()
         autoencoder.save_submodels()
         autoencoder.save()
+        summary(autoencoder)
     elif int(os.sys.argv[1]) == 3:
         unet = initialize_unet()
         unet.save()
+        summary(unet)
     elif int(os.sys.argv[1]) == 0:
         
         embedder = initialize_clip_embedder()
@@ -69,11 +73,16 @@ if __name__ == '__main__':
         
         unet = initialize_unet()
         unet.save()
-    
+
+        summary(embedder)
+        summary(autoencoder)
+        summary(unet)
+
     else:
         if len(os.sys.argv) > 2:
             if os.sys.argv[2] == 'True':
                 model = initialize_latent_diffusion(path=CHECKPOINT_PATH, force_submodels_init=True)
+                summary(model)
         else:
             model = initialize_latent_diffusion(path=CHECKPOINT_PATH, force_submodels_init=False)
         model.save()

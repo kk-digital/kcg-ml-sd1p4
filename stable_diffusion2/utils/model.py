@@ -32,15 +32,18 @@ from stable_diffusion2.model.vae.decoder import Decoder
 from stable_diffusion2.model.vae.autoencoder import Autoencoder
 from stable_diffusion2.model.clip.clip_embedder import CLIPTextEmbedder
 from stable_diffusion2.model.unet.unet import UNetModel
+
+from transformers import CLIPTokenizer, CLIPTextModel
+
 # from stable_diffusion2.model.unet import UNetModel
 
-def check_device(device):
+def check_device(device, cuda_fallback = 'cuda:0'):
     if device is None:
-        device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-        print(f'Using device: {device}. Slow on CPU.')
+        device = torch.device(cuda_fallback if torch.cuda.is_available() else 'cpu')
+        print(f'Using {device}: {torch.cuda.get_device_name(device)}. Slow on CPU.')
     else:
         device = torch.device(device)
-        print(f'Using device: {device}.')
+        print(f'Using {device}: {torch.cuda.get_device_name(device)}. Slow on CPU.')
     return device
 
 
@@ -79,22 +82,30 @@ def initialize_decoder(device = None,
     # Initialize the autoencoder    
 
     
-def initialize_autoencoder(device = None, encoder = None, decoder = None, emb_channels = 4, z_channels = 4) -> Autoencoder:
+def initialize_autoencoder(device = None, encoder = None, decoder = None, emb_channels = 4, z_channels = 4, force_submodels_init = True) -> Autoencoder:
     device = check_device(device)
     # Initialize the autoencoder
     with section('autoencoder initialization'):
-        if encoder is None:
-            encoder = initialize_encoder(device=device, z_channels=z_channels)
-        if decoder is None:
-            decoder = initialize_decoder(device=device, z_channels=z_channels)
+        if force_submodels_init:
+            if encoder is None:
+                encoder = initialize_encoder(device=device, z_channels=z_channels)
+            if decoder is None:
+                decoder = initialize_decoder(device=device, z_channels=z_channels)
         
         autoencoder = Autoencoder(emb_channels=emb_channels,
                                     encoder=encoder,
                                     decoder=decoder,
                                     z_channels=z_channels).to(device)
     return autoencoder
-        
-def initialize_clip_embedder(device = None, tokenizer = None, transformer = None) -> CLIPTextEmbedder:
+def initialize_tokenizer(device = None, version="openai/clip-vit-large-patch14") -> CLIPTokenizer:
+    check_device(device)
+    tokenizer = CLIPTokenizer.from_pretrained(version)
+    return tokenizer
+def initialize_transformer(device = None, version = "openai/clip-vit-large-patch14") -> CLIPTextModel:
+    check_device(device)
+    transformer = CLIPTextModel.from_pretrained(version).eval().to(device)        
+    return transformer
+def initialize_clip_embedder(device = None, tokenizer = None, transformer = None, force_submodels_init = True) -> CLIPTextEmbedder:
 
     # Initialize the CLIP text embedder
     device = check_device(device)
@@ -145,7 +156,7 @@ def initialize_unet(device = None,
             # torch.save(unet_model, UNET_PATH)
     return unet_model
 
-def initialize_latent_diffusion(path: Union[str, Path] = '', device = None, autoencoder = None, clip_text_embedder = None, unet_model = None, force_submodels_init = True) -> LatentDiffusion:
+def initialize_latent_diffusion(path: Union[str, Path] = '', device = None, autoencoder = None, clip_text_embedder = None, unet_model = None, force_submodels_init = False) -> LatentDiffusion:
     """
     ### Load [`LatentDiffusion` model](latent_diffusion.html)
     """

@@ -24,7 +24,7 @@ from torch import nn, save
 from os.path import join
 from transformers import CLIPTokenizer, CLIPTextModel
 from stable_diffusion2.constants import EMBEDDER_PATH, TOKENIZER_PATH, TRANSFORMER_PATH
-
+from torchinfo import summary
 # EMBEDDER_PATH = os.path.abspath('./input/model/clip/clip_embedder.ckpt')
 # TOKENIZER_PATH = os.path.abspath('./input/model/clip/clip_tokenizer.ckpt')
 # TRANSFORMER_PATH = os.path.abspath('./input/model/clip/clip_transformer.ckpt')
@@ -83,6 +83,7 @@ class CLIPTextEmbedder(nn.Module):
                                         return_overflowing_tokens=False, padding="max_length", return_tensors="pt")
         # Get token ids
         tokens = batch_encoding["input_ids"].to(self.device)
+        print(tokens), print(tokens.shape)
         # Get CLIP embeddings
         return self.transformer(input_ids=tokens).last_hidden_state
 #%%
@@ -95,14 +96,19 @@ if __name__ == "__main__":
 
 
 
-    clip.load_from_lib()
+    clip.load_tokenizer_from_lib()
+    clip.load_transformer_from_lib()
     embeddings1 = clip(prompts)
+
+    summary(clip.transformer)
+    print("embeddings: ", embeddings1)
+    print("embeddings.shape: ", embeddings1.shape)
 
     clip.save()  
 
-    clip.unload()
+    clip.unload_submodels()
 
-    clip.load()
+    clip.load_submodels()
 
     embeddings2 = clip(prompts)
 
