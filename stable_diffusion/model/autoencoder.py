@@ -70,7 +70,7 @@ class Autoencoder(nn.Module):
         # Decode the image of shape `[batch_size, channels, height, width]`
         return self.decoder(z)
     
-    def PrintTorchInfo():
+    def PrintTorchInfo(self):
         # Autoencoder model
         print("Printing Autoencoder Layers for: ConvNet(nn.Module)")
         encoder = Encoder(z_channels=4,
