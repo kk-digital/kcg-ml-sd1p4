@@ -83,8 +83,8 @@ class CLI:
         self.parser.add_argument(
             '--checkpoint_path',
             type=str,
-            default='./input/model/sd-v1-4.ckpt',
-            help='Path to the checkpoint file (default: \'./input/model/sd-v1-4.ckpt\')'
+            default='./input/models/sd-v1-4.ckpt',
+            help='Path to the checkpoint file (default: \'./input/models/sd-v1-4.ckpt\')'
         )
 
         if check_exists:

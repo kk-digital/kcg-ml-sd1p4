@@ -193,7 +193,7 @@ def generate_images_from_custom_noise(
         clear_output_dir: bool = CLEAR_OUTPUT_DIR,
         prompt_prefix: str="A woman with flowers in her hair in a courtyard, in the style of",
         artist_file: str=os.path.abspath('./input/artists.txt'),
-        checkpoint_path: str=os.path.abspath('./input/model/sd-v1-4.ckpt'),
+        checkpoint_path: str=os.path.abspath('./input/models/sd-v1-4.ckpt'),
         sampler_name: str='ddim',
         n_steps: int=20,
         batch_size: int=1,

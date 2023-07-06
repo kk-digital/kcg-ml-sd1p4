@@ -28,7 +28,7 @@ def load_embeddings(path= os.path.abspath('./input/prompt_embeddings.pt')):
 def generate_images_from_embeddings(
     embeddings_path: str='prompt_embeddings.pt',
     output_dir: str='./output/noise-tests/',
-    checkpoint_path: str='./input/model/sd-v1-4.ckpt',
+    checkpoint_path: str='./input/models/sd-v1-4.ckpt',
     sampler_name: str='ddim',
     n_steps: int=20,
     batch_size: int=1,
@@ -48,7 +48,7 @@ def generate_images_from_embeddings(
     t0_clip = time.time()
     
     
-    clip_text_embedder_model = torch.load('./input/model/clip_embedder.pt')
+    clip_text_embedder_model = torch.load('./input/models/clip_embedder.pt')
     t1_clip = time.time()
     
     print("Time to load CLIP from disk: %.2f seconds" % (t1_clip-t0_clip))
@@ -121,7 +121,7 @@ def init_txt2img(checkpoint_path, sampler_name, n_steps):
     # print("CLIP model: ", clip_text_embedder_model, type(clip_text_embedder_model))
     txt2img = Txt2Img(checkpoint_path=checkpoint_path, sampler_name=sampler_name, n_steps=n_steps)
     # txt2img.initialize_script(clip_text_embedder=clip_text_embedder_model)
-    txt2img.initialize_script(clip_text_embedder='./input/model/clip_embedder.pt')
+    txt2img.initialize_script(clip_text_embedder='./input/models/clip_embedder.pt')
     # txt2img.initialize_script()
     return txt2img
 
@@ -157,7 +157,7 @@ def generate_images(
     prompt_prefix: str="A woman with flowers in her hair in a courtyard, in the style of",
     artist_file: str='./input/artists.txt',
     output_dir: str='./output/noise-tests/',
-    checkpoint_path: str='./input/model/sd-v1-4.ckpt',
+    checkpoint_path: str='./input/models/sd-v1-4.ckpt',
     sampler_name: str='ddim',
     n_steps: int=20,
     batch_size: int=1,
