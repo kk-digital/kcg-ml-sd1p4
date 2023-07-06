@@ -12,9 +12,9 @@ from auxiliary_functions import save_images, save_image_grid, get_torch_distribu
 from text_to_image import Txt2Img
 
 from stable_diffusion2.latent_diffusion import LatentDiffusion
-from stable_diffusion2.constants import CHECKPOINT_PATH, AUTOENCODER_PATH, UNET_PATH, EMBEDDER_PATH, LATENT_DIFFUSION_PATH
+from stable_diffusion2.constants import CHECKPOINT_PATH, AUTOENCODER_PATH, UNET_PATH, EMBEDDER_PATH, LATENT_DIFFUSION_PATH, ENCODER_PATH, DECODER_PATH, TOKENIZER_PATH, TRANSFORMER_PATH
 from stable_diffusion2.utils.utils import SectionManager as section
-from stable_diffusion2.utils.model import initialize_latent_diffusion
+from stable_diffusion2.utils.model import initialize_latent_diffusion, initialize_autoencoder, initialize_clip_embedder
 import safetensors.torch as st
 
 # CHECKPOINT_PATH = os.path.abspath('./input/model/v1-5-pruned-emaonly.ckpt')
@@ -146,9 +146,9 @@ def init_txt2img(
                 clip_text_embedder.eval()
                 unet_model = torch.load(UNET_PATH)
                 unet_model.eval()
-                # print(type(latent_diffusion_model))
+                latent_diffusion_model = initialize_latent_diffusion(path=None, autoencoder=autoencoder, unet_model = unet_model, clip_text_embedder=clip_text_embedder, force_submodels_init=False)
                 # latent_diffusion_model.load_submodels()
-            txt2img.initialize_script(autoencoder=autoencoder, unet_model = unet_model, clip_text_embedder=clip_text_embedder, force_submodels_init=False)
+            txt2img.initialize_from_model(latent_diffusion_model)
 
 
         elif DISK_MODE == 4:
@@ -162,6 +162,57 @@ def init_txt2img(
                 # print(type(latent_diffusion_model))
                 # latent_diffusion_model.load_submodels()
             txt2img.initialize_script(autoencoder=autoencoder, unet_model = unet_model, clip_text_embedder=clip_text_embedder, force_submodels_init=False)
+
+        elif DISK_MODE == 5: #builds the autoencoder and the embedder from submodels before loading the latent diffusion model
+            with section("to load latent diffusion saved model"):
+                # encoder = torch.load(ENCODER_PATH)
+                # encoder.eval()
+                # decoder = torch.load(DECODER_PATH)
+                # decoder.eval()
+                # autoencoder = initialize_autoencoder(encoder=encoder, decoder=decoder, force_submodels_init=False)
+                autoencoder = torch.load(AUTOENCODER_PATH)
+                autoencoder.eval()                
+                tokenizer = torch.load(TOKENIZER_PATH)
+                transformer = torch.load(TRANSFORMER_PATH)
+                transformer.eval()
+                clip_text_embedder = initialize_clip_embedder(tokenizer=tokenizer, transformer=transformer, force_submodels_init=False)
+                
+                unet_model = torch.load(UNET_PATH)
+                unet_model.eval()
+                # print(type(latent_diffusion_model))
+                # latent_diffusion_model.load_submodels()
+            txt2img.initialize_script(autoencoder=autoencoder, unet_model = unet_model, clip_text_embedder=clip_text_embedder, force_submodels_init=False)
+
+        elif DISK_MODE == 6: #builds the autoencoder and the embedder from submodels before loading the latent diffusion model
+            with section("to load latent diffusion saved model"):
+                encoder = torch.load(ENCODER_PATH)
+                encoder.eval()
+                decoder = torch.load(DECODER_PATH)
+                decoder.eval()
+                autoencoder = initialize_autoencoder(encoder=encoder, decoder=decoder, force_submodels_init=False)
+                # autoencoder = torch.load(AUTOENCODER_PATH)
+                autoencoder.eval()                
+                # autoencoder = initialize_autoencoder(encoder=encoder, decoder=decoder, force_submodels_init=False)
+
+                tokenizer = torch.load(TOKENIZER_PATH)
+                transformer = torch.load(TRANSFORMER_PATH)
+                transformer.eval()
+                clip_text_embedder = initialize_clip_embedder(tokenizer=tokenizer, transformer=transformer, force_submodels_init=False)
+                
+                unet_model = torch.load(UNET_PATH)
+                unet_model.eval()
+                latent_diffusion_model = initialize_latent_diffusion(path=None, autoencoder=autoencoder, unet_model = unet_model, clip_text_embedder=clip_text_embedder, force_submodels_init=False)
+                print(type(latent_diffusion_model))
+                # latent_diffusion_model.load_submodels()
+            txt2img.initialize_from_model(latent_diffusion_model)
+
+        elif DISK_MODE == 7: #builds the latent diffusion model then loads submodels
+            with section("to load latent diffusion saved model"):
+
+                latent_diffusion_model = initialize_latent_diffusion(path=None, autoencoder=autoencoder, unet_model = unet_model, clip_text_embedder=clip_text_embedder, force_submodels_init=False)               
+                print(type(latent_diffusion_model))
+                latent_diffusion_model.load_submodels()
+            txt2img.initialize_from_model(latent_diffusion_model)
 
         return txt2img
     else:

@@ -85,7 +85,7 @@ def initialize_decoder(device = None,
 def initialize_autoencoder(device = None, encoder = None, decoder = None, emb_channels = 4, z_channels = 4, force_submodels_init = True) -> Autoencoder:
     device = check_device(device)
     # Initialize the autoencoder
-    with section('autoencoder initialization'):
+    with section(f'autoencoder initialization, device {device}'):
         if force_submodels_init:
             if encoder is None:
                 encoder = initialize_encoder(device=device, z_channels=z_channels)
