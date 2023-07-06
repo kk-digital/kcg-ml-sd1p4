@@ -179,20 +179,21 @@ def initialize_latent_diffusion(path: Union[str, Path] = '', device = None, auto
                                 autoencoder=autoencoder,
                                 clip_embedder=clip_text_embedder,
                                 unet_model=unet_model)
-
+    if path is not ("" or None):
     # Load the checkpoint
-    with section(f"stable-diffusion checkpoint loading, from {path}"):
-        checkpoint = torch.load(path, map_location="cpu")
+        with section(f"stable-diffusion checkpoint loading, from {path}"):
+            checkpoint = torch.load(path, map_location="cpu")
 
-    # Set model state
-    with section('model state loading'):
-        missing_keys, extra_keys = model.load_state_dict(checkpoint["state_dict"], strict=False)
+        # Set model state
+        with section('model state loading'):
+            missing_keys, extra_keys = model.load_state_dict(checkpoint["state_dict"], strict=False)
 
-    # Debugging output
-    # inspect(global_step=checkpoint.get('global_step', -1), missing_keys=missing_keys, extra_keys=extra_keys,
-    #         _expand=True)
+        # Debugging output
+        # inspect(global_step=checkpoint.get('global_step', -1), missing_keys=missing_keys, extra_keys=extra_keys,
+        #         _expand=True)
 
-    #
+        #
+    model.to(device)
     model.eval()
     
     return model

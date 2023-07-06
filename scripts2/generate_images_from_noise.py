@@ -8,12 +8,13 @@ from tqdm import tqdm
 
 # from stable_diffusion2.utils.model import save_images, save_image_grid
 from auxiliary_functions import save_images, save_image_grid, get_torch_distribution_from_name
-# from stable_diffusion2.utils.utils import save_images, save_image_grid
+
 from text_to_image import Txt2Img
 
 from stable_diffusion2.latent_diffusion import LatentDiffusion
 from stable_diffusion2.constants import CHECKPOINT_PATH, AUTOENCODER_PATH, UNET_PATH, EMBEDDER_PATH, LATENT_DIFFUSION_PATH
 from stable_diffusion2.utils.utils import SectionManager as section
+from stable_diffusion2.utils.model import initialize_latent_diffusion
 import safetensors.torch as st
 
 # CHECKPOINT_PATH = os.path.abspath('./input/model/v1-5-pruned-emaonly.ckpt')
@@ -107,33 +108,50 @@ def init_txt2img(
             txt2img.initialize_from_saved(model_path=LATENT_DIFFUSION_PATH)
         elif DISK_MODE == 2:
             with section("to load all submodels from disk"):
+                # autoencoder = torch.load(AUTOENCODER_PATH)
+                # autoencoder.eval()
+                # clip_text_embedder = torch.load(EMBEDDER_PATH)
+                # clip_text_embedder.eval()
+                # unet_model = torch.load(UNET_PATH)
+                # unet_model.eval()
+
+                # latent_diffusion_model.load_submodels()
+
+            # latent_diffusion_model = LatentDiffusion(linear_start=0.00085,
+            #                     linear_end=0.0120,
+            #                     n_steps=1000,
+            #                     latent_scaling_factor=0.18215,
+            #                     autoencoder=autoencoder,
+            #                     clip_embedder=clip_text_embedder,
+            #                     unet_model=unet_model)
+            # summary(model)
+                latent_diffusion_model = initialize_latent_diffusion(path=CHECKPOINT_PATH, force_submodels_init=True)
+                latent_diffusion_model.save_submodels()
+                latent_diffusion_model.first_stage_model.save_submodels()
+                latent_diffusion_model.cond_stage_model.save_submodels()
+            # with section(f"stable-diffusion checkpoint loading, from {CHECKPOINT_PATH}"):
+            #     checkpoint = torch.load(CHECKPOINT_PATH, map_location="cpu")
+
+            # # Set model state
+            # with section('model state loading'):
+                # missing_keys, extra_keys = latent_diffusion_model.load_state_dict(checkpoint["state_dict"], strict=False)
+                # latent_diffusion_model.eval()
+            txt2img.initialize_from_model(latent_diffusion_model)
+
+        elif DISK_MODE == 3:
+            with section("to load latent diffusion saved model"):
                 autoencoder = torch.load(AUTOENCODER_PATH)
                 autoencoder.eval()
                 clip_text_embedder = torch.load(EMBEDDER_PATH)
                 clip_text_embedder.eval()
                 unet_model = torch.load(UNET_PATH)
                 unet_model.eval()
-
+                # print(type(latent_diffusion_model))
                 # latent_diffusion_model.load_submodels()
+            txt2img.initialize_script(autoencoder=autoencoder, unet_model = unet_model, clip_text_embedder=clip_text_embedder, force_submodels_init=False)
 
-            latent_diffusion_model = LatentDiffusion(linear_start=0.00085,
-                                linear_end=0.0120,
-                                n_steps=1000,
-                                latent_scaling_factor=0.18215,
-                                autoencoder=autoencoder,
-                                clip_embedder=clip_text_embedder,
-                                unet_model=unet_model)
 
-            with section(f"stable-diffusion checkpoint loading, from {CHECKPOINT_PATH}"):
-                checkpoint = torch.load(CHECKPOINT_PATH, map_location="cpu")
-
-            # Set model state
-            with section('model state loading'):
-                missing_keys, extra_keys = latent_diffusion_model.load_state_dict(checkpoint["state_dict"], strict=False)
-            
-            txt2img.initialize_from_model(latent_diffusion_model)
-
-        elif DISK_MODE == 3:
+        elif DISK_MODE == 4:
             with section("to load latent diffusion saved model"):
                 autoencoder = torch.load(AUTOENCODER_PATH)
                 autoencoder.eval()

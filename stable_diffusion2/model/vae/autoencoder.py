@@ -100,7 +100,9 @@ class Autoencoder(nn.Module):
         ### Load the model from a checkpoint
         """
         self.encoder = torch.load(encoder_path, map_location=device)
+        self.encoder.eval()
         self.decoder = torch.load(decoder_path, map_location=device)
+        self.decoder.eval()
 
     def unload_submodels(self):
         del self.encoder

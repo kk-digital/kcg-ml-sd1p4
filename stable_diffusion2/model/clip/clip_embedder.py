@@ -60,7 +60,9 @@ class CLIPTextEmbedder(nn.Module):
         ### Load the model from a checkpoint
         """
         self.tokenizer = torch.load(tokenizer_path, map_location=device)
+        # self.tokenizer.eval()
         self.transformer = torch.load(transformer_path, map_location=device)
+        self.transformer.eval()
 
     def unload_submodels(self):
         del self.tokenizer

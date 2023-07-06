@@ -61,7 +61,7 @@ DDIM_ETA = 0.0 #should be cli argument
 OUTPUT_DIR = os.path.abspath('./output/noise-tests/')
 TESTS_OUTPUT_DIR = os.path.abspath('./output/outputs_for_test/')
 parser = argparse.ArgumentParser(
-        description='sum the integers at the command line')
+        description='')
 parser.add_argument('--output_dir', type=str, default=OUTPUT_DIR)
 parser.add_argument('--vae_init_mode', type=int, default=0)
 parser.add_argument('--clip_init_mode', type=int, default=0)

@@ -138,7 +138,7 @@ class StableDiffusionBaseScript:
         self.load_model(model_path)
         self.initialize_sampler()  
 
-    def initialize_script(self, autoencoder = None, clip_text_embedder = None, unet_model = None, force_submodels_init = True):
+    def initialize_script(self, autoencoder = None, clip_text_embedder = None, unet_model = None, force_submodels_init = True, path = None):
         """You can initialize the autoencoder, CLIP and UNet models externally and pass them to the script.
         Use the methods: 
             stable_diffusion.utils.model.initialize_autoencoder,
@@ -150,13 +150,13 @@ class StableDiffusionBaseScript:
             clip_text_embedder (CLIPTextEmbedder, optional): the externally initialized autoencoder. Defaults to None.
             unet_model (UNetModel, optional): the externally initialized autoencoder. Defaults to None.
         """
-        self.initialize_latent_diffusion(autoencoder, clip_text_embedder, unet_model, force_submodels_init=force_submodels_init)
+        self.initialize_latent_diffusion(autoencoder, clip_text_embedder, unet_model, force_submodels_init=force_submodels_init, path=path)
         self.initialize_sampler()
 
-    def initialize_latent_diffusion(self, autoencoder, clip_text_embedder, unet_model, force_submodels_init = True):
+    def initialize_latent_diffusion(self, autoencoder, clip_text_embedder, unet_model, force_submodels_init = True, path=None):
         try:
             self.model = initialize_latent_diffusion(
-                self.checkpoint_path,
+                path,
                 self.device_id,
                 autoencoder,
                 clip_text_embedder,

@@ -15,6 +15,7 @@ else saves latent diffusion model with state dict loaded from checkpoint
 
 import random
 import os
+import argparse
 from pathlib import Path
 from typing import Union
 
@@ -44,6 +45,18 @@ from stable_diffusion2.model.clip.clip_embedder import CLIPTextEmbedder
 from stable_diffusion2.model.unet.unet import UNetModel
 # from stable_diffusion2.model.unet import UNetModel
 from torchinfo import summary
+
+# parser = argparse.ArgumentParser(
+#         description='')
+
+# parser.add_argument('--vae_init_mode', type=int, default=0)
+# parser.add_argument('--clip_init_mode', type=int, default=0)
+# parser.add_argument('--latent_diffusion_init_mode', type=int, default=0)
+# args = parser.parse_args()
+# print(args)
+# VAE_INIT_MODE = args.vae_init_mode
+# CLIP_INIT_MODE = args.clip_init_mode
+# LATENT_DIFFUSION_INIT_MODE = args.latent_diffusion_init_mode
 
 if __name__ == '__main__':
     assert len(os.sys.argv) > 1, 'Please provide an argument.'
@@ -83,7 +96,10 @@ if __name__ == '__main__':
             if os.sys.argv[2] == 'True':
                 model = initialize_latent_diffusion(path=CHECKPOINT_PATH, force_submodels_init=True)
                 summary(model)
+                model.save_submodels()
+                model.first_stage_model.save_submodels()
+                model.cond_stage_model.save_submodels()
         else:
             model = initialize_latent_diffusion(path=CHECKPOINT_PATH, force_submodels_init=False)
-        model.save()
+        # model.save()
         print(type(model))
