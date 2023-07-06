@@ -24,7 +24,7 @@ def load_embeddings(path= os.path.abspath('C:\\Users\\igor-\\.cloned\\kcg-ml-sd1
 def generate_images_from_embeddings(
     embeddings_path: str='prompt_embeddings.pt',
     output_dir: str='./output/noise-tests/',
-    checkpoint_path: str='./input/models/sd-v1-4.ckpt',
+    checkpoint_path: str='./input/model/sd-v1-4.ckpt',
     sampler_name: str='ddim',
     n_steps: int=20,
     batch_size: int=1,
@@ -122,7 +122,7 @@ def generate_images(
     prompt_prefix: str="A woman with flowers in her hair in a courtyard, in the style of",
     artist_file: str='./input/prompts/artists.txt',
     output_dir: str='./output/noise-tests/',
-    checkpoint_path: str='./input/models/sd-v1-4.ckpt',
+    checkpoint_path: str='./input/model/sd-v1-4.ckpt',
     sampler_name: str='ddim',
     n_steps: int=20,
     batch_size: int=1,

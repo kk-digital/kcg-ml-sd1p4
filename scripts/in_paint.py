@@ -18,7 +18,7 @@ from stable_diffusion.utils.model import save_images, set_seed, get_autocast
 from cli_builder import CLI
 
 def get_model_path():
-    return "./input/models/sd-v1-4.ckpt"  
+    return "./input/model/sd-v1-4.ckpt"  
 
 class InPaint(StableDiffusionBaseScript):
     """
