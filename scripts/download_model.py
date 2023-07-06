@@ -74,7 +74,7 @@ model_list: ModelList = [
     }
 ]
 
-DESTINATION = './input/model/'
+DESTINATION = './input/models/'
 LOGS_DIR = '/tmp/logs'
 
 def to_byte_units(size: int):

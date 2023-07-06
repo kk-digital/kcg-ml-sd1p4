@@ -17,7 +17,7 @@ def initialize_unet(device = 'cpu', model_path = None) -> UNetModel:
                             n_heads=8,
                             tf_layers=1,
                             d_cond=768)
-        torch.save(unet_model, './input/model/unet.ckpt')
+        torch.save(unet_model, './input/models/unet.ckpt')
         return unet_model
     else:
         unet_model = torch.load(model_path)
@@ -45,7 +45,7 @@ def initialize_autoencoder(device = 'cpu', model_path = None) -> Autoencoder:
                                 decoder=decoder,
                                 z_channels=4)
         
-        torch.save(autoencoder, './input/model/autoencoder.ckpt')
+        torch.save(autoencoder, './input/models/autoencoder.ckpt')
         
         return autoencoder
     else:
@@ -60,7 +60,7 @@ def initialize_clip_embedder(device = 'cpu', model_path = None) -> CLIPTextEmbed
         clip_text_embedder = CLIPTextEmbedder(
             device=device,
         )
-        torch.save(clip_text_embedder, './input/model/clip_embedder.ckpt')
+        torch.save(clip_text_embedder, './input/models/clip_embedder.ckpt')
         return clip_text_embedder
     else:
         clip_text_embedder = torch.load(model_path)
