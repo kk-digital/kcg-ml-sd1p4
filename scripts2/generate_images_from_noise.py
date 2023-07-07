@@ -155,8 +155,10 @@ def init_txt2img(
             with section("to load latent diffusion saved model"):
                 autoencoder = torch.load(AUTOENCODER_PATH)
                 autoencoder.eval()
+                autoencoder.load_submodels()
                 clip_text_embedder = torch.load(EMBEDDER_PATH)
                 clip_text_embedder.eval()
+                clip_text_embedder.load_submodels()
                 unet_model = torch.load(UNET_PATH)
                 unet_model.eval()
                 # print(type(latent_diffusion_model))
@@ -189,16 +191,21 @@ def init_txt2img(
                 encoder.eval()
                 decoder = torch.load(DECODER_PATH)
                 decoder.eval()
-                autoencoder = initialize_autoencoder(encoder=encoder, decoder=decoder, force_submodels_init=False)
-                # autoencoder = torch.load(AUTOENCODER_PATH)
+                # autoencoder = initialize_autoencoder(encoder=encoder, decoder=decoder, force_submodels_init=False)
+                autoencoder = torch.load(AUTOENCODER_PATH)
                 autoencoder.eval()                
+                autoencoder.encoder = encoder
+                autoencoder.decoder = decoder
                 # autoencoder = initialize_autoencoder(encoder=encoder, decoder=decoder, force_submodels_init=False)
 
                 tokenizer = torch.load(TOKENIZER_PATH)
                 transformer = torch.load(TRANSFORMER_PATH)
                 transformer.eval()
-                clip_text_embedder = initialize_clip_embedder(tokenizer=tokenizer, transformer=transformer, force_submodels_init=False)
-                
+                # clip_text_embedder = initialize_clip_embedder(tokenizer=tokenizer, transformer=transformer, force_submodels_init=False)
+                clip_text_embedder = torch.load(EMBEDDER_PATH)
+                clip_text_embedder.eval()
+                clip_text_embedder.tokenizer = tokenizer
+                clip_text_embedder.transformer = transformer
                 unet_model = torch.load(UNET_PATH)
                 unet_model.eval()
                 latent_diffusion_model = initialize_latent_diffusion(path=None, autoencoder=autoencoder, unet_model = unet_model, clip_text_embedder=clip_text_embedder, force_submodels_init=False)

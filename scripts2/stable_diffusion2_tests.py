@@ -152,6 +152,14 @@ def init_latent_diffusion_from_mode(mode):
         with section("to initialize latent diffusion forcing submodels initialization"):
             latent_diffusion_model = initialize_latent_diffusion(path = CHECKPOINT_PATH, force_submodels_init=True)
             return latent_diffusion_model
+    if mode == 3:
+        with section("load latent diffusion from disk, then load its submodels from disk"):
+            latent_diffusion_model = torch.load(LATENT_DIFFUSION_PATH)
+            latent_diffusion_model.load_submodels()
+            latent_diffusion_model.first_stage_model.load_submodels()
+            latent_diffusion_model.second_stage_model.load_submodels()
+            latent_diffusion_model.eval()
+            return latent_diffusion_model        
 
 def init_txt2img(
         checkpoint_path: str=CHECKPOINT_PATH,

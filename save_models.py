@@ -33,6 +33,7 @@ from stable_diffusion2.constants import EMBEDDER_PATH, TOKENIZER_PATH, TRANSFORM
 from stable_diffusion2.constants import UNET_PATH
 from stable_diffusion2.constants import LATENT_DIFFUSION_PATH
 from stable_diffusion2.constants import CHECKPOINT_PATH
+from stable_diffusion2.constants import ROOT_MODELS_PATH
 
 from stable_diffusion2.utils.model import initialize_autoencoder, initialize_clip_embedder, initialize_unet, initialize_latent_diffusion
 from stable_diffusion2.utils.utils import SectionManager as section
@@ -43,63 +44,101 @@ from stable_diffusion2.model.vae.decoder import Decoder
 from stable_diffusion2.model.vae.autoencoder import Autoencoder
 from stable_diffusion2.model.clip.clip_embedder import CLIPTextEmbedder
 from stable_diffusion2.model.unet.unet import UNetModel
-# from stable_diffusion2.model.unet import UNetModel
-from torchinfo import summary
 
-# parser = argparse.ArgumentParser(
-#         description='')
+try:
+    from torchinfo import summary
+except:
+    print('torchinfo not installed')
+    summary = lambda x: print(x)
 
-# parser.add_argument('--vae_init_mode', type=int, default=0)
-# parser.add_argument('--clip_init_mode', type=int, default=0)
-# parser.add_argument('--latent_diffusion_init_mode', type=int, default=0)
-# args = parser.parse_args()
+parser = argparse.ArgumentParser(
+        description='')
+
+parser.add_argument('--save_without_weights', type=bool, default=False)
+parser.add_argument('--unet', type=bool, default=True)
+parser.add_argument('--clip', type=bool, default=True)
+parser.add_argument('--vae', type=bool, default=True)
+parser.add_argument('--granularity', type=int, default=0)
+parser.add_argument('--checkpoint_path', type=str, default=CHECKPOINT_PATH)
+parser.add_argument('--root_models_path', type=str, default=ROOT_MODELS_PATH)
+
+args = parser.parse_args()
+
+
 # print(args)
-# VAE_INIT_MODE = args.vae_init_mode
-# CLIP_INIT_MODE = args.clip_init_mode
-# LATENT_DIFFUSION_INIT_MODE = args.latent_diffusion_init_mode
+GRANULARITY = args.granularity
+CHECKPOINT_PATH = args.checkpoint_path
+ROOT_MODELS_PATH = args.root_models_path
+SAVE_WITHOUT_WEIGHTS = args.save_without_weights
+SAVE_UNET = args.unet
+SAVE_CLIP = args.clip
+SAVE_VAE = args.vae
 
+
+def create_folder_structure(root_dir: str = "./") -> None:
+    
+    embedder_submodels_folder = os.path.abspath(os.path.join(root_dir, 'clip/'))
+    os.makedirs(embedder_submodels_folder, exist_ok=True)
+
+    autoencoder_submodels_folder = os.path.abspath(os.path.join(root_dir, 'autoencoder/'))
+    os.makedirs(autoencoder_submodels_folder, exist_ok=True)
+
+    unet_submodels_folder = os.path.abspath(os.path.join(root_dir, 'unet/'))
+    os.makedirs(unet_submodels_folder, exist_ok=True)
+
+    latent_diffusion_submodels_folder = os.path.abspath(os.path.join(root_dir, 'latent_diffusion/'))
+    os.makedirs(latent_diffusion_submodels_folder, exist_ok=True)
+
+    
 if __name__ == '__main__':
-    assert len(os.sys.argv) > 1, 'Please provide an argument.'
-    if int(os.sys.argv[1]) == 1:
-        embedder = initialize_clip_embedder()
-        embedder.save_submodels()
-        embedder.save()
-        summary(embedder)
-    elif int(os.sys.argv[1]) == 2:
-        autoencoder = initialize_autoencoder()
-        autoencoder.save_submodels()
-        autoencoder.save()
-        summary(autoencoder)
-    elif int(os.sys.argv[1]) == 3:
-        unet = initialize_unet()
-        unet.save()
-        summary(unet)
-    elif int(os.sys.argv[1]) == 0:
-        
-        embedder = initialize_clip_embedder()
-        embedder.save_submodels()
-        embedder.save()
-        
-        autoencoder = initialize_autoencoder()
-        autoencoder.save_submodels()
-        autoencoder.save()
-        
-        unet = initialize_unet()
-        unet.save()
-
-        summary(embedder)
-        summary(autoencoder)
-        summary(unet)
+    create_folder_structure(root_dir=ROOT_MODELS_PATH)
+    if SAVE_WITHOUT_WEIGHTS:
+        if SAVE_CLIP:
+            embedder = initialize_clip_embedder()
+            summary(embedder)
+            with section("to save submodels"):
+                embedder.save_submodels()
+            with section("to save embedder"):    
+                embedder.save()
+        if SAVE_VAE:
+            autoencoder = initialize_autoencoder()
+            summary(autoencoder)
+            with section("to save submodels"):
+                autoencoder.save_submodels()
+            with section("to save autoencoder"):
+                autoencoder.save()
+        if SAVE_UNET:
+            unet = initialize_unet()
+            summary(unet)
+            with section("to save unet"):
+                unet.save()
 
     else:
-        if len(os.sys.argv) > 2:
-            if os.sys.argv[2] == 'True':
-                model = initialize_latent_diffusion(path=CHECKPOINT_PATH, force_submodels_init=True)
-                summary(model)
-                model.save_submodels()
-                model.first_stage_model.save_submodels()
-                model.cond_stage_model.save_submodels()
-        else:
-            model = initialize_latent_diffusion(path=CHECKPOINT_PATH, force_submodels_init=False)
-        # model.save()
-        print(type(model))
+
+        model = initialize_latent_diffusion(path=CHECKPOINT_PATH, force_submodels_init=True)
+        summary(model)
+        if GRANULARITY == 0:
+            with section("to save vae submodels"):
+                model.first_stage_model.save_submodels() # saves autoencoder submodels (encoder, decoder) with loaded state dict
+            with section("to unload vae submodels"):
+                model.first_stage_model.unload_submodels() # unloads autoencoder submodels
+            with section("to save embedder submodels"):
+                model.cond_stage_model.save_submodels() # saves text embedder submodels (tokenizer, transformer) with loaded state dict
+            with section("to unload embedder submodels"):
+                model.cond_stage_model.unload_submodels() # unloads text embedder submodels
+            with section("to save latent diffusion submodels"):
+                model.save_submodels() # saves latent diffusion submodels (first_stage_model, cond_stage_model) with loaded state dict and unloaded submodels
+            with section("to unload latent diffusion submodels"):
+                model.unload_submodels() # unloads latent diffusion submodels
+            with section("to save latent diffusion model"):
+                model.save() # saves latent diffusion model with loaded state dict and unloaded submodels
+        elif GRANULARITY == 1:
+            with section("to save latent diffusion submodels"):
+                model.save_submodels() # saves latent diffusion submodels (first_stage_model, cond_stage_model and unet) with loaded state dict loaded submodels
+            with section("to unload latent diffusion submodels"):
+                model.unload_submodels() # unloads latent diffusion submodels
+            with section("to save latent diffusion model"):
+                model.save() # saves latent diffusion model with loaded state dict and unloaded submodels
+        elif GRANULARITY == 2:
+            with section("to save latent diffusion model"):
+                model.save() # saves latent diffusion model with loaded state dict and loaded submodels

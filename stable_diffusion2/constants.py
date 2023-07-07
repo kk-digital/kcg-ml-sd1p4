@@ -1,19 +1,21 @@
 import os
 import sys
 
-base_directory = "../"
+base_directory = "./"
 sys.path.insert(0, base_directory)
 
-CHECKPOINT_PATH = os.path.abspath('./input/model/v1-5-pruned-emaonly.ckpt')
+ROOT_MODELS_PATH = os.path.abspath(os.path.join(base_directory, 'input/model/'))
 
-EMBEDDER_PATH = os.path.abspath('./input/model/clip/clip_embedder.ckpt')
-TOKENIZER_PATH = os.path.abspath('./input/model/clip/clip_tokenizer.ckpt')
-TRANSFORMER_PATH = os.path.abspath('./input/model/clip/clip_transformer.ckpt')
+CHECKPOINT_PATH = os.path.abspath(os.path.join(ROOT_MODELS_PATH, 'v1-5-pruned-emaonly.ckpt'))
 
-UNET_PATH = os.path.abspath('./input/model/unet/unet.ckpt')
+EMBEDDER_PATH = os.path.abspath(os.path.join(ROOT_MODELS_PATH, 'clip/clip_embedder.ckpt'))
+TOKENIZER_PATH = os.path.abspath(os.path.join(ROOT_MODELS_PATH, 'clip/clip_tokenizer.ckpt'))
+TRANSFORMER_PATH = os.path.abspath(os.path.join(ROOT_MODELS_PATH, 'clip/clip_transformer.ckpt'))
 
-AUTOENCODER_PATH = os.path.abspath('./input/model/autoencoder/autoencoder.ckpt')
-ENCODER_PATH = os.path.abspath('./input/model/autoencoder/encoder.ckpt')
-DECODER_PATH = os.path.abspath('./input/model/autoencoder/decoder.ckpt')
+UNET_PATH = os.path.abspath(os.path.join(ROOT_MODELS_PATH, 'unet/unet.ckpt'))
 
-LATENT_DIFFUSION_PATH = os.path.abspath('./input/model/latent_diffusion/latent_diffusion.ckpt')
+AUTOENCODER_PATH = os.path.abspath(os.path.join(ROOT_MODELS_PATH, 'autoencoder/autoencoder.ckpt'))
+ENCODER_PATH = os.path.abspath(os.path.join(ROOT_MODELS_PATH, 'autoencoder/encoder.ckpt'))
+DECODER_PATH = os.path.abspath(os.path.join(ROOT_MODELS_PATH, 'autoencoder/decoder.ckpt'))
+
+LATENT_DIFFUSION_PATH = os.path.abspath(os.path.join(ROOT_MODELS_PATH, 'latent_diffusion/latent_diffusion.ckpt'))
