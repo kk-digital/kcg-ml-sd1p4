@@ -14,7 +14,7 @@ from text_to_image import Txt2Img
 from stable_diffusion2.latent_diffusion import LatentDiffusion
 from stable_diffusion2.constants import CHECKPOINT_PATH, AUTOENCODER_PATH, UNET_PATH, EMBEDDER_PATH, LATENT_DIFFUSION_PATH
 from stable_diffusion2.utils.utils import SectionManager as section
-from stable_diffusion2.utils.model import initialize_autoencoder, initialize_encoder, initialize_decoder 
+from stable_diffusion2.utils.model import initialize_autoencoder, initialize_encoder, initialize_decoder, check_device
 from stable_diffusion2.utils.model import initialize_clip_embedder, initialize_tokenizer, initialize_transformer 
 from stable_diffusion2.utils.model import initialize_unet, initialize_latent_diffusion
 import safetensors.torch as st
@@ -157,24 +157,42 @@ def init_latent_diffusion_from_mode(mode):
             latent_diffusion_model = torch.load(LATENT_DIFFUSION_PATH)
             latent_diffusion_model.load_submodels()
             latent_diffusion_model.first_stage_model.load_submodels()
-            latent_diffusion_model.second_stage_model.load_submodels()
+            latent_diffusion_model.cond_stage_model.load_submodels()
             latent_diffusion_model.eval()
             return latent_diffusion_model        
+    if mode == 4:
+        with section("initialize latent diffusion empty and without loading weights, with external initialization function, then load its submodels from disk"):
+            latent_diffusion_model = initialize_latent_diffusion(force_submodels_init=False)
+            latent_diffusion_model.load_submodels()
+            latent_diffusion_model.first_stage_model.load_submodels()
+            latent_diffusion_model.cond_stage_model.load_submodels()
+            latent_diffusion_model.eval()
+            return latent_diffusion_model 
+    if mode == 5:
+        with section("initialize latent diffusion empty and without loading weights, then load its submodels from disk"):
+            device = check_device(0)
+            latent_diffusion_model = LatentDiffusion(linear_start=0.00085,
+                                linear_end=0.0120,
+                                n_steps=1000,
+                                latent_scaling_factor=0.18215
+                                ).to(device)
+            latent_diffusion_model.load_submodels()
+            latent_diffusion_model.first_stage_model.load_submodels()
+            latent_diffusion_model.cond_stage_model.load_submodels()
+            latent_diffusion_model.eval()
+            return latent_diffusion_model 
 
 def init_txt2img(
         checkpoint_path: str=CHECKPOINT_PATH,
         sampler_name: str='ddim',
         n_steps: int=20,
-        ddim_eta: float=0.0,
-        autoencoder = None,
-        unet_model = None,
-        clip_text_embedder = None                                   
+        ddim_eta: float=0.0,                                
         ):
     
     txt2img = Txt2Img(checkpoint_path=checkpoint_path, sampler_name=sampler_name, n_steps=n_steps, ddim_eta=ddim_eta)
     # compute loading time
     latent_diffusion_model = init_latent_diffusion_from_mode(LATENT_DIFFUSION_INIT_MODE)
-    print(latent_diffusion_model)
+    # print(latent_diffusion_model)
     txt2img.initialize_from_model(latent_diffusion_model)
     return txt2img
 

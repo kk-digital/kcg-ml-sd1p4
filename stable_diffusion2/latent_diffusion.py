@@ -62,13 +62,13 @@ class LatentDiffusion(nn.Module):
     cond_stage_model: CLIPTextEmbedder
 
     def __init__(self,
-                 unet_model: UNetModel,
-                 autoencoder: Autoencoder,
-                 clip_embedder: CLIPTextEmbedder,
                  latent_scaling_factor: float,
                  n_steps: int,
                  linear_start: float,
                  linear_end: float,
+                 unet_model: UNetModel = None,
+                 autoencoder: Autoencoder = None,
+                 clip_embedder: CLIPTextEmbedder = None
                  ):
         """
         :param unet_model: is the [U-Net](model/unet.html) that predicts noise
