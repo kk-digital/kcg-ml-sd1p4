@@ -29,7 +29,7 @@ import torch.nn as nn
 from .model.vae.autoencoder import Autoencoder
 from .model.clip.clip_embedder import CLIPTextEmbedder
 from .model.unet.unet import UNetModel
-from .constants import AUTOENCODER_PATH, UNET_PATH, LATENT_DIFFUSION_PATH, EMBEDDER_PATH
+from .constants import AUTOENCODER_PATH, UNET_PATH, LATENT_DIFFUSION_PATH, EMBEDDER_PATH, ENCODER_PATH, DECODER_PATH, TOKENIZER_PATH, TRANSFORMER_PATH
 
 class DiffusionWrapper(nn.Module):
     """
@@ -135,6 +135,19 @@ class LatentDiffusion(nn.Module):
         self.first_stage_model.eval()
         self.cond_stage_model = torch.load(embedder_path, map_location=device)
         self.cond_stage_model.eval()
+        self.model = DiffusionWrapper(torch.load(unet_path, map_location=device).eval())
+
+    def load_submodel_tree(self, encoder_path = ENCODER_PATH, decoder_path = DECODER_PATH, autoencoder_path = AUTOENCODER_PATH, embedder_path = EMBEDDER_PATH, unet_path = UNET_PATH, device = "cuda:0"):
+        
+        """
+        ### Load the model from a checkpoint
+        """
+        self.first_stage_model = torch.load(autoencoder_path, map_location=device)
+        self.first_stage_model.eval()
+        self.first_stage_model.load_submodels(encoder_path=encoder_path, decoder_path=decoder_path, device=device)
+        self.cond_stage_model = torch.load(embedder_path, map_location=device)
+        self.cond_stage_model.eval()
+        self.cond_stage_model.load_submodels(tokenizer_path=TOKENIZER_PATH, transformer_path=TRANSFORMER_PATH, device=device)
         self.model = DiffusionWrapper(torch.load(unet_path, map_location=device).eval())
 
     def unload_submodels(self):

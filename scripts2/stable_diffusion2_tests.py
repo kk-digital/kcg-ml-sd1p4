@@ -11,7 +11,7 @@ from auxiliary_functions import save_images, save_image_grid, get_torch_distribu
 # from stable_diffusion2.utils.utils import save_images, save_image_grid
 from text_to_image import Txt2Img
 
-from stable_diffusion2.latent_diffusion import LatentDiffusion
+from stable_diffusion2.latent_diffusion import LatentDiffusion, DiffusionWrapper
 from stable_diffusion2.constants import CHECKPOINT_PATH, AUTOENCODER_PATH, UNET_PATH, EMBEDDER_PATH, LATENT_DIFFUSION_PATH
 from stable_diffusion2.utils.utils import SectionManager as section
 from stable_diffusion2.utils.model import initialize_autoencoder, initialize_encoder, initialize_decoder, check_device
@@ -66,12 +66,13 @@ parser.add_argument('--output_dir', type=str, default=OUTPUT_DIR)
 parser.add_argument('--vae_init_mode', type=int, default=0)
 parser.add_argument('--clip_init_mode', type=int, default=0)
 parser.add_argument('--latent_diffusion_init_mode', type=int, default=0)
+parser.add_argument('--txt2img_init_from_saved', type=bool, default=False)
 args = parser.parse_args()
 print(args)
 VAE_INIT_MODE = args.vae_init_mode
 CLIP_INIT_MODE = args.clip_init_mode
 LATENT_DIFFUSION_INIT_MODE = args.latent_diffusion_init_mode
-
+FROM_SAVED = args.txt2img_init_from_saved
 
 
 CLEAR_OUTPUT_DIR = True
@@ -106,6 +107,7 @@ def generate_prompt(prompt_prefix, artist):
     # Generate the prompt
     prompt = f"{prompt_prefix} {artist}"
     return prompt
+
 
 def init_vae_from_mode(mode):
     if mode == 0:
@@ -153,7 +155,7 @@ def init_latent_diffusion_from_mode(mode):
             latent_diffusion_model = initialize_latent_diffusion(path = CHECKPOINT_PATH, force_submodels_init=True)
             return latent_diffusion_model
     if mode == 3:
-        with section("load latent diffusion from disk, then load its submodels from disk"):
+        with section("to load latent diffusion from disk, then load its submodels from disk"):
             latent_diffusion_model = torch.load(LATENT_DIFFUSION_PATH)
             latent_diffusion_model.load_submodels()
             latent_diffusion_model.first_stage_model.load_submodels()
@@ -161,7 +163,7 @@ def init_latent_diffusion_from_mode(mode):
             latent_diffusion_model.eval()
             return latent_diffusion_model        
     if mode == 4:
-        with section("initialize latent diffusion empty and without loading weights, with external initialization function, then load its submodels from disk"):
+        with section("to initialize latent diffusion empty and without loading weights, with external initialization function, then load its submodels from disk"):
             latent_diffusion_model = initialize_latent_diffusion(force_submodels_init=False)
             latent_diffusion_model.load_submodels()
             latent_diffusion_model.first_stage_model.load_submodels()
@@ -169,7 +171,7 @@ def init_latent_diffusion_from_mode(mode):
             latent_diffusion_model.eval()
             return latent_diffusion_model 
     if mode == 5:
-        with section("initialize latent diffusion empty and without loading weights, then load its submodels from disk"):
+        with section("to initialize latent diffusion empty and without loading weights, then load its submodels from disk"):
             device = check_device(0)
             latent_diffusion_model = LatentDiffusion(linear_start=0.00085,
                                 linear_end=0.0120,
@@ -181,6 +183,52 @@ def init_latent_diffusion_from_mode(mode):
             latent_diffusion_model.cond_stage_model.load_submodels()
             latent_diffusion_model.eval()
             return latent_diffusion_model 
+    if mode == 6:
+        with section("to load latent diffusion saved model"):
+            autoencoder = torch.load(AUTOENCODER_PATH)
+            autoencoder.eval()
+            autoencoder.load_submodels()
+            clip_text_embedder = torch.load(EMBEDDER_PATH)
+            clip_text_embedder.eval()
+            clip_text_embedder.load_submodels()
+            unet_model = torch.load(UNET_PATH)
+            unet_model.eval()
+            latent_diffusion_model = initialize_latent_diffusion(path=None, autoencoder=autoencoder, unet_model = unet_model, clip_text_embedder=clip_text_embedder, force_submodels_init=False)
+            # latent_diffusion_model.load_submodels()
+            return latent_diffusion_model   
+    if mode == 7:
+        with section("to load each submodel, initialize latent diffusion without them, then assigning them to latent diffusion fields"):
+            autoencoder = torch.load(AUTOENCODER_PATH)
+            autoencoder.eval()
+            autoencoder.load_submodels()
+            clip_text_embedder = torch.load(EMBEDDER_PATH)
+            clip_text_embedder.eval()
+            clip_text_embedder.load_submodels()
+            unet_model = torch.load(UNET_PATH)
+            unet_model.eval()
+            device = check_device(0)
+            latent_diffusion_model = LatentDiffusion(linear_start=0.00085,
+                                linear_end=0.0120,
+                                n_steps=1000,
+                                latent_scaling_factor=0.18215
+                                ).to(device)
+            latent_diffusion_model.first_stage_model = autoencoder
+            latent_diffusion_model.cond_stage_model = clip_text_embedder
+            latent_diffusion_model.model = DiffusionWrapper(unet_model)
+            # latent_diffusion_model.load_submodels()
+            return latent_diffusion_model
+    if mode == 8:
+        with section("to initialize latent diffusion empty and without weights, then loading the submodels tree from disk"):
+            device = check_device(0)
+            latent_diffusion_model = LatentDiffusion(linear_start=0.00085,
+                                linear_end=0.0120,
+                                n_steps=1000,
+                                latent_scaling_factor=0.18215
+                                ).to(device)
+            latent_diffusion_model.load_submodel_tree()
+            return latent_diffusion_model        
+
+
 
 def init_txt2img(
         checkpoint_path: str=CHECKPOINT_PATH,
@@ -191,9 +239,12 @@ def init_txt2img(
     
     txt2img = Txt2Img(checkpoint_path=checkpoint_path, sampler_name=sampler_name, n_steps=n_steps, ddim_eta=ddim_eta)
     # compute loading time
-    latent_diffusion_model = init_latent_diffusion_from_mode(LATENT_DIFFUSION_INIT_MODE)
-    # print(latent_diffusion_model)
-    txt2img.initialize_from_model(latent_diffusion_model)
+
+    if FROM_SAVED:
+        txt2img.initialize_from_saved(model_path=LATENT_DIFFUSION_PATH)
+    else:
+        latent_diffusion_model = init_latent_diffusion_from_mode(LATENT_DIFFUSION_INIT_MODE)
+        txt2img.initialize_from_model(latent_diffusion_model)
     return txt2img
 
 def get_all_prompts(prompt_prefix, artist_file, num_artists = None):

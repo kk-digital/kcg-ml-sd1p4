@@ -85,7 +85,7 @@ class CLIPTextEmbedder(nn.Module):
                                         return_overflowing_tokens=False, padding="max_length", return_tensors="pt")
         # Get token ids
         tokens = batch_encoding["input_ids"].to(self.device)
-        print(tokens), print(tokens.shape)
+        
         # Get CLIP embeddings
         return self.transformer(input_ids=tokens).last_hidden_state
 #%%
