@@ -12,9 +12,10 @@ from auxiliary_functions import save_images, save_image_grid, get_torch_distribu
 from text_to_image import Txt2Img
 
 from stable_diffusion2.latent_diffusion import LatentDiffusion, DiffusionWrapper
+from stable_diffusion2.latent_diffusion_model import LatentDiffusionModel
 from stable_diffusion2.constants import CHECKPOINT_PATH, AUTOENCODER_PATH, UNET_PATH, EMBEDDER_PATH, LATENT_DIFFUSION_PATH
 from stable_diffusion2.utils.utils import SectionManager as section
-from stable_diffusion2.utils.model import initialize_autoencoder, initialize_encoder, initialize_decoder, check_device
+from stable_diffusion2.utils.model import initialize_autoencoder, initialize_encoder, initialize_decoder, check_device, get_device
 from stable_diffusion2.utils.model import initialize_clip_embedder, initialize_tokenizer, initialize_transformer 
 from stable_diffusion2.utils.model import initialize_unet, initialize_latent_diffusion
 import safetensors.torch as st
@@ -66,13 +67,15 @@ parser.add_argument('--output_dir', type=str, default=OUTPUT_DIR)
 parser.add_argument('--vae_init_mode', type=int, default=0)
 parser.add_argument('--clip_init_mode', type=int, default=0)
 parser.add_argument('--latent_diffusion_init_mode', type=int, default=0)
-parser.add_argument('--txt2img_init_from_saved', type=bool, default=False)
+parser.add_argument('--default', type=bool, default=False)
+parser.add_argument('--alternative', type=bool, default=False)
 args = parser.parse_args()
 print(args)
 VAE_INIT_MODE = args.vae_init_mode
 CLIP_INIT_MODE = args.clip_init_mode
 LATENT_DIFFUSION_INIT_MODE = args.latent_diffusion_init_mode
-FROM_SAVED = args.txt2img_init_from_saved
+DEFAULT = args.default
+ALT = args.alternative
 
 
 CLEAR_OUTPUT_DIR = True
@@ -240,12 +243,30 @@ def init_txt2img(
     txt2img = Txt2Img(checkpoint_path=checkpoint_path, sampler_name=sampler_name, n_steps=n_steps, ddim_eta=ddim_eta)
     # compute loading time
 
-    if FROM_SAVED:
-        txt2img.initialize_from_saved(model_path=LATENT_DIFFUSION_PATH)
+    if DEFAULT:
+        device = check_device(None)
+        latent_diffusion_model = LatentDiffusion(linear_start=0.00085,
+            linear_end=0.0120,
+            n_steps=1000,
+            latent_scaling_factor=0.18215
+            ).to(device)
+        latent_diffusion_model.load_submodel_tree(device = device)
+        txt2img.initialize_from_model(latent_diffusion_model)
+        return txt2img
+    elif ALT:
+        device = check_device(None)
+        latent_diffusion_model = LatentDiffusionModel(linear_start=0.00085,
+            linear_end=0.0120,
+            n_steps=1000,
+            latent_scaling_factor=0.18215
+            )
+        latent_diffusion_model.load_submodel_tree(device = device)
+        txt2img.initialize_from_model(latent_diffusion_model)
+        return txt2img
     else:
         latent_diffusion_model = init_latent_diffusion_from_mode(LATENT_DIFFUSION_INIT_MODE)
         txt2img.initialize_from_model(latent_diffusion_model)
-    return txt2img
+        return txt2img
 
 def get_all_prompts(prompt_prefix, artist_file, num_artists = None):
 

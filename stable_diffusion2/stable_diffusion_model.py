@@ -6,7 +6,7 @@ import torch
 from stable_diffusion2.sampler.ddim import DDIMSampler
 from stable_diffusion2.sampler.ddpm import DDPMSampler
 from stable_diffusion2.utils.model import initialize_latent_diffusion, get_device, load_img
-from stable_diffusion2.latent_diffusion import LatentDiffusion
+from stable_diffusion2.latent_diffusion_model import LatentDiffusionModel
 from stable_diffusion2.sampler import DiffusionSampler
 from stable_diffusion2.constants import LATENT_DIFFUSION_PATH
 from stable_diffusion2.utils.utils import SectionManager as section
@@ -16,11 +16,11 @@ from pathlib import Path
 class ModelLoadError(Exception):
     pass
 
-class StableDiffusionBaseScript:
-    model: LatentDiffusion
+class StableDiffusionModel:
+    model: LatentDiffusionModel
     sampler: DiffusionSampler
 
-    def __init__(self, *, checkpoint_path: Union[str, Path],
+    def __init__(self, *,
                  ddim_steps: int = 50,
                  ddim_eta: float = 0.0,
                  force_cpu: bool = False,
@@ -34,7 +34,7 @@ class StableDiffusionBaseScript:
         :param n_steps: is the number of sampling steps
         :param ddim_eta: is the [DDIM sampling](../sampler/ddim.html) $\eta$ constant
         """
-        self.checkpoint_path = checkpoint_path
+
         self.ddim_steps = ddim_steps
         self.ddim_eta = ddim_eta
         self.force_cpu = force_cpu
@@ -128,14 +128,9 @@ class StableDiffusionBaseScript:
         with section(f'Latent Diffusion model saving, to {model_path}'):
             torch.save(self.model, model_path)
     
-    def initialize_from_model(self, model: LatentDiffusion):
+    def initialize_from_model(self, model: LatentDiffusionModel):
 
         self.model = model
-        self.initialize_sampler()  
-
-    def initialize_from_saved(self, model_path = LATENT_DIFFUSION_PATH):
-
-        self.load_model(model_path)
         self.initialize_sampler()  
 
     def initialize_script(self, autoencoder = None, clip_text_embedder = None, unet_model = None, force_submodels_init = False, path = None):
@@ -165,7 +160,7 @@ class StableDiffusionBaseScript:
             )
 
             # Move the model to device
-            # self.model.to(self.device)
+            self.model.to(self.device)
         except EOFError:
                 raise ModelLoadError("Stable Diffusion model couldn't be loaded. Check that the .ckpt file exists in the specified location (path), and that it is not corrupted.")
 
