@@ -102,7 +102,7 @@ def init_txt2img(
         clip_text_embedder = None                                   
         ):
     
-    txt2img = Txt2Img(checkpoint_path=checkpoint_path, sampler_name=sampler_name, n_steps=n_steps, ddim_eta=ddim_eta)
+    txt2img = Txt2Img(sampler_name=sampler_name, n_steps=n_steps, ddim_eta=ddim_eta)
     # compute loading time
      
 
@@ -114,7 +114,7 @@ def init_txt2img(
         return txt2img
     else:
         with section("to run `StableDiffusionBaseScript`'s initialization function"):
-            txt2img.initialize_script(path=CHECKPOINT_PATH, autoencoder= autoencoder, unet_model = unet_model, clip_text_embedder=clip_text_embedder, force_submodels_init=True)
+            txt2img.initialize_script(path=checkpoint_path, autoencoder= autoencoder, unet_model = unet_model, clip_text_embedder=clip_text_embedder, force_submodels_init=True)
         
         return txt2img
 

@@ -6,7 +6,7 @@ import torch
 from stable_diffusion2.sampler.ddim import DDIMSampler
 from stable_diffusion2.sampler.ddpm import DDPMSampler
 from stable_diffusion2.utils.model import initialize_latent_diffusion
-from stable_diffusion2.utils.utils import get_device, load_img
+from stable_diffusion2.utils.utils import check_device, get_device, load_img, get_memory_status
 from stable_diffusion2.latent_diffusion import LatentDiffusion
 from stable_diffusion2.sampler import DiffusionSampler
 from stable_diffusion2.constants import LATENT_DIFFUSION_PATH
@@ -27,7 +27,7 @@ class StableDiffusion:
                  force_cpu: bool = False,
                  sampler_name: str='ddim',
                  n_steps: int = 50,
-                 cuda_device: str = 'cuda:0',
+                 device = None,
                  ):
         """
         :param checkpoint_path: is the path of the checkpoint
@@ -35,18 +35,13 @@ class StableDiffusion:
         :param n_steps: is the number of sampling steps
         :param ddim_eta: is the [DDIM sampling](../sampler/ddim.html) $\eta$ constant
         """
+        self.device = check_device(device)
 
         self.ddim_steps = ddim_steps
         self.ddim_eta = ddim_eta
         self.force_cpu = force_cpu
         self.sampler_name = sampler_name
         self.n_steps = n_steps
-        self.cuda_device = cuda_device
-        self.device_id = get_device(force_cpu, cuda_device)
-        self.device = torch.device(self.device_id)
-
-        # Load [latent diffusion model](../latent_diffusion.html)
-        # Get device or force CPU if requested
 
     def encode_image(self, orig_img: str, batch_size: int = 1):
         """
@@ -55,7 +50,8 @@ class StableDiffusion:
         orig_image = load_img(orig_img).to(self.device)
         # Encode the image in the latent space and make `batch_size` copies of it
         orig = self.model.autoencoder_encode(orig_image).repeat(batch_size, 1, 1, 1)
-
+        with section("Encoding image"):
+            print(get_memory_status())
         return orig
 
     def prepare_mask(self, mask: Optional[torch.Tensor], orig: torch.Tensor):
@@ -82,13 +78,14 @@ class StableDiffusion:
         else:
             un_cond = None
 
-        print(prompts)
         # Get the prompt embeddings
         cond = self.model.get_text_conditioning(prompts)
 
         return un_cond, cond
 
     def decode_image(self, x: torch.Tensor):
+        with section("decoding image"):
+            print(get_memory_status())
         return self.model.autoencoder_decode(x)
 
     def paint(self,
@@ -146,22 +143,22 @@ class StableDiffusion:
             clip_text_embedder (CLIPTextEmbedder, optional): the externally initialized autoencoder. Defaults to None.
             unet_model (UNetModel, optional): the externally initialized autoencoder. Defaults to None.
         """
+        raise DeprecationWarning("This method is deprecated. Use initialize_latent_diffusion instead.")
         self.initialize_latent_diffusion(autoencoder, clip_text_embedder, unet_model, force_submodels_init=force_submodels_init, path=path)
         self.initialize_sampler()
 
-    def initialize_latent_diffusion(self, autoencoder, clip_text_embedder, unet_model, force_submodels_init = False, path=None):
+    def initialize_latent_diffusion(self, path = None, autoencoder = None, clip_text_embedder = None, unet_model = None, force_submodels_init = False):
         try:
             self.model = initialize_latent_diffusion(
                 path=path,
-                device=self.device_id,
+                device=self.device,
                 autoencoder=autoencoder,
                 clip_text_embedder=clip_text_embedder,
                 unet_model = unet_model,
                 force_submodels_init=force_submodels_init
             )
 
-            # Move the model to device
-            self.model.to(self.device)
+            self.initialize_sampler()
         except EOFError:
                 raise ModelLoadError("Stable Diffusion model couldn't be loaded. Check that the .ckpt file exists in the specified location (path), and that it is not corrupted.")
 

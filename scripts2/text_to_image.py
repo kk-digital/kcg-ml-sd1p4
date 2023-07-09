@@ -11,11 +11,12 @@ summary: >
 import time
 import os
 import torch
-from labml import monit
 from datetime import datetime
 from stable_diffusion_base_script import StableDiffusionBaseScript
 from stable_diffusion2.utils.utils import save_images, set_seed, get_autocast
+from stable_diffusion2.utils.utils import SectionManager as section
 from stable_diffusion2.model.unet.unet_attention import CrossAttention
+from stable_diffusion2.stable_diffusion import StableDiffusion
 from cli_builder import CLI
 
 def get_prompts(prompt, prompts_file):
@@ -36,7 +37,7 @@ def get_prompts(prompt, prompts_file):
 
     return prompts
 
-class Txt2Img(StableDiffusionBaseScript):
+class Txt2Img(StableDiffusion):
     """
     ### Text to image class
     """
@@ -182,15 +183,15 @@ def main():
     CrossAttention.use_flash_attention = opt.flash
 
     # Starts the text2img
-    txt2img = Txt2Img(checkpoint_path=opt.checkpoint_path,
+    txt2img = Txt2Img(
                       sampler_name=opt.sampler,
                       n_steps=opt.steps,
                       force_cpu=opt.force_cpu,
-                      cuda_device=opt.cuda_device
+                      device=opt.cuda_device
                     )
-    txt2img.initialize_script()
+    txt2img.initialize_latent_diffusion(path=opt.checkpoint_path, force_submodels_init=True)
 
-    with monit.section('Generate', total_steps=len(prompts)) as section:
+    with section(f'generate images for {len(prompts)} prompts'):
         for prompt in prompts:
             print(f'Generating images for prompt: "{prompt}"')
 
@@ -202,7 +203,7 @@ def main():
             )
 
             save_images(images, filename)
-            section.progress(1)
+            
 
 
 if __name__ == "__main__":
