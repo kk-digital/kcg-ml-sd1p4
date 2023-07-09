@@ -50,8 +50,8 @@ class StableDiffusion:
         orig_image = load_img(orig_img).to(self.device)
         # Encode the image in the latent space and make `batch_size` copies of it
         orig = self.model.autoencoder_encode(orig_image).repeat(batch_size, 1, 1, 1)
-        with section("Encoding image"):
-            print(get_memory_status())
+        # with section("Encoding image"):
+        #     print(get_memory_status())
         return orig
 
     def prepare_mask(self, mask: Optional[torch.Tensor], orig: torch.Tensor):
@@ -84,8 +84,8 @@ class StableDiffusion:
         return un_cond, cond
 
     def decode_image(self, x: torch.Tensor):
-        with section("decoding image"):
-            print(get_memory_status())
+        # with section("decoding image"):
+        #     print(get_memory_status())
         return self.model.autoencoder_decode(x)
 
     def paint(self,
