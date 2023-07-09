@@ -54,6 +54,9 @@ class StableDiffusion:
             n_steps=1000,
             latent_scaling_factor=0.18215,
             device = self.device)
+    @property
+    def latent_diffusion(self):
+        return self.model
 
     @property
     def sampler(self):

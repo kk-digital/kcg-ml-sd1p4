@@ -109,7 +109,15 @@ class LatentDiffusion(nn.Module):
         alpha_bar = torch.cumprod(alpha, dim=0)
         self.alpha_bar = nn.Parameter(alpha_bar.to(torch.float32), requires_grad=False)
         self.to(self.device)
+        
+    @property
+    def autoencoder(self):
+        return self.first_stage_model
 
+    @property
+    def clip_embedder(self):
+        return self.cond_stage_model
+    
     def save_submodels(self, autoencoder_path = AUTOENCODER_PATH, embedder_path = EMBEDDER_PATH, unet_path = UNET_PATH):
 
         self.first_stage_model.save(autoencoder_path=autoencoder_path)
@@ -124,6 +132,7 @@ class LatentDiffusion(nn.Module):
     def load_autoencoder(self, autoencoder_path = AUTOENCODER_PATH):
         self.first_stage_model = torch.load(autoencoder_path, map_location=self.device)
         self.first_stage_model.eval()
+        return self.first_stage_model
 
     def load_unet(self, unet_path = UNET_PATH):
         unet = torch.load(unet_path, map_location=self.device)
