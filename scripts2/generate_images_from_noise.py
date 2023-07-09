@@ -9,13 +9,14 @@ from typing import Callable
 from tqdm import tqdm
 
 
-from auxiliary_functions import save_images, save_image_grid, get_torch_distribution_from_name
+from auxiliary_functions import get_torch_distribution_from_name
 
 from text_to_image import Txt2Img
 
 from stable_diffusion2.latent_diffusion import LatentDiffusion
 from stable_diffusion2.constants import CHECKPOINT_PATH, AUTOENCODER_PATH, UNET_PATH, EMBEDDER_PATH, LATENT_DIFFUSION_PATH, ENCODER_PATH, DECODER_PATH, TOKENIZER_PATH, TRANSFORMER_PATH
 from stable_diffusion2.utils.utils import SectionManager as section
+from stable_diffusion2.utils.utils import save_image_grid, save_images
 from stable_diffusion2.utils.model import initialize_latent_diffusion, initialize_autoencoder, initialize_clip_embedder
 import safetensors.torch as st
 
@@ -102,6 +103,7 @@ def init_txt2img(
         clip_text_embedder = None                                   
         ):
     
+    # txt2img = Txt2Img(checkpoint_path=checkpoint_path, sampler_name=sampler_name, n_steps=n_steps, ddim_eta=ddim_eta)
     txt2img = Txt2Img(sampler_name=sampler_name, n_steps=n_steps, ddim_eta=ddim_eta)
     # compute loading time
      

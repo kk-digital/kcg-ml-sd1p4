@@ -147,8 +147,8 @@ class StableDiffusion:
     def unload_model(self):
         # del self.model.autoencoder.encoder
         # del self.model.autoencoder.decoder
-        self.model.autoencoder.unload_submodels()
-        self.model.clip_embedder.unload_submodels()
+        self.model.first_stage_model.unload_submodels()
+        self.model.cond_stage_model.unload_submodels()
         del self.model.model
         torch.cuda.empty_cache()
 

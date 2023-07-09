@@ -119,13 +119,13 @@ if __name__ == '__main__':
         summary(model)
         if GRANULARITY == 0:
             with section("to save vae submodels"):
-                model.autoencoder.save_submodels() # saves autoencoder submodels (encoder, decoder) with loaded state dict
+                model.first_stage_model.save_submodels() # saves autoencoder submodels (encoder, decoder) with loaded state dict
             with section("to unload vae submodels"):
-                model.autoencoder.unload_submodels() # unloads autoencoder submodels
+                model.first_stage_model.unload_submodels() # unloads autoencoder submodels
             with section("to save embedder submodels"):
-                model.clip_embedder.save_submodels() # saves text embedder submodels (tokenizer, transformer) with loaded state dict
+                model.cond_stage_model.save_submodels() # saves text embedder submodels (tokenizer, transformer) with loaded state dict
             with section("to unload embedder submodels"):
-                model.clip_embedder.unload_submodels() # unloads text embedder submodels
+                model.cond_stage_model.unload_submodels() # unloads text embedder submodels
             with section("to save latent diffusion submodels"):
                 model.save_submodels() # saves latent diffusion submodels (autoencoder, clip_embedder) with loaded state dict and unloaded submodels
             with section("to unload latent diffusion submodels"):

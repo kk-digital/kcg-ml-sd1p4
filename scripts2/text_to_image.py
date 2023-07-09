@@ -143,9 +143,6 @@ class Txt2Img(StableDiffusion):
         # AMP auto casting
         autocast = get_autocast()
         with autocast:
-            # un_cond, cond = self.get_text_conditioning(uncond_scale, prompt_list, batch_size)
-            # print("gettextcond shape: ", cond.shape)
-            # print(un_cond.shape)
 
             # [Sample in the latent space](../sampler/index.html).
             # `x` will be of shape `[batch_size, c, h / f, w / f]`

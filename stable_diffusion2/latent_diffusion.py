@@ -92,10 +92,10 @@ class LatentDiffusion(nn.Module):
         # [CompVis/stable-diffusion](https://github.com/CompVis/stable-diffusion).
         self.model = DiffusionWrapper(unet_model)
         # Auto-encoder and scaling factor
-        self.autoencoder = autoencoder
+        self.first_stage_model = autoencoder
         self.latent_scaling_factor = latent_scaling_factor
         # [CLIP embeddings generator](model/clip_embedder.html)
-        self.clip_embedder = clip_embedder
+        self.cond_stage_model = clip_embedder
 
         # Number of steps $T$
         self.n_steps = n_steps
@@ -112,8 +112,8 @@ class LatentDiffusion(nn.Module):
 
     def save_submodels(self, autoencoder_path = AUTOENCODER_PATH, embedder_path = EMBEDDER_PATH, unet_path = UNET_PATH):
 
-        self.autoencoder.save(autoencoder_path=autoencoder_path)
-        self.clip_embedder.save(embedder_path=embedder_path)
+        self.first_stage_model.save(autoencoder_path=autoencoder_path)
+        self.cond_stage_model.save(embedder_path=embedder_path)
         self.model.diffusion_model.save(unet_path=unet_path)
 
 
@@ -122,8 +122,8 @@ class LatentDiffusion(nn.Module):
         torch.save(self, latent_diffusion_path)
 
     def load_autoencoder(self, autoencoder_path = AUTOENCODER_PATH):
-        self.autoencoder = torch.load(autoencoder_path, map_location=self.device)
-        self.autoencoder.eval()
+        self.first_stage_model = torch.load(autoencoder_path, map_location=self.device)
+        self.first_stage_model.eval()
 
     def load_unet(self, unet_path = UNET_PATH):
         unet = torch.load(unet_path, map_location=self.device)
@@ -131,45 +131,45 @@ class LatentDiffusion(nn.Module):
         self.model = DiffusionWrapper(unet)
 
     def load_clip_embedder(self, embedder_path = EMBEDDER_PATH):
-        self.clip_embedder = torch.load(embedder_path, map_location=self.device)
-        self.clip_embedder.eval()
+        self.cond_stage_model = torch.load(embedder_path, map_location=self.device)
+        self.cond_stage_model.eval()
 
     def load_submodels(self,  autoencoder_path = AUTOENCODER_PATH, embedder_path = EMBEDDER_PATH, unet_path = UNET_PATH):
         
         """
         ### Load the model from a checkpoint
         """
-        self.autoencoder = torch.load(autoencoder_path, map_location=self.device)
-        self.autoencoder.eval()
-        self.clip_embedder = torch.load(embedder_path, map_location=self.device)
-        self.clip_embedder.eval()
+        self.first_stage_model = torch.load(autoencoder_path, map_location=self.device)
+        self.first_stage_model.eval()
+        self.cond_stage_model = torch.load(embedder_path, map_location=self.device)
+        self.cond_stage_model.eval()
         self.model = DiffusionWrapper(torch.load(unet_path, map_location=self.device).eval())
 
     def load_submodel_tree(self, encoder_path = ENCODER_PATH, decoder_path = DECODER_PATH, autoencoder_path = AUTOENCODER_PATH, embedder_path = EMBEDDER_PATH, unet_path = UNET_PATH):
         
         with section("load submodel tree"):
-            self.autoencoder = torch.load(autoencoder_path, map_location=self.device)
-            self.autoencoder.eval()
-            self.autoencoder.load_submodels(encoder_path=encoder_path, decoder_path=decoder_path)
-            self.clip_embedder = torch.load(embedder_path, map_location=self.device)
-            self.clip_embedder.eval()
-            self.clip_embedder.load_submodels(tokenizer_path=TOKENIZER_PATH, transformer_path=TRANSFORMER_PATH)
+            self.first_stage_model = torch.load(autoencoder_path, map_location=self.device)
+            self.first_stage_model.eval()
+            self.first_stage_model.load_submodels(encoder_path=encoder_path, decoder_path=decoder_path)
+            self.cond_stage_model = torch.load(embedder_path, map_location=self.device)
+            self.cond_stage_model.eval()
+            self.cond_stage_model.load_submodels(tokenizer_path=TOKENIZER_PATH, transformer_path=TRANSFORMER_PATH)
             self.model = DiffusionWrapper(torch.load(unet_path, map_location=self.device).eval())
 
     def unload_submodels(self):
-        del self.autoencoder
-        del self.clip_embedder
+        del self.first_stage_model
+        del self.cond_stage_model
         del self.model
         torch.cuda.empty_cache()
-        self.autoencoder = None
-        self.clip_embedder = None    
+        self.first_stage_model = None
+        self.cond_stage_model = None    
         self.model = None
 
     def get_text_conditioning(self, prompts: List[str]):
         """
         ### Get [CLIP embeddings](model/clip_embedder.html) for a list of text prompts
         """
-        return self.clip_embedder(prompts)
+        return self.cond_stage_model(prompts)
 
     def autoencoder_encode(self, image: torch.Tensor):
         """
@@ -178,7 +178,7 @@ class LatentDiffusion(nn.Module):
         The encoder output is a distribution.
         We sample from that and multiply by the scaling factor.
         """
-        return self.latent_scaling_factor * self.autoencoder.encode(image).sample()
+        return self.latent_scaling_factor * self.first_stage_model.encode(image).sample()
 
     def autoencoder_decode(self, z: torch.Tensor):
         """
@@ -186,7 +186,7 @@ class LatentDiffusion(nn.Module):
 
         We scale down by the scaling factor and then decode.
         """
-        return self.autoencoder.decode(z / self.latent_scaling_factor)
+        return self.first_stage_model.decode(z / self.latent_scaling_factor)
 
     def forward(self, x: torch.Tensor, t: torch.Tensor, context: torch.Tensor):
         """
