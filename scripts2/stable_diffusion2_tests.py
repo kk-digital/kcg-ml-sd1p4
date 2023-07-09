@@ -161,16 +161,16 @@ def init_latent_diffusion_from_mode(mode):
         with section("to load latent diffusion from disk, then load its submodels from disk"):
             latent_diffusion_model = torch.load(LATENT_DIFFUSION_PATH)
             latent_diffusion_model.load_submodels()
-            latent_diffusion_model.first_stage_model.load_submodels()
-            latent_diffusion_model.cond_stage_model.load_submodels()
+            latent_diffusion_model.autoencoder.load_submodels()
+            latent_diffusion_model.clip_embedder.load_submodels()
             latent_diffusion_model.eval()
             return latent_diffusion_model        
     if mode == 4:
         with section("to initialize latent diffusion empty and without loading weights, with external initialization function, then load its submodels from disk"):
             latent_diffusion_model = initialize_latent_diffusion(force_submodels_init=False)
             latent_diffusion_model.load_submodels()
-            latent_diffusion_model.first_stage_model.load_submodels()
-            latent_diffusion_model.cond_stage_model.load_submodels()
+            latent_diffusion_model.autoencoder.load_submodels()
+            latent_diffusion_model.clip_embedder.load_submodels()
             latent_diffusion_model.eval()
             return latent_diffusion_model 
     if mode == 5:
@@ -182,8 +182,8 @@ def init_latent_diffusion_from_mode(mode):
                                 latent_scaling_factor=0.18215
                                 ).to(device)
             latent_diffusion_model.load_submodels()
-            latent_diffusion_model.first_stage_model.load_submodels()
-            latent_diffusion_model.cond_stage_model.load_submodels()
+            latent_diffusion_model.autoencoder.load_submodels()
+            latent_diffusion_model.clip_embedder.load_submodels()
             latent_diffusion_model.eval()
             return latent_diffusion_model 
     if mode == 6:
@@ -215,8 +215,8 @@ def init_latent_diffusion_from_mode(mode):
                                 n_steps=1000,
                                 latent_scaling_factor=0.18215
                                 ).to(device)
-            latent_diffusion_model.first_stage_model = autoencoder
-            latent_diffusion_model.cond_stage_model = clip_text_embedder
+            latent_diffusion_model.autoencoder = autoencoder
+            latent_diffusion_model.clip_embedder = clip_text_embedder
             latent_diffusion_model.model = DiffusionWrapper(unet_model)
             # latent_diffusion_model.load_submodels()
             return latent_diffusion_model

@@ -2,11 +2,12 @@ import os, sys
 sys.path.append(os.path.abspath(''))
 
 import torch
+import time
 
 from stable_diffusion2.sampler.ddim import DDIMSampler
 from stable_diffusion2.sampler.ddpm import DDPMSampler
 from stable_diffusion2.utils.model import initialize_latent_diffusion
-from stable_diffusion2.utils.utils import check_device, get_device, load_img, get_memory_status
+from stable_diffusion2.utils.utils import check_device, get_device, load_img, get_memory_status, set_seed, get_autocast
 from stable_diffusion2.latent_diffusion import LatentDiffusion
 from stable_diffusion2.sampler import DiffusionSampler
 from stable_diffusion2.constants import LATENT_DIFFUSION_PATH
@@ -28,6 +29,7 @@ class StableDiffusion:
                  sampler_name: str='ddim',
                  n_steps: int = 50,
                  device = None,
+                 model: LatentDiffusion = None,
                  ):
         """
         :param checkpoint_path: is the path of the checkpoint
@@ -36,12 +38,36 @@ class StableDiffusion:
         :param ddim_eta: is the [DDIM sampling](../sampler/ddim.html) $\eta$ constant
         """
         self.device = check_device(device)
-
+        self.model = model
         self.ddim_steps = ddim_steps
-        self.ddim_eta = ddim_eta
+        self._ddim_eta = ddim_eta
         self.force_cpu = force_cpu
         self.sampler_name = sampler_name
+        self._sampler = None
         self.n_steps = n_steps
+        if self.model is None:
+            
+            print("WARNING: LatentDiffusion model not given.")
+            
+            self.model = LatentDiffusion(linear_start=0.00085,
+            linear_end=0.0120,
+            n_steps=1000,
+            latent_scaling_factor=0.18215,
+            device = self.device)
+
+    @property
+    def sampler(self):
+        self.initialize_sampler()
+        return self._sampler
+
+    @property
+    def ddim_eta(self):
+        return self._ddim_eta
+    @ddim_eta.setter
+    def ddim_eta(self, value):
+        self._ddim_eta = value
+        if self.sampler_name == 'ddim':
+            self.initialize_sampler()
 
     def encode_image(self, orig_img: str, batch_size: int = 1):
         """
@@ -119,7 +145,11 @@ class StableDiffusion:
             self.model.eval()
 
     def unload_model(self):
-        del self.model
+        # del self.model.autoencoder.encoder
+        # del self.model.autoencoder.decoder
+        self.model.autoencoder.unload_submodels()
+        self.model.clip_embedder.unload_submodels()
+        del self.model.model
         torch.cuda.empty_cache()
 
     def save_model(self, model_path = LATENT_DIFFUSION_PATH):
@@ -164,9 +194,76 @@ class StableDiffusion:
 
     def initialize_sampler(self):
         if self.sampler_name == 'ddim':
-            self.sampler = DDIMSampler(self.model,
+            self._sampler = DDIMSampler(self.model,
                                        n_steps=self.n_steps,
-                                       ddim_eta=self.ddim_eta)
+                                       ddim_eta=self._ddim_eta)
         elif self.sampler_name == 'ddpm':
-            self.sampler = DDPMSampler(self.model)
+            self._sampler = DDPMSampler(self.model)
 
+    @torch.no_grad()
+    def generate_images(self, *,
+                seed: int = 0,
+                batch_size: int = 1,
+                prompt: str,
+                h: int = 512, w: int = 512,
+                uncond_scale: float = 7.5,
+                low_vram: bool = False,
+                noise_fn = torch.randn,
+                temperature: float = 1.0,
+                ):
+        """
+        :param seed: the seed to use when generating the images
+        :param dest_path: is the path to store the generated images
+        :param batch_size: is the number of images to generate in a batch
+        :param prompt: is the prompt to generate images with
+        :param h: is the height of the image
+        :param w: is the width of the image
+        :param uncond_scale: is the unconditional guidance scale $s$. This is used for
+            $\epsilon_\theta(x_t, c) = s\epsilon_\text{cond}(x_t, c) + (s - 1)\epsilon_\text{cond}(x_t, c_u)$
+        :param low_vram: whether to limit VRAM usage
+        """
+        # Number of channels in the image
+        c = 4
+        # Image to latent space resolution reduction
+        f = 8
+        if seed == 0:
+            seed = time.time_ns() % 2**32
+        set_seed(seed)
+        # Adjust batch size based on VRAM availability
+        if low_vram:
+            batch_size = 1
+        # Make a batch of prompts
+        prompts = batch_size * [prompt]
+        # AMP auto casting
+        autocast = get_autocast()
+        with autocast:
+            # with section("getting text cond"):
+            un_cond, cond = self.get_text_conditioning(uncond_scale, prompts, batch_size)
+            # [Sample in the latent space](../sampler/index.html).
+            # `x` will be of shape `[batch_size, c, h / f, w / f]`
+            # with section("sampling"):
+            x = self.sampler.sample(cond=cond,
+                                        shape=[batch_size, c, h // f, w // f],
+                                        uncond_scale=uncond_scale,
+                                        uncond_cond=un_cond,
+                                        noise_fn=noise_fn,
+                                        temperature=temperature)
+            return self.decode_image(x)
+
+    @torch.no_grad()
+    def decode(self, x: torch.Tensor):
+        
+        # AMP auto casting
+        autocast = get_autocast()
+        
+        with autocast:
+            return self.decode_image(x)        
+    
+    @torch.no_grad()
+    def encode(self, image: torch.Tensor):
+        
+        # AMP auto casting
+        autocast = get_autocast()
+
+        with autocast:
+            return self.model.autoencoder_encode(image.to(self.device))            
