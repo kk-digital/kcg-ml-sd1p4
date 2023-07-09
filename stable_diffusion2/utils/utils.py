@@ -180,7 +180,6 @@ def get_memory_status(device = None):
         free, total = torch.tensor(torch.cuda.mem_get_info(device = device)) // 1024 ** 2
         used = total - free
         print(f'Total: {total.item()} MiB\nFree: {free.item()} MiB\nUsed: {used.item()} MiB')
-        return free, total
     else:
         t = torch.cuda.get_device_properties(device).total_memory // 1024 ** 2
         r = torch.cuda.memory_reserved(device) // 1024 ** 2

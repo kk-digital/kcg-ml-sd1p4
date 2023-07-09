@@ -47,16 +47,13 @@ class StableDiffusion:
         self.n_steps = n_steps
         if self.model is None:
             
-            print("WARNING: LatentDiffusion model not given.")
+            print("WARNING: LatentDiffusion model not given. An empty model will be initialized.")
             
             self.model = LatentDiffusion(linear_start=0.00085,
             linear_end=0.0120,
             n_steps=1000,
             latent_scaling_factor=0.18215,
             device = self.device)
-    @property
-    def latent_diffusion(self):
-        return self.model
 
     @property
     def sampler(self):
@@ -66,6 +63,7 @@ class StableDiffusion:
     @property
     def ddim_eta(self):
         return self._ddim_eta
+    
     @ddim_eta.setter
     def ddim_eta(self, value):
         self._ddim_eta = value
@@ -79,8 +77,6 @@ class StableDiffusion:
         orig_image = load_img(orig_img).to(self.device)
         # Encode the image in the latent space and make `batch_size` copies of it
         orig = self.model.autoencoder_encode(orig_image).repeat(batch_size, 1, 1, 1)
-        # with section("Encoding image"):
-        #     print(get_memory_status())
         return orig
 
     def prepare_mask(self, mask: Optional[torch.Tensor], orig: torch.Tensor):
@@ -113,8 +109,6 @@ class StableDiffusion:
         return un_cond, cond
 
     def decode_image(self, x: torch.Tensor):
-        # with section("decoding image"):
-        #     print(get_memory_status())
         return self.model.autoencoder_decode(x)
 
     def paint(self,
@@ -146,7 +140,7 @@ class StableDiffusion:
         with section(f'Latent Diffusion model loading, from {model_path}'):
             self.model = torch.load(model_path, map_location=self.device)
             self.model.eval()
-
+            
     def unload_model(self):
         # del self.model.autoencoder.encoder
         # del self.model.autoencoder.decoder
@@ -204,6 +198,24 @@ class StableDiffusion:
             self._sampler = DDPMSampler(self.model)
 
     @torch.no_grad()
+    def decode(self, x: torch.Tensor):
+        
+        # AMP auto casting
+        autocast = get_autocast()
+        
+        with autocast:
+            return self.decode_image(x.to(self.device))        
+    
+    @torch.no_grad()
+    def encode(self, image: torch.Tensor):
+        
+        # AMP auto casting
+        autocast = get_autocast()
+
+        with autocast:
+            return self.model.autoencoder_encode(image.to(self.device))   
+
+    @torch.no_grad()
     def generate_images(self, *,
                 seed: int = 0,
                 batch_size: int = 1,
@@ -253,20 +265,4 @@ class StableDiffusion:
                                         temperature=temperature)
             return self.decode_image(x)
 
-    @torch.no_grad()
-    def decode(self, x: torch.Tensor):
-        
-        # AMP auto casting
-        autocast = get_autocast()
-        
-        with autocast:
-            return self.decode_image(x)        
-    
-    @torch.no_grad()
-    def encode(self, image: torch.Tensor):
-        
-        # AMP auto casting
-        autocast = get_autocast()
-
-        with autocast:
-            return self.model.autoencoder_encode(image.to(self.device))            
+         

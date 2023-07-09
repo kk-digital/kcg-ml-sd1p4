@@ -138,11 +138,13 @@ class LatentDiffusion(nn.Module):
         unet = torch.load(unet_path, map_location=self.device)
         unet.eval()
         self.model = DiffusionWrapper(unet)
-
+        return self.model
+    
     def load_clip_embedder(self, embedder_path = EMBEDDER_PATH):
         self.cond_stage_model = torch.load(embedder_path, map_location=self.device)
         self.cond_stage_model.eval()
-
+        return self.cond_stage_model
+    
     def load_submodels(self,  autoencoder_path = AUTOENCODER_PATH, embedder_path = EMBEDDER_PATH, unet_path = UNET_PATH):
         
         """
