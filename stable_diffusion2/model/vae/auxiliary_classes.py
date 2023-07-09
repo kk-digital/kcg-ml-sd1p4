@@ -21,9 +21,9 @@ class GaussianDistribution:
         # Calculate standard deviation
         self.std = torch.exp(0.5 * self.log_var)
 
-    def sample(self):
+    def sample(self, num_samples: int = 1):
         # Sample from the distribution
-        return self.mean + self.std * torch.randn_like(self.std)
+        return self.mean + self.std * torch.randn_like(self.std.repeat(num_samples, 1, 1, 1))
 
 
 class AttnBlock(nn.Module):

@@ -10,7 +10,7 @@ import time
 import shutil
 from tqdm import tqdm
 import torchvision
-from stable_diffusion2.utils.model import save_images
+from stable_diffusion2.utils.utils import save_images
 from cli_builder import CLI
 
 # noise_seeds = [

@@ -14,8 +14,6 @@ import torchvision
 
 from PIL import Image
 from pathlib import Path
-# from stable_diffusion2.utils.model import save_images, save_image_grid
-# from stable_diffusion.utils.model import save_images
 from text_to_image2 import Txt2Img
 # from stable_diffusion2.scripts.text_to_image import Txt2Img
 

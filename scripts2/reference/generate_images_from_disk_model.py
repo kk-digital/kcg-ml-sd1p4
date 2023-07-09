@@ -5,8 +5,9 @@ import torch
 import time
 from tqdm import tqdm
 
-from stable_diffusion2.utils.model import save_images, initialize_autoencoder, initialize_clip_embedder, initialize_unet
-from stable_diffusion2.model.autoencoder import Encoder, Decoder, Autoencoder
+from stable_diffusion2.utils.utils import save_images
+from stable_diffusion2.utils.model import initialize_autoencoder, initialize_clip_embedder, initialize_unet
+from stable_diffusion2.model.vae.autoencoder import Autoencoder
 from stable_diffusion2.model.clip_embedder import CLIPTextEmbedder
 from stable_diffusion2.model.unet import UNetModel
 from cli_builder import CLI

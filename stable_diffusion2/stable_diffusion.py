@@ -5,8 +5,9 @@ import torch
 
 from stable_diffusion2.sampler.ddim import DDIMSampler
 from stable_diffusion2.sampler.ddpm import DDPMSampler
-from stable_diffusion2.utils.model import initialize_latent_diffusion, get_device, load_img
-from stable_diffusion2.latent_diffusion_model import LatentDiffusionModel
+from stable_diffusion2.utils.model import initialize_latent_diffusion
+from stable_diffusion2.utils.utils import get_device, load_img
+from stable_diffusion2.latent_diffusion import LatentDiffusion
 from stable_diffusion2.sampler import DiffusionSampler
 from stable_diffusion2.constants import LATENT_DIFFUSION_PATH
 from stable_diffusion2.utils.utils import SectionManager as section
@@ -16,8 +17,8 @@ from pathlib import Path
 class ModelLoadError(Exception):
     pass
 
-class StableDiffusionModel:
-    model: LatentDiffusionModel
+class StableDiffusion:
+    model: LatentDiffusion
     sampler: DiffusionSampler
 
     def __init__(self, *,
@@ -128,7 +129,7 @@ class StableDiffusionModel:
         with section(f'Latent Diffusion model saving, to {model_path}'):
             torch.save(self.model, model_path)
     
-    def initialize_from_model(self, model: LatentDiffusionModel):
+    def initialize_from_model(self, model: LatentDiffusion):
 
         self.model = model
         self.initialize_sampler()  

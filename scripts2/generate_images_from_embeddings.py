@@ -5,10 +5,12 @@ import torch
 import time
 from tqdm import tqdm
 
-from stable_diffusion2.utils.model import save_images, save_image_grid
-from stable_diffusion2.model.autoencoder import Encoder, Decoder, Autoencoder
-from stable_diffusion2.model.clip_embedder import CLIPTextEmbedder
-from stable_diffusion2.model.unet import UNetModel
+from stable_diffusion2.utils.utils import save_images, save_image_grid
+from stable_diffusion2.model.vae.autoencoder import Autoencoder
+from stable_diffusion2.model.vae.encoder import Encoder
+from stable_diffusion2.model.vae.decoder import Decoder
+from stable_diffusion2.model.clip.clip_embedder import CLIPTextEmbedder
+from stable_diffusion2.model.unet.unet import UNetModel
 from cli_builder import CLI
 from constants import CHECKPOINT_PATH, EMBEDDER_PATH
 

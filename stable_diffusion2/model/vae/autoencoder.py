@@ -28,6 +28,7 @@ import os
 import sys
 sys.path.insert(0, os.getcwd())
 from stable_diffusion2.constants import ENCODER_PATH, DECODER_PATH, AUTOENCODER_PATH
+from stable_diffusion2.utils.utils import check_device
 # ENCODER_PATH = os.path.abspath('./input/model/autoencoder/encoder.ckpt')
 # DECODER_PATH = os.path.abspath('./input/model/autoencoder/decoder.ckpt')
 # AUTOENCODER_PATH = os.path.abspath('./input/model/autoencoder/autoencoder.ckpt')
@@ -39,7 +40,7 @@ class Autoencoder(nn.Module):
     This consists of the encoder and decoder modules.
     """
 
-    def __init__(self, emb_channels: int, z_channels: int, encoder = None, decoder = None):
+    def __init__(self, emb_channels: int, z_channels: int, encoder = None, decoder = None, device = None):
         """
         :param encoder: is the encoder
         :param decoder: is the decoder
@@ -47,6 +48,9 @@ class Autoencoder(nn.Module):
         :param z_channels: is the number of channels in the embedding space
         """
         super().__init__()
+
+        self.device = check_device(device)
+
         self.encoder = encoder
         self.decoder = decoder
         self.z_channels = z_channels
@@ -57,7 +61,8 @@ class Autoencoder(nn.Module):
         # Convolution to map from quantized embedding space back to
         # embedding space
         self.post_quant_conv = nn.Conv2d(emb_channels, z_channels, 1)
-
+        self.to(self.device)
+        
     # def initialize_submodels(self, *, channels: int, channel_multipliers: List[int], n_resnet_blocks: int,
     #              out_channels: int, z_channels: int):
     def initialize_submodels(self):
@@ -94,15 +99,33 @@ class Autoencoder(nn.Module):
         """
         torch.save(self, autoencoder_path)
 
-    def load_submodels(self, encoder_path = ENCODER_PATH, decoder_path = DECODER_PATH, device = "cuda:0"):
+    def load_submodels(self, encoder_path = ENCODER_PATH, decoder_path = DECODER_PATH):
         
         """
         ### Load the model from a checkpoint
         """
-        self.encoder = torch.load(encoder_path, map_location=device)
+        self.encoder = torch.load(encoder_path, map_location=self.device)
         self.encoder.eval()
-        self.decoder = torch.load(decoder_path, map_location=device)
+        self.decoder = torch.load(decoder_path, map_location=self.device)
         self.decoder.eval()
+
+    def load_encoder(self, encoder_path = ENCODER_PATH):
+        self.encoder = torch.load(encoder_path, map_location=self.device)
+        self.encoder.eval()
+
+    def load_decoder(self, decoder_path = DECODER_PATH):
+        self.decoder = torch.load(decoder_path, map_location=self.device)
+        self.decoder.eval()
+
+    def unload_encoder(self):
+        del self.encoder
+        torch.cuda.empty_cache()
+        self.encoder = None
+
+    def unload_decoder(self):
+        del self.decoder
+        torch.cuda.empty_cache()
+        self.encoder = None
 
     def unload_submodels(self):
         del self.encoder

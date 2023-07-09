@@ -24,6 +24,7 @@ from torch import nn, save
 from os.path import join
 from transformers import CLIPTokenizer, CLIPTextModel
 from stable_diffusion2.constants import EMBEDDER_PATH, TOKENIZER_PATH, TRANSFORMER_PATH
+from stable_diffusion2.utils.utils import check_device
 from torchinfo import summary
 # EMBEDDER_PATH = os.path.abspath('./input/model/clip/clip_embedder.ckpt')
 # TOKENIZER_PATH = os.path.abspath('./input/model/clip/clip_tokenizer.ckpt')
@@ -33,19 +34,23 @@ class CLIPTextEmbedder(nn.Module):
     ## CLIP Text Embedder
     """
 
-    def __init__(self, version: str = "openai/clip-vit-large-patch14", device="cuda:0", max_length: int = 77, tokenizer = None, transformer = None):
+    def __init__(self, version: str = "openai/clip-vit-large-patch14", device=None, max_length: int = 77, tokenizer = None, transformer = None):
         """
         :param version: is the model version
         :param device: is the device
         :param max_length: is the max length of the tokenized prompt
         """
         super().__init__()
+
+        self.device = check_device(device)
+
         self.version = version
-        # self.model = None
+
         self.tokenizer = tokenizer
         self.transformer = transformer
-        self.device = device
+        
         self.max_length = max_length
+        self.to(self.device)
 
     def save_submodels(self, tokenizer_path: str = TOKENIZER_PATH, transformer_path: str = TRANSFORMER_PATH):
         torch.save(self.tokenizer, tokenizer_path)
@@ -54,21 +59,38 @@ class CLIPTextEmbedder(nn.Module):
     def save(self, embedder_path: str = EMBEDDER_PATH):
         torch.save(self, embedder_path)
     
-    def load_submodels(self, tokenizer_path = TOKENIZER_PATH, transformer_path = TRANSFORMER_PATH, device = "cuda:0"):
-        
-        """
-        ### Load the model from a checkpoint
-        """
-        self.tokenizer = torch.load(tokenizer_path, map_location=device)
-        # self.tokenizer.eval()
-        self.transformer = torch.load(transformer_path, map_location=device)
+    def load_submodels(self, tokenizer_path = TOKENIZER_PATH, transformer_path = TRANSFORMER_PATH):
+
+        self.tokenizer = torch.load(tokenizer_path, map_location=self.device)
+        self.transformer = torch.load(transformer_path, map_location=self.device)
         self.transformer.eval()
+
+    def load_tokenizer(self, tokenizer_path = TOKENIZER_PATH):
+        self.tokenizer = torch.load(tokenizer_path, map_location=self.device)
+        
+
+    def load_transformer(self, transformer_path = TRANSFORMER_PATH):
+
+        self.transformer = torch.load(transformer_path, map_location=self.device)
+        self.transformer.eval()
+
+
 
     def unload_submodels(self):
         del self.tokenizer
         del self.transformer
         torch.cuda.empty_cache()
         self.tokenizer = None
+        self.transformer = None
+    
+    def unload_tokenizer(self):
+        del self.tokenizer
+        torch.cuda.empty_cache()
+        self.tokenizer = None
+
+    def unload_transformer(self):
+        del self.transformer
+        torch.cuda.empty_cache()
         self.transformer = None
 
     def load_tokenizer_from_lib(self):

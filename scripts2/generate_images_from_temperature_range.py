@@ -8,7 +8,7 @@ import argparse
 from typing import Callable
 from tqdm import tqdm
 
-# from stable_diffusion2.utils.model import save_images, save_image_grid
+
 from auxiliary_functions import save_images, save_image_grid, get_torch_distribution_from_name
 
 from text_to_image import Txt2Img

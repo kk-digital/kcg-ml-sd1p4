@@ -6,7 +6,7 @@ import time
 from typing import Callable
 from tqdm import tqdm
 import argparse
-# from stable_diffusion2.utils.model import save_images, save_image_grid
+
 from auxiliary_functions import save_images, save_image_grid, get_torch_distribution_from_name
 # from stable_diffusion2.utils.utils import save_images, save_image_grid
 from text_to_image import Txt2Img
@@ -244,24 +244,28 @@ def init_txt2img(
     # compute loading time
 
     if DEFAULT:
-        device = check_device(None)
-        latent_diffusion_model = LatentDiffusion(linear_start=0.00085,
-            linear_end=0.0120,
-            n_steps=1000,
-            latent_scaling_factor=0.18215
-            ).to(device)
-        latent_diffusion_model.load_submodel_tree(device = device)
-        txt2img.initialize_from_model(latent_diffusion_model)
+        with section("to default init"):
+            device = check_device(None)
+            latent_diffusion_model = LatentDiffusion(linear_start=0.00085,
+                linear_end=0.0120,
+                n_steps=1000,
+                latent_scaling_factor=0.18215
+                ).to(device)
+            latent_diffusion_model.load_submodel_tree(device = device)
+            txt2img.initialize_from_model(latent_diffusion_model)
         return txt2img
     elif ALT:
-        device = check_device(None)
-        latent_diffusion_model = LatentDiffusionModel(linear_start=0.00085,
-            linear_end=0.0120,
-            n_steps=1000,
-            latent_scaling_factor=0.18215
-            )
-        latent_diffusion_model.load_submodel_tree(device = device)
-        txt2img.initialize_from_model(latent_diffusion_model)
+        with section("to alt init"):
+            device = check_device(None)
+            latent_diffusion_model = LatentDiffusionModel(linear_start=0.00085,
+                linear_end=0.0120,
+                n_steps=1000,
+                latent_scaling_factor=0.18215
+                )
+            latent_diffusion_model.alpha_bar.to(device)
+            latent_diffusion_model.beta.to(device)
+            latent_diffusion_model.load_submodel_tree(device = device)
+            txt2img.initialize_from_model(latent_diffusion_model)
         return txt2img
     else:
         latent_diffusion_model = init_latent_diffusion_from_mode(LATENT_DIFFUSION_INIT_MODE)

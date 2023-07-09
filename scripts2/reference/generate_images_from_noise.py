@@ -5,7 +5,7 @@ import torch
 import time
 from tqdm import tqdm
 
-from stable_diffusion2.utils.model import save_images
+from stable_diffusion2.utils.utils import save_images
 from cli_builder import CLI
 from constants import CHECKPOINT_PATH
 noise_seeds = [

@@ -5,11 +5,12 @@ import torch
 
 from stable_diffusion2.sampler.ddim import DDIMSampler
 from stable_diffusion2.sampler.ddpm import DDPMSampler
-from stable_diffusion2.utils.model import initialize_latent_diffusion, get_device, load_img
+from stable_diffusion2.utils.model import initialize_latent_diffusion
 from stable_diffusion2.latent_diffusion import LatentDiffusion
 from stable_diffusion2.sampler import DiffusionSampler
 from stable_diffusion2.constants import LATENT_DIFFUSION_PATH
 from stable_diffusion2.utils.utils import SectionManager as section
+from stable_diffusion2.utils.utils import get_device, load_img
 from typing import Union, Optional
 from pathlib import Path
 
