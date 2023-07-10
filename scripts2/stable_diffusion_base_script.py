@@ -10,7 +10,7 @@ from stable_diffusion2.latent_diffusion import LatentDiffusion
 from stable_diffusion2.sampler import DiffusionSampler
 from stable_diffusion2.constants import LATENT_DIFFUSION_PATH
 from stable_diffusion2.utils.utils import SectionManager as section
-from stable_diffusion2.utils.utils import get_device, load_img
+from stable_diffusion2.utils.utils import get_device, load_img, check_device, get_autocast
 from typing import Union, Optional
 from pathlib import Path
 
@@ -21,7 +21,7 @@ class StableDiffusionBaseScript:
     model: LatentDiffusion
     sampler: DiffusionSampler
 
-    def __init__(self, *, checkpoint_path: Union[str, Path],
+    def __init__(self, *, checkpoint_path: Union[str, Path] = None,
                  ddim_steps: int = 50,
                  ddim_eta: float = 0.0,
                  force_cpu: bool = False,
@@ -164,7 +164,7 @@ class StableDiffusionBaseScript:
                 unet_model = unet_model,
                 force_submodels_init=force_submodels_init
             )
-
+            self.initialize_sampler()
             # Move the model to device
             # self.model.to(self.device)
         except EOFError:

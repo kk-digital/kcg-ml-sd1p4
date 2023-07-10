@@ -7,13 +7,15 @@ import argparse
 
 from typing import Callable
 from tqdm import tqdm
-
+base_directory = "./"
+sys.path.insert(0, base_directory)
 
 from auxiliary_functions import get_torch_distribution_from_name
 
 from text_to_image import Txt2Img
 
 from stable_diffusion2.latent_diffusion import LatentDiffusion
+from stable_diffusion2.stable_diffusion import StableDiffusion
 from stable_diffusion2.constants import CHECKPOINT_PATH, AUTOENCODER_PATH, UNET_PATH, EMBEDDER_PATH, LATENT_DIFFUSION_PATH, ENCODER_PATH, DECODER_PATH, TOKENIZER_PATH, TRANSFORMER_PATH
 from stable_diffusion2.utils.utils import SectionManager as section
 from stable_diffusion2.utils.utils import save_image_grid, save_images
@@ -74,10 +76,6 @@ DIST_NAME = dist_names[DISTRIBUTION]
 VAR_RANGE = torch.linspace(*PARAMS_RANGE, NUM_DISTRIBUTIONS)
 DISTRIBUTIONS = {f'{DIST_NAME}_{var.item():.4f}': dict(loc=0.0, scale=var.item()) for var in VAR_RANGE}
 
-# DIST_NAME = 'Normal'
-# VAR_RANGE = torch.linspace(0.90, 1.1, 5)
-# DISTRIBUTIONS = {f'{DIST_NAME}_{var.item():.4f}': dict(loc=0, scale=var.item()) for var in VAR_RANGE}
-
 def create_folder_structure(distributions_dict: dict[str, dict[str, float]], root_dir: str = OUTPUT_DIR) -> None:
     for i, distribution_name in enumerate(distributions_dict.keys()):
         
@@ -104,21 +102,21 @@ def init_txt2img(
         ):
     
     # txt2img = Txt2Img(checkpoint_path=checkpoint_path, sampler_name=sampler_name, n_steps=n_steps, ddim_eta=ddim_eta)
-    txt2img = Txt2Img(sampler_name=sampler_name, n_steps=n_steps, ddim_eta=ddim_eta)
-    # compute loading time
-     
+    stable_diffusion = StableDiffusion(sampler_name=sampler_name, n_steps=n_steps, ddim_eta=ddim_eta)
+    
 
     if FROM_DISK:
         with section("to initialize latent diffusion and load submodels tree"):
-            latent_diffusion_model = initialize_latent_diffusion()
-            latent_diffusion_model.load_submodel_tree()
-            txt2img.initialize_from_model(latent_diffusion_model)
-        return txt2img
+            # stable_diffusion.quick_initialize().load_submodel_tree()
+            stable_diffusion.load_model()
+            stable_diffusion.model.load_submodel_tree()
+            stable_diffusion.initialize_sampler()
+        return stable_diffusion
     else:
         with section("to run `StableDiffusionBaseScript`'s initialization function"):
-            txt2img.initialize_script(path=checkpoint_path, autoencoder= autoencoder, unet_model = unet_model, clip_text_embedder=clip_text_embedder, force_submodels_init=True)
+            stable_diffusion.initialize_latent_diffusion(path=checkpoint_path, autoencoder= autoencoder, unet_model = unet_model, clip_text_embedder=clip_text_embedder, force_submodels_init=True)
         
-        return txt2img
+        return stable_diffusion
 
 def get_all_prompts(prompt_prefix, artist_file, num_artists = None):
 
@@ -166,7 +164,6 @@ def generate_images_from_dist(
     total_images, prompts = get_all_prompts(prompt_prefix, artist_file, num_artists = num_artists)
     dist_name, params = distribution
 
-    # noise_fn = lambda shape, device = None: get_torch_distribution_from_name(dist_name)(**params).sample(shape).to(device)
     with torch.no_grad():
         with tqdm(total=total_images, desc='Generating images', ) as pbar:
             print(f"Generating images for {dist_name}")
@@ -188,28 +185,22 @@ def generate_images_from_dist(
                         noise_fn = noise_fn,
                         temperature=temperature,
                     )
-                    print(f"temperature: {temperature}")
-                    # print("img shape: ", images.shape)
+
                     prompt_batch.append(images)
-                    # print("len prompt batch: ", len(prompt_batch))
+
                     save_images(images, dest_path=dest_path)
                     img_counter += 1
 
                 image_name = f"row_a{prompt_index+1:04d}.jpg"
                 dest_path = os.path.join(os.path.join(output_dir, dist_name), image_name)
-                print("len prompt batch: ", len(prompt_batch))
-                print([img.shape for img in prompt_batch])
                 row = torch.cat(prompt_batch, dim=0)
-                print("row shape: ", row.shape)
                 save_image_grid(row, dest_path, normalize=True, scale_each=True)
                 grid_rows.append(row)
+
             dest_path = os.path.join(os.path.join(output_dir, dist_name), f"grid_{dist_name}.jpg")
-            print("grid_rows: ", [row.shape for row in grid_rows])
             grid = torch.cat(grid_rows, dim=0)
-            print("grid shape: ", grid.shape)
             save_image_grid(grid, dest_path, nrow=num_artists, normalize=True, scale_each=True)
-            return grid    
-            # save_image_grid(grid_rows, dest_path, nrow=num_artists, normalize=True, scale_each=True)    
+            return grid        
 
 def generate_images_from_dist_dict(
         distributions: dict[str, dict[str, float]], 
@@ -222,8 +213,8 @@ def generate_images_from_dist_dict(
         batch_size: int=1,
         temperature: float=1.0,
         ):
+    
     # Clear the output directory
-
     if clear_output_dir:
         shutil.rmtree(output_dir)
         os.makedirs(output_dir, exist_ok=True)
@@ -247,8 +238,7 @@ def generate_images_from_dist_dict(
     
     grid = torch.cat(img_grids, dim=0)
     torch.save(grid, dest_path.replace('.jpg', '.pt'))
-    st.save_file({"img_grid": grid}, dest_path.replace('.jpg', '.safetensors'))
-    print("grid shape: ", grid.shape)
+    # st.save_file({"img_grid": grid}, dest_path.replace('.jpg', '.safetensors'))
     save_image_grid(grid, dest_path, nrow=NUM_SEEDS, normalize=True, scale_each=True)
 
 
@@ -259,5 +249,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-# %%

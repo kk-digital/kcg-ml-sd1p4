@@ -120,6 +120,18 @@ class StableDiffusion:
         with autocast:
             return self.model.autoencoder_encode(image.to(self.device))
 
+    def decode_image(self, x: torch.Tensor):
+        return self.model.autoencoder_decode(x)
+
+    @torch.no_grad()
+    def decode(self, x: torch.Tensor):
+        
+        # AMP auto casting
+        autocast = get_autocast()
+        
+        with autocast:
+            return self.decode_image(x.to(self.device)) 
+
     def prepare_mask(self, mask: Optional[torch.Tensor], orig: torch.Tensor):
         # If `mask` is not provided,
         # we set a sample mask to preserve the bottom half of the image
@@ -148,18 +160,6 @@ class StableDiffusion:
         cond = self.model.get_text_conditioning(prompts)
 
         return un_cond, cond
-
-    def decode_image(self, x: torch.Tensor):
-        return self.model.autoencoder_decode(x)
-
-    @torch.no_grad()
-    def decode(self, x: torch.Tensor):
-        
-        # AMP auto casting
-        autocast = get_autocast()
-        
-        with autocast:
-            return self.decode_image(x.to(self.device))       
 
     def paint(self,
               orig: torch.Tensor,
@@ -209,21 +209,21 @@ class StableDiffusion:
         self.initialize_sampler()
         return self.model
 
-    def initialize_script(self, autoencoder = None, clip_text_embedder = None, unet_model = None, force_submodels_init = False, path = None):
-        """You can initialize the autoencoder, CLIP and UNet models externally and pass them to the script.
-        Use the methods: 
-            stable_diffusion.utils.model.initialize_autoencoder,
-            stable_diffusion.utils.model.initialize_clip_embedder and 
-            stable_diffusion.utils.model.initialize_unet to initialize them.
-        If you don't initialize them externally, the script will initialize them internally.
-        Args:
-            autoencoder (Autoencoder, optional): the externally initialized autoencoder. Defaults to None.
-            clip_text_embedder (CLIPTextEmbedder, optional): the externally initialized autoencoder. Defaults to None.
-            unet_model (UNetModel, optional): the externally initialized autoencoder. Defaults to None.
-        """
-        self.initialize_latent_diffusion(autoencoder, clip_text_embedder, unet_model, force_submodels_init=force_submodels_init, path=path)
-        self.initialize_sampler()
-        raise DeprecationWarning("This method is deprecated. Use initialize_latent_diffusion instead.")
+    # def initialize_script(self, autoencoder = None, clip_text_embedder = None, unet_model = None, force_submodels_init = False, path = None):
+    #     """You can initialize the autoencoder, CLIP and UNet models externally and pass them to the script.
+    #     Use the methods: 
+    #         stable_diffusion.utils.model.initialize_autoencoder,
+    #         stable_diffusion.utils.model.initialize_clip_embedder and 
+    #         stable_diffusion.utils.model.initialize_unet to initialize them.
+    #     If you don't initialize them externally, the script will initialize them internally.
+    #     Args:
+    #         autoencoder (Autoencoder, optional): the externally initialized autoencoder. Defaults to None.
+    #         clip_text_embedder (CLIPTextEmbedder, optional): the externally initialized autoencoder. Defaults to None.
+    #         unet_model (UNetModel, optional): the externally initialized autoencoder. Defaults to None.
+    #     """
+    #     self.initialize_latent_diffusion(autoencoder, clip_text_embedder, unet_model, force_submodels_init=force_submodels_init, path=path)
+    #     self.initialize_sampler()
+    #     raise DeprecationWarning("This method is deprecated. Use initialize_latent_diffusion instead.")
 
     def quick_initialize(self):
         self.model = LatentDiffusion(linear_start=0.00085,
@@ -231,6 +231,7 @@ class StableDiffusion:
             n_steps=1000,
             latent_scaling_factor=0.18215,
             device = self.device)
+        self.initialize_sampler()
         return self.model
 
     def initialize_latent_diffusion(self, path = None, autoencoder = None, clip_text_embedder = None, unet_model = None, force_submodels_init = False):
@@ -253,11 +254,11 @@ class StableDiffusion:
 
     def initialize_sampler(self):
         if self.sampler_name == 'ddim':
-            self.sampler = DDIMSampler(self._model,
-                                       n_steps=self._ddim_steps,
-                                       ddim_eta=self._ddim_eta)
+            self.sampler = DDIMSampler(self.model,
+                                       n_steps=self.n_steps,
+                                       ddim_eta=self.ddim_eta)
         elif self.sampler_name == 'ddpm':
-            self.sampler = DDPMSampler(self._model)
+            self.sampler = DDPMSampler(self.model)
 
     @torch.no_grad()
     def generate_images(self, *,
@@ -309,4 +310,60 @@ class StableDiffusion:
                                         temperature=temperature)
             return self.decode_image(x)
 
-         
+    @torch.no_grad()
+    def generate_images_from_embeddings(self, *,
+                 seed: int = 0,
+                 batch_size: int = 1,
+                 embedded_prompt: torch.Tensor,
+                 null_prompt: torch.Tensor,
+                 h: int = 512, w: int = 512,
+                 uncond_scale: float = 7.5,
+                 low_vram: bool = False,
+                 noise_fn = torch.randn,
+                 temperature: float = 1.0,                 
+                 ):
+        """
+        :param seed: the seed to use when generating the images
+        :param dest_path: is the path to store the generated images
+        :param batch_size: is the number of images to generate in a batch
+        :param prompt: is the prompt to generate images with
+        :param h: is the height of the image
+        :param w: is the width of the image
+        :param uncond_scale: is the unconditional guidance scale $s$. This is used for
+            $\epsilon_\theta(x_t, c) = s\epsilon_\text{cond}(x_t, c) + (s - 1)\epsilon_\text{cond}(x_t, c_u)$
+        :param low_vram: whether to limit VRAM usage
+        """
+        # Number of channels in the image
+        c = 4
+        # Image to latent space resolution reduction
+        f = 8
+
+        if seed == 0:
+            seed = time.time_ns() % 2**32
+
+        set_seed(seed)
+        # Adjust batch size based on VRAM availability
+        if low_vram:
+            batch_size = 1
+
+        # Make a batch of prompts
+        # prompts = batch_size * [embedded_prompt]
+        # cond = torch.cat(prompts, dim=1)
+        cond = embedded_prompt.unsqueeze(0)
+        print("cond shape: ", cond.shape)
+        print("uncond shape: ", null_prompt.shape)
+        prompt_list = ["a painting of a virus monster playing guitar", "a painting of a computer virus "]
+        # AMP auto casting
+        autocast = get_autocast()
+        with autocast:
+
+            # [Sample in the latent space](../sampler/index.html).
+            # `x` will be of shape `[batch_size, c, h / f, w / f]`
+            x = self.sampler.sample(cond=cond,
+                                    shape=[batch_size, c, h // f, w // f],
+                                    uncond_scale=uncond_scale,
+                                    uncond_cond=null_prompt,
+                                    noise_fn=noise_fn,
+                                    temperature=temperature)                                    
+
+            return self.decode_image(x)              

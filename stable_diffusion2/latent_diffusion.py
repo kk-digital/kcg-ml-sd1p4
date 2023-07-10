@@ -118,6 +118,10 @@ class LatentDiffusion(nn.Module):
     def clip_embedder(self):
         return self.cond_stage_model
     
+    @property
+    def unet(self):
+        return self.model
+    
     def save_submodels(self, autoencoder_path = AUTOENCODER_PATH, embedder_path = EMBEDDER_PATH, unet_path = UNET_PATH):
 
         self.first_stage_model.save(autoencoder_path=autoencoder_path)
@@ -135,16 +139,32 @@ class LatentDiffusion(nn.Module):
         print(f"Autoencoder loaded from: {autoencoder_path}")
         return self.first_stage_model
 
+    def unload_autoencoder(self):
+        del self.first_stage_model
+        torch.cuda.empty_cache()
+        self.first_stage_model = None
+
     def load_unet(self, unet_path = UNET_PATH):
         unet = torch.load(unet_path, map_location=self.device)
         unet.eval()
         self.model = DiffusionWrapper(unet)
         return self.model
     
+    def unload_unet(self):
+        del self.model
+        torch.cuda.empty_cache()
+        self.model = None
+
     def load_clip_embedder(self, embedder_path = EMBEDDER_PATH):
         self.cond_stage_model = torch.load(embedder_path, map_location=self.device)
         self.cond_stage_model.eval()
         return self.cond_stage_model
+    
+    def unload_clip_embedder(self):
+
+        del self.cond_stage_model
+        torch.cuda.empty_cache()
+        self.cond_stage_model = None    
     
     def load_submodels(self,  autoencoder_path = AUTOENCODER_PATH, embedder_path = EMBEDDER_PATH, unet_path = UNET_PATH):
         
