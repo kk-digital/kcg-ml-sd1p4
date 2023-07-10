@@ -139,6 +139,7 @@ class UNetModel(nn.Module):
             nn.SiLU(),
             nn.Conv2d(channels, out_channels, 3, padding=1),
         )
+        
     def save(self, unet_path = UNET_PATH):
         torch.save(self, unet_path)
 

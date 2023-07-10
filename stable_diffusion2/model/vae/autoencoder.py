@@ -112,10 +112,13 @@ class Autoencoder(nn.Module):
     def load_encoder(self, encoder_path = ENCODER_PATH):
         self.encoder = torch.load(encoder_path, map_location=self.device)
         self.encoder.eval()
-
+        print(f"Encoder loaded from: {encoder_path}")
+        return self.encoder
     def load_decoder(self, decoder_path = DECODER_PATH):
         self.decoder = torch.load(decoder_path, map_location=self.device)
         self.decoder.eval()
+        print(f"Decoder loaded from: {decoder_path}")
+        return self.decoder
 
     def unload_encoder(self):
         del self.encoder

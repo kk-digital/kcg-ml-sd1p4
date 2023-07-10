@@ -127,7 +127,7 @@ if __name__ == '__main__':
             with section("to unload embedder submodels"):
                 model.cond_stage_model.unload_submodels() # unloads text embedder submodels
             with section("to save latent diffusion submodels"):
-                model.save_submodels() # saves latent diffusion submodels (autoencoder, clip_embedder) with loaded state dict and unloaded submodels
+                model.save_submodels() # saves latent diffusion submodels (autoencoder, clip_embedder, unet) with loaded state dict and unloaded submodels (when it applies)
             with section("to unload latent diffusion submodels"):
                 model.unload_submodels() # unloads latent diffusion submodels
             with section("to save latent diffusion model"):

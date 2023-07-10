@@ -37,38 +37,70 @@ class StableDiffusion:
         :param n_steps: is the number of sampling steps
         :param ddim_eta: is the [DDIM sampling](../sampler/ddim.html) $\eta$ constant
         """
-        self.device = check_device(device)
-        self.model = model
-        self.ddim_steps = ddim_steps
+        self._device = check_device(device)
+        self._model = model
+        self._ddim_steps = ddim_steps
         self._ddim_eta = ddim_eta
-        self.force_cpu = force_cpu
-        self.sampler_name = sampler_name
-        self._sampler = None
-        self.n_steps = n_steps
-        if self.model is None:
-            
-            print("WARNING: LatentDiffusion model not given. An empty model will be initialized.")
-            
-            self.model = LatentDiffusion(linear_start=0.00085,
-            linear_end=0.0120,
-            n_steps=1000,
-            latent_scaling_factor=0.18215,
-            device = self.device)
+        self._sampler_name = sampler_name
+        self.sampler = None
+        self._n_steps = n_steps
+        
+        if self._model is None:
+            print("WARNING: `LatentDiffusion` model is `None` given. Initialize one with the appropriate method.")
+            # print("WARNING: LatentDiffusion model not given. An empty model will be initialized.")
 
     @property
-    def sampler(self):
+    def device(self):        
+        return self._device
+    @device.setter
+    def device(self, value):
+        self._device = check_device(value)
+        self._model.to(self._device)
         self.initialize_sampler()
-        return self._sampler
 
     @property
     def ddim_eta(self):
         return self._ddim_eta
-    
     @ddim_eta.setter
     def ddim_eta(self, value):
         self._ddim_eta = value
         if self.sampler_name == 'ddim':
             self.initialize_sampler()
+    @property
+    def ddim_steps(self):
+        return self._ddim_steps
+    @ddim_steps.setter
+    def ddim_steps(self, value):
+        self._ddim_steps = value
+        if self.sampler_name == 'ddim':
+            self.initialize_sampler()
+
+    @property
+    def n_steps(self):
+        return self._n_steps
+    @n_steps.setter
+    def n_steps(self, value):
+        self._n_steps = value
+        if self.sampler_name == 'ddpm':
+            self.initialize_sampler()
+    
+    @property
+    def sampler_name(self):
+        return self._sampler_name
+    @sampler_name.setter
+    def sampler_name(self, value):
+        self._sampler_name = value
+        self.initialize_sampler()
+
+    @property
+    def model(self):
+        return self._model
+    @model.setter
+    def model(self, value):
+        self._model = value
+        self._model.to(self._device)
+        self.initialize_sampler()
+
 
     def encode_image(self, orig_img: str, batch_size: int = 1):
         """
@@ -78,6 +110,15 @@ class StableDiffusion:
         # Encode the image in the latent space and make `batch_size` copies of it
         orig = self.model.autoencoder_encode(orig_image).repeat(batch_size, 1, 1, 1)
         return orig
+
+    @torch.no_grad()
+    def encode(self, image: torch.Tensor, batch_size: int = 1):
+        
+        # AMP auto casting
+        autocast = get_autocast()
+
+        with autocast:
+            return self.model.autoencoder_encode(image.to(self.device))
 
     def prepare_mask(self, mask: Optional[torch.Tensor], orig: torch.Tensor):
         # If `mask` is not provided,
@@ -110,6 +151,15 @@ class StableDiffusion:
 
     def decode_image(self, x: torch.Tensor):
         return self.model.autoencoder_decode(x)
+
+    @torch.no_grad()
+    def decode(self, x: torch.Tensor):
+        
+        # AMP auto casting
+        autocast = get_autocast()
+        
+        with autocast:
+            return self.decode_image(x.to(self.device))       
 
     def paint(self,
               orig: torch.Tensor,
@@ -156,7 +206,8 @@ class StableDiffusion:
     def initialize_from_model(self, model: LatentDiffusion):
 
         self.model = model
-        self.initialize_sampler()  
+        self.initialize_sampler()
+        return self.model
 
     def initialize_script(self, autoencoder = None, clip_text_embedder = None, unet_model = None, force_submodels_init = False, path = None):
         """You can initialize the autoencoder, CLIP and UNet models externally and pass them to the script.
@@ -170,12 +221,21 @@ class StableDiffusion:
             clip_text_embedder (CLIPTextEmbedder, optional): the externally initialized autoencoder. Defaults to None.
             unet_model (UNetModel, optional): the externally initialized autoencoder. Defaults to None.
         """
-        raise DeprecationWarning("This method is deprecated. Use initialize_latent_diffusion instead.")
         self.initialize_latent_diffusion(autoencoder, clip_text_embedder, unet_model, force_submodels_init=force_submodels_init, path=path)
         self.initialize_sampler()
+        raise DeprecationWarning("This method is deprecated. Use initialize_latent_diffusion instead.")
+
+    def quick_initialize(self):
+        self.model = LatentDiffusion(linear_start=0.00085,
+            linear_end=0.0120,
+            n_steps=1000,
+            latent_scaling_factor=0.18215,
+            device = self.device)
+        return self.model
 
     def initialize_latent_diffusion(self, path = None, autoencoder = None, clip_text_embedder = None, unet_model = None, force_submodels_init = False):
         try:
+            
             self.model = initialize_latent_diffusion(
                 path=path,
                 device=self.device,
@@ -186,34 +246,18 @@ class StableDiffusion:
             )
 
             self.initialize_sampler()
+            return self.model
         except EOFError:
                 raise ModelLoadError("Stable Diffusion model couldn't be loaded. Check that the .ckpt file exists in the specified location (path), and that it is not corrupted.")
+        
 
     def initialize_sampler(self):
         if self.sampler_name == 'ddim':
-            self._sampler = DDIMSampler(self.model,
-                                       n_steps=self.n_steps,
+            self.sampler = DDIMSampler(self._model,
+                                       n_steps=self._ddim_steps,
                                        ddim_eta=self._ddim_eta)
         elif self.sampler_name == 'ddpm':
-            self._sampler = DDPMSampler(self.model)
-
-    @torch.no_grad()
-    def decode(self, x: torch.Tensor):
-        
-        # AMP auto casting
-        autocast = get_autocast()
-        
-        with autocast:
-            return self.decode_image(x.to(self.device))        
-    
-    @torch.no_grad()
-    def encode(self, image: torch.Tensor):
-        
-        # AMP auto casting
-        autocast = get_autocast()
-
-        with autocast:
-            return self.model.autoencoder_encode(image.to(self.device))   
+            self.sampler = DDPMSampler(self._model)
 
     @torch.no_grad()
     def generate_images(self, *,

@@ -132,6 +132,7 @@ class LatentDiffusion(nn.Module):
     def load_autoencoder(self, autoencoder_path = AUTOENCODER_PATH):
         self.first_stage_model = torch.load(autoencoder_path, map_location=self.device)
         self.first_stage_model.eval()
+        print(f"Autoencoder loaded from: {autoencoder_path}")
         return self.first_stage_model
 
     def load_unet(self, unet_path = UNET_PATH):
