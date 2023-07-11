@@ -28,8 +28,8 @@ def check_dataset(dataset_dir):
 
     raise ValueError("Invalid dataset path.")
 
-def generate_config(config_file, dataset_config_file, model_file, activation_tags, max_train_epochs, save_every_n_epochs, unet_lr, text_encoder_lr,
-                    network_dim, network_alpha, batch_size, caption_extension, config_dir, log_dir, repo_dir, output_dir, accelerate_config_file,
+def generate_config(config_file, dataset_config_file, model_file, activation_tags, max_train_epochs, save_every_n_epochs, unet_lr, text_encoder_lr, lowram,
+                    network_dim, network_alpha, batch_size, caption_extension, config_dir, log_dir, repo_dir, output_dir, accelerate_config_file, dataset_reg,
                     continue_from_lora, resolution,
                     num_repeats, dataset, project_name):
 
@@ -62,17 +62,18 @@ def generate_config(config_file, dataset_config_file, model_file, activation_tag
             "noise_offset": None,
             "clip_skip": 2,
             "min_snr_gamma": 5.0,
+            "output_dir": output_dir,
             "weighted_captions": None,
             "seed": 42,
             "max_token_length": 225,
             "xformers": True,
-            "lowram": COLAB,
+            "lowram": lowram,
+            "adaptive_noise_scale": None,
             "max_data_loader_n_workers": 8,
             "persistent_data_loader_workers": True,
             "save_precision": "fp16",
             "mixed_precision": "fp16",
-            "output_dir": None,
-            "logging_dir": None,
+            "logging_dir": log_dir,
             "output_name": project_name,
             "log_prefix": project_name,
             "save_state": False,
@@ -99,30 +100,65 @@ def generate_config(config_file, dataset_config_file, model_file, activation_tag
         f.write(toml.dumps(config_dict))
     print(f"\nConfig saved to {config_file}")
 
-    dataset_config_dict = {
-        "general": {
-            "resolution": resolution,
-            "keep_tokens": activation_tags,
-            "flip_aug": False,
-            "caption_extension": caption_extension,
-            "enable_bucket": True,
-            "bucket_reso_steps": 64,
-            "bucket_no_upscale": False,
-            "min_bucket_reso": 320 if resolution > 640 else 256,
-            "max_bucket_reso": 1280 if resolution > 640 else 1024
-        },
-        "datasets": [
-            {
-                "subsets": [
-                    {
-                        "num_repeats": num_repeats,
-                        "image_dir": dataset,
-                        "class_tokens": None if caption_extension else project_name
-                    }
-                ]
-            }
-        ]
-    }
+    if dataset_reg is None:
+        dataset_config_dict = {
+            "general": {
+                "resolution": resolution,
+                "keep_tokens": activation_tags,
+                "flip_aug": False,
+                "caption_extension": caption_extension,
+                "enable_bucket": True,
+                "bucket_reso_steps": 64,
+                "bucket_no_upscale": False,
+                "min_bucket_reso": 320 if resolution > 640 else 256,
+                "max_bucket_reso": 1280 if resolution > 640 else 1024
+            },
+            "datasets": [
+                {
+                    "subsets": [
+                        {
+                            "num_repeats": num_repeats,
+                            "image_dir": dataset,
+                            "class_tokens": None if caption_extension else project_name
+                        }
+                    ]
+                }
+            ]
+        }
+    else:
+        _, reg_name = os.path.split(dataset_reg)
+        dataset_config_dict = {
+            "general": {
+                "resolution": resolution,
+                "keep_tokens": activation_tags,
+                "flip_aug": False,
+                "caption_extension": caption_extension,
+                "enable_bucket": True,
+                "bucket_reso_steps": 64,
+                "bucket_no_upscale": False,
+                "min_bucket_reso": 320 if resolution > 640 else 256,
+                "max_bucket_reso": 1280 if resolution > 640 else 1024
+            },
+            "datasets": [
+                {
+                    "subsets": [
+                        {
+                            "num_repeats": num_repeats,
+                            "image_dir": dataset,
+                            "class_tokens": None if caption_extension else project_name
+                        },
+                        {
+                            "num_repeats": 1,
+                            "image_dir": os.path.abspath(dataset_reg),
+                            "class_tokens": reg_name,
+                            "is_reg" : True,
+                            "keep_tokens": 1
+                        }
+                    ]
+                }
+            ]
+        }
+
 
     with open(dataset_config_file, "w") as f:
         f.write(toml.dumps(dataset_config_dict))
@@ -136,11 +172,13 @@ def main(args):
         os.makedirs(dir)
 
     # Check dataset and extract if necessary
-    args.dataset = check_dataset(args.dataset)
     print(f"Dataset directory: {args.dataset}")
+    if not args.dataset_reg is None:
+        print(f"Regularization dataset directory: {args.dataset_reg}")
+
 
     # Patch kohya for minor stuff
-    if COLAB:
+    if args.lowram:
         model_util_file = os.path.join(args.repo_dir, "library", "model_util.py")
         with open(model_util_file, "r+") as f:
             content = f.read()
@@ -191,11 +229,11 @@ def main(args):
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset", default="./test/images/chibi-waifu-pixelart.zip", help="Path to the dataset directory or ZIP file.")
+    parser.add_argument("--dataset", default="./test-images/chibi-waifu-pixelart.zip", help="Path to the dataset directory or ZIP file.")
     parser.add_argument("--repo_dir", default=None, help="Directory to clone sd-scripts repository.")
     parser.add_argument("--activation_tags", type=int, default=1, help="The number of activation tags in each txt file on the dataset.")
-    parser.add_argument("--num_repeats", default=10, help="Number of times to repeat per image.")
-    parser.add_argument("--max_train_epochs", default=10, help="How many epochs to train for.")
+    parser.add_argument("--num_repeats", type=int, default=None, help="Number of times to repeat per image.")
+    parser.add_argument("--max_train_epochs", type=int, default=10, help="How many epochs to train for.")
     parser.add_argument("--save_every_n_epochs", default=1, help="How frequently should we save the LoRa model.")
     parser.add_argument("--config_file", default=None, help="Path to the training configuration file.")
     parser.add_argument("--config_dir", default=None, help="Path to store all of the generated config files.")
@@ -208,6 +246,7 @@ def parse_arguments():
     parser.add_argument("--network_dim", type=int, default=512, help="Dimension of the network.")
     parser.add_argument("--network_alpha", type=int, help="Alpha value for the network.")
     parser.add_argument("--batch_size", type=int, default=3, help="Number of images to use per epoch.")
+    parser.add_argument("--lowram", type=bool, default=False, help="Supply this argument if running on a system with a low amount of RAM (<20GB)")
     parser.add_argument("--caption_extension", type=str, default=None, help="Do not specify if there are no captions for the image, if there are, specify the extension of the captions (eg. txt) here.")
     parser.add_argument("--resolution", type=int, default=512, help="Resolution of the images. Must be square aspect ratio (1:1).")
     parser.add_argument("--project_name", type=str, default="Test", help="Put the project name here. Will dictate the filenames of the LoRa models produced, amongst other things.")
@@ -215,13 +254,15 @@ def parse_arguments():
                         help="Path to the Lora file from which to continue training.")
     parser.add_argument("--accelerate_config_file", default=None,
                         help="Path to the accelerate distributed training configuration file.")
+    parser.add_argument("--dataset_reg", default=None, type=str,
+                        help="(Optional) Add a directory for a set of normalization images to train the LoRa. The name of the folder will be used as the class token (eg. woman for a set of images of women).")
     args = parser.parse_args()
     set_defaults(args)
     return args
 
 def set_defaults(args):
     if args.repo_dir is None:
-        args.repo_dir = os.path.abspath(os.path.join("./", "train/sd-scripts"))
+        args.repo_dir = os.path.abspath(os.path.join("./", "lora-tuning/sd-scripts"))
     repo_dir = os.path.abspath(args.repo_dir)
     if args.config_dir is None:
         args.config_dir = os.path.join(repo_dir, "config")
@@ -243,10 +284,15 @@ def set_defaults(args):
     if args.output_dir is None:
         args.output_dir = os.path.abspath(os.path.join("./output/LoRa/", args.project_name, "output"))
 
-    # Make directories if they don't exist
+    args.dataset = check_dataset(args.dataset)
+    args.dataset = os.path.abspath(args.dataset)
+    if args.dataset_reg is not None:
+        args.dataset_reg = check_dataset(args.dataset_reg)
+    if args.num_repeats is None:
+        total_image_files = len([file for file in os.listdir(args.dataset) if file.endswith((".png", ".jpg", ".jpeg"))])
+        args.num_repeats = round(300 / total_image_files)
+        print("Num_repeats not specified, calculating an automatic " + str(args.num_repeats) + " repeats for best results.")
 
 if __name__ == '__main__':
-    global COLAB
-    COLAB = 'google.colab' in sys.modules
     args = parse_arguments()
     main(args)
