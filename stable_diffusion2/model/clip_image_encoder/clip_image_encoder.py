@@ -7,9 +7,9 @@ import hashlib
 import time
 import torch
 import tqdm
-
+import PIL
 from PIL import Image
-from torchvision.transforms import Compose, Resize, CenterCrop, ToTensor, Normalize
+from torchvision.transforms import Compose, Resize, CenterCrop, ToTensor, Normalize, Lambda
 from typing import Any, Union, List
 
 from typing import List
@@ -23,14 +23,36 @@ from torchinfo import summary
 
 
 class CLIPImageEncoder(nn.Module):
-    def __init__(self, device = None, image_processor = None, clip_model = None ):
+    def __init__(self, device = None, image_processor = None, clip_model = None, input_mode = PIL.Image.Image):
         super().__init__()
         self.device = check_device(device)
     
         self.clip_model = clip_model
-        self.image_processor = image_processor
-
+        self._image_processor = image_processor
+        self.input_mode = input_mode
+        if image_processor is None:
+            self.initialize_preprocessor()    
         self.to(self.device)
+
+    def get_input_type(self, image):
+        if isinstance(image, PIL.Image.Image):
+            return Image.Image
+        elif isinstance(image, torch.Tensor):
+            return torch.Tensor
+        else:
+            raise ValueError("Image must be PIL Image or Tensor")
+
+    @property
+    def image_processor(self):
+        if self.input_mode == PIL.Image.Image:
+            return self._image_processor_image
+        elif self.input_mode == torch.Tensor:
+            return self._image_processor_tensor
+    @image_processor.setter
+    def image_processor(self, value):
+        self._image_processor_image = value
+        self._image_processor_tensor = value
+        print(f"WARNING: image_processor has been set externally. This class image processer currently expects a {self.input_mode} as input. Please set the `input_mode` and provide inputs accordingly.")
 
     def load_from_lib(self, vit_model = 'ViT-L/14'):
         self.clip_model, self.image_processor = clip.load(vit_model, device=self.device)
@@ -76,100 +98,48 @@ class CLIPImageEncoder(nn.Module):
         # Save the model to the specified folder
         torch.save(self.image_processor, image_processor_path)
         torch.save(self.clip_model, clip_model_path)
-
-    def forward(self, image: Image, batch_size: int = 1):
+    
+    def preprocess_input(self, image: Union[Image.Image, torch.Tensor]):
         # Preprocess image
-        image = self.image_processor(image).unsqueeze(0).to(self.device)
+        self.input_mode = self.get_input_type(image)
+        return self.image_processor(image).to(self.device)
+    
+    def forward(self, image: Union[Image.Image, torch.Tensor], batch_size: int = 1):
+        # Preprocess image
+        image = self.preprocess_input(image)
         # Compute CLIP features
         with torch.no_grad():
             features = self.clip_model.encode_image(image)
-        return features.cpu().numpy()
+        return features
 
-    @staticmethod
     def compute_sha256(image_data):
         # Compute SHA256
         return hashlib.sha256(image_data).hexdigest()
-
-    # @staticmethod
-    # def convert_file_to_tensor(image_data):
-    #     # Convert file to tensor
-    #     image = Image.open(io.BytesIO(image_data))
-    #     image = image.convert('RGB')  # Convert to RGB if needed
-    #     image_tensor = torch.from_numpy(np.array(image))
-    #     return image_tensor
     
-    def convert_image_to_rgb(image):
+    def convert_image_to_rgb(self, image):
         return image.convert("RGB")
     
-    def initialize_preprocesser(self, size = 224, from_tensor = True):
-        if from_tensor:
-            self.image_processor = Compose([
-                                    Resize(size),
-                                    CenterCrop(size),
-                                    Normalize(
-                                        (0.48145466, 0.4578275, 0.40821073), 
-                                        (0.26862954, 0.26130258, 0.27577711)
-                                        ),
-                                    ])     
-        else:
-            self.image_processor = Compose([
-                                    Resize(size),
-                                    CenterCrop(size),
-                                    self.convert_image_to_rgb,
-                                    ToTensor(),
-                                    Normalize(
-                                        (0.48145466, 0.4578275, 0.40821073), 
-                                        (0.26862954, 0.26130258, 0.27577711)
-                                        ),
-                                    ])
-    # def preprocess_image(self, n_px):
-    #     return Compose([
-    #         Resize(n_px, interpolation=BICUBIC),
-    #         CenterCrop(n_px),
-    #         self.convert_image_to_rgb,
-    #         ToTensor(),
-    #         Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711)),
-    #     ])
-    # def preprocess_image_tensor(self, n_px):
-    #     return Compose([
-    #         Resize(n_px),
-    #         CenterCrop(n_px),
-    #         Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711)),
-    #     ])        
-
-    # def compute_clip(self, image_data):
-    #     # Compute clip for one image
-    #     image_tensor = self.convert_file_to_tensor(image_data).to(self.device).unsqueeze(0)
-    #     self.model.eval()
-    #     with torch.no_grad():
-    #         features = self.model.encode_image(image_tensor)
-    #     return features.cpu().numpy()
-
-    # def compute_clip_batch(self, images, batch_size):
-    #     # Compute clip for a batch of images
-    #     start_time = time.time()
-    #     num_images = len(images)
-    #     clip_features = []
-    #     self.model.eval()
-    #     with torch.no_grad():
-    #         for i in range(0, num_images, batch_size):
-    #             batch_images = images[i:i+batch_size]
-    #             batch_images = [image.to(self.device) for image in batch_images]
-    #             batch_features = self.model.encode_image(torch.stack(batch_images))
-    #             clip_features.append(batch_features.cpu().numpy())
-    #     clip_features = np.concatenate(clip_features, axis=0)
-    #     end_time = time.time()
-    #     print("Processed {} images in {:.2f} seconds. Speed: {:.2f} images/second, {:.2f} MB/second".format(
-    #         num_images, end_time - start_time, num_images / (end_time - start_time),
-    #         (num_images * images[0].nbytes / 1024 / 1024) / (end_time - start_time)))
-    #     return clip_features
-    
-    # def model_exists(root: str, filename: str):
-    #     """
-    #     Check if the model exists in the specified directory.
-    #     """
-    #     model_path = os.path.join(root, filename)
-    #     return os.path.isfile(model_path)
+    def initialize_preprocessor(self, size = 224):
+        
+        self._image_processor_tensor = Compose([
+                                Resize(size),
+                                CenterCrop(size),
+                                Normalize(
+                                    (0.48145466, 0.4578275, 0.40821073), 
+                                    (0.26862954, 0.26130258, 0.27577711)
+                                    ),
+                                ])     
+        self._image_processor_image = Compose([
+                                Resize(size),
+                                CenterCrop(size),
+                                self.convert_image_to_rgb,
+                                ToTensor(),
+                                Normalize(
+                                    (0.48145466, 0.4578275, 0.40821073), 
+                                    (0.26862954, 0.26130258, 0.27577711)
+                                    ),
+                                Lambda(lambda x: x.unsqueeze(0)),
+                                ])
 
     # def verify_model(root: str, filename: str, expected_sha256: str):
     #     """
