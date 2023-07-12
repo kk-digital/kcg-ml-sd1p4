@@ -29,7 +29,7 @@ from stable_diffusion2.utils.utils import SectionManager as section
 
 from stable_diffusion2.latent_diffusion import LatentDiffusion
 from stable_diffusion2.model.vae import Autoencoder, Encoder, Decoder
-from stable_diffusion2.model.clip import CLIPTextEmbedder
+from stable_diffusion2.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion2.model.unet import UNetModel
 
 from stable_diffusion2.utils.utils import check_device

@@ -9,7 +9,7 @@ from stable_diffusion2.utils.utils import save_images, save_image_grid
 from stable_diffusion2.model.vae.autoencoder import Autoencoder
 from stable_diffusion2.model.vae.encoder import Encoder
 from stable_diffusion2.model.vae.decoder import Decoder
-from stable_diffusion2.model.clip.clip_embedder import CLIPTextEmbedder
+from stable_diffusion2.model.clip_text_embedder.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion2.model.unet.unet import UNetModel
 from cli_builder import CLI
 from constants import CHECKPOINT_PATH, EMBEDDER_PATH
