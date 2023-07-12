@@ -42,19 +42,6 @@ class CLIPImageEncoder(nn.Module):
 
         self.to(self.device)
 
-
-    # @property
-    # def image_processor(self):
-    #     if self.input_mode == PIL.Image.Image:
-    #         return self._image_processor_image
-    #     elif self.input_mode == torch.Tensor:
-    #         return self._image_processor_tensor
-    # @image_processor.setter
-    # def image_processor(self, value):
-    #     self._image_processor_image = value
-    #     self._image_processor_tensor = value
-    #     print(f"WARNING: image_processor has been set externally. This class image processer currently expects a {self.input_mode} as input. Please set the `input_mode` and provide inputs accordingly.")
-
     def load_from_lib(self, vit_model = 'ViT-L/14'):
         self.clip_model, self.image_processor = clip.load(vit_model, device=self.device)
 
@@ -121,19 +108,6 @@ class CLIPImageEncoder(nn.Module):
             features = self.clip_model.encode_image(image)
         return features
 
-    # def preprocess_input(self, image: Union[Image.Image, torch.Tensor]):
-    #     # Preprocess image
-    #     self.input_mode = self.get_input_type(image)
-    #     return self.image_processor(image).to(self.device)
-    
-    # def forward(self, image: Union[PIL.Image.Image, torch.Tensor]):
-    #     # Preprocess image
-    #     image = self.preprocess_input(image)
-    #     # Compute CLIP features
-    #     with torch.no_grad():
-    #         features = self.clip_model.encode_image(image)
-    #     return features
-    
     @staticmethod
     def compute_sha256(image_data):
         # Compute SHA256
@@ -153,6 +127,7 @@ class CLIPImageEncoder(nn.Module):
             raise ValueError("Image must be PIL Image or Tensor")
         
     def initialize_preprocessor(self, size = 224):
+        print("Initializing image preprocessor...")
         self.image_processor = Compose([
                                 Resize(size),
                                 CenterCrop(size),
@@ -182,40 +157,3 @@ class CLIPImageEncoder(nn.Module):
         #                             ),
         #                         Lambda(lambda x: x.unsqueeze(0)),
         #                         ])
-
-    # def verify_model(root: str, filename: str, expected_sha256: str):
-    #     """
-    #     Verify the SHA256 hash of the model file.
-    #     """
-    #     model_path = os.path.join(root, filename)
-    #     if os.path.isfile(model_path):
-    #         actual_sha256 = hashlib.sha256(open(model_path, "rb").read()).hexdigest()
-    #         return actual_sha256 == expected_sha256
-    #     else:
-    #         return False
-        
-
-    
-
-
-
-
-# encoder = CLIPImageEncoder(model_path='path_to_model_folder')
-# encoder.load_model()
-
-# with zipfile.ZipFile("zipfile.zip", "r") as f:
-#     image_data_list = [f.read(name) for name in f.namelist() if name.lower().endswith(('.png', '.jpg', '.jpeg','.gif'))]
-
-# # Compute SHA256
-# sha256_list = [encoder.compute_sha256(image_data) for image_data in image_data_list]
-
-# # Convert image data to tensors
-# image_tensors = [encoder.convert_file_to_tensor(image_data) for image_data in image_data_list]
-
-# # Compute CLIP features for a batch
-# batch_size = 8  # Adjust the batch size as needed
-# clip_features = encoder.compute_clip_batch(image_tensors, batch_size)
-
-# # Unload model
-# encoder.unload_model()
-
