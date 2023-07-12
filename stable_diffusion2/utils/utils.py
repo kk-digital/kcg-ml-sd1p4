@@ -9,6 +9,7 @@ import torchvision
 
 import PIL
 from PIL import Image
+from torchvision.transforms import ToPILImage
 
 from pathlib import Path
 from typing import Union, BinaryIO, List, Optional
@@ -28,6 +29,9 @@ class SectionManager:
     def __exit__(self, exception_type, exception_value, traceback):
         self.t1 = time.time()
         print(f"Finished section: {self.section_name} in {(self.t1 - self.t0):.2f} seconds\n")
+
+def to_pil(image):
+    return ToPILImage()(torch.clamp((image + 1.0) / 2.0, min=0.0, max=1.0))
 
 def save_images(images: torch.Tensor, dest_path: str, img_format: str = 'jpeg'):
     """
