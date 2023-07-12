@@ -90,13 +90,13 @@ class CLIPImageEncoder(nn.Module):
         # Compute SHA256
         return hashlib.sha256(image_data).hexdigest()
 
-    @staticmethod
-    def convert_file_to_tensor(image_data):
-        # Convert file to tensor
-        image = Image.open(io.BytesIO(image_data))
-        image = image.convert('RGB')  # Convert to RGB if needed
-        image_tensor = torch.from_numpy(np.array(image))
-        return image_tensor
+    # @staticmethod
+    # def convert_file_to_tensor(image_data):
+    #     # Convert file to tensor
+    #     image = Image.open(io.BytesIO(image_data))
+    #     image = image.convert('RGB')  # Convert to RGB if needed
+    #     image_tensor = torch.from_numpy(np.array(image))
+    #     return image_tensor
     
     def convert_image_to_rgb(image):
         return image.convert("RGB")
@@ -122,65 +122,65 @@ class CLIPImageEncoder(nn.Module):
                                         (0.26862954, 0.26130258, 0.27577711)
                                         ),
                                     ])
-    def preprocess_image(self, n_px):
-        return Compose([
-            Resize(n_px, interpolation=BICUBIC),
-            CenterCrop(n_px),
-            self.convert_image_to_rgb,
-            ToTensor(),
-            Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711)),
-        ])
-    def preprocess_image_tensor(self, n_px):
-        return Compose([
-            Resize(n_px),
-            CenterCrop(n_px),
-            Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711)),
-        ])        
+    # def preprocess_image(self, n_px):
+    #     return Compose([
+    #         Resize(n_px, interpolation=BICUBIC),
+    #         CenterCrop(n_px),
+    #         self.convert_image_to_rgb,
+    #         ToTensor(),
+    #         Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711)),
+    #     ])
+    # def preprocess_image_tensor(self, n_px):
+    #     return Compose([
+    #         Resize(n_px),
+    #         CenterCrop(n_px),
+    #         Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711)),
+    #     ])        
 
-    def compute_clip(self, image_data):
-        # Compute clip for one image
-        image_tensor = self.convert_file_to_tensor(image_data).to(self.device).unsqueeze(0)
-        self.model.eval()
-        with torch.no_grad():
-            features = self.model.encode_image(image_tensor)
-        return features.cpu().numpy()
+    # def compute_clip(self, image_data):
+    #     # Compute clip for one image
+    #     image_tensor = self.convert_file_to_tensor(image_data).to(self.device).unsqueeze(0)
+    #     self.model.eval()
+    #     with torch.no_grad():
+    #         features = self.model.encode_image(image_tensor)
+    #     return features.cpu().numpy()
 
-    def compute_clip_batch(self, images, batch_size):
-        # Compute clip for a batch of images
-        start_time = time.time()
-        num_images = len(images)
-        clip_features = []
-        self.model.eval()
-        with torch.no_grad():
-            for i in range(0, num_images, batch_size):
-                batch_images = images[i:i+batch_size]
-                batch_images = [image.to(self.device) for image in batch_images]
-                batch_features = self.model.encode_image(torch.stack(batch_images))
-                clip_features.append(batch_features.cpu().numpy())
-        clip_features = np.concatenate(clip_features, axis=0)
-        end_time = time.time()
-        print("Processed {} images in {:.2f} seconds. Speed: {:.2f} images/second, {:.2f} MB/second".format(
-            num_images, end_time - start_time, num_images / (end_time - start_time),
-            (num_images * images[0].nbytes / 1024 / 1024) / (end_time - start_time)))
-        return clip_features
+    # def compute_clip_batch(self, images, batch_size):
+    #     # Compute clip for a batch of images
+    #     start_time = time.time()
+    #     num_images = len(images)
+    #     clip_features = []
+    #     self.model.eval()
+    #     with torch.no_grad():
+    #         for i in range(0, num_images, batch_size):
+    #             batch_images = images[i:i+batch_size]
+    #             batch_images = [image.to(self.device) for image in batch_images]
+    #             batch_features = self.model.encode_image(torch.stack(batch_images))
+    #             clip_features.append(batch_features.cpu().numpy())
+    #     clip_features = np.concatenate(clip_features, axis=0)
+    #     end_time = time.time()
+    #     print("Processed {} images in {:.2f} seconds. Speed: {:.2f} images/second, {:.2f} MB/second".format(
+    #         num_images, end_time - start_time, num_images / (end_time - start_time),
+    #         (num_images * images[0].nbytes / 1024 / 1024) / (end_time - start_time)))
+    #     return clip_features
     
-    def model_exists(root: str, filename: str):
-        """
-        Check if the model exists in the specified directory.
-        """
-        model_path = os.path.join(root, filename)
-        return os.path.isfile(model_path)
+    # def model_exists(root: str, filename: str):
+    #     """
+    #     Check if the model exists in the specified directory.
+    #     """
+    #     model_path = os.path.join(root, filename)
+    #     return os.path.isfile(model_path)
 
-    def verify_model(root: str, filename: str, expected_sha256: str):
-        """
-        Verify the SHA256 hash of the model file.
-        """
-        model_path = os.path.join(root, filename)
-        if os.path.isfile(model_path):
-            actual_sha256 = hashlib.sha256(open(model_path, "rb").read()).hexdigest()
-            return actual_sha256 == expected_sha256
-        else:
-            return False
+    # def verify_model(root: str, filename: str, expected_sha256: str):
+    #     """
+    #     Verify the SHA256 hash of the model file.
+    #     """
+    #     model_path = os.path.join(root, filename)
+    #     if os.path.isfile(model_path):
+    #         actual_sha256 = hashlib.sha256(open(model_path, "rb").read()).hexdigest()
+    #         return actual_sha256 == expected_sha256
+    #     else:
+    #         return False
         
 
     
