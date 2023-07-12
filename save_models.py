@@ -30,6 +30,7 @@ from PIL import Image
 
 from stable_diffusion2.constants import AUTOENCODER_PATH, ENCODER_PATH, DECODER_PATH
 from stable_diffusion2.constants import EMBEDDER_PATH, TOKENIZER_PATH, TRANSFORMER_PATH
+from stable_diffusion2.constants import IMAGE_PROCESSOR_PATH, CLIP_MODEL_PATH
 from stable_diffusion2.constants import UNET_PATH
 from stable_diffusion2.constants import LATENT_DIFFUSION_PATH
 from stable_diffusion2.constants import CHECKPOINT_PATH
@@ -42,7 +43,8 @@ from stable_diffusion2.latent_diffusion import LatentDiffusion
 from stable_diffusion2.model.vae.encoder import Encoder
 from stable_diffusion2.model.vae.decoder import Decoder
 from stable_diffusion2.model.vae.autoencoder import Autoencoder
-from stable_diffusion2.model.clip.clip_embedder import CLIPTextEmbedder
+from stable_diffusion2.model.clip_text_embedder.clip_text_embedder import CLIPTextEmbedder
+from stable_diffusion2.model.clip_image_encoder import CLIPImageEncoder
 from stable_diffusion2.model.unet.unet import UNetModel
 
 try:
@@ -58,7 +60,8 @@ parser.add_argument('--save_without_weights', type=bool, default=False)
 parser.add_argument('--unet', type=bool, default=True)
 parser.add_argument('--clip', type=bool, default=True)
 parser.add_argument('--vae', type=bool, default=True)
-parser.add_argument('--granularity', type=int, default=0)
+parser.add_argument('--image_encoder', type=bool, default=True)
+parser.add_argument('-g', '--granularity', type=int, default=0)
 parser.add_argument('--checkpoint_path', type=str, default=CHECKPOINT_PATH)
 parser.add_argument('--root_models_path', type=str, default=ROOT_MODELS_PATH)
 
@@ -73,7 +76,7 @@ SAVE_WITHOUT_WEIGHTS = args.save_without_weights
 SAVE_UNET = args.unet
 SAVE_CLIP = args.clip
 SAVE_VAE = args.vae
-
+IMAGE_ENCODER = args.image_encoder
 
 def create_folder_structure(root_dir: str = "./") -> None:
     
@@ -118,6 +121,14 @@ if __name__ == '__main__':
         model = initialize_latent_diffusion(path=CHECKPOINT_PATH, force_submodels_init=True)
         summary(model)
         if GRANULARITY == 0:
+            if IMAGE_ENCODER:
+                with section("initialize CLIP image encoder and load submodels from lib"):
+                    img_encoder = CLIPImageEncoder()
+                    img_encoder.load_from_lib()
+                with section("save image encoder submodels"):
+                    img_encoder.save_submodels()
+                    img_encoder.unload_submodels()
+                    img_encoder.save()
             with section("to save vae submodels"):
                 model.first_stage_model.save_submodels() # saves autoencoder submodels (encoder, decoder) with loaded state dict
             with section("to unload vae submodels"):
@@ -133,6 +144,13 @@ if __name__ == '__main__':
             with section("to save latent diffusion model"):
                 model.save() # saves latent diffusion model with loaded state dict and unloaded submodels
         elif GRANULARITY == 1:
+            if IMAGE_ENCODER:
+                with section("initialize CLIP image encoder and load submodels from lib"):
+                    img_encoder = CLIPImageEncoder()
+                    img_encoder.load_from_lib()
+                with section("save image encoder"):
+                    img_encoder.save_model()
+                    img_encoder.unload_submodels()
             with section("to save latent diffusion submodels"):
                 model.save_submodels() # saves latent diffusion submodels (autoencoder, clip_embedder and unet) with loaded state dict loaded submodels
             with section("to unload latent diffusion submodels"):
