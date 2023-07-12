@@ -48,7 +48,7 @@ def show_summary(total_time, partial_time, total_images, output_dir):
 
 # main function, called when the script is run
 def generate_images(
-    prompt: str="An oil painting of a computer generated image of a landscape",
+    prompt: str="An oil painting of a computer generated image of a geometric pattern",
     output_base_dir: str='./output/stable_diffusion/',
     sampler_name: str='ddim',
     n_steps: int=20,
@@ -61,7 +61,7 @@ def generate_images(
     shutil.rmtree(images_dir, ignore_errors=True)
     os.makedirs(images_dir, exist_ok=True)
     
-    clip_vectors_dir = os.path.join(output_base_dir, "clip_vectors/")
+    clip_vectors_dir = os.path.join(output_base_dir, "features/")
     shutil.rmtree(clip_vectors_dir, ignore_errors=True)
     os.makedirs(clip_vectors_dir, exist_ok=True)
     
