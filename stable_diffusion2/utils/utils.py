@@ -147,7 +147,7 @@ def save_images(images: torch.Tensor, dest_path: str, img_format: str = 'jpeg'):
     # Save images
     for i, img in enumerate(images):
         img = Image.fromarray((255. * img).astype(np.uint8))
-        img.save(dest_path, format=img_format)
+        img.save(dest_path+f"{i}.jpg", format=img_format)
 
 def save_image_grid(
     tensor: Union[torch.Tensor, List[torch.Tensor]],

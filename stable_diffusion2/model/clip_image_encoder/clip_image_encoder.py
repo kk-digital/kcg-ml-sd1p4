@@ -6,6 +6,7 @@ import clip
 import hashlib
 import time
 import torch
+import numpy as np
 import tqdm
 import PIL
 from PIL import Image
@@ -23,36 +24,36 @@ from torchinfo import summary
 
 
 class CLIPImageEncoder(nn.Module):
-    def __init__(self, device = None, image_processor = None, clip_model = None, input_mode = PIL.Image.Image):
+
+    def __init__(self, device = None, image_processor = None, clip_model = None):#, input_mode = PIL.Image.Image):
+
         super().__init__()
+
         self.device = check_device(device)
-    
+
         self.clip_model = clip_model
-        self._image_processor = image_processor
-        self.input_mode = input_mode
+        # self._image_processor = image_processor
+        self.image_processor = image_processor
+        # self.input_mode = input_mode
+
         if image_processor is None:
-            self.initialize_preprocessor()    
+            print("WARNING: image_processor has not been given. Initialize one with the `.initialize_preprocessor()` method.")
+            # self.initialize_preprocessor()
+
         self.to(self.device)
 
-    def get_input_type(self, image):
-        if isinstance(image, PIL.Image.Image):
-            return Image.Image
-        elif isinstance(image, torch.Tensor):
-            return torch.Tensor
-        else:
-            raise ValueError("Image must be PIL Image or Tensor")
 
-    @property
-    def image_processor(self):
-        if self.input_mode == PIL.Image.Image:
-            return self._image_processor_image
-        elif self.input_mode == torch.Tensor:
-            return self._image_processor_tensor
-    @image_processor.setter
-    def image_processor(self, value):
-        self._image_processor_image = value
-        self._image_processor_tensor = value
-        print(f"WARNING: image_processor has been set externally. This class image processer currently expects a {self.input_mode} as input. Please set the `input_mode` and provide inputs accordingly.")
+    # @property
+    # def image_processor(self):
+    #     if self.input_mode == PIL.Image.Image:
+    #         return self._image_processor_image
+    #     elif self.input_mode == torch.Tensor:
+    #         return self._image_processor_tensor
+    # @image_processor.setter
+    # def image_processor(self, value):
+    #     self._image_processor_image = value
+    #     self._image_processor_tensor = value
+    #     print(f"WARNING: image_processor has been set externally. This class image processer currently expects a {self.input_mode} as input. Please set the `input_mode` and provide inputs accordingly.")
 
     def load_from_lib(self, vit_model = 'ViT-L/14'):
         self.clip_model, self.image_processor = clip.load(vit_model, device=self.device)
@@ -99,29 +100,60 @@ class CLIPImageEncoder(nn.Module):
         torch.save(self.image_processor, image_processor_path)
         torch.save(self.clip_model, clip_model_path)
     
-    def preprocess_input(self, image: Union[Image.Image, torch.Tensor]):
+    def convert_image_to_tensor(self, image: PIL.Image.Image):
+        return torch.from_numpy(np.array(image)) \
+            .permute(2, 0, 1) \
+            .unsqueeze(0) \
+            .to(self.device) * (2/255.) - 1.0
+
+    def preprocess_input(self, image: Union[PIL.Image.Image, torch.Tensor]):
         # Preprocess image
-        self.input_mode = self.get_input_type(image)
+        if self.get_input_type(image) == PIL.Image.Image:
+            image = self.convert_image_to_tensor(image)
         return self.image_processor(image).to(self.device)
     
-    def forward(self, image: Union[Image.Image, torch.Tensor], batch_size: int = 1):
+    def forward(self, image: Union[PIL.Image.Image, torch.Tensor], do_preprocess = False):
         # Preprocess image
-        image = self.preprocess_input(image)
+        if do_preprocess:
+            image = self.preprocess_input(image)
         # Compute CLIP features
         with torch.no_grad():
             features = self.clip_model.encode_image(image)
         return features
 
+    # def preprocess_input(self, image: Union[Image.Image, torch.Tensor]):
+    #     # Preprocess image
+    #     self.input_mode = self.get_input_type(image)
+    #     return self.image_processor(image).to(self.device)
+    
+    # def forward(self, image: Union[PIL.Image.Image, torch.Tensor]):
+    #     # Preprocess image
+    #     image = self.preprocess_input(image)
+    #     # Compute CLIP features
+    #     with torch.no_grad():
+    #         features = self.clip_model.encode_image(image)
+    #     return features
+    
+    @staticmethod
     def compute_sha256(image_data):
         # Compute SHA256
         return hashlib.sha256(image_data).hexdigest()
     
-    def convert_image_to_rgb(self, image):
+    @staticmethod
+    def convert_image_to_rgb(image):
         return image.convert("RGB")
     
-    def initialize_preprocessor(self, size = 224):
+    @staticmethod
+    def get_input_type(image):
+        if isinstance(image, PIL.Image.Image):
+            return PIL.Image.Image
+        elif isinstance(image, torch.Tensor):
+            return torch.Tensor
+        else:
+            raise ValueError("Image must be PIL Image or Tensor")
         
-        self._image_processor_tensor = Compose([
+    def initialize_preprocessor(self, size = 224):
+        self.image_processor = Compose([
                                 Resize(size),
                                 CenterCrop(size),
                                 Normalize(
@@ -129,17 +161,27 @@ class CLIPImageEncoder(nn.Module):
                                     (0.26862954, 0.26130258, 0.27577711)
                                     ),
                                 ])     
-        self._image_processor_image = Compose([
-                                Resize(size),
-                                CenterCrop(size),
-                                self.convert_image_to_rgb,
-                                ToTensor(),
-                                Normalize(
-                                    (0.48145466, 0.4578275, 0.40821073), 
-                                    (0.26862954, 0.26130258, 0.27577711)
-                                    ),
-                                Lambda(lambda x: x.unsqueeze(0)),
-                                ])
+        
+        # self._image_processor_tensor = Compose([
+        #                         Resize(size),
+        #                         CenterCrop(size),
+        #                         Normalize(
+        #                             (0.48145466, 0.4578275, 0.40821073), 
+        #                             (0.26862954, 0.26130258, 0.27577711)
+        #                             ),
+        #                         ])     
+        # self._image_processor_image = Compose([
+        #                         Resize(size),
+        #                         CenterCrop(size),
+        #                         self.convert_image_to_rgb,
+        #                         ToTensor(),
+        #                         Lambda(lambda x: x * (2/255) - 1.0),
+        #                         Normalize(
+        #                             (0.48145466, 0.4578275, 0.40821073), 
+        #                             (0.26862954, 0.26130258, 0.27577711)
+        #                             ),
+        #                         Lambda(lambda x: x.unsqueeze(0)),
+        #                         ])
 
     # def verify_model(root: str, filename: str, expected_sha256: str):
     #     """
