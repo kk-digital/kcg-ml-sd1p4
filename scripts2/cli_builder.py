@@ -125,6 +125,27 @@ class CLI:
         )
 
         return self
+    
+    def num_iterations(self):
+        self.parser.add_argument(
+            '--num_iterations',
+            type=int,
+            default=10,
+            help='How many times to iterate the generation of a batch of images (default: %(default)s)'
+        )
+
+        return self
+
+    def noise_seed(self):
+        self.parser.add_argument(
+            '--noise_seed',
+            type=int,
+            default=42,
+            help='The noise seed to be fed to the sampling process (default: %(default)s)'
+        )
+
+        return self
+
 
     def prompts_file(self, check_exists: Union[bool, Callable]=True, required: bool=True):
         self.parser.add_argument(
