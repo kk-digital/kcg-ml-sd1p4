@@ -104,6 +104,7 @@ def generate_images(
 
 def main():
     args = CLI('Generate images from noise seeds.') \
+        .prompt() \
         .batch_size() \
         .num_iterations() \
         .cuda_device() \
@@ -112,6 +113,7 @@ def main():
 
 
     generate_images(
+        prompt = args.prompt,
         batch_size=args.batch_size,
         num_iterations=args.num_iterations,
         device=args.cuda_device
