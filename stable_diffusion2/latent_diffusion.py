@@ -27,7 +27,7 @@ import torch
 import torch.nn as nn
 
 from .model.vae.autoencoder import Autoencoder
-from .model.clip.clip_embedder import CLIPTextEmbedder
+from .model.clip_text_embedder.clip_text_embedder import CLIPTextEmbedder
 from .model.unet.unet import UNetModel
 from .constants import AUTOENCODER_PATH, UNET_PATH, LATENT_DIFFUSION_PATH, EMBEDDER_PATH, ENCODER_PATH, DECODER_PATH, TOKENIZER_PATH, TRANSFORMER_PATH
 from .utils.utils import check_device
