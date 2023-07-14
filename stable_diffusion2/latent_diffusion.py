@@ -177,7 +177,15 @@ class LatentDiffusion(nn.Module):
         self.cond_stage_model.eval()
         self.model = DiffusionWrapper(torch.load(unet_path, map_location=self.device).eval())
 
-    def load_submodel_tree(self, encoder_path = ENCODER_PATH, decoder_path = DECODER_PATH, autoencoder_path = AUTOENCODER_PATH, embedder_path = EMBEDDER_PATH, unet_path = UNET_PATH):
+    def load_submodel_tree(self, 
+                           encoder_path = ENCODER_PATH, 
+                           decoder_path = DECODER_PATH, 
+                           autoencoder_path = AUTOENCODER_PATH, 
+                           embedder_path = EMBEDDER_PATH, 
+                           tokenizer_path = TOKENIZER_PATH, 
+                           transformer_path = TRANSFORMER_PATH, 
+                           unet_path = UNET_PATH
+                           ):
         
         with section("load submodel tree"):
             self.first_stage_model = torch.load(autoencoder_path, map_location=self.device)
@@ -185,7 +193,7 @@ class LatentDiffusion(nn.Module):
             self.first_stage_model.load_submodels(encoder_path=encoder_path, decoder_path=decoder_path)
             self.cond_stage_model = torch.load(embedder_path, map_location=self.device)
             self.cond_stage_model.eval()
-            self.cond_stage_model.load_submodels(tokenizer_path=TOKENIZER_PATH, transformer_path=TRANSFORMER_PATH)
+            self.cond_stage_model.load_submodels(tokenizer_path=tokenizer_path, transformer_path=transformer_path)
             self.model = DiffusionWrapper(torch.load(unet_path, map_location=self.device).eval())
 
     def unload_submodels(self):
