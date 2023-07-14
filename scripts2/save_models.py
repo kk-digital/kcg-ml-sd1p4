@@ -15,6 +15,7 @@ else saves latent diffusion model with state dict loaded from checkpoint
 
 import random
 import os
+import sys
 import argparse
 from pathlib import Path
 from typing import Union
@@ -26,7 +27,8 @@ from PIL import Image
 
 # from labml import monit
 # from labml.logger import inspect
-
+base_directory = "./"
+sys.path.insert(0, base_directory)
 
 from stable_diffusion2.constants import AUTOENCODER_PATH, ENCODER_PATH, DECODER_PATH
 from stable_diffusion2.constants import EMBEDDER_PATH, TOKENIZER_PATH, TRANSFORMER_PATH
@@ -80,7 +82,10 @@ IMAGE_ENCODER = args.image_encoder
 
 def create_folder_structure(root_dir: str = "./") -> None:
     
-    embedder_submodels_folder = os.path.abspath(os.path.join(root_dir, 'clip/'))
+    embedder_submodels_folder = os.path.abspath(os.path.join(root_dir, 'clip_text_embedder/'))
+    os.makedirs(embedder_submodels_folder, exist_ok=True)
+
+    image_encoder_submodels_folder = os.path.abspath(os.path.join(root_dir, 'clip_image_encoder/'))
     os.makedirs(embedder_submodels_folder, exist_ok=True)
 
     autoencoder_submodels_folder = os.path.abspath(os.path.join(root_dir, 'autoencoder/'))
