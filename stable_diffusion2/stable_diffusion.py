@@ -351,10 +351,7 @@ class StableDiffusion:
         cond = torch.cat(prompts, dim=0)
         null_prompts = batch_size * [null_prompt]
         uncond_cond = torch.cat(null_prompts, dim=0) 
-        # cond = embedded_prompt.unsqueeze(0)
-        # print("cond shape: ", cond.shape)
-        # print("uncond shape: ", uncond_cond.shape)
-        # prompt_list = ["a painting of a virus monster playing guitar", "a painting of a computer virus "]
+
         # AMP auto casting
         autocast = get_autocast()
         with autocast:
