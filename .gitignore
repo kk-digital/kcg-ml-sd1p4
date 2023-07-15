@@ -148,3 +148,6 @@ dmypy.json
 
 #Ignore prompts
 data.json
+
+#Ignore vscode settings
+/.vscode
