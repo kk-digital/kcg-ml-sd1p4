@@ -259,7 +259,8 @@ class DDIMSampler(DiffusionSampler):
     @torch.no_grad()
     def paint(self, x: torch.Tensor, cond: torch.Tensor, t_start: int, *,
               orig: Optional[torch.Tensor] = None,
-              mask: Optional[torch.Tensor] = None, orig_noise: Optional[torch.Tensor] = None,
+              mask: Optional[torch.Tensor] = None, 
+              orig_noise: Optional[torch.Tensor] = None,
               uncond_scale: float = 1.,
               uncond_cond: Optional[torch.Tensor] = None,
               ):
