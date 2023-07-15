@@ -2,10 +2,9 @@ import os
 import sys
 import torch
 import shutil
-import time
 import argparse
 
-from typing import Callable
+
 from tqdm import tqdm
 
 
@@ -13,12 +12,10 @@ from auxiliary_functions import get_torch_distribution_from_name
 
 from text_to_image import Txt2Img
 
-from stable_diffusion2.latent_diffusion import LatentDiffusion
-from stable_diffusion2.stable_diffusion import StableDiffusion
-from stable_diffusion2.constants import CHECKPOINT_PATH, AUTOENCODER_PATH, UNET_PATH, EMBEDDER_PATH, LATENT_DIFFUSION_PATH, ENCODER_PATH, DECODER_PATH, TOKENIZER_PATH, TRANSFORMER_PATH
+from stable_diffusion2.constants import CHECKPOINT_PATH
 from stable_diffusion2.utils.utils import SectionManager as section
 from stable_diffusion2.utils.utils import save_image_grid, save_images
-from stable_diffusion2.utils.model import initialize_latent_diffusion, initialize_autoencoder, initialize_clip_embedder
+from stable_diffusion2.utils.model import initialize_latent_diffusion
 
 
 # CHECKPOINT_PATH = os.path.abspath('./input/model/v1-5-pruned-emaonly.ckpt')
@@ -29,7 +26,7 @@ parser = argparse.ArgumentParser(
 
 parser.add_argument('-p', '--prompt', type = str, default = "A woman with flowers in her hair in a courtyard, in the style of Frank Frazetta",\
                     help = "The prompt to generate images from. Defaults to 'A woman with flowers in her hair in a courtyard, in the style of Frank Frazetta'")
-parser.add_argument('-od', '--output_dir', type = str, default = OUTPUT_DIR, help = "The output directory. defaults to OUTPUT_DIR constant, which should be './output/noise-tests/'")
+parser.add_argument('-od', '--output_dir', type = str, default = OUTPUT_DIR, help = "The output directory. defaults to OUTPUT_DIR constant, which should be './output/noise-tests/temperature_range'")
 parser.add_argument('-cp', '--checkpoint_path', type = str, default = CHECKPOINT_PATH, help = "The path to the checkpoint file to load from. Defaults to CHECKPOINT_PATH constant, which should be './input/model/v1-5-pruned-emaonly.ckpt'")
 parser.add_argument('-F', '--fully_initialize', type=bool, default=False)
 parser.add_argument('-d', '--distribution_index', type=int, default=4, help = "0: 'Normal' | 1: 'Cauchy' | 2: 'Gumbel' | 3: 'Laplace' | 4: 'Logistic' | Defaults to 4.")
@@ -41,6 +38,7 @@ parser.add_argument('--temperature_steps', type=int, default=3)
 parser.add_argument('--temperature_range', nargs = "+", type=float, default=[1.0, 4.0])
 parser.add_argument('--ddim_eta', type=float, default=0.1)
 parser.add_argument('--clear_output_dir', type=bool, default=False)
+parser.add_argument('--cuda_device', type=str, default="cuda:0")
 
 args = parser.parse_args() 
 
@@ -57,6 +55,7 @@ TEMPERATURE_STEPS = args.temperature_steps
 TEMPERATURE_RANGE = args.temperature_range
 DDIM_ETA = args.ddim_eta
 CLEAR_OUTPUT_DIR = args.clear_output_dir
+DEVICE = args.cuda_device
 
 TEMP_RANGE = torch.linspace(*TEMPERATURE_RANGE, TEMPERATURE_STEPS)
 
@@ -66,7 +65,6 @@ __DISTRIBUTIONS = {
     'Gumbel': dict(loc=1.0, scale=2.0), 
     'Laplace': dict(loc=0.0, scale=1.0), #there's some stuff here for scale \in (0.6, 0.8)
     'Logistic': dict(loc=0.0, scale=1.0),
-    # 'Uniform': dict(low=0.0, high=1.0)
 }    
 dist_names = list(__DISTRIBUTIONS.keys())
 DIST_NAME = dist_names[DISTRIBUTION_ID]
@@ -132,8 +130,12 @@ def generate_images_from_temp_range(
     # Clear the output directory
 
     if clear_output_dir:
-        shutil.rmtree(output_dir)
-        os.makedirs(output_dir, exist_ok=True)
+        try:
+            shutil.rmtree(output_dir)
+        except Exception as e:
+            print(e)
+        
+    os.makedirs(output_dir, exist_ok=True)
     # Create the folder structure for the outputs
     create_folder_structure(distributions, output_dir)
 
