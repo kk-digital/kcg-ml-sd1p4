@@ -58,10 +58,12 @@ except:
 parser = argparse.ArgumentParser(
         description='')
 
-parser.add_argument('--save_without_weights', type=bool, default=False)
-parser.add_argument('--unet', type=bool, default=True)
-parser.add_argument('--clip', type=bool, default=True)
-parser.add_argument('--vae', type=bool, default=True)
+# parser.add_argument('--save_without_weights', type=bool, default=False)
+parser.add_argument("--without_weights", default=False, action="store_true",
+                    help="Save the submodels without loading weights from checkpoint")
+parser.add_argument('--unet', default=False, action="store_true")
+parser.add_argument('--clip', default=False, action="store_true",)
+parser.add_argument('--vae', default=False, action="store_true")
 parser.add_argument('--image_encoder', type=bool, default=True)
 parser.add_argument('-g', '--granularity', type=int, default=0)
 parser.add_argument('--checkpoint_path', type=str, default=CHECKPOINT_PATH)
@@ -74,7 +76,7 @@ args = parser.parse_args()
 GRANULARITY = args.granularity
 CHECKPOINT_PATH = args.checkpoint_path
 ROOT_MODELS_PATH = args.root_models_path
-SAVE_WITHOUT_WEIGHTS = args.save_without_weights
+SAVE_WITHOUT_WEIGHTS = args.without_weights
 SAVE_UNET = args.unet
 SAVE_CLIP = args.clip
 SAVE_VAE = args.vae
@@ -101,6 +103,7 @@ def create_folder_structure(root_dir: str = "./") -> None:
 if __name__ == '__main__':
     create_folder_structure(root_dir=ROOT_MODELS_PATH)
     if SAVE_WITHOUT_WEIGHTS:
+        print('saving without weights')
         if SAVE_CLIP:
             embedder = initialize_clip_embedder()
             summary(embedder)
@@ -154,7 +157,7 @@ if __name__ == '__main__':
                     img_encoder = CLIPImageEncoder()
                     img_encoder.load_from_lib()
                 with section("save image encoder"):
-                    img_encoder.save_model()
+                    img_encoder.save()
                     img_encoder.unload_submodels()
             with section("to save latent diffusion submodels"):
                 model.save_submodels() # saves latent diffusion submodels (autoencoder, clip_embedder and unet) with loaded state dict loaded submodels
