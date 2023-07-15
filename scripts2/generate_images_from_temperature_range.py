@@ -28,11 +28,11 @@ parser = argparse.ArgumentParser(
         description='')
 
 parser.add_argument('-p', '--prompt', type = str, default = "A woman with flowers in her hair in a courtyard, in the style of Frank Frazetta",\
-                    help = "The prompt to generate images from.\nDefaults to 'A painting of a computer virus dancing tango with a human'")
-parser.add_argument('-od', '--output_dir', type = str, default = OUTPUT_DIR, help = "output directory. defaults to OUTPUT_DIR constant, which should be './output/noise-tests/'")
-parser.add_argument('-cp', '--checkpoint_path', type = str, default = CHECKPOINT_PATH, help = "checkpoint path to load from. defaults to CHECKPOINT_PATH constant, which should be './input/model/v1-5-pruned-emaonly.ckpt'")
+                    help = "The prompt to generate images from. Defaults to 'A woman with flowers in her hair in a courtyard, in the style of Frank Frazetta'")
+parser.add_argument('-od', '--output_dir', type = str, default = OUTPUT_DIR, help = "The output directory. defaults to OUTPUT_DIR constant, which should be './output/noise-tests/'")
+parser.add_argument('-cp', '--checkpoint_path', type = str, default = CHECKPOINT_PATH, help = "The path to the checkpoint file to load from. Defaults to CHECKPOINT_PATH constant, which should be './input/model/v1-5-pruned-emaonly.ckpt'")
 parser.add_argument('-F', '--fully_initialize', type=bool, default=False)
-parser.add_argument('-d', '--distribution_index', type=int, default=4, help = "0: 'Normal'\n1: 'Cauchy'\n2: 'Gumbel'\n3: 'Laplace'\n4: 'Logistic'\n Defaults to 4.")
+parser.add_argument('-d', '--distribution_index', type=int, default=4, help = "0: 'Normal' | 1: 'Cauchy' | 2: 'Gumbel' | 3: 'Laplace' | 4: 'Logistic' | Defaults to 4.")
 parser.add_argument('-s', '--seed', type=int, default=2982)
 parser.add_argument('-bs', '--batch_size', type=int, default=1)
 parser.add_argument('--params_steps', type=int, default=3)
