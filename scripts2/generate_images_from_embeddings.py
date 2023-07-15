@@ -51,7 +51,7 @@ parser.add_argument(
 )
 parser.add_argument("--num_seeds", type=int, default=3)
 parser.add_argument("-bs", "--batch_size", type=int, default=1)
-parser.add_argument("--temperature", type=float, default=1.0)
+parser.add_argument("-t", "--temperature", type=float, default=1.0)
 parser.add_argument("--ddim_eta", type=float, default=0.0)
 parser.add_argument("--clear_output_dir", type=bool, default=False)
 parser.add_argument("--cuda_device", type=str, default="cuda:0")

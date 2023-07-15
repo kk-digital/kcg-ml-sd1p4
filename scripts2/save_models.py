@@ -64,7 +64,10 @@ except:
 
 parser = argparse.ArgumentParser(description="")
 
-# parser.add_argument('--save_without_weights', type=bool, default=False)
+
+parser.add_argument("-g", "--granularity", type=int, default=0)
+parser.add_argument("--root_models_path", type=str, default=ROOT_MODELS_PATH)
+parser.add_argument("--checkpoint_path", type=str, default=CHECKPOINT_PATH)
 parser.add_argument(
     "--without_weights",
     default=False,
@@ -78,10 +81,7 @@ parser.add_argument(
     action="store_true",
 )
 parser.add_argument("--vae", default=False, action="store_true")
-parser.add_argument("--image_encoder", type=bool, default=True)
-parser.add_argument("-g", "--granularity", type=int, default=0)
-parser.add_argument("--checkpoint_path", type=str, default=CHECKPOINT_PATH)
-parser.add_argument("--root_models_path", type=str, default=ROOT_MODELS_PATH)
+# parser.add_argument("--image_encoder", type=bool, default=True)
 
 args = parser.parse_args()
 
@@ -94,7 +94,7 @@ SAVE_WITHOUT_WEIGHTS = args.without_weights
 SAVE_UNET = args.unet
 SAVE_CLIP = args.clip
 SAVE_VAE = args.vae
-IMAGE_ENCODER = args.image_encoder
+IMAGE_ENCODER = True
 
 
 def create_folder_structure(root_dir: str = "./") -> None:

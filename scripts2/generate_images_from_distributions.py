@@ -22,9 +22,6 @@ OUTPUT_DIR = os.path.abspath("./output/noise-tests/from_distributions")
 
 NOISE_SEEDS = [2982, 4801, 1995, 3598, 987, 3688, 8872, 762]
 
-NUM_ARTISTS = 1
-CLEAR_OUTPUT_DIR = True
-
 # CHECKPOINT_PATH = os.path.abspath('./input/model/v1-5-pruned-emaonly.ckpt')
 
 parser = argparse.ArgumentParser(description="")
