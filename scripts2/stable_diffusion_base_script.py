@@ -82,7 +82,6 @@ class StableDiffusionBaseScript:
         else:
             un_cond = None
 
-        print(prompts)
         # Get the prompt embeddings
         cond = self.model.get_text_conditioning(prompts)
 
@@ -143,8 +142,10 @@ class StableDiffusionBaseScript:
         """You can initialize the autoencoder, CLIP and UNet models externally and pass them to the script.
         Use the methods: 
             stable_diffusion.utils.model.initialize_autoencoder,
-            stable_diffusion.utils.model.initialize_clip_embedder and 
-            stable_diffusion.utils.model.initialize_unet to initialize them.
+            stable_diffusion.utils.model.initialize_clip_embedder 
+            and 
+            stable_diffusion.utils.model.initialize_unet 
+        to initialize them.
         If you don't initialize them externally, the script will initialize them internally.
         Args:
             autoencoder (Autoencoder, optional): the externally initialized autoencoder. Defaults to None.

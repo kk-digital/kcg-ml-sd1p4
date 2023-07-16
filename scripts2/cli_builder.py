@@ -36,7 +36,7 @@ class CLI:
 
         return self
 
-    def output(self, default='./outputs', check_exists: Union[bool, Callable]=True):
+    def output(self, default='./output', check_exists: Union[bool, Callable]=True):
         self.parser.add_argument('--output',
             help='Path to the output directory (default: %(default)s)',
             default=default

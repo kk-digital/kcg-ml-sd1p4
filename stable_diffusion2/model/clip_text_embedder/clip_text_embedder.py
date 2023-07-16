@@ -64,16 +64,17 @@ class CLIPTextEmbedder(nn.Module):
         self.tokenizer = torch.load(tokenizer_path, map_location=self.device)
         self.transformer = torch.load(transformer_path, map_location=self.device)
         self.transformer.eval()
-
+        return self
+    
     def load_tokenizer(self, tokenizer_path = TOKENIZER_PATH):
         self.tokenizer = torch.load(tokenizer_path, map_location=self.device)
-        
+        return self.tokenizer    
 
     def load_transformer(self, transformer_path = TRANSFORMER_PATH):
 
         self.transformer = torch.load(transformer_path, map_location=self.device)
         self.transformer.eval()
-
+        return self.transformer
 
 
     def unload_submodels(self):

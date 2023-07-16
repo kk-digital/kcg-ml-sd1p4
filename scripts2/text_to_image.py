@@ -15,7 +15,8 @@ from datetime import datetime
 from stable_diffusion_base_script import StableDiffusionBaseScript
 from stable_diffusion2.stable_diffusion import StableDiffusion
 from stable_diffusion2.utils.utils import save_images, set_seed, get_autocast
-from stable_diffusion2.utils.utils import SectionManager as section
+# from stable_diffusion2.utils.utils import SectionManager as section
+from labml import monit
 from stable_diffusion2.model.unet.unet_attention import CrossAttention
 from cli_builder import CLI
 
@@ -137,9 +138,9 @@ class Txt2Img(StableDiffusionBaseScript):
         # prompts = batch_size * [embedded_prompt]
         # cond = torch.cat(prompts, dim=1)
         cond = embedded_prompt.unsqueeze(0)
-        print("cond shape: ", cond.shape)
-        print("uncond shape: ", null_prompt.shape)
-        prompt_list = ["a painting of a virus monster playing guitar", "a painting of a computer virus "]
+        # print("cond shape: ", cond.shape)
+        # print("uncond shape: ", null_prompt.shape)
+        # prompt_list = ["a painting of a virus monster playing guitar", "a painting of a computer virus "]
         # AMP auto casting
         autocast = get_autocast()
         with autocast:
@@ -173,8 +174,8 @@ def main():
         .parse()
 
     prompts = get_prompts(opt.prompt, opt.prompts_file)
-    timestamp = datetime.now().strftime('%d-%m-%Y-%H-%M-%S')
-    filename = os.path.join(opt.output, f'{timestamp}.jpg')
+    # timestamp = datetime.now().strftime('%d-%m-%Y-%H-%M-%S')
+    # filename = os.path.join(opt.output, f'{timestamp}.jpg')
 
     # Set flash attention
     CrossAttention.use_flash_attention = opt.flash
@@ -184,13 +185,16 @@ def main():
                       sampler_name=opt.sampler,
                       n_steps=opt.steps,
                       force_cpu=opt.force_cpu,
-                      device=opt.cuda_device
+                      cuda_device=opt.cuda_device
                     )
-    txt2img.initialize_latent_diffusion(path=opt.checkpoint_path, force_submodels_init=True)
+    txt2img.initialize_latent_diffusion(autoencoder=None, clip_text_embedder=None, unet_model = None, path=opt.checkpoint_path, force_submodels_init=True)
 
-    with section(f'generate images for {len(prompts)} prompts'):
+    with monit.section('Generate', total_steps=len(prompts)) as section:
         for prompt in prompts:
             print(f'Generating images for prompt: "{prompt}"')
+
+            timestamp = datetime.now().strftime('%d-%m-%Y-%H-%M-%S')
+            filename = os.path.join(opt.output, f'{timestamp}.jpg')
 
             images = txt2img.generate_images(
                 batch_size=opt.batch_size,
