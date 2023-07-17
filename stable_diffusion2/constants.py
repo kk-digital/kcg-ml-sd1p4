@@ -8,10 +8,13 @@ import dataclasses
 base_directory = os.getcwd()
 sys.path.insert(0, base_directory)
 
-ROOT_MODELS_PATH = os.path.abspath(os.path.join(base_directory, "input/model/"))
+ROOT_MODELS_PREFIX = "input/model/"
+CHECKPOINT = "v1-5-pruned-emaonly.ckpt"
+
+ROOT_MODELS_PATH = os.path.abspath(os.path.join(base_directory, ROOT_MODELS_PREFIX))
 
 CHECKPOINT_PATH = os.path.abspath(
-    os.path.join(ROOT_MODELS_PATH, "v1-5-pruned-emaonly.ckpt")
+    os.path.join(ROOT_MODELS_PATH, CHECKPOINT)
 )
 
 EMBEDDER_PATH = os.path.abspath(
@@ -58,10 +61,10 @@ class ModelsPathTree:
     def __init__(self, base_directory: str = "./"):
         self.base_directory = base_directory
         self.root_models_path = os.path.abspath(
-            os.path.join(base_directory, "input/model/")
+            os.path.join(base_directory, ROOT_MODELS_PREFIX)
         )
         self.checkpoint_path = os.path.abspath(
-            os.path.join(self.root_models_path, "v1-5-pruned-emaonly.ckpt")
+            os.path.join(self.root_models_path, CHECKPOINT)
         )
         self.embedder_path = os.path.abspath(
             os.path.join(self.root_models_path, "clip_text_embedder/clip_embedder.ckpt")
@@ -109,21 +112,21 @@ class ModelsPathTree:
 
     def __repr__(self):
         return f"""ModelsPathTree(base_directory={self.base_directory})
-                - latent_diffusion
+                - latent_diffusion: {self.latent_diffusion_path}
                 
-                -- autoencoder
-                --- encoder
-                --- decoder
+                -- autoencoder: {self.autoencoder_path}
+                --- encoder: {self.encoder_path}
+                --- decoder: {self.decoder_path}
                 
-                -- embedder
-                --- tokenizer
-                --- transformer
+                -- embedder: {self.embedder_path}
+                --- tokenizer: {self.tokenizer_path}
+                --- transformer: {self.transformer_path}
                 
-                -- unet
+                -- unet: {self.unet_path}
 
-                - image_encoder
-                -- clip_model
-                -- image_processor
+                - image_encoder: {self.image_encoder_path}
+                -- clip_model: {self.clip_model_path}
+                -- image_processor: {self.image_processor_path}
             """
 
     @property
@@ -219,10 +222,10 @@ class ModelsPathTree:
 
 
 def create_directory_tree_paths(base_directory: str = "./"):
-    ROOT_MODELS_PATH = os.path.abspath(os.path.join(base_directory, "input/model/"))
+    ROOT_MODELS_PATH = os.path.abspath(os.path.join(base_directory, ROOT_MODELS_PREFIX))
 
     CHECKPOINT_PATH = os.path.abspath(
-        os.path.join(ROOT_MODELS_PATH, "v1-5-pruned-emaonly.ckpt")
+        os.path.join(ROOT_MODELS_PATH, CHECKPOINT)
     )
 
     EMBEDDER_PATH = os.path.abspath(
@@ -292,7 +295,7 @@ def create_directory_tree_paths(base_directory: str = "./"):
 
 
 def create_latent_diffusion_submodels_tree_paths(base_directory: str = "./"):
-    ROOT_MODELS_PATH = os.path.abspath(os.path.join(base_directory, "input/model/"))
+    ROOT_MODELS_PATH = os.path.abspath(os.path.join(base_directory, ROOT_MODELS_PREFIX))
 
     EMBEDDER_PATH = os.path.abspath(
         os.path.join(ROOT_MODELS_PATH, "clip_text_embedder/clip_embedder.ckpt")
