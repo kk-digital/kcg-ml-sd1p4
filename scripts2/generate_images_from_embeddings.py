@@ -90,7 +90,7 @@ def generate_images_from_embeddings(
     sampler_name: str = "ddim",
     n_steps: int = 20,
     batch_size: int = BATCH_SIZE,
-    noise_seeds: list[int] = NOISE_SEEDS,
+    noise_seeds: list = NOISE_SEEDS,
     clear_output_dir: bool = CLEAR_OUTPUT_DIR,
     ddim_eta: float = DDIM_ETA,
     cuda_device: str = DEVICE,
