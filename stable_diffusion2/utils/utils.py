@@ -80,8 +80,6 @@ def save_image_grid(
 
 def show_image_grid(
     tensor: Union[torch.Tensor, List[torch.Tensor]],
-    fp: Union[str, Path, BinaryIO],
-    format: Optional[str] = None,
     **kwargs,
 ) -> None:
     """
