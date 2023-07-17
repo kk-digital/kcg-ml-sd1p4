@@ -19,7 +19,7 @@ from stable_diffusion2.utils.utils import (
 from stable_diffusion2.latent_diffusion import LatentDiffusion
 from stable_diffusion2.sampler import DiffusionSampler
 from stable_diffusion2.constants import LATENT_DIFFUSION_PATH
-from stable_diffusion2.utils.utils import SectionManager as section
+from labml.monit import section
 from typing import Union, Optional
 from pathlib import Path
 

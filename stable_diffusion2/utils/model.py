@@ -25,7 +25,7 @@ from stable_diffusion2.constants import EMBEDDER_PATH, TOKENIZER_PATH, TRANSFORM
 from stable_diffusion2.constants import UNET_PATH
 from stable_diffusion2.constants import LATENT_DIFFUSION_PATH
 
-from stable_diffusion2.utils.utils import SectionManager as section
+from labml.monit import section
 
 from stable_diffusion2.latent_diffusion import LatentDiffusion
 from stable_diffusion2.model.vae import Autoencoder, Encoder, Decoder

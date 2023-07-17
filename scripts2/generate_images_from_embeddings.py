@@ -21,7 +21,7 @@ from stable_diffusion2.constants import (
     TRANSFORMER_PATH,
 )
 from stable_diffusion2.stable_diffusion import StableDiffusion
-from stable_diffusion2.utils.utils import SectionManager as section
+from labml.monit import section
 from stable_diffusion2.utils.utils import save_image_grid, save_images, check_device
 
 from os.path import join
