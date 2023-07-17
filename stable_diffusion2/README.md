@@ -6,6 +6,7 @@
 
 - [kcg-ml-sd1p4](#kcg-ml-sd1p4)
   - [Summary](#summary)
+  - [Downloading models](#downloading-models)
   - [Saving submodels](#saving-submodels)
   - [Running `stable_diffusion2` scripts](#running-stable_diffusion2-scripts)
       - [Embed prompts](#embed-prompts)
@@ -14,12 +15,18 @@
       - [Images from temperature range](#images-from-temperature-range)
       - [Images and encodings](#images-and-encodings)
   - [Notebooks](#notebooks)
+## Downloading models
 
+Will download the currently supported checkpoint, `v1-5-pruned-emaonly.ckpt`, to `./input/model/`.
+
+```bash
+./stable_diffusion2/download-model.sh
+```
 ## Saving submodels
 
-After following the root folder `README.md`, you should have a model checkpoint at `./input/model/`. That file contains the weights for the whole stable diffusion model. We start by loading this checkpoint into an appropriate `nn.Module`, mapping the trained weights the checkpoint contains into it to their appropriate fields across the submodules tree. Then we save all submodules used in the latent diffusion module, with their weights mapped.
-The following command should create a folder structure, initialize a `LatentDiffusion` module, load its weights from a checkpoint file at `./input/model/*.ckpt` and then save all submodules.
+This initializes a `LatentDiffusion` module, load its weights from a checkpoint file at `./input/model/v1-5-pruned-emaonly.ckpt` and then save all submodules.
 **Note**: saving these models will take an extra ~5GB of storage. 
+
 ```bash
 python3 ./scripts2/save_models.py
 ```
@@ -28,10 +35,6 @@ python3 ./scripts2/save_models.py
 - `-g, --granularity`: Determines the height in the model tree on which to save the submodels. Defaults to `0`, saving all submodels of the `LatentDiffusion` class and all submodels thereof. If `1` is given, it saves only up to the first level, i.e., autoencoder, UNet and CLIP text embedder. _Note that_ the other scripts expect this to be ran with `0`.
 - `--root_models_path`: Base directory for the models' folder structure. Defaults to the constant `ROOT_MODELS_PATH`, which is expected to be `./input/model/`.
 - `--checkpoint_path`: Relative path of the checkpoint file (*.ckpt). Defaults to the constant `CHECKPOINT_PATH`, which is expected to be `'./input/model/v1-5-pruned-emaonly.ckpt' = os.path.join(ROOT_MODELS_PATH, 'v1-5-pruned-emaonly.ckpt')`.
-- `--without_weights`: Defaults to `False`. If true, the script will save the submodels without loading the checkpoint weights.
-- `--unet`: In case of saving without weights, you also have to flag the submodels you want to save. Defaults to `False`.
-- `--vae`: In case of saving without weights, you also have to flag the submodels you want to save. Defaults to `False`.
-- `--clip`: In case of saving without weights, you also have to flag the submodels you want to save. Defaults to `False`.
 
 ## Running `stable_diffusion2` scripts
 
