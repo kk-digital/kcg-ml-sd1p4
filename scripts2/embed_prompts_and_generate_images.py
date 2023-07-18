@@ -5,7 +5,7 @@ import torch
 import hashlib
 import json
 import clip
-
+import shutil
 base_dir = "./"
 sys.path.insert(0, base_dir)
 
@@ -30,16 +30,9 @@ OUTPUT_DIR = os.path.abspath("./output/disturbing_embeddings/")
 FEATURES_DIR = os.path.abspath(join(OUTPUT_DIR, "features/"))
 IMAGES_DIR = os.path.abspath(join(OUTPUT_DIR, "images/"))
 SCORER_CHECKPOINT_PATH = os.path.abspath("./input/model/aesthetic_scorer/sac+logos+ava1-l14-linearMSE.pth")
-NULL_PROMPT = ""
-PROMPTS = 'A woman with flowers in her hair in a courtyard, in the style of Frank Frazetta'
-NUM_IMAGES = 8
-SEED = 2982
-NOISE_MULTIPLIER = 0.008
 
-os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
-os.makedirs(OUTPUT_DIR, exist_ok=True)
-os.makedirs(FEATURES_DIR, exist_ok=True)
-os.makedirs(IMAGES_DIR, exist_ok=True)
+
+
 # DEVICE = input("Set device: 'cuda:i' or 'cpu'")
 
 pt = ModelsPathTree(base_directory=base_dir)
@@ -57,7 +50,7 @@ parser.add_argument(
     "--save_embeddings",
     type=bool,
     default=False,
-    help="If True, the disturbed embeddings will be saved to disk. Defaults to True.",
+    help="If True, the disturbed embeddings will be saved to disk. Defaults to False.",
 )
 parser.add_argument(
     "--embedded_prompts_dir",
@@ -68,14 +61,14 @@ parser.add_argument(
 parser.add_argument(
     "--num_iterations",
     type=str,
-    default=4,
-    help="The number of iterations to batch-generate images. Defaults to 10.",
+    default=8,
+    help="The number of iterations to batch-generate images. Defaults to 8.",
 )
 
 parser.add_argument(
     "--batch_size",
     type=str,
-    default=2,
+    default=1,
     help="The number of images to generate per batch. Defaults to 1.",
 )
 
@@ -88,7 +81,7 @@ parser.add_argument(
 parser.add_argument(
     "--noise_multiplier",
     type=float,
-    default=0.008,
+    default=0.01,
     help="The multiplier for the amount of noise used to disturb the prompt embedding. Defaults to 0.008.",
 )
 parser.add_argument(
@@ -96,6 +89,12 @@ parser.add_argument(
     type=str,
     default="cuda:0",
     help="The cuda device to use. Defaults to 'cuda:0'.",
+)
+parser.add_argument(
+    "--clear_output_dir",
+    type=bool,
+    default=False,
+    help="Avoid. If True, the output directory will be cleared before generating images. Defaults to False.",
 )
 args = parser.parse_args()
 
@@ -107,9 +106,25 @@ NOISE_MULTIPLIER = args.noise_multiplier
 DEVICE = check_device(args.cuda_device)
 BATCH_SIZE = args.batch_size
 SAVE_EMBEDDINGS = args.save_embeddings
+CLEAR_OUTPUT_DIR = args.clear_output_dir
 
 os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
+
 pt = ModelsPathTree(base_directory=base_dir)
+
+
+try: 
+    shutil.rmtree(OUTPUT_DIR)
+except Exception as e:
+    print(e, "\n", "Creating the paths...")
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    os.makedirs(FEATURES_DIR, exist_ok=True)
+    os.makedirs(IMAGES_DIR, exist_ok=True)
+else:
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    os.makedirs(FEATURES_DIR, exist_ok=True)
+    os.makedirs(IMAGES_DIR, exist_ok=True)
+
 
 
 def embed_and_save_prompts(prompt: str, null_prompt = NULL_PROMPT):
@@ -244,9 +259,9 @@ if __name__ == "__main__":
 
     json_output = []
     manifest = []
-
+    images_tensors = []
     for i, (image, embedding) in enumerate(images):
-
+        images_tensors.append(image)
         #compute hash
         img_hash = calculate_sha256(image.squeeze())
         pil_image = to_pil(image.squeeze())
@@ -299,7 +314,12 @@ if __name__ == "__main__":
                             "aesthetic-score": score.item(),
                         }
                     )
-
+    print(images_tensors[0].shape)
+    print(images_tensors[0])
+    images_grid = torch.cat(images_tensors)
+    print(images_grid.shape)
+    save_image_grid(images_grid, join(IMAGES_DIR, "images_grid.png"), nrow=NUM_ITERATIONS//2)
+    print(f"Image grid saved at: {join(IMAGES_DIR, 'images_grid.png')}")
     json_output_path = join(FEATURES_DIR, "features.json")
     manifest_path = join(OUTPUT_DIR, "manifest.json")
     json.dump(json_output, open(json_output_path, "w"))
