@@ -43,7 +43,7 @@ class StableDiffusionBaseScript:
         self.sampler_name = sampler_name
         self.n_steps = n_steps
         self.cuda_device = cuda_device
-        self.device_id = get_device(force_cpu, cuda_device)
+        self.device_id = get_device(cuda_device)
         self.device = torch.device(self.device_id)
 
         # Load [latent diffusion model](../latent_diffusion.html)
