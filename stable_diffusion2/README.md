@@ -147,7 +147,7 @@ python3 ./scripts2/generate_images_and_encodings.py --prompt "An oil painting of
 
 Try running:
 ```bash
-python3 ./scripts/embed_prompts_and_generate_images.py 
+python3 ./scripts2/embed_prompts_and_generate_images.py 
 ```
 Outputs in: `./output/disturbing_embeddings`
 
