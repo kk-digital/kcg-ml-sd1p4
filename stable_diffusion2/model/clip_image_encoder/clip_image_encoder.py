@@ -93,13 +93,13 @@ class CLIPImageEncoder(nn.Module):
             .unsqueeze(0) \
             .to(self.device) * (2/255.) - 1.0
 
-    def preprocess_input(self, image: Union[PIL.Image.Image, torch.Tensor]):
+    def preprocess_input(self, image):
         # Preprocess image
         if self.get_input_type(image) == PIL.Image.Image:
             image = self.convert_image_to_tensor(image)
         return self.image_processor(image).to(self.device)
     
-    def forward(self, image: Union[PIL.Image.Image, torch.Tensor], do_preprocess = False):
+    def forward(self, image, do_preprocess = False):
         # Preprocess image
         if do_preprocess:
             image = self.preprocess_input(image)
