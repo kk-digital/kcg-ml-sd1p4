@@ -40,8 +40,8 @@ from .constants import (
     TRANSFORMER_PATH,
 )
 from .utils.utils import check_device
-from .utils.utils import SectionManager as section
-
+# from .utils.utils import SectionManager as section
+from labml.monit import section
 
 class DiffusionWrapper(nn.Module):
     """

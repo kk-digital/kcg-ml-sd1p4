@@ -15,7 +15,7 @@ from datetime import datetime
 from stable_diffusion_base_script import StableDiffusionBaseScript
 from stable_diffusion2.stable_diffusion import StableDiffusion
 from stable_diffusion2.utils.utils import save_images, set_seed, get_autocast
-# from stable_diffusion2.utils.utils import SectionManager as section
+# from labml.monit import section
 from labml import monit
 from stable_diffusion2.model.unet.unet_attention import CrossAttention
 from cli_builder import CLI
