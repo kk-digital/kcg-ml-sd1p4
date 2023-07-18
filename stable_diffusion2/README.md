@@ -83,7 +83,7 @@ python3 ./scripts2/generate_images_from_embeddings.py --num_seeds 4 --temperatur
 
 Try running:
 ```bash
-python3 ./scripts2/generate_images_from_temperature_range.py -d 4 --params_steps 4 --params_range 0.49, 0.54 --num_seeds 4 --temperature 1.2 --ddim_eta 1.2
+python3 ./scripts2/generate_images_from_distributions.py -d 4 --params_steps 4 --params_range 0.49, 0.54 --num_seeds 4 --temperature 1.2 --ddim_eta 1.2
 ```
 
 **Command line arguments**

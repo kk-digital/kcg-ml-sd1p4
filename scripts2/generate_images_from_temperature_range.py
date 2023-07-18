@@ -96,7 +96,7 @@ DISTRIBUTIONS = {
 
 
 def create_folder_structure(
-    distributions_dict: dict[str, dict[str, float]], root_dir: str = OUTPUT_DIR
+    distributions_dict: dict, root_dir: str = OUTPUT_DIR
 ) -> None:
     for i, distribution_name in enumerate(distributions_dict.keys()):
         distribution_outputs = os.path.join(root_dir, distribution_name)
@@ -157,7 +157,7 @@ def show_summary(total_time, partial_time, total_images, output_dir):
 
 
 def generate_images_from_temp_range(
-    distributions: dict[str, dict[str, float]],
+    distributions: dict,
     txt2img: Txt2Img,
     output_dir: str = OUTPUT_DIR,
     clear_output_dir: bool = CLEAR_OUTPUT_DIR,
