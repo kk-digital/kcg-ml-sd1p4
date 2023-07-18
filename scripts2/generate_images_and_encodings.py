@@ -86,6 +86,7 @@ def generate_images(
                 image_name = f"{image_counter:06d}.jpg"
                 img_dest_path = os.path.join(images_dir, image_name)
                 img = Image.fromarray((255.0 * img).astype(np.uint8))
+                
                 img.save(img_dest_path)
 
                 prep_img = image_encoder.preprocess_input(img)

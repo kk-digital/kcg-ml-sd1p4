@@ -105,7 +105,7 @@ DISTRIBUTIONS = {
 
 
 def create_folder_structure(
-    distributions_dict: dict[str, dict[str, float]], root_dir: str = OUTPUT_DIR
+    distributions_dict: dict, root_dir: str = OUTPUT_DIR
 ) -> None:
     for i, distribution_name in enumerate(distributions_dict.keys()):
         distribution_outputs = os.path.join(root_dir, distribution_name)
@@ -148,7 +148,7 @@ def show_summary(total_time, partial_time, total_images, output_dir):
 
 def generate_images_from_dist(
     stable_diffusion: StableDiffusion,
-    distribution: tuple[str, dict[str, float]],
+    distribution: tuple,
     output_dir: str = OUTPUT_DIR,
     prompt: str = PROMPT,
     batch_size: int = BATCH_SIZE,
@@ -208,7 +208,7 @@ def generate_images_from_dist(
 
 def generate_images_from_dist_dict(
     stable_diffusion: StableDiffusion,
-    distributions: dict[str, dict[str, float]],
+    distributions: dict,
     output_dir: str = OUTPUT_DIR,
     clear_output_dir: bool = CLEAR_OUTPUT_DIR,
     prompt: str = PROMPT,
