@@ -8,7 +8,7 @@ import dataclasses
 base_directory = os.getcwd()
 sys.path.insert(0, base_directory)
 
-ROOT_MODELS_PREFIX = "input/model/"
+ROOT_MODELS_PREFIX = "./input/model/"
 CHECKPOINT = "v1-5-pruned-emaonly.ckpt"
 
 ROOT_MODELS_PATH = os.path.abspath(os.path.join(base_directory, ROOT_MODELS_PREFIX))
