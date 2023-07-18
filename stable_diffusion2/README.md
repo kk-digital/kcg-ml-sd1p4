@@ -14,6 +14,7 @@
       - [Images from distributions](#images-from-distributions)
       - [Images from temperature range](#images-from-temperature-range)
       - [Images and encodings](#images-and-encodings)
+      - [Perturbations on prompts embeddings](#perturbations-on-prompts-embeddings)
   - [Notebooks](#notebooks)
 ## Downloading models
 
@@ -141,6 +142,20 @@ python3 ./scripts2/generate_images_and_encodings.py --prompt "An oil painting of
 - `--num_iterations`: How many times to iterate the generation of a batch of images. Defaults to `10`.
 - `--prompt`: The prompt to render. It is an optional argument. Defaults to `"a painting of a cute monkey playing guitar"`.
 - `--cuda_device`: CUDA device to use for generation. Defaults to "cuda:0".
+
+#### Perturbations on prompts embeddings
+
+Try running:
+```bash
+python3 ./scripts/embed_prompts_and_generate_images.py 
+```
+Outputs in: `./output/disturbing_embeddings`
+
+- `--prompt`: The prompt to embed. Defaults to `"A woman with flowers in her hair in a courtyard, in the style of Frank Frazetta"`.
+- `--num_iterations`: The number of iterations to batch-generate images. Defaults to `8`.
+- `--seed`: The noise seed used to generate the images. Defaults to `2982`.
+- `--noise_multiplier`: The multiplier for the amount of noise used to disturb the prompt embedding. Defaults to `0.01`.
+- `--cuda_device`: The CUDA device to use. Defaults to `"cuda:0"`.
 
 
 ## Notebooks
