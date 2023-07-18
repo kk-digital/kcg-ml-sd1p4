@@ -322,9 +322,9 @@ if __name__ == "__main__":
     print(f"Image grid saved at: {join(IMAGES_DIR, 'images_grid.png')}")
     json_output_path = join(FEATURES_DIR, "features.json")
     manifest_path = join(OUTPUT_DIR, "manifest.json")
-    json.dump(json_output, open(json_output_path, "w"))
+    json.dump(json_output, open(json_output_path, "w"), indent=4)
     print(f"features.json saved at: {json_output_path}")
-    json.dump(manifest, open(manifest_path, "w"))
+    json.dump(manifest, open(manifest_path, "w"), indent=4)
     print(f"manifest.json saved at: {manifest_path}")
 
 
