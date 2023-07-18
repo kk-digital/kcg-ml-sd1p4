@@ -1,14 +1,4 @@
-from pathlib import Path
-from typing import Union, BinaryIO, List, Optional
-from typing import Callable
-
-import PIL
-import numpy as np
 import torch
-import torchvision
-
-from PIL import Image
-
 
 def get_torch_distribution_from_name(name: str) -> type:
     if name == "Logistic":
@@ -28,7 +18,7 @@ def get_torch_distribution_from_name(name: str) -> type:
     return torch.distributions.__dict__[name]
 
 
-def get_all_torch_distributions() -> tuple[list[str], list[type]]:
+def get_all_torch_distributions() -> tuple:
     torch_distributions_names = torch.distributions.__all__
 
     torch_distributions = [
@@ -40,8 +30,8 @@ def get_all_torch_distributions() -> tuple[list[str], list[type]]:
 
 
 def build_noise_samplers(
-    distributions: dict[str, dict[str, float]]
-) -> dict[str, Callable]:
+    distributions: dict
+) -> dict:
     noise_samplers = {
         k: lambda shape, device=None: get_torch_distribution_from_name(k)(**v)
         .sample(shape)
