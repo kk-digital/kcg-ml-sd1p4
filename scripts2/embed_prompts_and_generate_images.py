@@ -1,28 +1,63 @@
 import os
 import sys
 import argparse
+import torch
+import hashlib
+import json
+import clip
 
-sys.path.insert(0, os.getcwd())
+base_dir = "./"
+sys.path.insert(0, base_dir)
 
 from typing import List
-import torch
-
 from os.path import join
 
 from stable_diffusion2.model.clip_text_embedder import CLIPTextEmbedder
-from stable_diffusion2.utils.utils import check_device, get_memory_status
-
+from stable_diffusion2.model.clip_image_encoder import CLIPImageEncoder
+from aesthetic_score import AestheticPredictor
+from stable_diffusion2 import StableDiffusion
+from stable_diffusion2.constants import ModelsPathTree
+from stable_diffusion2.utils.utils import (
+    check_device,
+    get_memory_status,
+    to_pil,
+    save_image_grid,
+    show_image_grid,
+)
 
 EMBEDDED_PROMPTS_DIR = os.path.abspath("./input/embedded_prompts/")
+OUTPUT_DIR = os.path.abspath("./output/disturbing_embeddings/")
+FEATURES_DIR = os.path.abspath(join(OUTPUT_DIR, "features/"))
+IMAGES_DIR = os.path.abspath(join(OUTPUT_DIR, "images/"))
+SCORER_CHECKPOINT_PATH = os.path.abspath("./input/model/aesthetic_scorer/sac+logos+ava1-l14-linearMSE.pth")
+NULL_PROMPT = ""
+PROMPTS = 'A woman with flowers in her hair in a courtyard, in the style of Frank Frazetta'
+NUM_IMAGES = 8
+SEED = 2982
+NOISE_MULTIPLIER = 0.008
+
+os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+os.makedirs(FEATURES_DIR, exist_ok=True)
+os.makedirs(IMAGES_DIR, exist_ok=True)
+# DEVICE = input("Set device: 'cuda:i' or 'cpu'")
+
+pt = ModelsPathTree(base_directory=base_dir)
+
+
 
 parser = argparse.ArgumentParser("Embed prompts using CLIP")
 parser.add_argument(
-    "-p",
-    "--prompts",
-    nargs="+",
+    "--prompt",
     type=str,
-    default=["An old photo of a computer scientist"],
-    help="The prompts to embed. Defaults to ['An old photo of a computer scientist']",
+    default='A woman with flowers in her hair in a courtyard, in the style of Frank Frazetta',
+    help="The prompt to embed. Defaults to 'A woman with flowers in her hair in a courtyard, in the style of Frank Frazetta'",
+)
+parser.add_argument(
+    "--save_embeddings",
+    type=bool,
+    default=False,
+    help="If True, the disturbed embeddings will be saved to disk. Defaults to True.",
 )
 parser.add_argument(
     "--embedded_prompts_dir",
@@ -31,23 +66,56 @@ parser.add_argument(
     help="The path to the directory containing the embedded prompts tensors. Defaults to a constant EMBEDDED_PROMPTS_DIR, which is expected to be './input/embedded_prompts/'",
 )
 parser.add_argument(
-    "--num_images",
+    "--num_iterations",
     type=str,
-    default=10,
-    help="The number of images to generate",
+    default=4,
+    help="The number of iterations to batch-generate images. Defaults to 10.",
+)
+
+parser.add_argument(
+    "--batch_size",
+    type=str,
+    default=2,
+    help="The number of images to generate per batch. Defaults to 1.",
+)
+
+parser.add_argument(
+    "--seed",
+    type=str,
+    default=2982,
+    help="The noise seed used to generate the images. Defaults to 2982",
+)
+parser.add_argument(
+    "--noise_multiplier",
+    type=float,
+    default=0.008,
+    help="The multiplier for the amount of noise used to disturb the prompt embedding. Defaults to 0.008.",
+)
+parser.add_argument(
+    "--cuda_device",
+    type=str,
+    default="cuda:0",
+    help="The cuda device to use. Defaults to 'cuda:0'.",
 )
 args = parser.parse_args()
 
 NULL_PROMPT = ""
-PROMPTS = args.prompts
-NUM_IMAGES = args.num_images
+PROMPTS = args.prompt
+NUM_ITERATIONS = args.num_iterations
+SEED = args.seed
+NOISE_MULTIPLIER = args.noise_multiplier
+DEVICE = check_device(args.cuda_device)
+BATCH_SIZE = args.batch_size
+SAVE_EMBEDDINGS = args.save_embeddings
 
 os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
+pt = ModelsPathTree(base_directory=base_dir)
 
-def embed_and_save_prompts(prompts: list, null_prompt = NULL_PROMPT):
+
+def embed_and_save_prompts(prompt: str, null_prompt = NULL_PROMPT):
 
     null_prompt = null_prompt
-    prompts = prompts
+    prompt = prompt
 
     clip_text_embedder = CLIPTextEmbedder(device=check_device())
     clip_text_embedder.load_submodels()
@@ -59,7 +127,7 @@ def embed_and_save_prompts(prompts: list, null_prompt = NULL_PROMPT):
         f"{join(EMBEDDED_PROMPTS_DIR, 'null_cond.pt')}",
     )
 
-    embedded_prompts = clip_text_embedder(prompts)
+    embedded_prompts = clip_text_embedder(prompt)
     torch.save(embedded_prompts, join(EMBEDDED_PROMPTS_DIR, "embedded_prompts.pt"))
     
     print(
@@ -74,8 +142,171 @@ def embed_and_save_prompts(prompts: list, null_prompt = NULL_PROMPT):
     get_memory_status()
     return embedded_prompts, null_cond
 
+def generate_images_from_disturbed_embeddings(
+    sd: StableDiffusion,
+    embedded_prompt: torch.Tensor,
+    null_prompt: torch.Tensor,
+    device=DEVICE,
+    seed=SEED,
+    num_iterations=NUM_ITERATIONS,
+    noise_multiplier=NOISE_MULTIPLIER,
+    batch_size=BATCH_SIZE
+):
+    # generator = torch.Generator(device=device).manual_seed(seed)
+
+    # embedding_mean, embedding_std = embedded_prompt.mean(), embedded_prompt.std()
+    # embedding_shape = tuple(embedded_prompt.shape)
+
+    # noise = torch.normal(
+    #     mean=embedding_mean.item(),
+    #     std=embedding_std.item(),
+    #     size=embedding_shape,
+    #     device=device,
+    #     generator=generator,
+    # )
+    # test with standard normal distribution
+    # noise = torch.normal(
+    #     mean=0.0,
+    #     std=1.0,
+    #     size=embedding_shape,
+    #     device=device,
+    #     generator=generator,
+    # )
+    # embedded_prompt.mean(dim=2), embedded_prompt.std(dim=2)
+    # noise = torch.normal(
+    #     mean=embedded_prompt.mean(dim=2), std=embedded_prompt.std(dim=2)
+    # )
+    dist = torch.distributions.normal.Normal(
+        loc=embedded_prompt.mean(dim=2), scale=embedded_prompt.std(dim=2)
+    )
+
+
+    for i in range(0, num_iterations//2):
+        for j in range(0, num_iterations//2):
+            noise_i = (
+                dist.sample(sample_shape=torch.Size([768])).permute(1, 0, 2).permute(0, 2, 1)
+            )
+            noise_j = (
+                dist.sample(sample_shape=torch.Size([768])).permute(1, 0, 2).permute(0, 2, 1)
+            )
+            embedding_e = embedded_prompt + (i * noise_multiplier) * noise_i / 2 + (j * noise_multiplier) * noise_j / 2
+            
+            image_e = sd.generate_images_from_embeddings(
+                seed=seed, embedded_prompt=embedding_e, null_prompt=null_prompt, batch_size=batch_size
+            )
+            
+            yield (image_e, embedding_e)
+
+
+def calculate_sha256(tensor):
+    if tensor.device == "cpu":
+        tensor_bytes = tensor.numpy().tobytes()  # Convert tensor to a byte array
+    else:
+        tensor_bytes = tensor.cpu().numpy().tobytes()  # Convert tensor to a byte array
+    sha256_hash = hashlib.sha256(tensor_bytes)
+    return sha256_hash.hexdigest()
+
+def get_image_features(
+    image, model, preprocess, device=DEVICE,
+):
+    image = preprocess(image).unsqueeze(0).to(device)
+    with torch.no_grad():
+        image_features = model.encode_image(image)
+        # l2 normalize
+        image_features /= image_features.norm(dim=-1, keepdim=True)
+    image_features = image_features.cpu().detach().numpy()
+    return image_features
+
+
 if __name__ == "__main__":
 
-    embedded_prompts, null_cond = embed_and_save_prompts(PROMPTS)
+    embedded_prompts, null_prompt = embed_and_save_prompts(PROMPTS)
+    
+    sd = StableDiffusion(device=DEVICE)
+    sd.quick_initialize().load_autoencoder(**pt.autoencoder).load_decoder(**pt.decoder)
+    sd.model.load_unet(**pt.unet)
+
+    images = generate_images_from_disturbed_embeddings(sd, embedded_prompts, null_prompt, batch_size = 1)
+    
+    # clip_image_encoder = CLIPImageEncoder(device=DEVICE)
+    # clip_image_encoder.load_clip_model(**pt.clip_model)
+    # clip_image_encoder.initialize_preprocessor()
+
+    clip_model, clip_preprocess = clip.load("ViT-L/14", device=DEVICE)
+    
+    loaded_model = torch.load(SCORER_CHECKPOINT_PATH)
+    predictor = AestheticPredictor(768, device=DEVICE)
+    predictor.load_state_dict(loaded_model)
+    predictor.eval()
+
+    # json_output = {}
+    # manifest = {}
+
+    json_output = []
+    manifest = []
+
+    for i, (image, embedding) in enumerate(images):
+
+        #compute hash
+        img_hash = calculate_sha256(image.squeeze())
+        pil_image = to_pil(image.squeeze())
+        #compute aesthetic score
+        # features = clip_image_encoder(image, do_preprocess = True)
+        image_features = get_image_features(pil_image, clip_model, clip_preprocess)
+        score = predictor(torch.from_numpy(image_features).to(DEVICE).float())
+        img_file_name = f"image_{i}.png"
+        img_path = join(IMAGES_DIR, img_file_name)
+        pil_image.save(img_path)
+        print(f"Image saved at: {img_path}")
+        if SAVE_EMBEDDINGS:
+            embedding_file_name = f"embedding_{i}.pt"
+            embedding_path = join(FEATURES_DIR, embedding_file_name)
+            torch.save(embedding, embedding_path)
+            print(f"Embedding saved at: {embedding_path}")
+        # json_output[i] = {
+        #                     "file-name": img_file_name,
+        #                     "file-hash": img_hash,
+        #                     "file-path": img_path,
+        #                     "aesthetic-score": score.item(),
+        #                     "embedding-tensor": embedding.tolist(),
+        #                     "initial-prompt": PROMPTS,
+        #                     "clip-vector": image_features.tolist()
+        #                 }
+        # manifest[i] = {
+        #                     "file-name": img_file_name,
+        #                     "file-hash": img_hash,
+        #                     "file-path": img_path,
+        #                     "aesthetic-score": score.item(),
+        #                 }
+
+        json_output.append( 
+                            {
+                                "file-name": img_file_name,
+                                "file-hash": img_hash,
+                                "file-path": img_path,
+                                "aesthetic-score": score.item(),
+                                "embedding-tensor": embedding.tolist(),
+                                "initial-prompt": PROMPTS,
+                                "clip-vector": image_features.tolist()
+                            }
+                        )
+        
+        manifest.append( 
+                        {
+                            "file-name": img_file_name,
+                            "file-hash": img_hash,
+                            "file-path": img_path,
+                            "aesthetic-score": score.item(),
+                        }
+                    )
+
+    json_output_path = join(FEATURES_DIR, "features.json")
+    manifest_path = join(OUTPUT_DIR, "manifest.json")
+    json.dump(json_output, open(json_output_path, "w"))
+    print(f"features.json saved at: {json_output_path}")
+    json.dump(manifest, open(manifest_path, "w"))
+    print(f"manifest.json saved at: {manifest_path}")
+
+
 
 
