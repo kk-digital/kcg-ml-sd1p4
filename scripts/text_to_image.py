@@ -10,7 +10,9 @@ summary: >
 
 import time
 import os
+import sys
 import torch
+sys.path.insert(0, os.getcwd())
 from labml import monit
 from datetime import datetime
 from stable_diffusion_base_script import StableDiffusionBaseScript

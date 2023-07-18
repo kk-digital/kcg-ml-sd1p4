@@ -209,17 +209,23 @@ def save_image_grid(
     im = Image.fromarray(ndarr)
     im.save(fp, format=format)
 
-def get_device(force_cpu: bool = False, cuda_fallback: str = 'cuda:0'):
+def get_device(device = None, cuda_fallback: str = 'cuda:0'):
     """
     ### Get device
     """
-    if torch.cuda.is_available() and not force_cpu:
-        device_name = torch.cuda.get_device_name(0)
-        print("INFO: Using CUDA device: {}".format(device_name))
-        return cuda_fallback
+    if device is None:
+        device = torch.device(torch.cuda.current_device() if torch.cuda.is_available() else 'cpu')
+        print(f'INFO: `device` is None. Falling back to current device: {device}.')
+    else:
+        device = torch.device(device)
+    try:
+        print(f'INFO: Using CUDA device {device.index}: {torch.cuda.get_device_name(device)}.')
+    except Exception as e:
+        print(e)
+        print(f'Using {device}. Slow on CPU.')
+    
+    return device    
 
-    print("WARNING: You are running this script without CUDA. Brace yourself for a slow ride.")
-    return 'cpu'
 
 def get_autocast(force_cpu: bool = False):
     """
@@ -228,5 +234,5 @@ def get_autocast(force_cpu: bool = False):
     if torch.cuda.is_available() and not force_cpu:
         return torch.cuda.amp.autocast()
 
-    print("WARNING: You are running this script without CUDA. Brace yourself for a slow ride.")
+    print("WARNING: You are running this script without CUDA. It might be extremely slow.")
     return torch.cpu.amp.autocast()
