@@ -105,6 +105,7 @@ class DDIMSampler(DiffusionSampler):
                uncond_scale: float = 1.,
                uncond_cond: Optional[torch.Tensor] = None,
                skip_steps: int = 0,
+               noise_fn = torch.randn
                ):
         """
         ### Sampling Loop
@@ -126,7 +127,7 @@ class DDIMSampler(DiffusionSampler):
         bs = shape[0]
 
         # Get $x_{\tau_S}$
-        x = x_last if x_last is not None else torch.randn(shape, device=device)
+        x = x_last if x_last is not None else noise_fn(shape, device=device)
 
         # Time steps to sample at $\tau_{S - i'}, \tau_{S - i' - 1}, \dots, \tau_1$
         time_steps = np.flip(self.time_steps)[skip_steps:]
@@ -142,7 +143,8 @@ class DDIMSampler(DiffusionSampler):
                                             repeat_noise=repeat_noise,
                                             temperature=temperature,
                                             uncond_scale=uncond_scale,
-                                            uncond_cond=uncond_cond)
+                                            uncond_cond=uncond_cond,
+                                            noise_fn = noise_fn)
 
         # Return $x_0$
         return x
@@ -152,7 +154,8 @@ class DDIMSampler(DiffusionSampler):
                  repeat_noise: bool = False,
                  temperature: float = 1.,
                  uncond_scale: float = 1.,
-                 uncond_cond: Optional[torch.Tensor] = None):
+                 uncond_cond: Optional[torch.Tensor] = None,
+                 noise_fn = torch.randn):
         """
         ### Sample $x_{\tau_{i-1}}$
 
@@ -176,14 +179,16 @@ class DDIMSampler(DiffusionSampler):
         # Calculate $x_{\tau_{i - 1}}$ and predicted $x_0$
         x_prev, pred_x0 = self.get_x_prev_and_pred_x0(e_t, index, x,
                                                       temperature=temperature,
-                                                      repeat_noise=repeat_noise)
+                                                      repeat_noise=repeat_noise,
+                                                      noise_fn = noise_fn)
 
         #
         return x_prev, pred_x0, e_t
 
     def get_x_prev_and_pred_x0(self, e_t: torch.Tensor, index: int, x: torch.Tensor, *,
                                temperature: float,
-                               repeat_noise: bool):
+                               repeat_noise: bool,
+                               noise_fn = torch.randn):
         """
         ### Sample $x_{\tau_{i-1}}$ given $\epsilon_\theta(x_{\tau_i})$
         """
@@ -209,10 +214,10 @@ class DDIMSampler(DiffusionSampler):
             noise = 0.
         # If same noise is used for all samples in the batch
         elif repeat_noise:
-            noise = torch.randn((1, *x.shape[1:]), device=x.device)
+            noise = noise_fn((1, *x.shape[1:]), device=x.device)
             # Different noise for each sample
         else:
-            noise = torch.randn(x.shape, device=x.device)
+            noise = noise_fn(x.shape, device=x.device)
 
         # Multiply noise by the temperature
         noise = noise * temperature
@@ -254,7 +259,8 @@ class DDIMSampler(DiffusionSampler):
     @torch.no_grad()
     def paint(self, x: torch.Tensor, cond: torch.Tensor, t_start: int, *,
               orig: Optional[torch.Tensor] = None,
-              mask: Optional[torch.Tensor] = None, orig_noise: Optional[torch.Tensor] = None,
+              mask: Optional[torch.Tensor] = None, 
+              orig_noise: Optional[torch.Tensor] = None,
               uncond_scale: float = 1.,
               uncond_cond: Optional[torch.Tensor] = None,
               ):

@@ -2,7 +2,7 @@ import argparse
 import os, sys
 
 sys.path.append(os.path.join(".", "stable_diffusion/utils"))
-from cli import check_folder_existence, check_file_existence
+from stable_diffusion_reference.utils.cli import check_folder_existence, check_file_existence
 
 from typing import Union, Callable
 
@@ -36,7 +36,7 @@ class CLI:
 
         return self
 
-    def output(self, default='./outputs', check_exists: Union[bool, Callable]=True):
+    def output(self, default='./output', check_exists: Union[bool, Callable]=True):
         self.parser.add_argument('--output',
             help='Path to the output directory (default: %(default)s)',
             default=default
@@ -125,6 +125,27 @@ class CLI:
         )
 
         return self
+    
+    def num_iterations(self):
+        self.parser.add_argument(
+            '--num_iterations',
+            type=int,
+            default=10,
+            help='How many times to iterate the generation of a batch of images (default: %(default)s)'
+        )
+
+        return self
+
+    def noise_seed(self):
+        self.parser.add_argument(
+            '--noise_seed',
+            type=int,
+            default=42,
+            help='The noise seed to be fed to the sampling process (default: %(default)s)'
+        )
+
+        return self
+
 
     def prompts_file(self, check_exists: Union[bool, Callable]=True, required: bool=True):
         self.parser.add_argument(

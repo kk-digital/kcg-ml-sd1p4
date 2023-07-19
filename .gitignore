@@ -151,3 +151,6 @@ data.json
 
 #Ignore vscode settings
 /.vscode
+
+# ignore pycharm
+.idea

@@ -5,207 +5,157 @@
 ## Summary
 
 - [kcg-ml-sd1p4](#kcg-ml-sd1p4)
-   - [Summary](#summary)
-   - [Downloading models](#downloading-models)
-   - [Install requirements](#install-requirements)
-   - [Running stable diffusion scripts](#running-stable-diffusion-scripts)
-      - [Text to image](#text-to-image)
-      - [Images from noise](#images-from-noise)
-      - [Image from a list of prompts](#image-from-a-list-of-prompts)
-      - [Image from another image](#image-from-another-image)
-      - [Inpainting an image](#inpainting-an-image)
-   - [Notebooks](#notebooks)
-      - [Cleaning Jupyter Notebooks for Version Control](#cleaning-jupyter-notebooks-for-version-control)
-      - [Installation](#installation)
-      - [Setting up nbstripout](#setting-up-nbstripout)
-      - [Using nbconvert](#using-nbconvert)
-- [Generate images from prefixed noise vectors/seeds](#generate-images-from-prefixed-noise-vectorsseeds)
-   - [Usage](#usage)
-
+  - [Summary](#summary)
+  - [Downloading models](#downloading-models)
+  - [Saving submodels](#saving-submodels)
+  - [Running `stable_diffusion` scripts](#running-stable_diffusion-scripts)
+      - [Embed prompts](#embed-prompts)
+      - [Images from embeddings](#images-from-embeddings)
+      - [Images from distributions](#images-from-distributions)
+      - [Images from temperature range](#images-from-temperature-range)
+      - [Images and encodings](#images-and-encodings)
+      - [Perturbations on prompts embeddings](#perturbations-on-prompts-embeddings)
+  - [Notebooks](#notebooks)
 ## Downloading models
 
-```bash
-./download-model.sh
-```
-
-## Install requirements
-
-Install required dependency by running
-```
-pip install -r requirements.txt
-```
-
-## Running stable diffusion scripts
-
-### Text to image
-
-`scripts/text_to_image.py` creates an image from a prompt.
-
-**Example**
+Will download the currently supported checkpoint, `v1-5-pruned-emaonly.ckpt`, to `./input/model/`.
 
 ```bash
-python3 ./scripts/text_to_image.py --prompt "a girl by the lake staring at the stars"
+./stable_diffusion/download-model.sh
+```
+## Saving submodels
+
+Start by running this.
+
+This script initializes a `LatentDiffusion` module, load its weights from a checkpoint file at `./input/model/v1-5-pruned-emaonly.ckpt` and then save all submodules.
+**Note**: saving these models will take an extra ~5GB of storage. 
+
+```bash
+python3 ./scripts/save_models.py
 ```
 
 **Command line arguments**
 
-- `--prompt`: Prompt to generate the image from. Defaults to _'a painting of a cute monkey playing guitar'_.
-- `--batch_size`: Batch size to use. Defaults to _4_.
-- `--output`: Output path to store the generated images. Defaults to _'./outputs'_.
-- `--sampler`: Set the sampler. Defaults to _'ddim'_. Options are _'ddim'_ and _'ddpm'_.
-- `--checkpoint_path`: Relative path of the checkpoint file (*.ckpt). Defaults to _'./sd-v1-4.ckpt'_.
-- `--flash`: Whether to use flash attention. Defaults to _False_.
-- `--steps`: Number of sampling steps. Defaults to _50_.
-- `--scale`: Unconditional guidance scale: **_eps = eps(x, empty) + scale * (eps(x, cond) - eps(x, empty))_** Defaults to _5.0_.
-- `--low_vram`: Reduce VRAM usage. Defaults to _False_.
-- `--force_cpu`: Force the use of CPU. Defaults to _False_.
-- `--cuda-device`: CUDA device to use. Defaults to _cuda:0_.
+- `-g, --granularity`: Determines the height in the model tree on which to save the submodels. Defaults to `0`, saving all submodels of the `LatentDiffusion` class and all submodels thereof. If `1` is given, it saves only up to the first level, i.e., autoencoder, UNet and CLIP text embedder. *Note*: that the other scripts and notebooks expect this to be ran with `0`.
+- `--root_models_path`: Base directory for the models' folder structure. Defaults to the constant `ROOT_MODELS_PATH`, which is expected to be `./input/model/`.
+- `--checkpoint_path`: Relative path of the checkpoint file (*.ckpt). Defaults to the constant `CHECKPOINT_PATH`, which is expected to be `'./input/model/v1-5-pruned-emaonly.ckpt' = os.path.join(ROOT_MODELS_PATH, 'v1-5-pruned-emaonly.ckpt')`.
 
-### Images from noise
+## Running `stable_diffusion` scripts
 
-`scripts/generate_images_from_noise.py` creates a number of images (`--num_seeds`) for each of the seeds listed in a file (`--artist_file`).
+There are five other new scripts besides `scripts/save_models.py`.
 
-**Example**
+#### Embed prompts
 
-``` bash
-python3 ./scripts/generate_images_from_noise.py
+Saves a tensor of a batch of prompts embeddings, and the tensor for the null prompt `""`.
+
+Command:
+
+```bash
+python3 ./scripts/embed_prompts.py --prompts 'A painting of a computer virus', 'An old photo of a computer scientist', 'A computer drawing a computer'
 ```
 
 **Command line arguments**
 
-- `--prompt_prefix`: Prefix for the prompt, must end with "in the style of". Default value="A woman with flowers in her hair in a courtyard, in the style of".
-- `--artist_file`:  Path to the file containing the artists, each on a line. Defaults to _'../input/prompts/artists.txt'_.
-- `--output`: Path to the output directory. Defaults to _'./outputs'_.
-- `--checkpoint_path`: Path to the checkpoint file. Defaults to _'./input/model/sd-v1-4.ckpt'_.
-- `--sampler`: Name of the sampler to use. Defaults to _'ddim'. Options are 'ddim' and 'ddpm'_.
-- `--steps`: Number of steps to use. Defaults to _20_.
-- `--num_seeds`: Number of seeds to use. Defaults to _8_.
-- `--noise_file`: Path to the file containing the noise seeds, each on a line. Defaults to _'noise-seeds.txt'_.
+- `-p, --prompts`: The prompts to embed. Defaults to `['A painting of a computer virus', 'An old photo of a computer scientist']`.
+- `--embedded_prompts_dir`: The path to the directory containing the embedded prompts tensors. Defaults to a constant `EMBEDDED_PROMPTS_DIR`, which is expected to be `'./input/embedded_prompts/'`.
+- 
+#### Images from embeddings
 
-### Image from a list of prompts
+Only run this _after_ generating the embedded prompts with the [above script](#embed-prompts).
 
-`scripts/image_from_prompt_list.py` creates a number of images (`--num_images`) for each of the prompts listed in a prompts file (`--prompts_file`). 
+Try running:
 
-**Example**
-
-``` bash
-python3 ./scripts/image_from_prompt_list.py
+```bash
+python3 ./scripts/generate_images_from_embeddings.py --num_seeds 4 --temperature 1.2 --ddim_eta 0.2
 ```
 
 **Command line arguments**
 
-- `--num_images`: Number of images to generate per prompt. Defaults to _4_.
-- `--checkpoint_path`: Path to the model. Defaults to _'./input/model/sd-v1-4.ckpt'_.
-- `--prompts_file`: Path to the file containing the prompts, each on a line. Defaults to _'./input/prompts.txt'_.
-- `--output`: Path to the output directory. Defaults to _'./outputs'_.
+- `-p, --embedded_prompts_dir`: The path to the directory containing the embedded prompts tensors. Defaults to the `EMBEDDED_PROMPTS_DIR` constant, which is expected to be `'./input/embedded_prompts/'`.
+- `-od, --output_dir`: The output directory. Defaults to the `OUTPUT_DIR` constant, which is expected to be `'./output/noise-tests/from_embeddings'`.
+- `--num_seeds`: Number of random seeds to use. Defaults to `3`. Ranges from `1` to `7`.
+- `-bs, --batch_size`: Batch size to use. Defaults to `1`. 
+- `-t, --temperature`: Sampling temperature. Defaults to `1.0`.
+- `--ddim_eta`: Amount of noise to readd during the sampling process. Defaults to `0.0`.
+- `--clear_output_dir`: Either to clear or not the output directory before running. Defaults to `False`.
+- `--cuda_device`: CUDA device to use. Defaults to `cuda:0`.
+ 
+#### Images from distributions
 
-### Image from another image
-
-`scripts/image_to_image.py` creates an image from another image (`--orig_img`) and a prompt (`--prompt`).  
-
-**Example**
-
-``` bash
-python3 ./scripts/image_to_image.py --orig_img ./input/orig-images/monkey.jpg --prompt "a painting of a cute monkey playing guitar"
+Try running:
+```bash
+python3 ./scripts/generate_images_from_distributions.py -d 4 --params_steps 4 --params_range 0.49, 0.54 --num_seeds 4 --temperature 1.2 --ddim_eta 1.2
 ```
 
 **Command line arguments**
 
-- `--prompt`: Prompt to generate the image from. Defaults to _'a painting of a cute monkey playing guitar'_.
-- `--orig_img`: Path to the original image. MANDATORY.
-- `--batch_size`: Batch size to use. Defaults to _4_.
-- `--steps`: Number of steps to use. Defaults to _50_.
-- `--scale`: Unconditional guidance scale. Defaults to _5.0_.
-- `--strength`: Strength for noise. Defaults to _0.75_.
-- `--checkpoint_path`: Path to the checkpoint file. Defaults to _'./input/model/sd-v1-4.ckpt'_.
-- `--output`: Path to the output directory. Defaults to _'./outputs'_.
-- `--force_cpu`: Force the use of CPU. Defaults to _False_.
-- `--cuda-device`: CUDA device to use. Defaults to _cuda:0_.
+- `-p, --prompt`: The prompt to generate images from. Defaults to `"A woman with flowers in her hair in a courtyard, in the style of Frank Frazetta"`.
+- `-od, --output_dir`: The output directory. Defaults to the `OUTPUT_DIR` constant, which should be `"./output/noise-tests/from_distributions"`.
+- `-cp, --checkpoint_path`: The path to the checkpoint file to load from. Defaults to the `CHECKPOINT_PATH` constant, which should be `"./input/model/v1-5-pruned-emaonly.ckpt"`.
+- `-F, --fully_initialize`: Whether to fully initialize or not. Defaults to `False`.
+- `-d, --distribution_index`: The distribution index to use. Defaults to `4`. Options: 0: "Normal", 1: "Cauchy", 2: "Gumbel", 3: "Laplace", 4: "Logistic".
+- `-bs, --batch_size`: The batch size to use. Defaults to `1`.
+- `--params_steps`: The number of steps for the parameters. Defaults to `3`.
+- `--params_range`: The range of parameters. Defaults to `[0.49, 0.54]`.
+- `--num_seeds`: Number of random seeds to use. Defaults to `3`.
+- `-t, --temperature`: Sampling temperature. Defaults to `1.0`.
+- `--ddim_eta`: Amount of noise to readd during the sampling process. Defaults to `0.0`.
+- `--clear_output_dir`: Either to clear or not the output directory before running. Defaults to `False`.
+- `--cuda_device`: CUDA device to use. Defaults to `"cuda:0"`.
 
-### Inpainting an image
+#### Images from temperature range
 
-`scripts/in_paint.py` performs inpainting based on a prompt (`--prompt`) to an image (`--orig_img`).
+Try running:
 
-**Example**
-
-``` bash
-python3 ./scripts/in_paint.py --orig_img ./input/orig-images/monkey.jpg --prompt "a painting of a cute monkey playing guitar"
+```bash
+python3 ./scripts/generate_images_from_temperature_range.py -d 4 --params_range 0.49 0.54 --params_steps 3 --temperature_steps 3 --temperature_range 0.8 2.0
 ```
 
 **Command line arguments**
 
-- `--prompt`: Prompt to generate the image from. Defaults to _'a painting of a cute monkey playing guitar'_.
-- `--checkpoint_path`: Path to the checkpoint file. Defaults to _'./input/model/sd-v1-4.ckpt'_.
-- `--orig_img`: Path to the input image. MANDATORY.
-- `--output`: Path to the output directory. Defaults to _'./outputs'_.
-- `--batch_size`: Batch size to use. Defaults to _4_.
-- `--steps`: Number of steps to use. Defaults to _50_.
-- `--scale`: Unconditional guidance scale. Defaults to _5.0_.
-- `--strength`: Strength for noise. Defaults to _0.75_.
-- `--force_cpu`: Force the use of CPU. Defaults to _False_.
-- `--cuda-device`: CUDA device to use. Defaults to _cuda:0_.
+- `-p, --prompt`: The prompt to generate images from. Defaults to `"A woman with flowers in her hair in a courtyard, in the style of Frank Frazetta"`.
+- `-od, --output_dir`: The output directory. Defaults to the `OUTPUT_DIR` constant, which is expected to be `"./output/noise-tests/temperature_range"`.
+- `-cp, --checkpoint_path`: The path to the checkpoint file to load from. Defaults to the `CHECKPOINT_PATH` constant, which is expected to be `"./input/model/v1-5-pruned-emaonly.ckpt"`.
+- `-F, --fully_initialize`: Whether to fully initialize or not. Defaults to `False`.
+- `-d, --distribution_index`: The distribution index to use. Defaults to 4. Options: 0: "Normal", 1: "Cauchy", 2: "Gumbel", 3: "Laplace", 4: "Logistic".
+- `-s, --seed`: The seed value. Defaults to `2982`.
+- `-bs, --batch_size`: The batch size to use. Defaults to `1`.
+- `--params_steps`: The number of steps for the parameters. Defaults to `3`.
+- `--params_range`: The range of parameters. Defaults to `[0.49, 0.54]`.
+- `--temperature_steps`: The number of steps for the temperature. Defaults to `3`.
+- `--temperature_range`: The range of temperature. Defaults to `[1.0, 4.0]`.
+- `--ddim_eta`: The value of ddim_eta. Defaults to `0.1`.
+- `--clear_output_dir`: Whether to clear the output directory or not. Defaults to `False`.
+- `--cuda_device`: The CUDA device to use. Defaults to `"cuda:0"`.
+
+
+#### Images and encodings
+
+Try running:
+```bash
+python3 ./scripts/generate_images_and_encodings.py --prompt "An oil painting of a computer generated image of a geometric pattern" --num_iterations 10
+```
+
+**Command line arguments**
+
+- `--batch_size`: How many images to generate at once. Defaults to `1`.
+- `--num_iterations`: How many times to iterate the generation of a batch of images. Defaults to `10`.
+- `--prompt`: The prompt to render. It is an optional argument. Defaults to `"a painting of a cute monkey playing guitar"`.
+- `--cuda_device`: CUDA device to use for generation. Defaults to "cuda:0".
+
+#### Perturbations on prompts embeddings
+
+Try running:
+```bash
+python3 ./scripts/embed_prompts_and_generate_images.py 
+```
+Outputs in: `./output/disturbing_embeddings`
+
+- `--prompt`: The prompt to embed. Defaults to `"A woman with flowers in her hair in a courtyard, in the style of Frank Frazetta"`.
+- `--num_iterations`: The number of iterations to batch-generate images. Defaults to `8`.
+- `--seed`: The noise seed used to generate the images. Defaults to `2982`.
+- `--noise_multiplier`: The multiplier for the amount of noise used to disturb the prompt embedding. Defaults to `0.01`.
+- `--cuda_device`: The CUDA device to use. Defaults to `"cuda:0"`.
+
 
 ## Notebooks
-| Notebook Title | Google Colab Link |
-| --- | --- |
-| Diffusers Unit Test Example | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/kk-digital/kcg-ml-sd1p4/blob/main/notebooks/diffusers_unit_test.ipynb)|
-
-### Cleaning Jupyter Notebooks for Version Control
-
-### Installation
-
-First, make sure you have nbstripout and nbconvert installed . You can install them using pip:
-
-```sh
-pip install nbstripout nbconvert
-```
-
-
-### Setting up nbstripout
-
-```sh
-nbstripout --install
-```
-Alternative installation to git attributes
-```sh
-nbstripout --install --attributes .gitattributes
-```
-### Using nbconvert
-```sh
-python -m nbconvert --ClearOutputPreprocessor.enabled=True --to notebook *.ipynb --inplace
-```
-
-# Generate images from prefixed noise vectors/seeds
-The generate_noise_image.py generates noise seeds, saves them to a file, and uses a file called "artists.txt" in order to generate prompts using a set prefix. It generates an image for each noise seed + artist + prefix combination.
-## Usage
-```bash
-python3 scripts/generate_noise_images.py \
-	--prompt_prefix {enter-the-prefix-for-prompt-here} \
-	--artist_file {default: input/artists.txt} \
-	--output_dir {default: output/noise-tests} \
-	--checkpoint_path {path-to-your-stable-diffusion-model-ckpt-file} \
-	--sampler_name {sampler-here | default: ddim} \
-	--n_steps {steps-for-image-generation} \
-	--num_seeds {how-many-seeds-variations-for-each-prompt} \
-	--noise_file {path-to-the-file-were-noise-seeds-are-going-to-be-stored}
-```
-
-The images will be stored on the output_dir, with the following name:
-```
-[artist-number-in-file]_n[noise-seed].jpg
-```
-
-# Run all notebooks test
-## To run all notebooks
-1. Make an env
-
-    `python3 -m venv env`
-2. Activate env
-
-    `source env/bin/activate`
-3. Install requirements
-
-    `pip install -r requirements.txt`
-4. run pytest
-
-    `pytest --nbmake -n=auto "./notebooks"`

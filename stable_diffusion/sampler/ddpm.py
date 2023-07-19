@@ -93,6 +93,7 @@ class DDPMSampler(DiffusionSampler):
                uncond_scale: float = 1.,
                uncond_cond: Optional[torch.Tensor] = None,
                skip_steps: int = 0,
+               noise_fn = torch.randn
                ):
         """
         ### Sampling Loop
@@ -114,7 +115,7 @@ class DDPMSampler(DiffusionSampler):
         bs = shape[0]
 
         # Get $x_T$
-        x = x_last if x_last is not None else torch.randn(shape, device=device)
+        x = x_last if x_last is not None else noise_fn(shape, device=device)
 
         # Time steps to sample at $T - t', T - t' - 1, \dots, 1$
         time_steps = np.flip(self.time_steps)[skip_steps:]
@@ -129,7 +130,8 @@ class DDPMSampler(DiffusionSampler):
                                             repeat_noise=repeat_noise,
                                             temperature=temperature,
                                             uncond_scale=uncond_scale,
-                                            uncond_cond=uncond_cond)
+                                            uncond_cond=uncond_cond,
+                                            noise_fn = noise_fn)
 
         # Return $x_0$
         return x
@@ -138,7 +140,8 @@ class DDPMSampler(DiffusionSampler):
     def p_sample(self, x: torch.Tensor, c: torch.Tensor, t: torch.Tensor, step: int,
                  repeat_noise: bool = False,
                  temperature: float = 1.,
-                 uncond_scale: float = 1., uncond_cond: Optional[torch.Tensor] = None):
+                 uncond_scale: float = 1., uncond_cond: Optional[torch.Tensor] = None,
+                 noise_fn = torch.randn):
         """
         ### Sample $x_{t-1}$ from $p_\theta(x_{t-1} | x_t)$
 
@@ -186,14 +189,15 @@ class DDPMSampler(DiffusionSampler):
 
         # Do not add noise when $t = 1$ (final step sampling process).
         # Note that `step` is `0` when $t = 1$)
+
         if step == 0:
             noise = 0
         # If same noise is used for all samples in the batch
         elif repeat_noise:
-            noise = torch.randn((1, *x.shape[1:]))
+            noise = noise_fn((1, *x.shape[1:]), device=self.model.device)
         # Different noise for each sample
         else:
-            noise = torch.randn(x.shape)
+            noise = noise_fn(x.shape, device=self.model.device)
 
         # Multiply noise by the temperature
         noise = noise * temperature

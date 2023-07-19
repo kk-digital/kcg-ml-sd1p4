@@ -10,14 +10,14 @@ summary: >
 
 import time
 import os
-import sys
 import torch
-sys.path.insert(0, os.getcwd())
-from labml import monit
 from datetime import datetime
 from stable_diffusion_base_script import StableDiffusionBaseScript
-from stable_diffusion.utils.model import save_images, set_seed, get_autocast
-from stable_diffusion.model.unet_attention import CrossAttention
+from stable_diffusion.stable_diffusion import StableDiffusion
+from stable_diffusion.utils.utils import save_images, set_seed, get_autocast
+# from labml.monit import section
+from labml import monit
+from stable_diffusion.model.unet.unet_attention import CrossAttention
 from cli_builder import CLI
 
 def get_prompts(prompt, prompts_file):
@@ -43,6 +43,7 @@ class Txt2Img(StableDiffusionBaseScript):
     ### Text to image class
     """
 
+
     @torch.no_grad()
     def generate_images(self, *,
                  seed: int = 0,
@@ -51,6 +52,8 @@ class Txt2Img(StableDiffusionBaseScript):
                  h: int = 512, w: int = 512,
                  uncond_scale: float = 7.5,
                  low_vram: bool = False,
+                 noise_fn = torch.randn,
+                 temperature: float = 1.0,
                  ):
         """
         :param seed: the seed to use when generating the images
@@ -89,9 +92,12 @@ class Txt2Img(StableDiffusionBaseScript):
             x = self.sampler.sample(cond=cond,
                                     shape=[batch_size, c, h // f, w // f],
                                     uncond_scale=uncond_scale,
-                                    uncond_cond=un_cond)
+                                    uncond_cond=un_cond,
+                                    noise_fn=noise_fn,
+                                    temperature=temperature)
 
             return self.decode_image(x)
+
     @torch.no_grad()
     def generate_images_from_embeddings(self, *,
                  seed: int = 0,
@@ -101,6 +107,8 @@ class Txt2Img(StableDiffusionBaseScript):
                  h: int = 512, w: int = 512,
                  uncond_scale: float = 7.5,
                  low_vram: bool = False,
+                 noise_fn = torch.randn,
+                 temperature: float = 1.0,                 
                  ):
         """
         :param seed: the seed to use when generating the images
@@ -127,23 +135,27 @@ class Txt2Img(StableDiffusionBaseScript):
             batch_size = 1
 
         # Make a batch of prompts
-        prompts = batch_size * [embedded_prompt]
-        cond = torch.cat(prompts, dim=0)
+        # prompts = batch_size * [embedded_prompt]
+        # cond = torch.cat(prompts, dim=1)
+        cond = embedded_prompt.unsqueeze(0)
+        # print("cond shape: ", cond.shape)
+        # print("uncond shape: ", null_prompt.shape)
+        # prompt_list = ["a painting of a virus monster playing guitar", "a painting of a computer virus "]
         # AMP auto casting
         autocast = get_autocast()
         with autocast:
-            # un_cond, cond = self.get_text_conditioning(uncond_scale, prompts, batch_size)
-            # print(cond.shape)
-            # print(un_cond.shape)
 
             # [Sample in the latent space](../sampler/index.html).
             # `x` will be of shape `[batch_size, c, h / f, w / f]`
             x = self.sampler.sample(cond=cond,
                                     shape=[batch_size, c, h // f, w // f],
                                     uncond_scale=uncond_scale,
-                                    uncond_cond=null_prompt)
+                                    uncond_cond=null_prompt,
+                                    noise_fn=noise_fn,
+                                    temperature=temperature)                                    
 
-            return self.decode_image(x)
+            return self.decode_image(x)        
+
 
 def main():
     opt = CLI('Generate images using stable diffusion with a prompt') \
@@ -162,24 +174,27 @@ def main():
         .parse()
 
     prompts = get_prompts(opt.prompt, opt.prompts_file)
-    timestamp = datetime.now().strftime('%d-%m-%Y-%H-%M-%S')
-    filename = os.path.join(opt.output, f'{timestamp}.jpg')
+    # timestamp = datetime.now().strftime('%d-%m-%Y-%H-%M-%S')
+    # filename = os.path.join(opt.output, f'{timestamp}.jpg')
 
     # Set flash attention
     CrossAttention.use_flash_attention = opt.flash
 
     # Starts the text2img
-    txt2img = Txt2Img(checkpoint_path=opt.checkpoint_path,
+    txt2img = Txt2Img(
                       sampler_name=opt.sampler,
                       n_steps=opt.steps,
                       force_cpu=opt.force_cpu,
                       cuda_device=opt.cuda_device
                     )
-    txt2img.initialize_script()
+    txt2img.initialize_latent_diffusion(autoencoder=None, clip_text_embedder=None, unet_model = None, path=opt.checkpoint_path, force_submodels_init=True)
 
     with monit.section('Generate', total_steps=len(prompts)) as section:
         for prompt in prompts:
             print(f'Generating images for prompt: "{prompt}"')
+
+            timestamp = datetime.now().strftime('%d-%m-%Y-%H-%M-%S')
+            filename = os.path.join(opt.output, f'{timestamp}.jpg')
 
             images = txt2img.generate_images(
                 batch_size=opt.batch_size,
@@ -189,7 +204,7 @@ def main():
             )
 
             save_images(images, filename)
-            section.progress(1)
+            
 
 
 if __name__ == "__main__":
