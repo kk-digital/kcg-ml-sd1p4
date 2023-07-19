@@ -1,33 +1,39 @@
 """
 ---
-title: Generate images using stable diffusion with a prompt from a given image
+title: In-paint images using stable diffusion with a prompt
 summary: >
- Generate images using stable diffusion with a prompt from a given image
+ In-paint images using stable diffusion with a prompt
 ---
 
-# Generate images using [stable diffusion](../index.html) with a prompt from a given image
+# In-paint images using [stable diffusion](../index.html) with a prompt
 """
+
+from typing import Optional
 
 import torch
 from labml import monit
 
 from stable_diffusion_base_script import StableDiffusionBaseScript
-from stable_diffusion.utils.model import save_images, set_seed, get_autocast
+from stable_diffusion_reference.utils.model import save_images, set_seed, get_autocast
 from cli_builder import CLI
 
-class Img2Img(StableDiffusionBaseScript):
+def get_model_path():
+    return "./input/model/sd-v1-4.ckpt"  
+
+class InPaint(StableDiffusionBaseScript):
     """
-    ### Image to image class
+    ### Image in-painting class
     """
 
     @torch.no_grad()
-    def transform_image(self, *,
+    def repaint_image(self, *,
                  orig_img: str,
                  strength: float,
                  batch_size: int = 3,
                  prompt: str,
                  uncond_scale: float = 5.0,
-                 ) -> torch.Tensor:
+                 mask: Optional[torch.Tensor] = None,
+                 ):
         """
         :param dest_path: is the path to store the generated images
         :param orig_img: is the image to transform
@@ -39,59 +45,64 @@ class Img2Img(StableDiffusionBaseScript):
         """
         # Make a batch of prompts
         prompts = batch_size * [prompt]
-        
-        orig = self.encode_image(orig_img, batch_size)
 
+        orig = self.encode_image(orig_img, batch_size)
+        mask = self.prepare_mask(mask, orig)
+        
+        # Noise diffuse the original image
+        orig_noise = torch.randn(orig.shape, device=self.device)
+
+        # Get the number of steps to diffuse the original
         t_index = self.calc_strength_time_step(strength)
 
         # AMP auto casting
         autocast = get_autocast()
         with autocast:
-            print(f'Generating images with prompt: "{prompt}"')
-
             un_cond, cond = self.get_text_conditioning(uncond_scale, prompts, batch_size)
             
-            x = self.paint(orig, cond, t_index, uncond_scale, un_cond)
-            
-            # Reconstruct from the noisy image
+            x = self.paint(orig, cond, t_index, uncond_scale,
+                      un_cond, mask, orig_noise)
+            # Decode the image from the [autoencoder](../model/autoencoder.html)
             return self.decode_image(x)
 
+
 def main():
-    """
-    ### CLI
-    """
-    opt = CLI('Modify an image using a prompt') \
+    opt = CLI('In-paint images using stable diffusion with a prompt') \
         .prompt() \
+        .checkpoint_path() \
         .orig_img() \
+        .output() \
         .batch_size() \
         .steps() \
         .scale() \
         .strength() \
-        .checkpoint_path() \
-        .output() \
         .force_cpu() \
         .cuda_device() \
         .parse()
+
     
-    print(opt)
-
     set_seed(42)
+    
+    if opt.strength < 0. or opt.strength > 1.:
+        print("ERROR: can only work with strength in [0.0, 1.0]")
+        exit(1)
 
-    print("Chegou aqui")
-    img2img = Img2Img(checkpoint_path=opt.checkpoint_path,
-                      ddim_steps=opt.steps,
-                      force_cpu=opt.force_cpu,
-                      cuda_device=opt.cuda_device)
-    img2img.initialize_script()
 
-    with monit.section('Generating images'):
-        images = img2img.transform_image(
+    in_paint = InPaint(checkpoint_path=opt.checkpoint_path,
+                       ddim_steps=opt.steps,
+                       force_cpu=opt.force_cpu,
+                       cuda_device=opt.cuda_device)
+    in_paint.initialize_script()
+
+    with monit.section('Generate'):
+        images = in_paint.repaint_image(
             orig_img=opt.orig_img,
             strength=opt.strength,
             batch_size=opt.batch_size,
             prompt=opt.prompt,
             uncond_scale=opt.scale
         )
+
         save_images(images, opt.output)
 
 
