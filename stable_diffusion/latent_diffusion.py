@@ -26,7 +26,6 @@ from typing import List
 import torch
 import torch.nn as nn
 
-from UnetDiffusionModelWrapper import UnetDiffusionModelWrapper
 from .model.vae.autoencoder import Autoencoder
 from .model.clip_text_embedder.clip_text_embedder import CLIPTextEmbedder
 from .model.unet.unet import UNetModel
@@ -44,6 +43,21 @@ from .utils.utils import check_device
 # from .utils.utils import SectionManager as section
 from labml.monit import section
 
+class DiffusionWrapper(nn.Module):
+    """
+    *This is an empty wrapper class around the [U-Net](model/unet.html).
+    We keep this to have the same model structure as
+    [CompVis/stable-diffusion](https://github.com/CompVis/stable-diffusion)
+    so that we do not have to map the checkpoint weights explicitly*.
+    """
+
+    def __init__(self, diffusion_model: UNetModel):
+        super().__init__()
+        self.diffusion_model = diffusion_model
+
+    def forward(self, x: torch.Tensor, time_steps: torch.Tensor, context: torch.Tensor):
+        return self.diffusion_model(x, time_steps, context)
+
 
 class LatentDiffusion(nn.Module):
     """
@@ -55,8 +69,8 @@ class LatentDiffusion(nn.Module):
     * [U-Net](model/unet.html) with [attention](model/unet_attention.html)
     * [CLIP embeddings generator](model/clip_embedder.html)
     """
-    #model:DiffusionWrapper
-    model: UnetDiffusionModelWrapper
+
+    model: DiffusionWrapper
     autoencoder: Autoencoder
     clip_embedder: CLIPTextEmbedder
 
@@ -88,15 +102,12 @@ class LatentDiffusion(nn.Module):
 
         # Wrap the [U-Net](model/unet.html) to keep the same model structure as
         # [CompVis/stable-diffusion](https://github.com/CompVis/stable-diffusion).
-        #self.model = DiffusionWrapper(unet_model)
-        self.unet = UnetDiffusionModelWrapper(unet_model)
+        self.model = DiffusionWrapper(unet_model)
         # Auto-encoder and scaling factor
-        #self.first_stage_model = autoencoder
-        self.auto-encoder = autoencoder
+        self.first_stage_model = autoencoder
         self.latent_scaling_factor = latent_scaling_factor
         # [CLIP embeddings generator](model/clip_embedder.html)
-        #self.cond_stage_model = clip_embedder
-        self.clip_embedder_model = clip_embedder
+        self.cond_stage_model = clip_embedder
 
         # Number of steps $T$
         self.n_steps = n_steps
@@ -118,11 +129,11 @@ class LatentDiffusion(nn.Module):
 
     @property
     def autoencoder(self):
-        return self.auto-encoder
+        return self.first_stage_model
 
     @property
     def clip_embedder(self):
-        return self.clip_embedder_model
+        return self.cond_stage_model
 
     @property
     def unet(self):
@@ -134,29 +145,28 @@ class LatentDiffusion(nn.Module):
         embedder_path=EMBEDDER_PATH,
         unet_path=UNET_PATH,
     ):
-        self.auto-encoder.save(autoencoder_path=autoencoder_path)
-        self.clip_embedder_model.save(embedder_path=embedder_path)
+        self.first_stage_model.save(autoencoder_path=autoencoder_path)
+        self.cond_stage_model.save(embedder_path=embedder_path)
         self.model.diffusion_model.save(unet_path=unet_path)
 
     def save(self, latent_diffusion_path=LATENT_DIFFUSION_PATH):
         torch.save(self, latent_diffusion_path)
 
     def load_autoencoder(self, autoencoder_path=AUTOENCODER_PATH):
-        self.auto-encoder = torch.load(autoencoder_path, map_location=self.device)
-        self.auto-encoder.eval()
+        self.first_stage_model = torch.load(autoencoder_path, map_location=self.device)
+        self.first_stage_model.eval()
         print(f"Autoencoder loaded from: {autoencoder_path}")
-        return self.auto-encoder
+        return self.first_stage_model
 
     def unload_autoencoder(self):
-        del self.auto-encoder
+        del self.first_stage_model
         torch.cuda.empty_cache()
-        self.auto-encoder = None
+        self.first_stage_model = None
 
     def load_unet(self, unet_path=UNET_PATH):
         unet = torch.load(unet_path, map_location=self.device)
         unet.eval()
-        #self.unet = DiffusionWrapper(unet)
-        self.unet = UnetDiffusionModelWrapper(unet)
+        self.model = DiffusionWrapper(unet)
         return self.model
 
     def unload_unet(self):
@@ -165,14 +175,14 @@ class LatentDiffusion(nn.Module):
         self.model = None
 
     def load_clip_embedder(self, embedder_path=EMBEDDER_PATH):
-        self.clip_embedder_model = torch.load(embedder_path, map_location=self.device)
-        self.clip_embedder_model.eval()
-        return self.clip_embedder_model
+        self.cond_stage_model = torch.load(embedder_path, map_location=self.device)
+        self.cond_stage_model.eval()
+        return self.cond_stage_model
 
     def unload_clip_embedder(self):
-        del self.clip_embedder_model
+        del self.cond_stage_model
         torch.cuda.empty_cache()
-        self.clip_embedder_model = None
+        self.cond_stage_model = None
 
     def load_submodels(
         self,
@@ -183,11 +193,11 @@ class LatentDiffusion(nn.Module):
         """
         ### Load the model from a checkpoint
         """
-        self.auto-encoder = torch.load(autoencoder_path, map_location=self.device)
-        self.auto-encoder.eval()
-        self.clip_embedder_model = torch.load(embedder_path, map_location=self.device)
-        self.clip_embedder_model.eval()
-        self.unet = UnetDiffusionModelWrapper(
+        self.first_stage_model = torch.load(autoencoder_path, map_location=self.device)
+        self.first_stage_model.eval()
+        self.cond_stage_model = torch.load(embedder_path, map_location=self.device)
+        self.cond_stage_model.eval()
+        self.model = DiffusionWrapper(
             torch.load(unet_path, map_location=self.device).eval()
         )
 
@@ -202,37 +212,37 @@ class LatentDiffusion(nn.Module):
         unet_path=UNET_PATH,
     ):
         with section("load submodel tree"):
-            self.auto-encoder = torch.load(
+            self.first_stage_model = torch.load(
                 autoencoder_path, map_location=self.device
             )
-            self.auto-encoder.eval()
-            self.auto-encoder.load_submodels(
+            self.first_stage_model.eval()
+            self.first_stage_model.load_submodels(
                 encoder_path=encoder_path, decoder_path=decoder_path
             )
-            self.clip_embedder_model = torch.load(embedder_path, map_location=self.device)
-            self.clip_embedder_model.eval()
-            self.clip_embedder_model.load_submodels(
+            self.cond_stage_model = torch.load(embedder_path, map_location=self.device)
+            self.cond_stage_model.eval()
+            self.cond_stage_model.load_submodels(
                 tokenizer_path=tokenizer_path, transformer_path=transformer_path
             )
-            self.model = UnetDiffusionModelWrapper(
+            self.model = DiffusionWrapper(
                 torch.load(unet_path, map_location=self.device).eval()
             )
         return self
 
     def unload_submodels(self):
-        del self.auto-encoder
-        del self.clip_embedder_model
+        del self.first_stage_model
+        del self.cond_stage_model
         del self.model
         torch.cuda.empty_cache()
-        self.auto-encoder = None
-        self.clip_embedder_model = None
+        self.first_stage_model = None
+        self.cond_stage_model = None
         self.model = None
 
     def get_text_conditioning(self, prompts: List[str]):
         """
         ### Get [CLIP embeddings](model/clip_embedder.html) for a list of text prompts
         """
-        return self.clip_embedder_model(prompts)
+        return self.cond_stage_model(prompts)
 
     def autoencoder_encode(self, image: torch.Tensor):
         """
@@ -242,7 +252,7 @@ class LatentDiffusion(nn.Module):
         We sample from that and multiply by the scaling factor.
         """
         return (
-            self.latent_scaling_factor * self.auto-encoder.encode(image).sample()
+            self.latent_scaling_factor * self.first_stage_model.encode(image).sample()
         )
 
     def autoencoder_decode(self, z: torch.Tensor):
@@ -251,7 +261,7 @@ class LatentDiffusion(nn.Module):
 
         We scale down by the scaling factor and then decode.
         """
-        return self.auto-encoder.decode(z / self.latent_scaling_factor)
+        return self.first_stage_model.decode(z / self.latent_scaling_factor)
 
     def forward(self, x: torch.Tensor, t: torch.Tensor, context: torch.Tensor):
         """
