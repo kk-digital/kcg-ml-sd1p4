@@ -14,12 +14,12 @@ sys.path.insert(0, base_dir)
 from typing import List
 from os.path import join
 
-from stable_diffusion2.model.clip_text_embedder import CLIPTextEmbedder
-from stable_diffusion2.model.clip_image_encoder import CLIPImageEncoder
+from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
+from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
 from chad_score import ChadPredictor
-from stable_diffusion2 import StableDiffusion
-from stable_diffusion2.constants import ModelsPathTree
-from stable_diffusion2.utils.utils import (
+from stable_diffusion import StableDiffusion
+from stable_diffusion.constants import ModelsPathTree
+from stable_diffusion.utils.utils import (
     check_device,
     get_memory_status,
     to_pil,

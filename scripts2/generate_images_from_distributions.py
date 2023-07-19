@@ -13,10 +13,10 @@ from auxiliary_functions import get_torch_distribution_from_name
 
 # from text_to_image import Txt2Img
 
-from stable_diffusion2.stable_diffusion import StableDiffusion
-from stable_diffusion2.constants import CHECKPOINT_PATH
+from stable_diffusion.stable_diffusion import StableDiffusion
+from stable_diffusion.constants import CHECKPOINT_PATH
 from labml.monit import section
-from stable_diffusion2.utils.utils import save_image_grid, save_images, check_device
+from stable_diffusion.utils.utils import save_image_grid, save_images, check_device
 
 OUTPUT_DIR = os.path.abspath("./output/noise-tests/from_distributions")
 

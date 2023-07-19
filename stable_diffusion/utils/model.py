@@ -20,19 +20,19 @@ import torchvision
 
 from PIL import Image
 
-from stable_diffusion2.constants import AUTOENCODER_PATH, ENCODER_PATH, DECODER_PATH
-from stable_diffusion2.constants import EMBEDDER_PATH, TOKENIZER_PATH, TRANSFORMER_PATH
-from stable_diffusion2.constants import UNET_PATH
-from stable_diffusion2.constants import LATENT_DIFFUSION_PATH
+from stable_diffusion.constants import AUTOENCODER_PATH, ENCODER_PATH, DECODER_PATH
+from stable_diffusion.constants import EMBEDDER_PATH, TOKENIZER_PATH, TRANSFORMER_PATH
+from stable_diffusion.constants import UNET_PATH
+from stable_diffusion.constants import LATENT_DIFFUSION_PATH
 
 from labml.monit import section
 
-from stable_diffusion2.latent_diffusion import LatentDiffusion
-from stable_diffusion2.model.vae import Autoencoder, Encoder, Decoder
-from stable_diffusion2.model.clip_text_embedder import CLIPTextEmbedder
-from stable_diffusion2.model.unet import UNetModel
+from stable_diffusion.latent_diffusion import LatentDiffusion
+from stable_diffusion.model.vae import Autoencoder, Encoder, Decoder
+from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
+from stable_diffusion.model.unet import UNetModel
 
-from stable_diffusion2.utils.utils import check_device
+from stable_diffusion.utils.utils import check_device
 
 from transformers import CLIPTokenizer, CLIPTextModel
 

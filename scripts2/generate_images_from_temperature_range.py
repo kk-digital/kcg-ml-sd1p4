@@ -9,10 +9,10 @@ from tqdm import tqdm
 from auxiliary_functions import get_torch_distribution_from_name
 from text_to_image import Txt2Img
 
-from stable_diffusion2.constants import CHECKPOINT_PATH
+from stable_diffusion.constants import CHECKPOINT_PATH
 from labml.monit import section
-from stable_diffusion2.utils.utils import save_image_grid, save_images
-from stable_diffusion2.utils.model import initialize_latent_diffusion
+from stable_diffusion.utils.utils import save_image_grid, save_images
+from stable_diffusion.utils.model import initialize_latent_diffusion
 
 # CHECKPOINT_PATH = os.path.abspath('./input/model/v1-5-pruned-emaonly.ckpt')
 OUTPUT_DIR = os.path.abspath("./output/noise-tests/temperature_range")

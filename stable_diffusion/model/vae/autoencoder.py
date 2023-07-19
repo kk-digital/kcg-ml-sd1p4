@@ -28,8 +28,8 @@ import os
 import sys
 sys.path.insert(0, os.getcwd())
 
-from stable_diffusion2.constants import ENCODER_PATH, DECODER_PATH, AUTOENCODER_PATH
-from stable_diffusion2.utils.utils import check_device
+from stable_diffusion.constants import ENCODER_PATH, DECODER_PATH, AUTOENCODER_PATH
+from stable_diffusion.utils.utils import check_device
 # ENCODER_PATH = os.path.abspath('./input/model/autoencoder/encoder.ckpt')
 # DECODER_PATH = os.path.abspath('./input/model/autoencoder/decoder.ckpt')
 # AUTOENCODER_PATH = os.path.abspath('./input/model/autoencoder/autoencoder.ckpt')

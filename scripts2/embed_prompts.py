@@ -9,8 +9,8 @@ import torch
 
 from os.path import join
 
-from stable_diffusion2.model.clip_text_embedder import CLIPTextEmbedder
-from stable_diffusion2.utils.utils import check_device
+from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
+from stable_diffusion.utils.utils import check_device
 
 
 EMBEDDED_PROMPTS_DIR = os.path.abspath("./input/embedded_prompts/")

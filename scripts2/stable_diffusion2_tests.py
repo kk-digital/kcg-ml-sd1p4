@@ -10,14 +10,14 @@ import argparse
 from auxiliary_functions import get_torch_distribution_from_name
 from text_to_image import Txt2Img
 
-from stable_diffusion2.latent_diffusion import LatentDiffusion, DiffusionWrapper
+from stable_diffusion.latent_diffusion import LatentDiffusion, DiffusionWrapper
 # from stable_diffusion2.latent_diffusion_model import LatentDiffusionModel
-from stable_diffusion2.constants import CHECKPOINT_PATH, AUTOENCODER_PATH, UNET_PATH, EMBEDDER_PATH, LATENT_DIFFUSION_PATH
+from stable_diffusion.constants import CHECKPOINT_PATH, AUTOENCODER_PATH, UNET_PATH, EMBEDDER_PATH, LATENT_DIFFUSION_PATH
 from labml.monit import section
-from stable_diffusion2.utils.utils import save_images, save_image_grid
-from stable_diffusion2.utils.model import initialize_autoencoder, initialize_encoder, initialize_decoder, check_device, get_device
-from stable_diffusion2.utils.model import initialize_clip_embedder, initialize_tokenizer, initialize_transformer 
-from stable_diffusion2.utils.model import initialize_unet, initialize_latent_diffusion
+from stable_diffusion.utils.utils import save_images, save_image_grid
+from stable_diffusion.utils.model import initialize_autoencoder, initialize_encoder, initialize_decoder, check_device, get_device
+from stable_diffusion.utils.model import initialize_clip_embedder, initialize_tokenizer, initialize_transformer 
+from stable_diffusion.utils.model import initialize_unet, initialize_latent_diffusion
 import safetensors.torch as st
 
 # CHECKPOINT_PATH = os.path.abspath('./input/model/v1-5-pruned-emaonly.ckpt')

@@ -18,8 +18,8 @@ from torch import nn, save
 from os.path import join
 
 
-from stable_diffusion2.constants import IMAGE_PROCESSOR_PATH, CLIP_MODEL_PATH, IMAGE_ENCODER_PATH
-from stable_diffusion2.utils.utils import check_device
+from stable_diffusion.constants import IMAGE_PROCESSOR_PATH, CLIP_MODEL_PATH, IMAGE_ENCODER_PATH
+from stable_diffusion.utils.utils import check_device
 from torchinfo import summary
 
 

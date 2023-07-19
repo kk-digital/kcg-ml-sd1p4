@@ -24,7 +24,7 @@ from .auxiliary_classes import *
 import os
 import sys
 sys.path.insert(0, os.getcwd())
-from stable_diffusion2.constants import DECODER_PATH
+from stable_diffusion.constants import DECODER_PATH
 
 class Decoder(nn.Module):
     """

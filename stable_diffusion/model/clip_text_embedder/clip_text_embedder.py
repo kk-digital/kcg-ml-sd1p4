@@ -23,8 +23,8 @@ import torch
 from torch import nn, save
 from os.path import join
 from transformers import CLIPTokenizer, CLIPTextModel
-from stable_diffusion2.constants import EMBEDDER_PATH, TOKENIZER_PATH, TRANSFORMER_PATH
-from stable_diffusion2.utils.utils import check_device
+from stable_diffusion.constants import EMBEDDER_PATH, TOKENIZER_PATH, TRANSFORMER_PATH
+from stable_diffusion.utils.utils import check_device
 from torchinfo import summary
 # EMBEDDER_PATH = os.path.abspath('./input/model/clip/clip_embedder.ckpt')
 # TOKENIZER_PATH = os.path.abspath('./input/model/clip/clip_tokenizer.ckpt')

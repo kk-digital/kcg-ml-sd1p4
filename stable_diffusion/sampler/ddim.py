@@ -19,8 +19,8 @@ import numpy as np
 import torch
 
 from labml import monit
-from stable_diffusion2.latent_diffusion import LatentDiffusion
-from stable_diffusion2.sampler import DiffusionSampler
+from stable_diffusion.latent_diffusion import LatentDiffusion
+from stable_diffusion.sampler import DiffusionSampler
 
 
 class DDIMSampler(DiffusionSampler):

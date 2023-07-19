@@ -1,5 +1,5 @@
 from torch import nn
-from stable_diffusion2.utils.utils import check_device
+from stable_diffusion.utils.utils import check_device
 
 class ChadPredictor(nn.Module):
     def __init__(self, input_size, device = None):

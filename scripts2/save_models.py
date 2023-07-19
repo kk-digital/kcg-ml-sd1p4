@@ -30,11 +30,11 @@ sys.path.insert(0, base_directory)
 
 # from labml.logger import inspect
 from labml.monit import section
-from stable_diffusion2.constants import CHECKPOINT_PATH
-from stable_diffusion2.constants import ROOT_MODELS_PATH, ROOT_MODELS_PREFIX
+from stable_diffusion.constants import CHECKPOINT_PATH
+from stable_diffusion.constants import ROOT_MODELS_PATH, ROOT_MODELS_PREFIX
 
 
-from stable_diffusion2.utils.model import (
+from stable_diffusion.utils.model import (
     initialize_autoencoder,
     initialize_clip_embedder,
     initialize_unet,
@@ -42,7 +42,7 @@ from stable_diffusion2.utils.model import (
 )
 # from labml.monit import section
 
-from stable_diffusion2.model.clip_image_encoder import CLIPImageEncoder
+from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
 
 
 try:

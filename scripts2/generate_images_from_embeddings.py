@@ -9,7 +9,7 @@ sys.path.insert(0, base_directory)
 
 
 from tqdm import tqdm
-from stable_diffusion2.constants import (
+from stable_diffusion.constants import (
     CHECKPOINT_PATH,
     AUTOENCODER_PATH,
     UNET_PATH,
@@ -20,9 +20,9 @@ from stable_diffusion2.constants import (
     TOKENIZER_PATH,
     TRANSFORMER_PATH,
 )
-from stable_diffusion2.stable_diffusion import StableDiffusion
+from stable_diffusion.stable_diffusion import StableDiffusion
 from labml.monit import section
-from stable_diffusion2.utils.utils import save_image_grid, save_images, check_device
+from stable_diffusion.utils.utils import save_image_grid, save_images, check_device
 
 from os.path import join
 
