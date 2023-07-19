@@ -31,7 +31,8 @@ EMBEDDED_PROMPTS_DIR = os.path.abspath("./input/embedded_prompts/")
 OUTPUT_DIR = os.path.abspath("./output/disturbing_embeddings/")
 FEATURES_DIR = os.path.abspath(join(OUTPUT_DIR, "features/"))
 IMAGES_DIR = os.path.abspath(join(OUTPUT_DIR, "images/"))
-SCORER_CHECKPOINT_PATH = os.path.abspath("./input/model/aesthetic_scorer/sac+logos+ava1-l14-linearMSE.pth")
+# SCORER_CHECKPOINT_PATH = os.path.abspath("./input/model/aesthetic_scorer/sac+logos+ava1-l14-linearMSE.pth")
+SCORER_CHECKPOINT_PATH = os.path.abspath("./input/model/aesthetic_scorer/chadscorer.pth")
 
 
 
@@ -310,7 +311,7 @@ def main():
         #             )
 
     images_grid = torch.cat(images_tensors)
-    save_image_grid(images_grid, join(IMAGES_DIR, "images_grid.png"), nrow=int(math.log(NUM_ITERATIONS, 2)))
+    save_image_grid(images_grid, join(IMAGES_DIR, "images_grid.png"), nrow=int(math.log(NUM_ITERATIONS, 2)), normalize=True, scale_each=True)
     print(f"Image grid saved at: {join(IMAGES_DIR, 'images_grid.png')}")
     json_output_path = join(FEATURES_DIR, "features.json")
     manifest_path = join(OUTPUT_DIR, "manifest.json")
