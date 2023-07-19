@@ -30,7 +30,7 @@ sys.path.insert(0, base_directory)
 
 # from labml.logger import inspect
 from labml.monit import section
-from stable_diffusion.constants import CHECKPOINT_PATH
+from stable_diffusion.constants import CHECKPOINT_PATH, CHECKPOINT_PATH_ST
 from stable_diffusion.constants import ROOT_MODELS_PATH, ROOT_MODELS_PREFIX
 
 
@@ -57,6 +57,7 @@ parser = argparse.ArgumentParser(description="")
 parser.add_argument("-g", "--granularity", type=int, default=0)
 parser.add_argument("--root_models_path", type=str, default=ROOT_MODELS_PATH)
 parser.add_argument("--checkpoint_path", type=str, default=CHECKPOINT_PATH)
+parser.add_argument("--use_safetensors", type=bool, default=False)
 # parser.add_argument(
 #     "--without_weights",
 #     default=False,
@@ -84,7 +85,7 @@ SAVE_UNET = False
 SAVE_CLIP = False
 SAVE_VAE = False
 IMAGE_ENCODER = True
-
+USE_SAFETENSORS = args.use_safetensors
 
 def create_folder_structure(root_dir: str = ROOT_MODELS_PREFIX) -> None:
     embedder_submodels_folder = os.path.abspath(
@@ -137,7 +138,7 @@ if __name__ == "__main__":
 
     else:
         model = initialize_latent_diffusion(
-            path=CHECKPOINT_PATH, force_submodels_init=True
+            path=CHECKPOINT_PATH, force_submodels_init=True, use_safetensors=USE_SAFETENSORS
         )
         summary(model)
         if GRANULARITY == 0:

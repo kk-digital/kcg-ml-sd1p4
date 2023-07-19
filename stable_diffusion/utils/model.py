@@ -19,6 +19,7 @@ import torch
 import torchvision
 
 from PIL import Image
+from safetensors.torch import load_file
 
 from stable_diffusion.constants import AUTOENCODER_PATH, ENCODER_PATH, DECODER_PATH
 from stable_diffusion.constants import EMBEDDER_PATH, TOKENIZER_PATH, TRANSFORMER_PATH
@@ -221,7 +222,7 @@ def load_unet(path: Union[str, Path] = UNET_PATH, device = None) -> UNetModel:
 
     return unet_model
 
-def initialize_latent_diffusion(path: Union[str, Path] = None, device = None, autoencoder = None, clip_text_embedder = None, unet_model = None, force_submodels_init = False) -> LatentDiffusion:
+def initialize_latent_diffusion(path: Union[str, Path] = None, device = None, autoencoder = None, clip_text_embedder = None, unet_model = None, force_submodels_init = False, use_safetensors = False) -> LatentDiffusion:
     """
     ### Load [`LatentDiffusion` model](latent_diffusion.html)
     """
@@ -246,12 +247,20 @@ def initialize_latent_diffusion(path: Union[str, Path] = None, device = None, au
                                 unet_model=unet_model)
     if path is not None:
     # Load the checkpoint
-        with section(f"stable-diffusion checkpoint loading, from {path}"):
-            checkpoint = torch.load(path, map_location="cpu")
+        if use_safetensors:
+            with section(f"stable-diffusion checkpoint loading, from {path}"):
+                tensors_dict = load_file(path, device="cpu")
 
-        # Set model state
-        with section('model state loading'):
-            missing_keys, extra_keys = model.load_state_dict(checkpoint["state_dict"], strict=False)
+            # Set model state
+            with section('model state loading'):
+                missing_keys, extra_keys = model.load_state_dict(tensors_dict, strict=False)
+        else:
+            with section(f"stable-diffusion checkpoint loading, from {path}"):
+                checkpoint = torch.load(path, map_location="cpu")
+
+            # Set model state
+            with section('model state loading'):
+                missing_keys, extra_keys = model.load_state_dict(checkpoint["state_dict"], strict=False)
 
         # Debugging output
         # inspect(global_step=checkpoint.get('global_step', -1), missing_keys=missing_keys, extra_keys=extra_keys,
