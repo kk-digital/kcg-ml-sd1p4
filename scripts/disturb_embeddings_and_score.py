@@ -99,6 +99,13 @@ parser.add_argument(
     default=False,
     help="Avoid. If True, the output directory will be cleared before generating images. Defaults to False.",
 )
+
+parser.add_argument(
+    "--random_walk",
+    type=bool,
+    default=False,
+    help="Random walk on the embedding space, with the prompt embedding as origin. Defaults to False.",
+)
 args = parser.parse_args()
 
 NULL_PROMPT = ""
@@ -111,7 +118,7 @@ DEVICE = check_device(args.cuda_device)
 BATCH_SIZE = 1
 SAVE_EMBEDDINGS = args.save_embeddings
 CLEAR_OUTPUT_DIR = args.clear_output_dir
-
+RANDOM_WALK = args.random_walk
 os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
 
 pt = ModelsPathTree(base_directory=base_dir)
@@ -175,25 +182,46 @@ def generate_images_from_disturbed_embeddings(
         loc=embedded_prompt.mean(dim=2), scale=embedded_prompt.std(dim=2)
     )
 
+    if not RANDOM_WALK:
+        for i in range(0, num_iterations):
 
-    for i in range(0, num_iterations):
+            j = num_iterations - i
 
-        j = num_iterations - i
+            noise_i = (
+                dist.sample(sample_shape=torch.Size([768])).permute(1, 0, 2).permute(0, 2, 1)
+            )
+            noise_j = (
+                dist.sample(sample_shape=torch.Size([768])).permute(1, 0, 2).permute(0, 2, 1)
+            )
+            embedding_e = embedded_prompt + ((i * noise_multiplier) * noise_i + (j * noise_multiplier) * noise_j) / (2 * num_iterations)
 
-        noise_i = (
-            dist.sample(sample_shape=torch.Size([768])).permute(1, 0, 2).permute(0, 2, 1)
-        )
-        noise_j = (
-            dist.sample(sample_shape=torch.Size([768])).permute(1, 0, 2).permute(0, 2, 1)
-        )
-        embedding_e = embedded_prompt + ((i * noise_multiplier) * noise_i + (j * noise_multiplier) * noise_j) / (2 * num_iterations)
-        
-        image_e = sd.generate_images_from_embeddings(
-            seed=seed, embedded_prompt=embedding_e, null_prompt=null_prompt, batch_size=batch_size
-        )
-        
-        yield (image_e, embedding_e)
+            image_e = sd.generate_images_from_embeddings(
+                seed=seed, 
+                embedded_prompt=embedding_e, 
+                null_prompt=null_prompt, 
+                batch_size=batch_size
+            )
+            
+            yield (image_e, embedding_e)
+    else:
+    
+        noise_t = torch.zeros_like(embedded_prompt)
+    
+        for i in range(0, num_iterations):
+            noise_i = (
+                dist.sample(sample_shape=torch.Size([768])).permute(1, 0, 2).permute(0, 2, 1)
+            )
+            noise_t = noise_t + noise_i
+            embedding_e = embedded_prompt + (noise_multiplier * noise_t) 
 
+            image_e = sd.generate_images_from_embeddings(
+                seed=seed, 
+                embedded_prompt=embedding_e, 
+                null_prompt=null_prompt, 
+                batch_size=batch_size
+            )
+            
+            yield (image_e, embedding_e)
 
 def calculate_sha256(tensor):
     if tensor.device == "cpu":
@@ -245,13 +273,13 @@ def main():
         #compute aesthetic score
         image_features = get_image_features(pil_image, clip_model, clip_preprocess)
         score = predictor(torch.from_numpy(image_features).to(DEVICE).float()).cpu()
-        img_file_name = f"image_{i}.png"
+        img_file_name = f"image_{i:06d}.png"
         img_path = join(IMAGES_DIR, img_file_name)
         pil_image.save(img_path)
         print(f"Image saved at: {img_path}")
 
         if SAVE_EMBEDDINGS:
-            embedding_file_name = f"embedding_{i}.pt"
+            embedding_file_name = f"embedding_{i:06d}.pt"
             embedding_path = join(FEATURES_DIR, embedding_file_name)
             torch.save(embedding, embedding_path)
             print(f"Embedding saved at: {embedding_path}")
