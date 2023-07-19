@@ -26,10 +26,25 @@ from typing import List
 import torch
 import torch.nn as nn
 
-from UnetDiffusionModelWrapper import UnetDiffusionModelWrapper
 from .model.autoencoder import Autoencoder
 from .model.clip_embedder import CLIPTextEmbedder
 from .model.unet import UNetModel
+
+
+class DiffusionWrapper(nn.Module):
+    """
+    *This is an empty wrapper class around the [U-Net](model/unet.html).
+    We keep this to have the same model structure as
+    [CompVis/stable-diffusion](https://github.com/CompVis/stable-diffusion)
+    so that we do not have to map the checkpoint weights explicitly*.
+    """
+
+    def __init__(self, diffusion_model: UNetModel):
+        super().__init__()
+        self.diffusion_model = diffusion_model
+
+    def forward(self, x: torch.Tensor, time_steps: torch.Tensor, context: torch.Tensor):
+        return self.diffusion_model(x, time_steps, context)
 
 
 class LatentDiffusion(nn.Module):
@@ -42,8 +57,7 @@ class LatentDiffusion(nn.Module):
     * [U-Net](model/unet.html) with [attention](model/unet_attention.html)
     * [CLIP embeddings generator](model/clip_embedder.html)
     """
-    #model: DiffusionWrapper
-    model: UnetDiffusionModelWrapper
+    model: DiffusionWrapper
     first_stage_model: Autoencoder
     cond_stage_model: CLIPTextEmbedder
 
@@ -70,8 +84,7 @@ class LatentDiffusion(nn.Module):
         super().__init__()
         # Wrap the [U-Net](model/unet.html) to keep the same model structure as
         # [CompVis/stable-diffusion](https://github.com/CompVis/stable-diffusion).
-        #self.model = DiffusionWrapper(unet_model)
-        self.model = UnetDiffusionModelWrapper(unet_model)
+        self.model = DiffusionWrapper(unet_model)
         # Auto-encoder and scaling factor
         self.first_stage_model = autoencoder
         self.latent_scaling_factor = latent_scaling_factor
