@@ -36,7 +36,7 @@ from stable_diffusion.utils.utils import check_device
 
 from transformers import CLIPTokenizer, CLIPTextModel
 
-# from stable_diffusion2.model.unet import UNetModel
+# from stable_diffusion.model.unet import UNetModel
 
 def initialize_encoder(device = None, 
                         z_channels=4,

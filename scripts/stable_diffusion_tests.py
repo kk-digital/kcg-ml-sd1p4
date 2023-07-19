@@ -11,7 +11,7 @@ from auxiliary_functions import get_torch_distribution_from_name
 from text_to_image import Txt2Img
 
 from stable_diffusion.latent_diffusion import LatentDiffusion, DiffusionWrapper
-# from stable_diffusion2.latent_diffusion_model import LatentDiffusionModel
+# from stable_diffusion.latent_diffusion_model import LatentDiffusionModel
 from stable_diffusion.constants import CHECKPOINT_PATH, AUTOENCODER_PATH, UNET_PATH, EMBEDDER_PATH, LATENT_DIFFUSION_PATH
 from labml.monit import section
 from stable_diffusion.utils.utils import save_images, save_image_grid
