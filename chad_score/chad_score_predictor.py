@@ -1,7 +1,7 @@
 from torch import nn
 from stable_diffusion2.utils.utils import check_device
 
-class AestheticPredictor(nn.Module):
+class ChadPredictor(nn.Module):
     def __init__(self, input_size, device = None):
         super().__init__()
         self.input_size = input_size

@@ -16,7 +16,7 @@ from os.path import join
 
 from stable_diffusion2.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion2.model.clip_image_encoder import CLIPImageEncoder
-from aesthetic_score import AestheticPredictor
+from chad_score import ChadPredictor
 from stable_diffusion2 import StableDiffusion
 from stable_diffusion2.constants import ModelsPathTree
 from stable_diffusion2.utils.utils import (
@@ -247,7 +247,7 @@ def main():
     clip_model, clip_preprocess = clip.load("ViT-L/14", device=DEVICE)
     
     loaded_model = torch.load(SCORER_CHECKPOINT_PATH)
-    predictor = AestheticPredictor(768, device=DEVICE)
+    predictor = ChadPredictor(768, device=DEVICE)
     predictor.load_state_dict(loaded_model)
     predictor.eval()
 
