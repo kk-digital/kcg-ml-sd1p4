@@ -43,7 +43,7 @@ from .utils.utils import check_device
 # from .utils.utils import SectionManager as section
 from labml.monit import section
 
-class DiffusionWrapper(nn.Module):
+class UNetWrapper(nn.Module):
     """
     *This is an empty wrapper class around the [U-Net](model/unet.html).
     We keep this to have the same model structure as
@@ -70,7 +70,7 @@ class LatentDiffusion(nn.Module):
     * [CLIP embeddings generator](model/clip_embedder.html)
     """
 
-    model: DiffusionWrapper
+    model: UNetWrapper
     autoencoder: Autoencoder
     clip_embedder: CLIPTextEmbedder
 
@@ -102,13 +102,13 @@ class LatentDiffusion(nn.Module):
 
         # Wrap the [U-Net](model/unet.html) to keep the same model structure as
         # [CompVis/stable-diffusion](https://github.com/CompVis/stable-diffusion).
-        self.model = DiffusionWrapper(unet_model)
-        # Auto-encoder and scaling factor
+        self.model = UNetWrapper(unet_model)
+        # Auto-encoder
         self.first_stage_model = autoencoder
-        self.latent_scaling_factor = latent_scaling_factor
         # [CLIP embeddings generator](model/clip_embedder.html)
         self.cond_stage_model = clip_embedder
-
+        # Latent space scaling factor
+        self.latent_scaling_factor = latent_scaling_factor
         # Number of steps $T$
         self.n_steps = n_steps
 
@@ -166,7 +166,7 @@ class LatentDiffusion(nn.Module):
     def load_unet(self, unet_path=UNET_PATH):
         unet = torch.load(unet_path, map_location=self.device)
         unet.eval()
-        self.model = DiffusionWrapper(unet)
+        self.model = UNetWrapper(unet)
         return self.model
 
     def unload_unet(self):
@@ -197,7 +197,7 @@ class LatentDiffusion(nn.Module):
         self.first_stage_model.eval()
         self.cond_stage_model = torch.load(embedder_path, map_location=self.device)
         self.cond_stage_model.eval()
-        self.model = DiffusionWrapper(
+        self.model = UNetWrapper(
             torch.load(unet_path, map_location=self.device).eval()
         )
 
@@ -224,7 +224,7 @@ class LatentDiffusion(nn.Module):
             self.cond_stage_model.load_submodels(
                 tokenizer_path=tokenizer_path, transformer_path=transformer_path
             )
-            self.model = DiffusionWrapper(
+            self.model = UNetWrapper(
                 torch.load(unet_path, map_location=self.device).eval()
             )
         return self
