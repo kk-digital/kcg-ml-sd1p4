@@ -13,6 +13,7 @@ from torchvision.transforms import ToPILImage
 
 from pathlib import Path
 from typing import Union, BinaryIO, List, Optional
+import hashlib
 
 class SectionManager:
     def __init__(self, name: str):
@@ -29,6 +30,14 @@ class SectionManager:
     def __exit__(self, exception_type, exception_value, traceback):
         self.t1 = time.time()
         print(f"Finished section: {self.section_name} in {(self.t1 - self.t0):.2f} seconds\n")
+
+def calculate_sha256(tensor):
+    if tensor.device == "cpu":
+        tensor_bytes = tensor.numpy().tobytes()  # Convert tensor to a byte array
+    else:
+        tensor_bytes = tensor.cpu().numpy().tobytes()  # Convert tensor to a byte array
+    sha256_hash = hashlib.sha256(tensor_bytes)
+    return sha256_hash.hexdigest()
 
 def to_pil(image):
     return ToPILImage()(torch.clamp((image + 1.0) / 2.0, min=0.0, max=1.0))
