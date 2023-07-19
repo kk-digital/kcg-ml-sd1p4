@@ -199,21 +199,23 @@ def generate_images_from_disturbed_embeddings(
     )
 
 
-    for i in range(0, int(math.log(num_iterations, 2))):
-        for j in range(0, int(math.log(num_iterations, 2))):
-            noise_i = (
-                dist.sample(sample_shape=torch.Size([768])).permute(1, 0, 2).permute(0, 2, 1)
-            )
-            noise_j = (
-                dist.sample(sample_shape=torch.Size([768])).permute(1, 0, 2).permute(0, 2, 1)
-            )
-            embedding_e = embedded_prompt + (i * noise_multiplier) * noise_i / 2 + (j * noise_multiplier) * noise_j / 2
-            
-            image_e = sd.generate_images_from_embeddings(
-                seed=seed, embedded_prompt=embedding_e, null_prompt=null_prompt, batch_size=batch_size
-            )
-            
-            yield (image_e, embedding_e)
+    for i in range(0, num_iterations):
+
+        j = num_iterations - i
+
+        noise_i = (
+            dist.sample(sample_shape=torch.Size([768])).permute(1, 0, 2).permute(0, 2, 1)
+        )
+        noise_j = (
+            dist.sample(sample_shape=torch.Size([768])).permute(1, 0, 2).permute(0, 2, 1)
+        )
+        embedding_e = embedded_prompt + ((i * noise_multiplier) * noise_i + (j * noise_multiplier) * noise_j) / (2 * num_iterations)
+        
+        image_e = sd.generate_images_from_embeddings(
+            seed=seed, embedded_prompt=embedding_e, null_prompt=null_prompt, batch_size=batch_size
+        )
+        
+        yield (image_e, embedding_e)
 
 
 def calculate_sha256(tensor):
