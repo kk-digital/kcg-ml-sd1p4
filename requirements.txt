@@ -28,3 +28,5 @@ pytest
 pytest-xdist
 torchinfo==1.8.0
 chardet==5.1.0
+safetensors
+clip
