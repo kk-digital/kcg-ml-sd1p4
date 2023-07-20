@@ -184,11 +184,11 @@ def check_device(device = None, cuda_fallback = 'cuda:0'):
     
     if device is None:
         device = torch.device(torch.cuda.current_device() if torch.cuda.is_available() else 'cpu')
-        print(f'INFO: `device` is None. Falling back to current device: {device}.')
+        print(f'INFO: `device` is None. Using device  {device}.')
     else:
         try:
             device = torch.device(device)
-            print(f'INFO: Device given. Using device {device}`device` is None. Falling back to current device: {device}.')
+            print(f'INFO: Device given. Using device {device}.')
         except Exception as e:
             print(f'INFO: The given device raised an exception.')
             print(e)
