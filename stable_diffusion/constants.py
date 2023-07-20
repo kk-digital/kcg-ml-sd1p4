@@ -10,11 +10,16 @@ sys.path.insert(0, base_directory)
 
 ROOT_MODELS_PREFIX = "./input/model/"
 CHECKPOINT = "v1-5-pruned-emaonly.ckpt"
+CHECKPOINT_ST = "v1-5-pruned-emaonly.safetensors"
 
 ROOT_MODELS_PATH = os.path.abspath(os.path.join(base_directory, ROOT_MODELS_PREFIX))
 
 CHECKPOINT_PATH = os.path.abspath(
     os.path.join(ROOT_MODELS_PATH, CHECKPOINT)
+)
+
+CHECKPOINT_PATH_ST = os.path.abspath(
+    os.path.join(ROOT_MODELS_PATH, CHECKPOINT_ST)
 )
 
 EMBEDDER_PATH = os.path.abspath(
@@ -66,6 +71,9 @@ class ModelsPathTree:
         self.checkpoint_path = os.path.abspath(
             os.path.join(self.root_models_path, CHECKPOINT)
         )
+        self.checkpoint_path_st = os.path.abspath(
+            os.path.join(self.root_models_path, CHECKPOINT_ST)
+        )        
         self.embedder_path = os.path.abspath(
             os.path.join(self.root_models_path, "clip_text_embedder/clip_embedder.ckpt")
         )
@@ -227,7 +235,9 @@ def create_directory_tree_paths(base_directory: str = "./"):
     CHECKPOINT_PATH = os.path.abspath(
         os.path.join(ROOT_MODELS_PATH, CHECKPOINT)
     )
-
+    CHECKPOINT_PATH_ST = os.path.abspath(
+        os.path.join(ROOT_MODELS_PATH, CHECKPOINT_ST)
+    )
     EMBEDDER_PATH = os.path.abspath(
         os.path.join(ROOT_MODELS_PATH, "clip_text_embedder/clip_embedder.ckpt")
     )
