@@ -179,7 +179,7 @@ def main():
 
     with monit.section('Generate', total_steps=len(prompts)) as section:
         for prompt in prompts:
-            section.logger(f'Generating images for prompt: "{prompt}"')
+            print(f'Generating images for prompt: "{prompt}"'.strip())
 
             images = txt2img.generate_images(
                 batch_size=opt.batch_size,
@@ -189,7 +189,7 @@ def main():
             )
 
             save_images(images, filename)
-            section.step()
+            section.progress(1)
 
 
 if __name__ == "__main__":
