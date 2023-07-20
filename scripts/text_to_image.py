@@ -173,7 +173,8 @@ def main():
         .cuda_device() \
         .parse()
 
-    prompts = get_prompts(opt.prompt, opt.prompts_file)
+    #prompts = get_prompts(opt.prompt, opt.prompts_file)
+    prompts = [opt.prompt]
     # timestamp = datetime.now().strftime('%d-%m-%Y-%H-%M-%S')
     # filename = os.path.join(opt.output, f'{timestamp}.jpg')
 
