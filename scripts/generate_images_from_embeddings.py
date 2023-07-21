@@ -70,7 +70,7 @@ DEVICE = args.cuda_device
 NOISE_SEEDS = NOISE_SEEDS[:NUM_SEEDS]
 
 
-def init_stable_diffusion(device, sampler_name="ddim", n_steps="20", ddim_eta=0.0):
+def init_stable_diffusion(device, sampler_name="ddim", n_steps=20, ddim_eta=0.0):
     device = check_device(device)
 
     stable_diffusion = StableDiffusion(
