@@ -14,13 +14,14 @@
       - [Image from a list of prompts](#image-from-a-list-of-prompts)
       - [Image from another image](#image-from-another-image)
       - [Inpainting an image](#inpainting-an-image)
+- [Generate images from prefixed noise vectors/seeds](#generate-images-from-prefixed-noise-vectorsseeds)
+   - [Usage](#usage)      
    - [Notebooks](#notebooks)
       - [Cleaning Jupyter Notebooks for Version Control](#cleaning-jupyter-notebooks-for-version-control)
       - [Installation](#installation)
       - [Setting up nbstripout](#setting-up-nbstripout)
       - [Using nbconvert](#using-nbconvert)
-- [Generate images from prefixed noise vectors/seeds](#generate-images-from-prefixed-noise-vectorsseeds)
-   - [Usage](#usage)
+
 
 ## Downloading models
 
@@ -145,6 +146,26 @@ python3 ./scripts/in_paint.py --orig_img ./input/orig-images/monkey.jpg --prompt
 - `--force_cpu`: Force the use of CPU. Defaults to _False_.
 - `--cuda-device`: CUDA device to use. Defaults to _cuda:0_.
 
+# Generate images from prefixed noise vectors/seeds
+The generate_noise_image.py generates noise seeds, saves them to a file, and uses a file called "artists.txt" in order to generate prompts using a set prefix. It generates an image for each noise seed + artist + prefix combination.
+## Usage
+```bash
+python3 scripts/generate_noise_images.py \
+	--prompt_prefix {enter-the-prefix-for-prompt-here} \
+	--artist_file {default: input/artists.txt} \
+	--output_dir {default: output/noise-tests} \
+	--checkpoint_path {path-to-your-stable-diffusion-model-ckpt-file} \
+	--sampler_name {sampler-here | default: ddim} \
+	--n_steps {steps-for-image-generation} \
+	--num_seeds {how-many-seeds-variations-for-each-prompt} \
+	--noise_file {path-to-the-file-were-noise-seeds-are-going-to-be-stored}
+```
+
+The images will be stored on the output_dir, with the following name:
+```
+[artist-number-in-file]_n[noise-seed].jpg
+```
+
 ## Notebooks
 | Notebook Title | Google Colab Link |
 | --- | --- |
@@ -173,26 +194,6 @@ nbstripout --install --attributes .gitattributes
 ### Using nbconvert
 ```sh
 python -m nbconvert --ClearOutputPreprocessor.enabled=True --to notebook *.ipynb --inplace
-```
-
-# Generate images from prefixed noise vectors/seeds
-The generate_noise_image.py generates noise seeds, saves them to a file, and uses a file called "artists.txt" in order to generate prompts using a set prefix. It generates an image for each noise seed + artist + prefix combination.
-## Usage
-```bash
-python3 scripts/generate_noise_images.py \
-	--prompt_prefix {enter-the-prefix-for-prompt-here} \
-	--artist_file {default: input/artists.txt} \
-	--output_dir {default: output/noise-tests} \
-	--checkpoint_path {path-to-your-stable-diffusion-model-ckpt-file} \
-	--sampler_name {sampler-here | default: ddim} \
-	--n_steps {steps-for-image-generation} \
-	--num_seeds {how-many-seeds-variations-for-each-prompt} \
-	--noise_file {path-to-the-file-were-noise-seeds-are-going-to-be-stored}
-```
-
-The images will be stored on the output_dir, with the following name:
-```
-[artist-number-in-file]_n[noise-seed].jpg
 ```
 
 # Run all notebooks test

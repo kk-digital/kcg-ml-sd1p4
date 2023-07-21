@@ -28,7 +28,7 @@ from stable_diffusion.utils.utils import (
 )
 
 EMBEDDED_PROMPTS_DIR = os.path.abspath("./input/embedded_prompts/")
-OUTPUT_DIR = os.path.abspath("./output/disturbing_embeddings/")
+OUTPUT_DIR = os.path.abspath("./output/data/")
 FEATURES_DIR = os.path.abspath(join(OUTPUT_DIR, "features/"))
 IMAGES_DIR = os.path.abspath(join(OUTPUT_DIR, "images/"))
 # SCORER_CHECKPOINT_PATH = os.path.abspath("./input/model/aesthetic_scorer/sac+logos+ava1-l14-linearMSE.pth")
@@ -68,12 +68,12 @@ parser.add_argument(
     help="The number of iterations to batch-generate images. Defaults to 8.",
 )
 
-parser.add_argument(
-    "--batch_size",
-    type=str,
-    default=1,
-    help="The number of images to generate per batch. Defaults to 1.",
-)
+# parser.add_argument(
+#     "--batch_size",
+#     type=str,
+#     default=1,
+#     help="The number of images to generate per batch. Defaults to 1.",
+# )
 
 parser.add_argument(
     "--seed",
@@ -114,7 +114,8 @@ NUM_ITERATIONS = args.num_iterations
 SEED = args.seed
 NOISE_MULTIPLIER = args.noise_multiplier
 DEVICE = check_device(args.cuda_device)
-BATCH_SIZE = args.batch_size
+# BATCH_SIZE = args.batch_size
+BATCH_SIZE = 1
 SAVE_EMBEDDINGS = args.save_embeddings
 CLEAR_OUTPUT_DIR = args.clear_output_dir
 RANDOM_WALK = args.random_walk
@@ -177,34 +178,9 @@ def generate_images_from_disturbed_embeddings(
     noise_multiplier=NOISE_MULTIPLIER,
     batch_size=BATCH_SIZE
 ):
-    # generator = torch.Generator(device=device).manual_seed(seed)
-
-    # embedding_mean, embedding_std = embedded_prompt.mean(), embedded_prompt.std()
-    # embedding_shape = tuple(embedded_prompt.shape)
-
-    # noise = torch.normal(
-    #     mean=embedding_mean.item(),
-    #     std=embedding_std.item(),
-    #     size=embedding_shape,
-    #     device=device,
-    #     generator=generator,
-    # )
-    # test with standard normal distribution
-    # noise = torch.normal(
-    #     mean=0.0,
-    #     std=1.0,
-    #     size=embedding_shape,
-    #     device=device,
-    #     generator=generator,
-    # )
-    # embedded_prompt.mean(dim=2), embedded_prompt.std(dim=2)
-    # noise = torch.normal(
-    #     mean=embedded_prompt.mean(dim=2), std=embedded_prompt.std(dim=2)
-    # )
     dist = torch.distributions.normal.Normal(
         loc=embedded_prompt.mean(dim=2), scale=embedded_prompt.std(dim=2)
     )
-
 
     if not RANDOM_WALK:
         for i in range(0, num_iterations):
@@ -247,7 +223,6 @@ def generate_images_from_disturbed_embeddings(
             
             yield (image_e, embedding_e)
 
-
 def calculate_sha256(tensor):
     if tensor.device == "cpu":
         tensor_bytes = tensor.numpy().tobytes()  # Convert tensor to a byte array
@@ -275,7 +250,7 @@ def main():
     sd.quick_initialize().load_autoencoder(**pt.autoencoder).load_decoder(**pt.decoder)
     sd.model.load_unet(**pt.unet)
 
-    images = generate_images_from_disturbed_embeddings(sd, embedded_prompts, null_prompt, batch_size = 1)
+    images = generate_images_from_disturbed_embeddings(sd, embedded_prompts, null_prompt, batch_size = BATCH_SIZE)
     
     clip_model, clip_preprocess = clip.load("ViT-L/14", device=DEVICE)
     
@@ -287,17 +262,17 @@ def main():
     json_output = []
     manifest = []
 
-    images_tensors = []
+    # images_tensors = []
+
     for i, (image, embedding) in enumerate(images):
-        images_tensors.append(image)
-        torch.cuda.empty_cache()
+        # images_tensors.append(image.cpu().detach())
         get_memory_status()
         #compute hash
         img_hash = calculate_sha256(image.squeeze())
         pil_image = to_pil(image.squeeze())
         #compute aesthetic score
         image_features = get_image_features(pil_image, clip_model, clip_preprocess)
-        score = predictor(torch.from_numpy(image_features).to(DEVICE).float())
+        score = predictor(torch.from_numpy(image_features).to(DEVICE).float()).cpu()
         img_file_name = f"image_{i:06d}.png"
         img_path = join(IMAGES_DIR, img_file_name)
         pil_image.save(img_path)
@@ -309,12 +284,12 @@ def main():
             torch.save(embedding, embedding_path)
             print(f"Embedding saved at: {embedding_path}")
 
-        manifest_i =    {                     
-                            "file-name": img_file_name,
-                            "file-hash": img_hash,
-                            "file-path": img_path,
-                            "aesthetic-score": score.item(),
-                        }
+        manifest_i = {                     
+                        "file-name": img_file_name,
+                        "file-hash": img_hash,
+                        "file-path": img_path,
+                        "aesthetic-score": score.item(),
+                    }
         manifest.append(manifest_i)
 
         json_output_i = manifest_i.copy()
@@ -323,34 +298,23 @@ def main():
         json_output_i["clip-vector"] = image_features.tolist()
         json_output.append(json_output_i)
 
-        # json_output.append( 
-        #                     {
-        #                         "file-name": img_file_name,
-        #                         "file-hash": img_hash,
-        #                         "file-path": img_path,
-        #                         "aesthetic-score": score.item(),
-        #                         "initial-prompt": PROMPT,
-        #                         "embedding-tensor": embedding.tolist(),
-        #                         "clip-vector": image_features.tolist()
-        #                     }
-        #                 )
-        
-        # manifest.append( 
-        #                 {
-        #                     "file-name": img_file_name,
-        #                     "file-hash": img_hash,
-        #                     "file-path": img_path,
-        #                     "aesthetic-score": score.item(),
-        #                 }
-        #             )
+        if i%300 == 0:
 
-    images_grid = torch.cat(images_tensors)
-    save_image_grid(images_grid, join(IMAGES_DIR, "images_grid.png"), nrow=int(math.log(NUM_ITERATIONS, 2)), normalize=True, scale_each=True)
-    print(f"Image grid saved at: {join(IMAGES_DIR, 'images_grid.png')}")
+            json_output_path = join(FEATURES_DIR, "features.json")
+            manifest_path = join(OUTPUT_DIR, "manifest.json")
+
+            json.dump(json_output, open(json_output_path, "w"), indent=4)
+            print(f"features.json saved at: {json_output_path}")
+
+            json.dump(manifest, open(manifest_path, "w"), indent=4)
+            print(f"manifest.json saved at: {manifest_path}")
+
     json_output_path = join(FEATURES_DIR, "features.json")
     manifest_path = join(OUTPUT_DIR, "manifest.json")
+
     json.dump(json_output, open(json_output_path, "w"), indent=4)
     print(f"features.json saved at: {json_output_path}")
+
     json.dump(manifest, open(manifest_path, "w"), indent=4)
     print(f"manifest.json saved at: {manifest_path}")
 
