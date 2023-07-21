@@ -56,8 +56,8 @@ parser = argparse.ArgumentParser(description="")
 
 parser.add_argument("-g", "--granularity", type=int, default=0)
 parser.add_argument("--root_models_path", type=str, default=ROOT_MODELS_PATH)
-parser.add_argument("--checkpoint_path", type=str, default=CHECKPOINT_PATH_ST)
-parser.add_argument("--use_safetensors", type=bool, default=True)
+parser.add_argument("--checkpoint_path", type=str, default=CHECKPOINT_PATH)
+parser.add_argument("-st", "--use_safetensors", type=bool, default=False)
 # parser.add_argument(
 #     "--without_weights",
 #     default=False,
@@ -78,7 +78,7 @@ args = parser.parse_args()
 
 # print(args)
 GRANULARITY = args.granularity
-CHECKPOINT_PATH = args.checkpoint_path
+CHECKPOINT_PATH_ARG = args.checkpoint_path
 ROOT_MODELS_PATH = args.root_models_path
 SAVE_WITHOUT_WEIGHTS = False
 SAVE_UNET = False
@@ -86,8 +86,12 @@ SAVE_CLIP = False
 SAVE_VAE = False
 IMAGE_ENCODER = True
 USE_SAFETENSORS = args.use_safetensors
-# if not USE_SAFETENSORS and not ".ckpt" in CHECKPOINT_PATH:
-#     CHECKPOINT_PATH = 
+print("USE_SAFETENSORS", USE_SAFETENSORS)
+if USE_SAFETENSORS and not ".safetensors" in CHECKPOINT_PATH_ARG:
+    print("WARNING: SAFETENSORS USED BUT CHECKPOINT PATH CONTAINS does not contain .safetensors")
+    print("Defaulting to configured default .safetensors checkpoint path")
+    CHECKPOINT_PATH_ARG = CHECKPOINT_PATH_ST
+
 def create_folder_structure(root_dir: str = ROOT_MODELS_PREFIX) -> None:
     embedder_submodels_folder = os.path.abspath(
         os.path.join(root_dir, "clip_text_embedder/")
@@ -139,7 +143,7 @@ if __name__ == "__main__":
 
     else:
         model = initialize_latent_diffusion(
-            path=CHECKPOINT_PATH, force_submodels_init=True, use_safetensors=USE_SAFETENSORS
+            path=CHECKPOINT_PATH_ARG, force_submodels_init=True, use_safetensors=USE_SAFETENSORS
         )
         summary(model)
         if GRANULARITY == 0:
