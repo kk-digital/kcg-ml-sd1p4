@@ -196,6 +196,8 @@ def main():
             print(f'Generating images for prompt: "{prompt}"')
 
             for i in range(opt.num_images):
+                print("Generating image " + str(i) + " out of " + str(opt.num_images));
+                start_time = time.time()
                 timestamp = datetime.now().strftime('%d-%m-%Y-%H-%M-%S')
                 filename = os.path.join(opt.output, f'{timestamp}-{i}.jpg')
 
@@ -207,7 +209,14 @@ def main():
                 )
 
                 save_images(images, filename)
-            
+
+                # Capture the ending time
+                end_time = time.time()
+
+                # Calculate the execution time
+                execution_time = end_time - start_time
+
+                print("Execution Time:", execution_time, "seconds")
 
 
 if __name__ == "__main__":
