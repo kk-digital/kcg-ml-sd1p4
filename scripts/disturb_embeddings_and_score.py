@@ -136,7 +136,7 @@ else:
     os.makedirs(FEATURES_DIR, exist_ok=True)
     os.makedirs(IMAGES_DIR, exist_ok=True)
 
-def init_stable_diffusion(device, sampler_name="ddim", n_steps=20, ddim_eta=0.0):
+def init_stable_diffusion(device, pt, sampler_name="ddim", n_steps=20, ddim_eta=0.0):
     device = check_device(device)
 
     stable_diffusion = StableDiffusion(
@@ -144,8 +144,8 @@ def init_stable_diffusion(device, sampler_name="ddim", n_steps=20, ddim_eta=0.0)
     )
 
     stable_diffusion.quick_initialize()
-    stable_diffusion.model.load_unet()
-    stable_diffusion.model.load_autoencoder().load_decoder()
+    stable_diffusion.model.load_unet(**pt.unet)
+    stable_diffusion.model.load_autoencoder(**pt.autoencoder).load_decoder(**pt.decoder)
 
     return stable_diffusion
 
@@ -261,15 +261,13 @@ def main():
     pt = ModelsPathTree(base_directory=base_dir)
 
     embedded_prompts, null_prompt = embed_and_save_prompts(PROMPT)
-    sd = init_stable_diffusion(device=DEVICE)    
-    # sd = StableDiffusion(device=DEVICE)
-    # sd.quick_initialize().load_autoencoder(**pt.autoencoder).load_decoder(**pt.decoder)
-    # sd.model.load_unet(**pt.unet)
+    sd = init_stable_diffusion(DEVICE, pt)    
+
 
     images = generate_images_from_disturbed_embeddings(sd, embedded_prompts, null_prompt, batch_size = BATCH_SIZE)
     
     image_encoder = CLIPImageEncoder(device=DEVICE)
-    image_encoder.load_clip_model()
+    image_encoder.load_clip_model(**pt.clip_model)
     image_encoder.initialize_preprocessor()
     
     loaded_model = torch.load(SCORER_CHECKPOINT_PATH)
