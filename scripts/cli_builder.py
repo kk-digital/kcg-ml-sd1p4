@@ -125,6 +125,16 @@ class CLI:
         )
 
         return self
+
+    def num_images(self):
+        self.parser.add_argument(
+            '--num_images',
+            type=int,
+            default=1,
+            help='How many images to generate (default: %(default)s)'
+        )
+
+        return self
     
     def num_iterations(self):
         self.parser.add_argument(

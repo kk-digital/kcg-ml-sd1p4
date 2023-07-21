@@ -171,9 +171,11 @@ def main():
         .low_vram() \
         .force_cpu() \
         .cuda_device() \
+        .num_images() \
         .parse()
 
-    prompts = get_prompts(opt.prompt, opt.prompts_file)
+    #prompts = get_prompts(opt.prompt, opt.prompts_file)
+    prompts = [opt.prompt]
     # timestamp = datetime.now().strftime('%d-%m-%Y-%H-%M-%S')
     # filename = os.path.join(opt.output, f'{timestamp}.jpg')
 
@@ -193,17 +195,18 @@ def main():
         for prompt in prompts:
             print(f'Generating images for prompt: "{prompt}"')
 
-            timestamp = datetime.now().strftime('%d-%m-%Y-%H-%M-%S')
-            filename = os.path.join(opt.output, f'{timestamp}.jpg')
+            for i in range(opt.num_images):
+                timestamp = datetime.now().strftime('%d-%m-%Y-%H-%M-%S')
+                filename = os.path.join(opt.output, f'{timestamp}-{i}.jpg')
 
-            images = txt2img.generate_images(
-                batch_size=opt.batch_size,
-                prompt=opt.prompt,
-                uncond_scale=opt.scale,
-                low_vram=opt.low_vram
-            )
+                images = txt2img.generate_images(
+                    batch_size=opt.batch_size,
+                    prompt=opt.prompt,
+                    uncond_scale=opt.scale,
+                    low_vram=opt.low_vram
+                )
 
-            save_images(images, filename)
+                save_images(images, filename)
             
 
 
