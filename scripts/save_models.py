@@ -57,7 +57,7 @@ parser = argparse.ArgumentParser(description="")
 parser.add_argument("-g", "--granularity", type=int, default=0)
 parser.add_argument("--root_models_path", type=str, default=ROOT_MODELS_PATH)
 parser.add_argument("--checkpoint_path", type=str, default=CHECKPOINT_PATH)
-parser.add_argument("--use_safetensors", type=bool, default=False)
+parser.add_argument("-st", "--use_safetensors", type=bool, default=False)
 # parser.add_argument(
 #     "--without_weights",
 #     default=False,
