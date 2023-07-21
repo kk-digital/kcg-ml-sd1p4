@@ -222,7 +222,7 @@ def load_unet(path: Union[str, Path] = UNET_PATH, device = None) -> UNetModel:
 
     return unet_model
 
-def initialize_latent_diffusion(path: Union[str, Path] = None, device = None, autoencoder = None, clip_text_embedder = None, unet_model = None, force_submodels_init = False, use_safetensors = False) -> LatentDiffusion:
+def initialize_latent_diffusion(path: Union[str, Path] = None, device = None, autoencoder = None, clip_text_embedder = None, unet_model = None, force_submodels_init = False, use_ckpt = False) -> LatentDiffusion:
     """
     ### Load [`LatentDiffusion` model](latent_diffusion.html)
     """
@@ -247,7 +247,7 @@ def initialize_latent_diffusion(path: Union[str, Path] = None, device = None, au
                                 unet_model=unet_model)
     if path is not None:
     # Load the checkpoint
-        if use_safetensors:
+        if not use_ckpt:
             with section(f"stable diffusion checkpoint loading, from {path}"):
                 tensors_dict = load_file(path, device="cpu")
 

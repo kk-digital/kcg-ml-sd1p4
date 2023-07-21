@@ -56,8 +56,8 @@ parser = argparse.ArgumentParser(description="")
 
 parser.add_argument("-g", "--granularity", type=int, default=0)
 parser.add_argument("--root_models_path", type=str, default=ROOT_MODELS_PATH)
-parser.add_argument("--checkpoint_path", type=str, default=CHECKPOINT_PATH)
-parser.add_argument("-st", "--use_safetensors", type=bool, default=False)
+parser.add_argument("--checkpoint_path", type=str, default=CHECKPOINT_PATH_ST)
+parser.add_argument("-ckpt", "--use_ckpt", type=bool, default=False)
 # parser.add_argument(
 #     "--without_weights",
 #     default=False,
@@ -85,12 +85,12 @@ SAVE_UNET = False
 SAVE_CLIP = False
 SAVE_VAE = False
 IMAGE_ENCODER = True
-USE_SAFETENSORS = args.use_safetensors
-print("USE_SAFETENSORS", USE_SAFETENSORS)
-if USE_SAFETENSORS and not ".safetensors" in CHECKPOINT_PATH_ARG:
-    print("WARNING: SAFETENSORS USED BUT CHECKPOINT PATH CONTAINS does not contain .safetensors")
-    print("Defaulting to configured default .safetensors checkpoint path")
-    CHECKPOINT_PATH_ARG = CHECKPOINT_PATH_ST
+USE_CKPT = args.use_ckpt
+print("USE_CKPT", USE_CKPT)
+if USE_CKPT and not ".ckpt" in CHECKPOINT_PATH_ARG:
+    print("WARNING: .ckpt used but CHECKPOINT_PATH does not contain .ckpt")
+    print("Defaulting to configured default .ckpt checkpoint path")
+    CHECKPOINT_PATH_ARG = CHECKPOINT_PATH
 
 def create_folder_structure(root_dir: str = ROOT_MODELS_PREFIX) -> None:
     embedder_submodels_folder = os.path.abspath(
@@ -143,7 +143,7 @@ if __name__ == "__main__":
 
     else:
         model = initialize_latent_diffusion(
-            path=CHECKPOINT_PATH_ARG, force_submodels_init=True, use_safetensors=USE_SAFETENSORS
+            path=CHECKPOINT_PATH_ARG, force_submodels_init=True, use_ckpt=USE_CKPT
         )
         summary(model)
         if GRANULARITY == 0:
