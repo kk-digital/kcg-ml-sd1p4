@@ -248,14 +248,14 @@ def initialize_latent_diffusion(path: Union[str, Path] = None, device = None, au
     if path is not None:
     # Load the checkpoint
         if use_safetensors:
-            with section(f"stable-diffusion checkpoint loading, from {path}"):
+            with section(f"stable diffusion checkpoint loading, from {path}"):
                 tensors_dict = load_file(path, device="cpu")
 
             # Set model state
             with section('model state loading'):
                 missing_keys, extra_keys = model.load_state_dict(tensors_dict, strict=False)
         else:
-            with section(f"stable-diffusion checkpoint loading, from {path}"):
+            with section(f"stable diffusion checkpoint loading, from {path}"):
                 checkpoint = torch.load(path, map_location="cpu")
 
             # Set model state

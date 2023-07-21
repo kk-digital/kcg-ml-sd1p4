@@ -56,8 +56,8 @@ parser = argparse.ArgumentParser(description="")
 
 parser.add_argument("-g", "--granularity", type=int, default=0)
 parser.add_argument("--root_models_path", type=str, default=ROOT_MODELS_PATH)
-parser.add_argument("--checkpoint_path", type=str, default=CHECKPOINT_PATH)
-parser.add_argument("--use_safetensors", type=bool, default=False)
+parser.add_argument("--checkpoint_path", type=str, default=CHECKPOINT_PATH_ST)
+parser.add_argument("--use_safetensors", type=bool, default=True)
 # parser.add_argument(
 #     "--without_weights",
 #     default=False,
@@ -86,7 +86,8 @@ SAVE_CLIP = False
 SAVE_VAE = False
 IMAGE_ENCODER = True
 USE_SAFETENSORS = args.use_safetensors
-
+# if not USE_SAFETENSORS and not ".ckpt" in CHECKPOINT_PATH:
+#     CHECKPOINT_PATH = 
 def create_folder_structure(root_dir: str = ROOT_MODELS_PREFIX) -> None:
     embedder_submodels_folder = os.path.abspath(
         os.path.join(root_dir, "clip_text_embedder/")
