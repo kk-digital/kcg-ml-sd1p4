@@ -167,15 +167,26 @@ def main():
         .checkpoint_path() \
         .flash() \
         .steps() \
-        .scale() \
+        .cfg_scale() \
         .low_vram() \
         .force_cpu() \
         .cuda_device() \
         .num_images() \
+        .seed() \
         .parse()
 
     #prompts = get_prompts(opt.prompt, opt.prompts_file)
     prompts = [opt.prompt]
+
+    # Split the numbers_string into a list of substrings using the comma as the delimiter
+    seed_string_array = opt.seed.split(',')
+
+    # Convert the elements in the list to integers (optional, if needed)
+    seed_array = [int(num) for num in seed_string_array]
+
+    if len(seed_array) == 0:
+        seed_array = [0]
+
     # timestamp = datetime.now().strftime('%d-%m-%Y-%H-%M-%S')
     # filename = os.path.join(opt.output, f'{timestamp}.jpg')
 
@@ -204,8 +215,9 @@ def main():
                 images = txt2img.generate_images(
                     batch_size=opt.batch_size,
                     prompt=opt.prompt,
-                    uncond_scale=opt.scale,
-                    low_vram=opt.low_vram
+                    uncond_scale=opt.cfg_scale,
+                    low_vram=opt.low_vram,
+                    seed=seed_array[i % len(seed_array)]
                 )
 
                 print(images.shape)

@@ -135,6 +135,16 @@ class CLI:
         )
 
         return self
+
+    def seed(self):
+        self.parser.add_argument(
+            '--seed',
+            type=str,
+            default='0',
+            help='Seed for the image generation (default: %(default)s)'
+        )
+
+        return self
     
     def num_iterations(self):
         self.parser.add_argument(
@@ -218,9 +228,9 @@ class CLI:
 
         return self
 
-    def scale(self):
+    def cfg_scale(self):
         self.parser.add_argument(
-            "--scale",
+            "--cfg_scale",
             type=float,
             default=5.0,
             help="unconditional guidance scale: "
