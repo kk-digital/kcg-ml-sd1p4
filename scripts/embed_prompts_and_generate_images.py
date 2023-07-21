@@ -4,7 +4,6 @@ import argparse
 import torch
 import hashlib
 import json
-import clip
 import shutil
 import math
 
@@ -135,7 +134,7 @@ else:
     os.makedirs(FEATURES_DIR, exist_ok=True)
     os.makedirs(IMAGES_DIR, exist_ok=True)
 
-def init_stable_diffusion(device, sampler_name="ddim", n_steps=20, ddim_eta=0.0):
+def init_stable_diffusion(device, pt, sampler_name="ddim", n_steps=20, ddim_eta=0.0):
     device = check_device(device)
 
     stable_diffusion = StableDiffusion(
@@ -143,8 +142,8 @@ def init_stable_diffusion(device, sampler_name="ddim", n_steps=20, ddim_eta=0.0)
     )
 
     stable_diffusion.quick_initialize()
-    stable_diffusion.model.load_unet()
-    stable_diffusion.model.load_autoencoder().load_decoder()
+    stable_diffusion.model.load_unet(**pt.unet)
+    stable_diffusion.model.load_autoencoder(**pt.autoencoder).load_decoder(**pt.decoder)
 
     return stable_diffusion
 
@@ -282,14 +281,11 @@ def main():
     
     pt = ModelsPathTree(base_directory=base_dir)
     embedded_prompts, null_prompt = embed_and_save_prompts(PROMPT)
-    
-    sd = StableDiffusion(device=DEVICE, n_steps=20, sampler_name="ddim", ddim_eta=0.0)
-    sd.quick_initialize().load_autoencoder(**pt.autoencoder).load_decoder(**pt.decoder)
-    sd.model.load_unet(**pt.unet)
+    sd = init_stable_diffusion(DEVICE, pt, n_steps=20, sampler_name="ddim", ddim_eta=0.0)
 
     images = generate_images_from_disturbed_embeddings(sd, embedded_prompts, null_prompt, batch_size = 1)
     image_encoder = CLIPImageEncoder(device=DEVICE)
-    image_encoder.load_clip_model()
+    image_encoder.load_clip_model(**pt.clip_model)
     image_encoder.initialize_preprocessor()
     # clip_model, clip_preprocess = clip.load("ViT-L/14", device=DEVICE)
     
@@ -348,27 +344,6 @@ def main():
         json_output_i["embedding-tensor"] = embedding.tolist()
         json_output_i["clip-vector"] = image_features.tolist()
         json_output.append(json_output_i)
-
-        # json_output.append( 
-        #                     {
-        #                         "file-name": img_file_name,
-        #                         "file-hash": img_hash,
-        #                         "file-path": img_path,
-        #                         "aesthetic-score": score.item(),
-        #                         "initial-prompt": PROMPT,
-        #                         "embedding-tensor": embedding.tolist(),
-        #                         "clip-vector": image_features.tolist()
-        #                     }
-        #                 )
-        
-        # manifest.append( 
-        #                 {
-        #                     "file-name": img_file_name,
-        #                     "file-hash": img_hash,
-        #                     "file-path": img_path,
-        #                     "aesthetic-score": score.item(),
-        #                 }
-        #             )
 
     images_grid = torch.cat(images_tensors)
     save_image_grid(images_grid, join(IMAGES_DIR, "images_grid.png"), nrow=int(math.log(NUM_ITERATIONS, 2)), normalize=True, scale_each=True)
