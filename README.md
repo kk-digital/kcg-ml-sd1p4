@@ -61,8 +61,10 @@ options:
                         Whether to use flash attention
   --steps         STEPS
                         Number of steps to use
-  --scale         SCALE
+  --cgf_scale         SCALE
                         Unconditional guidance scale: eps = eps(x, empty) + scale * (eps(x, cond) - eps(x, empty))
+  --seed      SEED
+                        Array of seed for the image generation: example '0, 1, 0, 7', Its better if the size of the array is the same as the number of generated images
   --low-vram      LOW_VRAM
                         Limit vram usage
   --force_cpu     FORCE_CPU
