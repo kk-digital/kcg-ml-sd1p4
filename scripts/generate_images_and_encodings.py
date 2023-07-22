@@ -22,11 +22,11 @@ from PIL import Image
 
 noise_seeds = [2982, 4801, 1995, 3598, 987, 3688, 8872, 762]
 
-OUTPUT_DIR = os.path.abspath("./output/stable_diffusion/")
-FEATURES_DIR = os.path.abspath(join(OUTPUT_DIR, "features/"))
-IMAGES_DIR = os.path.abspath(join(OUTPUT_DIR, "images/"))
+OUTPUT_DIR = "./output/stable_diffusion/"
+FEATURES_DIR = join(OUTPUT_DIR, "features/")
+IMAGES_DIR = join(OUTPUT_DIR, "images/")
 
-def init_stable_diffusion(device, sampler_name="ddim", n_steps="20", ddim_eta=0.0):
+def init_stable_diffusion(device, sampler_name="ddim", n_steps=20, ddim_eta=0.0):
     device = check_device(device)
     stable_diffusion = StableDiffusion(
         device=device, sampler_name=sampler_name, n_steps=n_steps, ddim_eta=ddim_eta
@@ -75,6 +75,7 @@ def generate_images(
     image_encoder.load_clip_model()
     image_encoder.initialize_preprocessor()
     manifest = []
+    features = []
     with torch.no_grad():
         image_counter = 0
         for i in range(num_iterations):
@@ -95,7 +96,7 @@ def generate_images(
                 print(tensor_images[j].squeeze().shape)
                 image_hash = calculate_sha256(tensor_images[j].squeeze())
                 image_name = f"{image_counter:06d}.jpg"
-                img_dest_path = os.path.abspath(os.path.join(images_dir, image_name))
+                img_dest_path = os.path.join(images_dir, image_name)
                 # img_hash = hashlib.sha256(img.tobytes())
                 img = Image.fromarray((255.0 * img).astype(np.uint8))
                 
@@ -103,22 +104,35 @@ def generate_images(
                 print(f"Saved image at {img_dest_path}.jpg")
                 prep_img = image_encoder.preprocess_input(img)
                 clip_vector = image_encoder(prep_img)
-                clip_vector_dest_path = os.path.abspath(os.path.join(clip_vectors_dir, f"{image_counter:06d}.pt"))
-                torch.save(
-                    clip_vector,
-                    clip_vector_dest_path,
-                )
-                print(f"Saved clip vector at {clip_vector_dest_path}")
+                # clip_vector_dest_path = os.path.abspath(os.path.join(clip_vectors_dir, f"{image_counter:06d}.pt"))
+                # torch.save(
+                #     clip_vector,
+                #     clip_vector_dest_path,
+                # )
+                # print(f"Saved clip vector at {clip_vector_dest_path}")
+                manifest_img_path = "./images/" + image_name
                 manifest_i =    {                     
                                     "file-name": image_name,
                                     "file-hash": image_hash,
-                                    "file-path": img_dest_path,
-                                    "clip-vector-path": clip_vector_dest_path,
+                                    "file-path": manifest_img_path,
+                                    # "clip-vector-path": clip_vector_dest_path,
                                 }
+                features_i = manifest_i.copy()
+                features_i["clip-vector"] = clip_vector.tolist()
+
+                features.append(features_i)
                 manifest.append(manifest_i)
                 image_counter += 1
+                if image_counter % 64 == 0:
+                    manifest_path = os.path.join(output_base_dir, "manifest.json")
+                    features_path = os.path.join(FEATURES_DIR, "features.json")
+                    json.dump(manifest, open(manifest_path, "w"), indent=4)
+                    json.dump(features, open(features_path, "w"), indent=4)
+
     manifest_path = os.path.join(output_base_dir, "manifest.json")
+    features_path = os.path.join(FEATURES_DIR, "features.json")
     json.dump(manifest, open(manifest_path, "w"), indent=4)
+    json.dump(features, open(features_path, "w"), indent=4)
 
 
 def main():

@@ -40,6 +40,47 @@ python3 ./scripts/save_models.py
 - `--root_models_path`: Base directory for the models' folder structure. Defaults to the constant `ROOT_MODELS_PATH`, which is expected to be `./input/model/`.
 - `--checkpoint_path`: Relative path of the checkpoint file (*.ckpt). Defaults to the constant `CHECKPOINT_PATH`, which is expected to be `'./input/model/v1-5-pruned-emaonly.ckpt' = os.path.join(ROOT_MODELS_PATH, 'v1-5-pruned-emaonly.ckpt')`.
 
+### Text To Image
+
+Takes in a prompt and generates images
+These are the available CLI arguments:
+
+```
+options:
+  --prompt        PROMPT
+                        An array of strings to help guide the generation process
+  --batch_size   BATCH_SIZE
+                        How many images to generate at once
+  --output        OUTPUT
+                        Number of folders to 
+  --sampler       SAMPLER
+                        Name of the sampler to use 
+  --checkpoint_path     CHECKPOINT_PATH
+                        Path to the checkpoint file
+  --flash         FLASH
+                        Whether to use flash attention
+  --steps         STEPS
+                        Number of steps to use
+  --cgf_scale         SCALE
+                        Unconditional guidance scale: eps = eps(x, empty) + scale * (eps(x, cond) - eps(x, empty))
+  --seed      SEED
+                        Array of seed for the image generation: example '0, 1, 0, 7', Its better if the size of the array is the same as the number of generated images
+  --low-vram      LOW_VRAM
+                        Limit vram usage
+  --force_cpu     FORCE_CPU
+                        Force cpu usage
+  --cuda_device   CUDA_DEVICE
+                        Cuda device to use for generation process
+  --num_images    NUM_IMAGES
+                        Number of images to output
+```
+
+#### Example Usage:
+
+``` shell
+python3 ./scripts/text_to_image.py --prompt "character, chibi, waifu, side scrolling, white background, centered" --checkpoint_path "./input/model/v1-5-pruned-emaonly.ckpt" --batch_size 1 --num_images 6
+```
+
 ## Running `stable_diffusion` scripts
 
 There are five other new scripts besides `scripts/save_models.py`.

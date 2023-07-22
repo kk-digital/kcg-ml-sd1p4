@@ -4,7 +4,6 @@ import argparse
 import torch
 import hashlib
 import json
-import clip
 import shutil
 import math
 
@@ -28,9 +27,9 @@ from stable_diffusion.utils.utils import (
 )
 
 EMBEDDED_PROMPTS_DIR = os.path.abspath("./input/embedded_prompts/")
-OUTPUT_DIR = os.path.abspath("./output/disturbing_embeddings/")
-FEATURES_DIR = os.path.abspath(join(OUTPUT_DIR, "features/"))
-IMAGES_DIR = os.path.abspath(join(OUTPUT_DIR, "images/"))
+OUTPUT_DIR = "./output/disturbing_embeddings/"
+FEATURES_DIR = join(OUTPUT_DIR, "features/")
+IMAGES_DIR = join(OUTPUT_DIR, "images/")
 # SCORER_CHECKPOINT_PATH = os.path.abspath("./input/model/aesthetic_scorer/sac+logos+ava1-l14-linearMSE.pth")
 SCORER_CHECKPOINT_PATH = os.path.abspath("./input/model/aesthetic_scorer/chadscorer.pth")
 
@@ -38,7 +37,7 @@ SCORER_CHECKPOINT_PATH = os.path.abspath("./input/model/aesthetic_scorer/chadsco
 
 # DEVICE = input("Set device: 'cuda:i' or 'cpu'")
 
-pt = ModelsPathTree(base_directory=base_dir)
+
 
 
 
@@ -135,7 +134,18 @@ else:
     os.makedirs(FEATURES_DIR, exist_ok=True)
     os.makedirs(IMAGES_DIR, exist_ok=True)
 
+def init_stable_diffusion(device, pt, sampler_name="ddim", n_steps=20, ddim_eta=0.0):
+    device = check_device(device)
 
+    stable_diffusion = StableDiffusion(
+        device=device, sampler_name=sampler_name, n_steps=n_steps, ddim_eta=ddim_eta
+    )
+
+    stable_diffusion.quick_initialize()
+    stable_diffusion.model.load_unet(**pt.unet)
+    stable_diffusion.model.load_autoencoder(**pt.autoencoder).load_decoder(**pt.decoder)
+
+    return stable_diffusion
 
 def embed_and_save_prompts(prompt: str, null_prompt = NULL_PROMPT):
 
@@ -213,10 +223,10 @@ def generate_images_from_disturbed_embeddings(
 
             noise_i = (
                 dist.sample(sample_shape=torch.Size([768])).permute(1, 0, 2).permute(0, 2, 1)
-            )
+            ).to(device)
             noise_j = (
                 dist.sample(sample_shape=torch.Size([768])).permute(1, 0, 2).permute(0, 2, 1)
-            )
+            ).to(device)
             embedding_e = embedded_prompt + ((i * noise_multiplier) * noise_i + (j * noise_multiplier) * noise_j) / (2 * num_iterations)
 
             image_e = sd.generate_images_from_embeddings(
@@ -229,12 +239,12 @@ def generate_images_from_disturbed_embeddings(
             yield (image_e, embedding_e)
     else:
     
-        noise_t = torch.zeros_like(embedded_prompt)
+        noise_t = torch.zeros_like(embedded_prompt).to(device)
     
         for i in range(0, num_iterations):
             noise_i = (
                 dist.sample(sample_shape=torch.Size([768])).permute(1, 0, 2).permute(0, 2, 1)
-            )
+            ).to(device)
             noise_t = noise_t + noise_i
             embedding_e = embedded_prompt + (noise_multiplier * noise_t) 
 
@@ -268,16 +278,16 @@ def get_image_features(
     return image_features
 
 def main():
-
-    embedded_prompts, null_prompt = embed_and_save_prompts(PROMPT)
     
-    sd = StableDiffusion(device=DEVICE)
-    sd.quick_initialize().load_autoencoder(**pt.autoencoder).load_decoder(**pt.decoder)
-    sd.model.load_unet(**pt.unet)
+    pt = ModelsPathTree(base_directory=base_dir)
+    embedded_prompts, null_prompt = embed_and_save_prompts(PROMPT)
+    sd = init_stable_diffusion(DEVICE, pt, n_steps=20, sampler_name="ddim", ddim_eta=0.0)
 
     images = generate_images_from_disturbed_embeddings(sd, embedded_prompts, null_prompt, batch_size = 1)
-    
-    clip_model, clip_preprocess = clip.load("ViT-L/14", device=DEVICE)
+    image_encoder = CLIPImageEncoder(device=DEVICE)
+    image_encoder.load_clip_model(**pt.clip_model)
+    image_encoder.initialize_preprocessor()
+    # clip_model, clip_preprocess = clip.load("ViT-L/14", device=DEVICE)
     
     loaded_model = torch.load(SCORER_CHECKPOINT_PATH)
     predictor = ChadPredictor(768, device=DEVICE)
@@ -286,8 +296,13 @@ def main():
 
     json_output = []
     manifest = []
-
+    scores = []
     images_tensors = []
+    
+    json_output_path = join(FEATURES_DIR, "features.json")
+    manifest_path = join(OUTPUT_DIR, "manifest.json")
+    scores_path = join(OUTPUT_DIR, "scores.json")
+
     for i, (image, embedding) in enumerate(images):
         images_tensors.append(image)
         torch.cuda.empty_cache()
@@ -296,8 +311,11 @@ def main():
         img_hash = calculate_sha256(image.squeeze())
         pil_image = to_pil(image.squeeze())
         #compute aesthetic score
-        image_features = get_image_features(pil_image, clip_model, clip_preprocess)
-        score = predictor(torch.from_numpy(image_features).to(DEVICE).float())
+        # image_features = get_image_features(pil_image, clip_model, clip_preprocess)
+        prep_img = image_encoder.preprocess_input(pil_image)
+        image_features = image_encoder(prep_img)
+        image_features /= image_features.norm(dim=-1, keepdim=True)
+        score = predictor(image_features.to(DEVICE).float())
         img_file_name = f"image_{i:06d}.png"
         img_path = join(IMAGES_DIR, img_file_name)
         pil_image.save(img_path)
@@ -309,48 +327,31 @@ def main():
             torch.save(embedding, embedding_path)
             print(f"Embedding saved at: {embedding_path}")
 
-        manifest_i =    {                     
-                            "file-name": img_file_name,
-                            "file-hash": img_hash,
-                            "file-path": img_path,
-                            "aesthetic-score": score.item(),
-                        }
+        manifest_i = {                     
+                        "file-name": img_file_name,
+                        "file-hash": img_hash,
+                        "file-path": img_path,
+                    }
         manifest.append(manifest_i)
+
+        scores_i = manifest_i.copy()
+        scores_i["score"] = score.item()
+        scores.append(scores_i)
 
         json_output_i = manifest_i.copy()
         json_output_i["initial-prompt"] = PROMPT
+        json_output_i["score"] = score.item()
         json_output_i["embedding-tensor"] = embedding.tolist()
         json_output_i["clip-vector"] = image_features.tolist()
         json_output.append(json_output_i)
 
-        # json_output.append( 
-        #                     {
-        #                         "file-name": img_file_name,
-        #                         "file-hash": img_hash,
-        #                         "file-path": img_path,
-        #                         "aesthetic-score": score.item(),
-        #                         "initial-prompt": PROMPT,
-        #                         "embedding-tensor": embedding.tolist(),
-        #                         "clip-vector": image_features.tolist()
-        #                     }
-        #                 )
-        
-        # manifest.append( 
-        #                 {
-        #                     "file-name": img_file_name,
-        #                     "file-hash": img_hash,
-        #                     "file-path": img_path,
-        #                     "aesthetic-score": score.item(),
-        #                 }
-        #             )
-
     images_grid = torch.cat(images_tensors)
     save_image_grid(images_grid, join(IMAGES_DIR, "images_grid.png"), nrow=int(math.log(NUM_ITERATIONS, 2)), normalize=True, scale_each=True)
     print(f"Image grid saved at: {join(IMAGES_DIR, 'images_grid.png')}")
-    json_output_path = join(FEATURES_DIR, "features.json")
-    manifest_path = join(OUTPUT_DIR, "manifest.json")
     json.dump(json_output, open(json_output_path, "w"), indent=4)
     print(f"features.json saved at: {json_output_path}")
+    json.dump(scores, open(scores_path, "w"), indent=4)
+    print(f"scores.json saved at: {scores_path}")
     json.dump(manifest, open(manifest_path, "w"), indent=4)
     print(f"manifest.json saved at: {manifest_path}")
 

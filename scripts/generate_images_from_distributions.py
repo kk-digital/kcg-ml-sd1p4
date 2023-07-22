@@ -146,66 +146,6 @@ def show_summary(total_time, partial_time, total_images, output_dir):
     print("Images generated successfully at", output_dir)
 
 
-def generate_images_from_dist(
-    stable_diffusion: StableDiffusion,
-    distribution: tuple,
-    output_dir: str = OUTPUT_DIR,
-    prompt: str = PROMPT,
-    batch_size: int = BATCH_SIZE,
-    temperature: float = TEMPERATURE,
-):
-    total_images = len(NOISE_SEEDS) * len(VAR_RANGE)
-
-    dist_name, params = distribution
-
-    with torch.no_grad():
-        with tqdm(
-            total=total_images,
-            desc="Generating images",
-        ) as pbar:
-            print(f"Generating images for {dist_name}")
-            noise_fn = (
-                lambda shape, device=None: get_torch_distribution_from_name(DIST_NAME)(
-                    **params
-                )
-                .sample(shape)
-                .to(device)
-            )
-
-            grid_rows = []
-            img_counter = 0
-
-            for seed_index, noise_seed in enumerate(NOISE_SEEDS):
-                p_bar_description = f"Generating image {img_counter+1} of {total_images}. Distribution: {DIST_NAME}{params}"
-                pbar.set_description(p_bar_description)
-
-                # image_name = f"n{noise_seed:04d}_d{dist_name}p{'_'.join(list(params.values())):04d}.jpg"
-                image_name = f"n{noise_seed:04d}_d{dist_name}.jpg"
-                dest_path = os.path.join(
-                    os.path.join(output_dir, dist_name), image_name
-                )
-                images = stable_diffusion.generate_images(
-                    batch_size=batch_size,
-                    prompt=prompt,
-                    seed=noise_seed,
-                    noise_fn=noise_fn,
-                    temperature=temperature,
-                )
-                grid_rows.append(images)
-                save_images(images, dest_path=dest_path)
-                img_counter += 1
-                pbar.update(1)
-
-            dest_path = os.path.join(
-                os.path.join(output_dir, dist_name), f"grid_{dist_name}.jpg"
-            )
-            grid = torch.cat(grid_rows, dim=0)
-            # save_image_grid(
-            #     grid, dest_path, nrow=num_artists, normalize=True, scale_each=True
-            # )
-            return grid
-
-
 def generate_images_from_dist_dict(
     stable_diffusion: StableDiffusion,
     distributions: dict,
@@ -226,19 +166,56 @@ def generate_images_from_dist_dict(
 
     # Create the folder structure for the outputs
     create_folder_structure(distributions, output_dir)
-
+    total_images = len(NOISE_SEEDS) * len(VAR_RANGE)
     # Generate the images
     img_grids = []
+    img_counter = 0
+
     for distribution_index, (distribution_name, params) in enumerate(
         distributions.items()
     ):
-        grid = generate_images_from_dist(
-            stable_diffusion,
-            (distribution_name, params),
-            prompt=prompt,
-            batch_size=batch_size,
-            temperature=temperature,
-        )
+        
+        with torch.no_grad():
+            with tqdm(
+                total=total_images,
+                desc="Generating images",
+            ) as pbar:
+                print(f"Generating images for {distribution_name}")
+                noise_fn = (
+                    lambda shape, device=None: get_torch_distribution_from_name(DIST_NAME)(
+                        **params
+                    )
+                    .sample(shape)
+                    .to(device)
+                )
+
+                grid_rows = []
+
+                for seed_index, noise_seed in enumerate(NOISE_SEEDS):
+                    p_bar_description = f"Generating image {img_counter+1} of {total_images}. Distribution: {DIST_NAME}{params}"
+                    pbar.set_description(p_bar_description)
+
+                    # image_name = f"n{noise_seed:04d}_d{distribution_name}p{'_'.join(list(params.values())):04d}.jpg"
+                    image_name = f"n{noise_seed:04d}_d{distribution_name}.jpg"
+                    dest_path = os.path.join(
+                        os.path.join(output_dir, distribution_name), image_name
+                    )
+                    images = stable_diffusion.generate_images(
+                        batch_size=batch_size,
+                        prompt=prompt,
+                        seed=noise_seed,
+                        noise_fn=noise_fn,
+                        temperature=temperature,
+                    )
+                    grid_rows.append(images)
+                    save_images(images, dest_path=dest_path)
+                    img_counter += 1
+                    pbar.update(1)
+
+                dest_path = os.path.join(
+                    os.path.join(output_dir, distribution_name), f"grid_{distribution_name}.jpg"
+                )
+                grid = torch.cat(grid_rows, dim=0)
         img_grids.append(grid)
 
     dest_path = os.path.join(

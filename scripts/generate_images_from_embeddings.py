@@ -70,7 +70,7 @@ DEVICE = args.cuda_device
 NOISE_SEEDS = NOISE_SEEDS[:NUM_SEEDS]
 
 
-def init_stable_diffusion(device, sampler_name="ddim", n_steps="20", ddim_eta=0.0):
+def init_stable_diffusion(device, sampler_name="ddim", n_steps=20, ddim_eta=0.0):
     device = check_device(device)
 
     stable_diffusion = StableDiffusion(
@@ -93,6 +93,7 @@ def generate_images_from_embeddings(
     noise_seeds: list = NOISE_SEEDS,
     clear_output_dir: bool = CLEAR_OUTPUT_DIR,
     ddim_eta: float = DDIM_ETA,
+    cfg_scale : float = 7.5,
     cuda_device: str = DEVICE,
 ):
     null_cond = torch.load(join(embeddings_dir, "null_cond.pt"), map_location=DEVICE)
@@ -144,6 +145,7 @@ def generate_images_from_embeddings(
                         null_prompt=null_cond,
                         seed=noise_seed,
                         temperature=TEMPERATURE,
+                        uncond_scale=cfg_scale
                     )
                     # print(images.shape)
                     save_images(images, dest_path=dest_path)
