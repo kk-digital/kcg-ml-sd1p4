@@ -87,6 +87,7 @@ class Txt2Img(StableDiffusionBaseScript):
         with autocast:
             un_cond, cond = self.get_text_conditioning(uncond_scale, prompts, batch_size)
 
+            start_time = time.time()
             # [Sample in the latent space](../sampler/index.html).
             # `x` will be of shape `[batch_size, c, h / f, w / f]`
             x = self.sampler.sample(cond=cond,
@@ -95,6 +96,14 @@ class Txt2Img(StableDiffusionBaseScript):
                                     uncond_cond=un_cond,
                                     noise_fn=noise_fn,
                                     temperature=temperature)
+
+            # Capture the ending time
+            end_time = time.time()
+
+            # Calculate the execution time
+            execution_time = end_time - start_time
+
+            print("Sampling Time:", execution_time, "seconds")
 
             return self.decode_image(x)
 
