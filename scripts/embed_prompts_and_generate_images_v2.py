@@ -272,11 +272,14 @@ def get_bounding_box_details(img):
 
 def get_bounding_box_center_offset(largest_bounding_box, image_size):
     box_x, box_y, box_w, box_h = largest_bounding_box
-    center_x = box_x + box_w / 2
-    center_y = box_y + box_h / 2
-    center_offset_x = center_x - image_size[0] / 2
-    center_offset_y = center_y - image_size[1] / 2
-    return center_x, center_y, center_offset_x, center_offset_y            
+    center_x = (box_x + box_w / 2) / image_size[1]
+    center_y = (box_y + box_h / 2) / image_size[0]
+    center_offset_x = center_x - 0.5
+    center_offset_y = center_y - 0.5
+    box_w /= image_size[1]
+    box_h /= image_size[0]
+    return center_x, center_y, center_offset_x, center_offset_y, box_w, box_h
+
 
 
 def calculate_sha256(tensor):
@@ -361,7 +364,7 @@ def main():
 
         numpy_img = np.array(pil_image)
         largest_bounding_box = get_bounding_box_details(numpy_img)
-        center_x, center_y, center_offset_x, center_offset_y = get_bounding_box_center_offset(largest_bounding_box, numpy_img.shape)
+        center_x, center_y, center_offset_x, center_offset_y, box_w, box_h = get_bounding_box_center_offset(largest_bounding_box, numpy_img.shape)
 
         json_output_i = manifest_i.copy()
         json_output_i["initial-prompt"] = PROMPT
@@ -370,8 +373,11 @@ def main():
         json_output_i["bounding_box_center_y"] = center_y
         json_output_i["bounding_box_center_offset_x"] = center_offset_x
         json_output_i["bounding_box_center_offset_y"] = center_offset_y
+        json_output_i["bounding_box_width"] = box_w
+        json_output_i["bounding_box_height"] = box_h
         json_output_i["embedding-tensor"] = embedding.tolist()
         json_output_i["clip-vector"] = image_features.tolist()
+
 
 
         json_output.append(json_output_i)
