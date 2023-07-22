@@ -262,7 +262,7 @@ def parse_arguments():
 
 def set_defaults(args):
     if args.repo_dir is None:
-        args.repo_dir = os.path.abspath(os.path.join("./", "lora-tuning/sd-scripts"))
+        args.repo_dir = os.path.abspath(os.path.join("./", "lora_tuning/sd-scripts"))
     repo_dir = os.path.abspath(args.repo_dir)
     if args.config_dir is None:
         args.config_dir = os.path.join(repo_dir, "config")
