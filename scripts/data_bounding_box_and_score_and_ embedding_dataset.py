@@ -43,10 +43,11 @@ SCORER_CHECKPOINT_PATH = os.path.abspath("./input/model/aesthetic_scorer/chadsco
 
 # DEVICE = input("Set device: 'cuda:i' or 'cpu'")
 
-prompt_list_1 = ['chibi', 'waifu', 'scifi', 'side scrolling', 'character', 'side scrolling']
-prompt_list_2 = ['white background', 'centered', 'full character', 'no background', 
-                 'not centered', 'line drawing', 'sketch', 'black and white', 
-                 'colored', 'offset', 'video game']
+prompt_list = ['chibi', 'waifu', 'scifi', 'side scrolling', 'character', 'side scrolling'
+               'white background', 'centered', 'full character', 'no background', 
+               'not centered', 'line drawing', 'sketch', 'black and white',
+                'colored', 'offset', 'video game','exotic', 'sureal', 'miltech', 'fantasy'
+                'frank frazetta', 'terraria', 'final fantasy', 'cortex command' ]
 
 
 parser = argparse.ArgumentParser("Embed prompts using CLIP")
@@ -60,6 +61,12 @@ parser.add_argument(
     type=bool,
     default=False,
     help="If True, the disturbed embeddings will be saved to disk. Defaults to False.",
+)
+parser.add_argument(
+    "--cfg_strength",
+    type=int,
+    default=12,
+    help="Configuration strength. Defaults to 12.",
 )
 parser.add_argument(
     "--embedded_prompts_dir",
@@ -155,15 +162,13 @@ def init_stable_diffusion(device, pt, sampler_name="ddim", n_steps=20, ddim_eta=
     return stable_diffusion
 
 def generate_prompt():
-    # Select 2 items randomly from prompt_list_1 and 5 items randomly from prompt_list_2
-    selected_prompts_1 = random.sample(prompt_list_1, 2)
-    selected_prompts_2 = random.sample(prompt_list_2, 5)
+    # Select 12 items randomly from the prompt_list
+    selected_prompts = random.sample(prompt_list, 12)
 
     # Join all selected prompts into a single string, separated by commas
-    prompt = ', '.join(selected_prompts_1 + selected_prompts_2)
+    prompt = ', '.join(selected_prompts)
     print(f"Generated prompt: {prompt}")
     return prompt
-
 
 def embed_and_save_prompts(prompt: str, i: int, null_prompt = NULL_PROMPT):
 
@@ -362,8 +367,8 @@ def main():
 
         manifest_i = {                     
                         "file-name": img_file_name,
-                        "file-hash": img_hash,
                         "file-path": img_path,
+                        "file-hash": img_hash,
                     }
         manifest.append(manifest_i)
 
@@ -376,15 +381,16 @@ def main():
         center_x, center_y, center_offset_x, center_offset_y, box_w, box_h = get_bounding_box_center_offset(largest_bounding_box, numpy_img.shape)
 
         json_output_i = manifest_i.copy()
-        json_output_i["initial-prompt"] = prompt  # Retrieve the prompt associated with this image
+        json_output_i["prompt"] = prompt  # Retrieve the prompt associated with this image
         json_output_i["score"] = score.item()
+        json_output_i["cfg_strength"] = args.cfg_strength
         json_output_i["bounding_box_center_x"] = center_x
         json_output_i["bounding_box_center_y"] = center_y
         json_output_i["bounding_box_center_offset_x"] = center_offset_x
         json_output_i["bounding_box_center_offset_y"] = center_offset_y
         json_output_i["bounding_box_width"] = box_w
         json_output_i["bounding_box_height"] = box_h
-        json_output_i["embedding-tensor"] = embedding.tolist()
+        json_output_i["embedding_tensor"] = embedding.tolist()
         json_output_i["clip-vector"] = image_features.tolist()
 
         json_output.append(json_output_i)
