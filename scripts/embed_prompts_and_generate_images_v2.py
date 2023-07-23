@@ -40,19 +40,6 @@ SCORER_CHECKPOINT_PATH = os.path.abspath("./input/model/aesthetic_scorer/chadsco
 
 # DEVICE = input("Set device: 'cuda:i' or 'cpu'")
 
-# The two prompt lists
-prompt_list_1 = ['chibi', 'waifu', 'scifi', 'side scrolling', 'character', 'side scrolling']
-prompt_list_2 = ['white background', 'centered', 'full character', 'no background', 
-                 'not centered', 'line drawing', 'sketch', 'black and white', 
-                 'colored', 'offset', 'video game']
-
-# Select 2 items randomly from prompt_list_1 and 5 items randomly from prompt_list_2
-selected_prompts_1 = random.sample(prompt_list_1, 2)
-selected_prompts_2 = random.sample(prompt_list_2, 5)
-
-# Join all selected prompts into a single string, separated by commas
-prompt = ', '.join(selected_prompts_1 + selected_prompts_2)
-
 
 
 parser = argparse.ArgumentParser("Embed prompts using CLIP")
@@ -159,6 +146,16 @@ def init_stable_diffusion(device, pt, sampler_name="ddim", n_steps=20, ddim_eta=
     stable_diffusion.model.load_autoencoder(**pt.autoencoder).load_decoder(**pt.decoder)
 
     return stable_diffusion
+
+def generate_prompt():
+    # Select 2 items randomly from prompt_list_1 and 5 items randomly from prompt_list_2
+    selected_prompts_1 = random.sample(prompt_list_1, 2)
+    selected_prompts_2 = random.sample(prompt_list_2, 5)
+
+    # Join all selected prompts into a single string, separated by commas
+    prompt = ', '.join(selected_prompts_1 + selected_prompts_2)
+    
+    return prompt
 
 
 
@@ -315,13 +312,14 @@ def get_image_features(
     return image_features
 
 def main():
+
     pt = ModelsPathTree(base_directory=base_dir)
+    
     sd = init_stable_diffusion(DEVICE, pt, n_steps=20, sampler_name="ddim", ddim_eta=0.0)
 
     image_encoder = CLIPImageEncoder(device=DEVICE)
     image_encoder.load_clip_model(**pt.clip_model)
     image_encoder.initialize_preprocessor()
-    # clip_model, clip_preprocess = clip.load("ViT-L/14", device=DEVICE)
     
     loaded_model = torch.load(SCORER_CHECKPOINT_PATH)
     predictor = ChadPredictor(768, device=DEVICE)
@@ -338,17 +336,11 @@ def main():
     scores_path = join(OUTPUT_DIR, "scores.json")
 
     for i in range(NUM_ITERATIONS):
-        # Select 2 items randomly from prompt_list_1 and 5 items randomly from prompt_list_2
-        selected_prompts_1 = random.sample(prompt_list_1, 2)
-        selected_prompts_2 = random.sample(prompt_list_2, 5)
-
-        # Join all selected prompts into a single string, separated by commas
-        prompt = ', '.join(selected_prompts_1 + selected_prompts_2)
-
-        embedded_prompts, null_prompt = embed_and_save_prompts(prompt)
-
+        PROMPT = generate_prompt() # Generate new prompt for each iteration
+        embedded_prompts, null_prompt = embed_and_save_prompts(PROMPT)
+        
         images = generate_images_from_disturbed_embeddings(sd, embedded_prompts, null_prompt, batch_size = 1)
-
+        
         for j, (image, embedding) in enumerate(images):
             images_tensors.append(image)
             torch.cuda.empty_cache()
@@ -361,45 +353,48 @@ def main():
             image_features = image_encoder(prep_img)
             image_features /= image_features.norm(dim=-1, keepdim=True)
             score = predictor(image_features.to(DEVICE).float())
-            img_file_name = f"image_{j:06d}.png"
+            img_file_name = f"image_{i:06d}_{j:06d}.png"
             img_path = join(IMAGES_DIR, img_file_name)
             pil_image.save(img_path)
             print(f"Image saved at: {img_path}")
 
             if SAVE_EMBEDDINGS:
-                embedding_file_name = f"embedding_{j:06d}.pt"
+                embedding_file_name = f"embedding_{i:06d}_{j:06d}.pt"
+                embedding_path = join(FEATURES_DIR, embedding_file_name)
+                torch.save(embedding, embedding_path)
+
                 print(f"Embedding saved at: {embedding_path}")
 
-            manifest_i = {                     
-                            "file-name": img_file_name,
-                            "file-hash": img_hash,
-                            "file-path": img_path,
-                        }
-            manifest.append(manifest_i)
+                manifest_i = {                     
+                                "file-name": img_file_name,
+                                "file-hash": img_hash,
+                                "file-path": img_path,
+                            }
+                manifest.append(manifest_i)
 
-            scores_i = manifest_i.copy()
-            scores_i["score"] = score.item()
-            scores.append(scores_i)
+                scores_i = manifest_i.copy()
+                scores_i["score"] = score.item()
+                scores.append(scores_i)
 
-            numpy_img = np.array(pil_image)
-            largest_bounding_box = get_bounding_box_details(numpy_img)
-            center_x, center_y, center_offset_x, center_offset_y, box_w, box_h = get_bounding_box_center_offset(largest_bounding_box, numpy_img.shape)
+                numpy_img = np.array(pil_image)
+                largest_bounding_box = get_bounding_box_details(numpy_img)
+                center_x, center_y, center_offset_x, center_offset_y, box_w, box_h = get_bounding_box_center_offset(largest_bounding_box, numpy_img.shape)
 
-            json_output_i = manifest_i.copy()
-            json_output_i["initial-prompt"] = PROMPT
-            json_output_i["score"] = score.item()
-            json_output_i["bounding_box_center_x"] = center_x
-            json_output_i["bounding_box_center_y"] = center_y
-            json_output_i["bounding_box_center_offset_x"] = center_offset_x
-            json_output_i["bounding_box_center_offset_y"] = center_offset_y
-            json_output_i["bounding_box_width"] = box_w
-            json_output_i["bounding_box_height"] = box_h
-            json_output_i["embedding-tensor"] = embedding.tolist()
-            json_output_i["clip-vector"] = image_features.tolist()
+                json_output_i = manifest_i.copy()
+                json_output_i["initial-prompt"] = PROMPT
+                json_output_i["score"] = score.item()
+                json_output_i["bounding_box_center_x"] = center_x
+                json_output_i["bounding_box_center_y"] = center_y
+                json_output_i["bounding_box_center_offset_x"] = center_offset_x
+                json_output_i["bounding_box_center_offset_y"] = center_offset_y
+                json_output_i["bounding_box_width"] = box_w
+                json_output_i["bounding_box_height"] = box_h
+                json_output_i["embedding-tensor"] = embedding.tolist()
+                json_output_i["clip-vector"] = image_features.tolist()
 
 
 
-            json_output.append(json_output_i)
+                json_output.append(json_output_i)
 
     images_grid = torch.cat(images_tensors)
     save_image_grid(images_grid, join(IMAGES_DIR, "images_grid.png"), nrow=int(math.log(NUM_ITERATIONS, 2)), normalize=True, scale_each=True)
