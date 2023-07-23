@@ -59,7 +59,6 @@ parser = argparse.ArgumentParser("Embed prompts using CLIP")
 parser.add_argument(
     "--prompt",
     type=str,
-    default=prompt,
     help="The prompt to embed. Defaults to a randomly generated prompt",
 )
 parser.add_argument(
@@ -316,12 +315,9 @@ def get_image_features(
     return image_features
 
 def main():
-    
     pt = ModelsPathTree(base_directory=base_dir)
-    embedded_prompts, null_prompt = embed_and_save_prompts(PROMPT)
     sd = init_stable_diffusion(DEVICE, pt, n_steps=20, sampler_name="ddim", ddim_eta=0.0)
 
-    images = generate_images_from_disturbed_embeddings(sd, embedded_prompts, null_prompt, batch_size = 1)
     image_encoder = CLIPImageEncoder(device=DEVICE)
     image_encoder.load_clip_model(**pt.clip_model)
     image_encoder.initialize_preprocessor()
@@ -341,60 +337,69 @@ def main():
     manifest_path = join(OUTPUT_DIR, "manifest.json")
     scores_path = join(OUTPUT_DIR, "scores.json")
 
-    for i, (image, embedding) in enumerate(images):
-        images_tensors.append(image)
-        torch.cuda.empty_cache()
-        get_memory_status()
-        #compute hash
-        img_hash = calculate_sha256(image.squeeze())
-        pil_image = to_pil(image.squeeze())
-        #compute aesthetic score
-        # image_features = get_image_features(pil_image, clip_model, clip_preprocess)
-        prep_img = image_encoder.preprocess_input(pil_image)
-        image_features = image_encoder(prep_img)
-        image_features /= image_features.norm(dim=-1, keepdim=True)
-        score = predictor(image_features.to(DEVICE).float())
-        img_file_name = f"image_{i:06d}.png"
-        img_path = join(IMAGES_DIR, img_file_name)
-        pil_image.save(img_path)
-        print(f"Image saved at: {img_path}")
+    for i in range(NUM_ITERATIONS):
+        # Select 2 items randomly from prompt_list_1 and 5 items randomly from prompt_list_2
+        selected_prompts_1 = random.sample(prompt_list_1, 2)
+        selected_prompts_2 = random.sample(prompt_list_2, 5)
 
-        if SAVE_EMBEDDINGS:
-            embedding_file_name = f"embedding_{i:06d}.pt"
-            embedding_path = join(FEATURES_DIR, embedding_file_name)
-            torch.save(embedding, embedding_path)
-            print(f"Embedding saved at: {embedding_path}")
+        # Join all selected prompts into a single string, separated by commas
+        prompt = ', '.join(selected_prompts_1 + selected_prompts_2)
 
-        manifest_i = {                     
-                        "file-name": img_file_name,
-                        "file-hash": img_hash,
-                        "file-path": img_path,
-                    }
-        manifest.append(manifest_i)
+        embedded_prompts, null_prompt = embed_and_save_prompts(prompt)
 
-        scores_i = manifest_i.copy()
-        scores_i["score"] = score.item()
-        scores.append(scores_i)
+        images = generate_images_from_disturbed_embeddings(sd, embedded_prompts, null_prompt, batch_size = 1)
 
-        numpy_img = np.array(pil_image)
-        largest_bounding_box = get_bounding_box_details(numpy_img)
-        center_x, center_y, center_offset_x, center_offset_y, box_w, box_h = get_bounding_box_center_offset(largest_bounding_box, numpy_img.shape)
+        for j, (image, embedding) in enumerate(images):
+            images_tensors.append(image)
+            torch.cuda.empty_cache()
+            get_memory_status()
+            # compute hash
+            img_hash = calculate_sha256(image.squeeze())
+            pil_image = to_pil(image.squeeze())
+            # compute aesthetic score
+            prep_img = image_encoder.preprocess_input(pil_image)
+            image_features = image_encoder(prep_img)
+            image_features /= image_features.norm(dim=-1, keepdim=True)
+            score = predictor(image_features.to(DEVICE).float())
+            img_file_name = f"image_{j:06d}.png"
+            img_path = join(IMAGES_DIR, img_file_name)
+            pil_image.save(img_path)
+            print(f"Image saved at: {img_path}")
 
-        json_output_i = manifest_i.copy()
-        json_output_i["initial-prompt"] = PROMPT
-        json_output_i["score"] = score.item()
-        json_output_i["bounding_box_center_x"] = center_x
-        json_output_i["bounding_box_center_y"] = center_y
-        json_output_i["bounding_box_center_offset_x"] = center_offset_x
-        json_output_i["bounding_box_center_offset_y"] = center_offset_y
-        json_output_i["bounding_box_width"] = box_w
-        json_output_i["bounding_box_height"] = box_h
-        json_output_i["embedding-tensor"] = embedding.tolist()
-        json_output_i["clip-vector"] = image_features.tolist()
+            if SAVE_EMBEDDINGS:
+                embedding_file_name = f"embedding_{j:06d}.pt"
+                print(f"Embedding saved at: {embedding_path}")
+
+            manifest_i = {                     
+                            "file-name": img_file_name,
+                            "file-hash": img_hash,
+                            "file-path": img_path,
+                        }
+            manifest.append(manifest_i)
+
+            scores_i = manifest_i.copy()
+            scores_i["score"] = score.item()
+            scores.append(scores_i)
+
+            numpy_img = np.array(pil_image)
+            largest_bounding_box = get_bounding_box_details(numpy_img)
+            center_x, center_y, center_offset_x, center_offset_y, box_w, box_h = get_bounding_box_center_offset(largest_bounding_box, numpy_img.shape)
+
+            json_output_i = manifest_i.copy()
+            json_output_i["initial-prompt"] = PROMPT
+            json_output_i["score"] = score.item()
+            json_output_i["bounding_box_center_x"] = center_x
+            json_output_i["bounding_box_center_y"] = center_y
+            json_output_i["bounding_box_center_offset_x"] = center_offset_x
+            json_output_i["bounding_box_center_offset_y"] = center_offset_y
+            json_output_i["bounding_box_width"] = box_w
+            json_output_i["bounding_box_height"] = box_h
+            json_output_i["embedding-tensor"] = embedding.tolist()
+            json_output_i["clip-vector"] = image_features.tolist()
 
 
 
-        json_output.append(json_output_i)
+            json_output.append(json_output_i)
 
     images_grid = torch.cat(images_tensors)
     save_image_grid(images_grid, join(IMAGES_DIR, "images_grid.png"), nrow=int(math.log(NUM_ITERATIONS, 2)), normalize=True, scale_each=True)
