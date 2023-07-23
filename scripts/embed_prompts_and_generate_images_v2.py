@@ -323,11 +323,14 @@ def main():
     prompts = []
     for i in range(NUM_ITERATIONS):
         PROMPT = generate_prompt()
+        print(f"Prompt {i}: {PROMPT}")  # Print the generated prompt
         prompts.append(PROMPT)  # Store each prompt for later use
         embedded_prompts, null_prompt = embed_and_save_prompts(PROMPT)
         images_generator = generate_images_from_disturbed_embeddings(sd, embedded_prompts, null_prompt, batch_size = 1)
         image, embedding = next(images_generator)
         images.append((image, embedding, PROMPT))  # Include the prompt with the image and embedding
+        print(f"Image {i} generated.")  # Print when an image is generated
+
 
     image_encoder = CLIPImageEncoder(device=DEVICE)
     image_encoder.load_clip_model(**pt.clip_model)
