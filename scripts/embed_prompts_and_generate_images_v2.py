@@ -8,6 +8,7 @@ import shutil
 import math
 import cv2
 import numpy as np
+import random
 
 base_dir = "./"
 sys.path.insert(0, base_dir)
@@ -39,7 +40,18 @@ SCORER_CHECKPOINT_PATH = os.path.abspath("./input/model/aesthetic_scorer/chadsco
 
 # DEVICE = input("Set device: 'cuda:i' or 'cpu'")
 
+# The two prompt lists
+prompt_list_1 = ['chibi', 'waifu', 'scifi', 'side scrolling', 'character', 'side scrolling']
+prompt_list_2 = ['white background', 'centered', 'full character', 'no background', 
+                 'not centered', 'line drawing', 'sketch', 'black and white', 
+                 'colored', 'offset', 'video game']
 
+# Select 2 items randomly from prompt_list_1 and 5 items randomly from prompt_list_2
+selected_prompts_1 = random.sample(prompt_list_1, 2)
+selected_prompts_2 = random.sample(prompt_list_2, 5)
+
+# Join all selected prompts into a single string, separated by commas
+prompt = ', '.join(selected_prompts_1 + selected_prompts_2)
 
 
 
@@ -47,8 +59,8 @@ parser = argparse.ArgumentParser("Embed prompts using CLIP")
 parser.add_argument(
     "--prompt",
     type=str,
-    default='A woman with flowers in her hair in a courtyard, in the style of Frank Frazetta',
-    help="The prompt to embed. Defaults to 'A woman with flowers in her hair in a courtyard, in the style of Frank Frazetta'",
+    default=prompt,
+    help="The prompt to embed. Defaults to a randomly generated prompt",
 )
 parser.add_argument(
     "--save_embeddings",
@@ -148,6 +160,8 @@ def init_stable_diffusion(device, pt, sampler_name="ddim", n_steps=20, ddim_eta=
     stable_diffusion.model.load_autoencoder(**pt.autoencoder).load_decoder(**pt.decoder)
 
     return stable_diffusion
+
+
 
 def embed_and_save_prompts(prompt: str, null_prompt = NULL_PROMPT):
 
