@@ -40,7 +40,10 @@ SCORER_CHECKPOINT_PATH = os.path.abspath("./input/model/aesthetic_scorer/chadsco
 
 # DEVICE = input("Set device: 'cuda:i' or 'cpu'")
 
-
+prompt_list_1 = ['chibi', 'waifu', 'scifi', 'side scrolling', 'character', 'side scrolling']
+prompt_list_2 = ['white background', 'centered', 'full character', 'no background', 
+                 'not centered', 'line drawing', 'sketch', 'black and white', 
+                 'colored', 'offset', 'video game']
 
 parser = argparse.ArgumentParser("Embed prompts using CLIP")
 parser.add_argument(
