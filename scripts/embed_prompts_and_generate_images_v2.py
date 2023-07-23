@@ -162,7 +162,7 @@ def generate_prompt():
     return prompt
 
 
-def embed_and_save_prompts(prompt: str, null_prompt = NULL_PROMPT):
+def embed_and_save_prompts(prompt: str, i: int, null_prompt = NULL_PROMPT):
 
     null_prompt = null_prompt
     prompt = prompt
@@ -171,18 +171,18 @@ def embed_and_save_prompts(prompt: str, null_prompt = NULL_PROMPT):
     clip_text_embedder.load_submodels()
 
     null_cond = clip_text_embedder(null_prompt)
-    torch.save(null_cond, join(EMBEDDED_PROMPTS_DIR, "null_cond.pt"))
+    torch.save(null_cond, join(EMBEDDED_PROMPTS_DIR, f"null_cond_{i}.pt"))
     print(
         "Null prompt embedding saved at: ",
-        f"{join(EMBEDDED_PROMPTS_DIR, 'null_cond.pt')}",
+        f"{join(EMBEDDED_PROMPTS_DIR, f'null_cond_{i}.pt')}",
     )
 
     embedded_prompts = clip_text_embedder(prompt)
-    torch.save(embedded_prompts, join(EMBEDDED_PROMPTS_DIR, "embedded_prompts.pt"))
+    torch.save(embedded_prompts, join(EMBEDDED_PROMPTS_DIR, f"embedded_prompts_{i}.pt"))
     
     print(
         "Prompts embeddings saved at: ",
-        f"{join(EMBEDDED_PROMPTS_DIR, 'embedded_prompts.pt')}",
+        f"{join(EMBEDDED_PROMPTS_DIR, f'embedded_prompts_{i}.pt')}",
     )
     
     get_memory_status()
@@ -191,6 +191,7 @@ def embed_and_save_prompts(prompt: str, null_prompt = NULL_PROMPT):
     torch.cuda.empty_cache()
     get_memory_status()
     return embedded_prompts, null_cond
+
 
 def generate_images_from_disturbed_embeddings(
     sd: StableDiffusion,
@@ -325,7 +326,7 @@ def main():
         PROMPT = generate_prompt()
         print(f"Prompt {i}: {PROMPT}")  # Print the generated prompt
         prompts.append(PROMPT)  # Store each prompt for later use
-        embedded_prompts, null_prompt = embed_and_save_prompts(PROMPT)
+        embedded_prompts, null_prompt = embed_and_save_prompts(PROMPT, i)
         images_generator = generate_images_from_disturbed_embeddings(sd, embedded_prompts, null_prompt, batch_size = 1)
         image, embedding = next(images_generator)
         images.append((image, embedding, PROMPT))  # Include the prompt with the image and embedding
