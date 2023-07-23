@@ -319,6 +319,24 @@ def main():
     pt = ModelsPathTree(base_directory=base_dir)
     sd = init_stable_diffusion(DEVICE, pt, n_steps=20, sampler_name="ddim", ddim_eta=0.0)
 
+    images = []
+    prompts = []
+    embedded_prompts_list = []  # To store the embedded prompts
+    null_prompt_list = []  # To store the null prompts
+    for i in range(NUM_ITERATIONS):
+        PROMPT = generate_prompt()
+        print(f"Prompt {i}: {PROMPT}")  # Print the generated prompt
+        prompts.append(PROMPT)  # Store each prompt for later use
+        embedded_prompts, null_prompt = embed_and_save_prompts(PROMPT, i)
+        embedded_prompts_list.append(embedded_prompts)  # Store the embedded prompts
+        null_prompt_list.append(null_prompt)  # Store the null prompts
+        print(f"Image {i} generated.")  # Print when an image is generated
+
+    for i in range(NUM_ITERATIONS):
+        images_generator = generate_images_from_disturbed_embeddings(sd, embedded_prompts_list[i], null_prompt_list[i], batch_size = 1)  # Use the corresponding prompt for each iteration
+        image, embedding = next(images_generator)
+        images.append((image, embedding, prompts[i]))  # Include the prompt with the image and embedding
+
     image_encoder = CLIPImageEncoder(device=DEVICE)
     image_encoder.load_clip_model(**pt.clip_model)
     image_encoder.initialize_preprocessor()
@@ -337,14 +355,7 @@ def main():
     manifest_path = join(OUTPUT_DIR, "manifest.json")
     scores_path = join(OUTPUT_DIR, "scores.json")
 
-    for i in range(NUM_ITERATIONS):
-        PROMPT = generate_prompt()
-        print(f"Prompt {i}: {PROMPT}")
-        embedded_prompts, null_prompt = embed_and_save_prompts(PROMPT, i)
-        images_generator = generate_images_from_disturbed_embeddings(sd, embedded_prompts, null_prompt, batch_size = 1)
-        image, embedding = next(images_generator)
-        print(f"Image {i} generated.")
-
+    for i, (image, embedding, prompt) in enumerate(images):  # Retrieve the prompt with the image and embedding
         images_tensors.append(image)
         torch.cuda.empty_cache()
         get_memory_status()
@@ -382,7 +393,7 @@ def main():
         center_x, center_y, center_offset_x, center_offset_y, box_w, box_h = get_bounding_box_center_offset(largest_bounding_box, numpy_img.shape)
 
         json_output_i = manifest_i.copy()
-        json_output_i["initial-prompt"] = PROMPT
+        json_output_i["initial-prompt"] = prompt  # Retrieve the prompt associated with this image
         json_output_i["score"] = score.item()
         json_output_i["bounding_box_center_x"] = center_x
         json_output_i["bounding_box_center_y"] = center_y
