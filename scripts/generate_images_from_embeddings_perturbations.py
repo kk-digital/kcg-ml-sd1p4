@@ -211,7 +211,7 @@ def generate_image_from_disturbed_embeddings(
     print("prompt index: ", prompt_index)
     print("num noise steps: ", num_noise_steps)
     embedded_prompt = embedded_prompts[prompt_index].to(device).unsqueeze(0)
-    print(embedded_prompt.shape)
+   
     dist = torch.distributions.normal.Normal(
         loc=embedded_prompt.mean(dim=2), scale=embedded_prompt.std(dim=2)
     )
@@ -291,34 +291,19 @@ if __name__ == "__main__":
         print("num noise steps: ", num_noise_steps)
 
         embedded_prompt = embedded_prompts[prompt_index].to(DEVICE).unsqueeze(0)
-        print(embedded_prompt.shape)
+
         dist = torch.distributions.normal.Normal(
             loc=embedded_prompt.mean(dim=2), scale=embedded_prompt.std(dim=2)
         )
         
         noise_t = torch.zeros_like(embedded_prompt).to(DEVICE)
 
-            
-
-        # noise_im = torch.randn_like(noise_t).to(DEVICE)
-        # noise_im = (
-        #     dist.sample(sample_shape=torch.Size([768]))
-        # ).permute(1, 0, 2).permute(0, 2, 1).to(DEVICE)
-        
         for k in range(num_noise_steps):
             noise_i = (
                 dist.sample(sample_shape=torch.Size([768]))
             ).permute(1, 0, 2).permute(0, 2, 1).to(DEVICE)
-            # noise_i = torch.randn_like(noise_t).to(DEVICE)
-            # print(torch.all(noise_im == noise_i))
             noise_t += (NOISE_MULTIPLIER * noise_i)
-            # noise_i = noise_im
-            # noise_im = torch.randn_like(noise_t).to(DEVICE)
-            # noise_im = (
-            #     dist.sample(sample_shape=torch.Size([768]))
-            # ).permute(1, 0, 2).permute(0, 2, 1).to(DEVICE)
 
-            # print(noise_i.shape)
         embedding = embedded_prompt + noise_t
         image = sd.generate_images_from_embeddings(
             seed=SEED, 
@@ -340,27 +325,32 @@ if __name__ == "__main__":
         img_path = join(IMAGES_DIR, img_file_name)
         pil_image.save(img_path)
         print(f"Image saved at: {img_path}")
+
         if SAVE_EMBEDDINGS:
             embedding_file_name = f"embedding_{img_counter:06d}.pt"
             embedding_path = join(FEATURES_DIR, embedding_file_name)
             torch.save(embedding, embedding_path)
             print(f"Embedding saved at: {embedding_path}")
+
         manifest_i = {                     
                         "file-name": img_file_name,
                         "file-hash": img_hash,
-                        "file-path": img_path,
+                        "file-path": "./images/"+img_file_name,
                     }
         manifest.append(manifest_i)
+
         scores_i = manifest_i.copy()
         scores_i["initial-prompt"] = PROMPTS[prompt_index]
         scores_i["initial-prompt-index"] = prompt_index
         scores_i["score"] = score.item()
         scores_i["num-noise-steps"] = num_noise_steps
         scores.append(scores_i)
+
         json_output_i = scores_i.copy()
         json_output_i["embedding-tensor"] = embedding.tolist()
         json_output_i["clip-vector"] = image_features.tolist()
         json_output.append(json_output_i)
+
         if i%64 == 0:
             json.dump(json_output, open(json_output_path, "w"), indent=4)
             print(f"features.json saved at: {json_output_path}")
