@@ -324,7 +324,10 @@ def main():
     for i in range(NUM_ITERATIONS):
         PROMPT = generate_prompt()
         embedded_prompts, null_prompt = embed_and_save_prompts(PROMPT)
-        images.extend(generate_images_from_disturbed_embeddings(sd, embedded_prompts, null_prompt, batch_size = 1))
+        images_generator = generate_images_from_disturbed_embeddings(sd, embedded_prompts, null_prompt, batch_size = 1)
+        image, embedding = next(images_generator)
+        images.append((image, embedding))
+
 
     image_encoder = CLIPImageEncoder(device=DEVICE)
     image_encoder.load_clip_model(**pt.clip_model)
