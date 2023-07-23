@@ -317,22 +317,21 @@ def get_image_features(
 def main():
     
     pt = ModelsPathTree(base_directory=base_dir)
-
     sd = init_stable_diffusion(DEVICE, pt, n_steps=20, sampler_name="ddim", ddim_eta=0.0)
 
     images = []
+    prompts = []
     for i in range(NUM_ITERATIONS):
         PROMPT = generate_prompt()
+        prompts.append(PROMPT)  # Store each prompt for later use
         embedded_prompts, null_prompt = embed_and_save_prompts(PROMPT)
         images_generator = generate_images_from_disturbed_embeddings(sd, embedded_prompts, null_prompt, batch_size = 1)
         image, embedding = next(images_generator)
-        images.append((image, embedding))
-
+        images.append((image, embedding, PROMPT))  # Include the prompt with the image and embedding
 
     image_encoder = CLIPImageEncoder(device=DEVICE)
     image_encoder.load_clip_model(**pt.clip_model)
     image_encoder.initialize_preprocessor()
-    # clip_model, clip_preprocess = clip.load("ViT-L/14", device=DEVICE)
     
     loaded_model = torch.load(SCORER_CHECKPOINT_PATH)
     predictor = ChadPredictor(768, device=DEVICE)
@@ -348,29 +347,27 @@ def main():
     manifest_path = join(OUTPUT_DIR, "manifest.json")
     scores_path = join(OUTPUT_DIR, "scores.json")
 
-    for i, (image, embedding) in enumerate(images):
+    for i, (image, embedding, prompt) in enumerate(images):  # Retrieve the prompt with the image and embedding
         images_tensors.append(image)
         torch.cuda.empty_cache()
         get_memory_status()
-        #compute hash
+
         img_hash = calculate_sha256(image.squeeze())
         pil_image = to_pil(image.squeeze())
-        #compute aesthetic score
-        # image_features = get_image_features(pil_image, clip_model, clip_preprocess)
+
         prep_img = image_encoder.preprocess_input(pil_image)
         image_features = image_encoder(prep_img)
         image_features /= image_features.norm(dim=-1, keepdim=True)
         score = predictor(image_features.to(DEVICE).float())
+        
         img_file_name = f"image_{i:06d}.png"
         img_path = join(IMAGES_DIR, img_file_name)
         pil_image.save(img_path)
-        print(f"Image saved at: {img_path}")
 
         if SAVE_EMBEDDINGS:
             embedding_file_name = f"embedding_{i:06d}.pt"
             embedding_path = join(FEATURES_DIR, embedding_file_name)
             torch.save(embedding, embedding_path)
-            print(f"Embedding saved at: {embedding_path}")
 
         manifest_i = {                     
                         "file-name": img_file_name,
@@ -388,7 +385,7 @@ def main():
         center_x, center_y, center_offset_x, center_offset_y, box_w, box_h = get_bounding_box_center_offset(largest_bounding_box, numpy_img.shape)
 
         json_output_i = manifest_i.copy()
-        json_output_i["initial-prompt"] = PROMPT
+        json_output_i["initial-prompt"] = prompt  # Retrieve the prompt associated with this image
         json_output_i["score"] = score.item()
         json_output_i["bounding_box_center_x"] = center_x
         json_output_i["bounding_box_center_y"] = center_y
@@ -399,25 +396,14 @@ def main():
         json_output_i["embedding-tensor"] = embedding.tolist()
         json_output_i["clip-vector"] = image_features.tolist()
 
-
-
         json_output.append(json_output_i)
 
     images_grid = torch.cat(images_tensors)
     save_image_grid(images_grid, join(IMAGES_DIR, "images_grid.png"), nrow=int(math.log(NUM_ITERATIONS, 2)), normalize=True, scale_each=True)
-    print(f"Image grid saved at: {join(IMAGES_DIR, 'images_grid.png')}")
+    
     json.dump(json_output, open(json_output_path, "w"), indent=4)
-    print(f"features.json saved at: {json_output_path}")
     json.dump(scores, open(scores_path, "w"), indent=4)
-    print(f"scores.json saved at: {scores_path}")
     json.dump(manifest, open(manifest_path, "w"), indent=4)
-    print(f"manifest.json saved at: {manifest_path}")
-
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
