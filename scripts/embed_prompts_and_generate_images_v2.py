@@ -165,7 +165,6 @@ def generate_prompt():
 def embed_and_save_prompts(prompt: str, i: int, null_prompt = NULL_PROMPT):
 
     null_prompt = null_prompt
-    prompt = prompt
 
     clip_text_embedder = CLIPTextEmbedder(device=check_device())
     clip_text_embedder.load_submodels()
