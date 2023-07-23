@@ -158,7 +158,7 @@ def generate_prompt():
 
     # Join all selected prompts into a single string, separated by commas
     prompt = ', '.join(selected_prompts_1 + selected_prompts_2)
-    
+    print(f"Generated prompt: {prompt}")
     return prompt
 
 
