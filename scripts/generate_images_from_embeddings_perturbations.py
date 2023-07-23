@@ -200,7 +200,7 @@ def generate_image_from_disturbed_embeddings(
     seed=SEED,
     num_iterations=NUM_ITERATIONS,
     noise_multiplier=NOISE_MULTIPLIER,
-    max_noise_steps = 15,
+    max_noise_steps = MAX_NOISE_STEPS,
     batch_size=BATCH_SIZE
 ):
     
@@ -334,8 +334,8 @@ if __name__ == "__main__":
 
         manifest_i = {                     
                         "file-name": img_file_name,
-                        "file-hash": img_hash,
                         "file-path": "./images/"+img_file_name,
+                        "file-hash": img_hash,
                     }
         manifest.append(manifest_i)
 
