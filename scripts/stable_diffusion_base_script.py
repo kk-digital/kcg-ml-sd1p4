@@ -164,7 +164,6 @@ class StableDiffusionBaseScript:
                 clip_text_embedder=clip_text_embedder,
                 unet_model = unet_model,
                 force_submodels_init=force_submodels_init,
-                use_safetensors=True
             )
             self.initialize_sampler()
             # Move the model to device
