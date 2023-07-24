@@ -188,8 +188,9 @@ def embed_and_save_prompts(clip_text_embedder, prompt: str, i: int, null_prompt 
 
 def generate_images_from_disturbed_embeddings(
     sd: StableDiffusion,
-    embedded_prompts: List[torch.Tensor],
-    null_prompt: torch.Tensor,
+    clip_text_embedder: CLIPTextEmbedder,
+    prompts: List[str],
+    # null_prompt: torch.Tensor,
     device=DEVICE,
     seed=SEED,
     num_iterations=NUM_ITERATIONS,
@@ -197,9 +198,10 @@ def generate_images_from_disturbed_embeddings(
     batch_size=BATCH_SIZE
 ):
 
+    null_prompt = clip_text_embedder(NULL_PROMPT).to(device)
 
     for i in range(0, num_iterations):
-        embedded_prompt = embedded_prompts[i].to(device)
+        embedded_prompt = clip_text_embedder(prompts[i]).to(device)
         print(embedded_prompt.shape)
         dist = torch.distributions.normal.Normal(
         loc=embedded_prompt.mean(dim=2), scale=embedded_prompt.std(dim=2)
@@ -279,18 +281,18 @@ def main():
     null_prompt_list = []  # To store the null prompts
     for i in range(NUM_ITERATIONS):
         prompt = generate_prompt()
-        print(f"Prompt {i}: {prompt}")  # Print the generated prompt
+    #     print(f"Prompt {i}: {prompt}")  # Print the generated prompt
         prompts.append(prompt)  # Store each prompt for later use
-        get_memory_status()        
-        embedded_prompt, null_prompt = embed_and_save_prompts(clip_text_embedder, prompt, i)
-        embedded_prompts_list.append(embedded_prompt.cpu())  # Store the embedded prompts
-        get_memory_status() 
-        torch.cuda.empty_cache()
+    #     get_memory_status()        
+    #     embedded_prompt, null_prompt = embed_and_save_prompts(clip_text_embedder, prompt, i)
+    #     embedded_prompts_list.append(embedded_prompt.cpu())  # Store the embedded prompts
+    #     get_memory_status() 
+    #     torch.cuda.empty_cache()
     # embedded_prompts_list = [embedded_prompt for embedded_prompt in embedded_prompts]  # Store the embedded prompts
     # null_prompt_list.append(null_prompt)  # Store the null prompts
     # print(f"Image {i} generated.")  # Print when an image is generated
 
-    images_generator = generate_images_from_disturbed_embeddings(sd, embedded_prompts_list, null_prompt, batch_size = 1)  # Use the corresponding prompt for each iteration
+    images_generator = generate_images_from_disturbed_embeddings(sd, clip_text_embedder, prompts, batch_size = 1)  # Use the corresponding prompt for each iteration
     # for i in range(NUM_ITERATIONS):
     #     image, embedding = next(images_generator)
     #     images.append((image.cpu(), embedding.cpu(), prompts[i]))  # Include the prompt with the image and embedding
@@ -368,7 +370,7 @@ def main():
         json_output_i["clip-vector"] = image_features.tolist()
 
         json_output.append(json_output_i)
-        if i % 64 == 0:
+        if i % 16 == 0:
             json.dump(json_output, open(json_output_path, "w"), indent=4)
             json.dump(scores, open(scores_path, "w"), indent=4)
             json.dump(manifest, open(manifest_path, "w"), indent=4)
