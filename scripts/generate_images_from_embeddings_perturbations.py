@@ -27,6 +27,7 @@ from stable_diffusion.utils.utils import (
     to_pil,
     save_image_grid,
     show_image_grid,
+    set_seed
 )
 
 EMBEDDED_PROMPTS_DIR = os.path.abspath("./input/embedded_prompts/")
@@ -50,7 +51,7 @@ parser.add_argument(
     "--prompts",
     nargs="+",
     type=str,
-    default=['A woman with flowers in her hair in a courtyard, in the style of Frank Frazetta', 'A computer virus painting a cow'],
+    default=['A woman with flowers in her hair in a courtyard, in the style of Frank Frazetta', 'An oil painting of a computer virus', 'chibi, waifu'],
     help="The prompts to embed. Defaults to ['A woman with flowers in her hair in a courtyard, in the style of Frank Frazetta', 'A computer virus painting a cow']",
 )
 
@@ -72,7 +73,18 @@ parser.add_argument(
     default=8,
     help="The number of iterations to batch-generate images. Defaults to 8.",
 )
-
+parser.add_argument(
+    "--max_noise_steps",
+    type=int,
+    default=5,
+    help="The maximum length of the random walk over the initial prompt. Defaults to 5.",
+)
+parser.add_argument(
+    "--ddim_steps",
+    type=int,
+    default=20,
+    help="Number of denoising steps during the sampling process. Defaults to 20.",
+)
 # parser.add_argument(
 #     "--batch_size",
 #     type=str,
@@ -84,7 +96,7 @@ parser.add_argument(
     "--seed",
     type=int,
     default=2982,
-    help="The noise seed used to generate the images. Defaults to 2982",
+    help="The noise seed used to generate the images. Defaults to `2982`. Set to `0` for a random seed.",
 )
 parser.add_argument(
     "--noise_multiplier",
@@ -124,6 +136,8 @@ BATCH_SIZE = 1
 SAVE_EMBEDDINGS = args.save_embeddings
 CLEAR_OUTPUT_DIR = args.clear_output_dir
 RANDOM_WALK = args.random_walk
+MAX_NOISE_STEPS = args.max_noise_steps
+DDIM_STEPS = args.ddim_steps
 os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
 
 pt = ModelsPathTree(base_directory=base_dir)
@@ -141,7 +155,7 @@ else:
     os.makedirs(FEATURES_DIR, exist_ok=True)
     os.makedirs(IMAGES_DIR, exist_ok=True)
 
-def init_stable_diffusion(device, pt, sampler_name="ddim", n_steps=20, ddim_eta=0.0):
+def init_stable_diffusion(device, pt, sampler_name="ddim", n_steps=DDIM_STEPS, ddim_eta=0.0):
     device = check_device(device)
 
     stable_diffusion = StableDiffusion(
@@ -192,7 +206,7 @@ def generate_image_from_disturbed_embeddings(
     seed=SEED,
     num_iterations=NUM_ITERATIONS,
     noise_multiplier=NOISE_MULTIPLIER,
-    max_noise_steps = 15,
+    max_noise_steps = MAX_NOISE_STEPS,
     batch_size=BATCH_SIZE
 ):
     
@@ -203,7 +217,7 @@ def generate_image_from_disturbed_embeddings(
     print("prompt index: ", prompt_index)
     print("num noise steps: ", num_noise_steps)
     embedded_prompt = embedded_prompts[prompt_index].to(device).unsqueeze(0)
-    print(embedded_prompt.shape)
+   
     dist = torch.distributions.normal.Normal(
         loc=embedded_prompt.mean(dim=2), scale=embedded_prompt.std(dim=2)
     )
@@ -215,19 +229,6 @@ def generate_image_from_disturbed_embeddings(
         print(noise_i.shape)
         noise_t = noise_t + (noise_multiplier * noise_i)   
 
-    # num_noise_steps = torch.randint(0, max_noise_steps, (1,)).item()
-    # noise_i = (
-    #     dist.sample(sample_shape=torch.Size([num_noise_steps, 768]))
-    # ).permute(0, 2, 1).to(device)
-    # print("i shape: ", noise_i.shape)
-    # noise_t = noise_i.cumsum(dim=0)[-1:, :, :].to(device)
-    # print(noise_t.shape)
-    # noise_t = noise_multiplier * noise_t
-
-
-    # noise_t = noise_t + noise_i
-    # embedding_e = embedded_prompt + (noise_multiplier * noise_t) 
-    # noise_t += (noise_multiplier * noise_i)
     embedding_e = embedded_prompt + noise_t
     image_e = sd.generate_images_from_embeddings(
         seed=seed, 
@@ -246,19 +247,6 @@ def calculate_sha256(tensor):
     sha256_hash = hashlib.sha256(tensor_bytes)
     return sha256_hash.hexdigest()
 
-def get_image_features(
-    image, model, preprocess, device=DEVICE,
-):
-    image = preprocess(image).unsqueeze(0).to(device)
-    with torch.no_grad():
-        image_features = model.encode_image(image)
-        # l2 normalize
-        image_features /= image_features.norm(dim=-1, keepdim=True)
-    image_features = image_features.cpu().detach().numpy()
-    return image_features
-
-
-
 
 if __name__ == "__main__":
 
@@ -266,7 +254,7 @@ if __name__ == "__main__":
 
     embedded_prompts, null_prompt = embed_and_save_prompts(PROMPTS)
     num_prompts = len(embedded_prompts)
-    sd = init_stable_diffusion(DEVICE, pt)    
+    sd = init_stable_diffusion(DEVICE, pt, n_steps=DDIM_STEPS)    
     
     image_encoder = CLIPImageEncoder(device=DEVICE)
     image_encoder.load_clip_model(**pt.clip_model)
@@ -284,95 +272,88 @@ if __name__ == "__main__":
     manifest_path = join(OUTPUT_DIR, "manifest.json")
     scores_path = join(OUTPUT_DIR, "scores.json")
     # images_tensors = []
-    MAX_NOISE_STEPS = 5
-    prompt_index = npr.choice(num_prompts)
-    num_noise_steps = npr.choice(MAX_NOISE_STEPS)
+    # prompt_index = npr.choice(num_prompts)
+    # num_noise_steps = npr.choice(MAX_NOISE_STEPS)
     img_counter = 0
     for i in range(0, NUM_ITERATIONS):
-        for j in range(0, num_prompts):
-            embedded_prompt = embedded_prompts[j].to(DEVICE).unsqueeze(0)
-            print(embedded_prompt.shape)
-            dist = torch.distributions.normal.Normal(
-                loc=embedded_prompt.mean(dim=2), scale=embedded_prompt.std(dim=2)
-            )
+
+        prompt_index = random.choice(range(0, num_prompts))
+        num_noise_steps = random.choice(range(0, MAX_NOISE_STEPS))
+
+        print("prompt index: ", prompt_index)
+        print("num noise steps: ", num_noise_steps)
+
+        embedded_prompt = embedded_prompts[prompt_index].to(DEVICE).unsqueeze(0)
+
+        dist = torch.distributions.normal.Normal(
+            loc=embedded_prompt.mean(dim=2), scale=embedded_prompt.std(dim=2)
+        )
+        
+        noise_t = torch.zeros_like(embedded_prompt).to(DEVICE)
+
+        for k in range(num_noise_steps):
+            noise_i = (
+                dist.sample(sample_shape=torch.Size([768]))
+            ).permute(1, 0, 2).permute(0, 2, 1).to(DEVICE)
+            noise_t += (NOISE_MULTIPLIER * noise_i)
+
+        embedding = embedded_prompt + noise_t
+        image = sd.generate_images_from_embeddings(
+            seed=SEED, 
+            embedded_prompt=embedding, 
+            null_prompt=null_prompt, 
+            batch_size=BATCH_SIZE
+        )        
+        # images_tensors.append(image.cpu().detach())
+        get_memory_status()
+        #compute hash
+        img_hash = calculate_sha256(image.squeeze())
+        pil_image = to_pil(image.squeeze())
+        #compute aesthetic score
+        prep_img = image_encoder.preprocess_input(pil_image)
+        image_features = image_encoder(prep_img)
+        image_features /= image_features.norm(dim=-1, keepdim=True)
+        score = predictor(image_features.to(DEVICE).float()).cpu()
+        img_file_name = f"image_{img_counter:06d}.png"
+        img_path = join(IMAGES_DIR, img_file_name)
+        pil_image.save(img_path)
+        print(f"Image saved at: {img_path}")
+
+        if SAVE_EMBEDDINGS:
+            embedding_file_name = f"embedding_{img_counter:06d}.pt"
+            embedding_path = join(FEATURES_DIR, embedding_file_name)
+            torch.save(embedding, embedding_path)
+            print(f"Embedding saved at: {embedding_path}")
+
+        manifest_i = {                     
+                        "file-name": img_file_name,
+                        "file-path": "./images/"+img_file_name,
+                        "file-hash": img_hash,
+                    }
+        manifest.append(manifest_i)
+
+        scores_i = manifest_i.copy()
+        scores_i["initial-prompt"] = PROMPTS[prompt_index]
+        scores_i["initial-prompt-index"] = prompt_index
+        scores_i["score"] = score.item()
+        scores_i["num-noise-steps"] = num_noise_steps
+        scores.append(scores_i)
+
+        json_output_i = scores_i.copy()
+        json_output_i["embedding-tensor"] = embedding.tolist()
+        json_output_i["clip-vector"] = image_features.tolist()
+        json_output.append(json_output_i)
+
+        if i%64 == 0:
+            json.dump(json_output, open(json_output_path, "w"), indent=4)
+            print(f"features.json saved at: {json_output_path}")
             
-            noise_t = torch.zeros_like(embedded_prompt).to(DEVICE)
-
-            for k in range(0, MAX_NOISE_STEPS):
-
-                noise_i = (
-                        dist.sample(sample_shape=torch.Size([768]))
-                    ).permute(1, 0, 2).permute(0, 2, 1).to(DEVICE)
-                # noise_i = torch.randn_like(noise_t).to(DEVICE)
-                noise_t += (NOISE_MULTIPLIER * noise_i)   
-                
-                # for k in range(num_noise_steps):
-                #     # noise_i = (
-                #     #     dist.sample(sample_shape=torch.Size([768]))
-                #     # ).permute(1, 0, 2).permute(0, 2, 1).to(DEVICE)
-                #     noise_i = torch.randn_like(noise_t).to(DEVICE)
-                #     print(noise_i.shape)
-
-                embedding = embedded_prompt + noise_t
-                image = sd.generate_images_from_embeddings(
-                    seed=SEED, 
-                    embedded_prompt=embedding, 
-                    null_prompt=null_prompt, 
-                    batch_size=BATCH_SIZE
-                )        
-
-                # images_tensors.append(image.cpu().detach())
-                get_memory_status()
-                #compute hash
-                img_hash = calculate_sha256(image.squeeze())
-                pil_image = to_pil(image.squeeze())
-                #compute aesthetic score
-                prep_img = image_encoder.preprocess_input(pil_image)
-                image_features = image_encoder(prep_img)
-                image_features /= image_features.norm(dim=-1, keepdim=True)
-                score = predictor(image_features.to(DEVICE).float()).cpu()
-                img_file_name = f"image_{img_counter:06d}.png"
-                img_path = join(IMAGES_DIR, img_file_name)
-                pil_image.save(img_path)
-                print(f"Image saved at: {img_path}")
-
-                if SAVE_EMBEDDINGS:
-                    embedding_file_name = f"embedding_{img_counter:06d}.pt"
-                    embedding_path = join(FEATURES_DIR, embedding_file_name)
-                    torch.save(embedding, embedding_path)
-                    print(f"Embedding saved at: {embedding_path}")
-
-                manifest_i = {                     
-                                "file-name": img_file_name,
-                                "file-hash": img_hash,
-                                "file-path": img_path,
-                            }
-                manifest.append(manifest_i)
-
-                scores_i = manifest_i.copy()
-                scores_i["initial-prompt"] = PROMPTS[prompt_index]
-                scores_i["initial-prompt-index"] = prompt_index
-                scores_i["score"] = score.item()
-                scores_i["num-noise-steps"] = num_noise_steps
-                scores.append(scores_i)
-
-                json_output_i = scores_i.copy()
-                json_output_i["embedding-tensor"] = embedding.tolist()
-                json_output_i["clip-vector"] = image_features.tolist()
-                json_output.append(json_output_i)
-
-                if i%64 == 0:
-
-                    json.dump(json_output, open(json_output_path, "w"), indent=4)
-                    print(f"features.json saved at: {json_output_path}")
-                    
-                    json.dump(scores, open(scores_path, "w"), indent=4)
-                    print(f"scores.json saved at: {scores_path}")
-                    
-                    json.dump(manifest, open(manifest_path, "w"), indent=4)
-                    print(f"manifest.json saved at: {manifest_path}")
-
-                img_counter += 1
+            json.dump(scores, open(scores_path, "w"), indent=4)
+            print(f"scores.json saved at: {scores_path}")
+            
+            json.dump(manifest, open(manifest_path, "w"), indent=4)
+            print(f"manifest.json saved at: {manifest_path}")
+        img_counter += 1
     json.dump(json_output, open(json_output_path, "w"), indent=4)
     print(f"features.json saved at: {json_output_path}")
     json.dump(scores, open(scores_path, "w"), indent=4)
