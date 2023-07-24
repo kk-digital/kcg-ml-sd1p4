@@ -79,7 +79,12 @@ parser.add_argument(
     default=5,
     help="The maximum length of the random walk over the initial prompt. Defaults to 5.",
 )
-
+parser.add_argument(
+    "--ddim_steps",
+    type=int,
+    default=20,
+    help="Number of denoising steps during the sampling process. Defaults to 20.",
+)
 # parser.add_argument(
 #     "--batch_size",
 #     type=str,
@@ -132,6 +137,7 @@ SAVE_EMBEDDINGS = args.save_embeddings
 CLEAR_OUTPUT_DIR = args.clear_output_dir
 RANDOM_WALK = args.random_walk
 MAX_NOISE_STEPS = args.max_noise_steps
+DDIM_STEPS = args.ddim_steps
 os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
 
 pt = ModelsPathTree(base_directory=base_dir)
@@ -149,7 +155,7 @@ else:
     os.makedirs(FEATURES_DIR, exist_ok=True)
     os.makedirs(IMAGES_DIR, exist_ok=True)
 
-def init_stable_diffusion(device, pt, sampler_name="ddim", n_steps=20, ddim_eta=0.0):
+def init_stable_diffusion(device, pt, sampler_name="ddim", n_steps=DDIM_STEPS, ddim_eta=0.0):
     device = check_device(device)
 
     stable_diffusion = StableDiffusion(
@@ -223,19 +229,6 @@ def generate_image_from_disturbed_embeddings(
         print(noise_i.shape)
         noise_t = noise_t + (noise_multiplier * noise_i)   
 
-    # num_noise_steps = torch.randint(0, max_noise_steps, (1,)).item()
-    # noise_i = (
-    #     dist.sample(sample_shape=torch.Size([num_noise_steps, 768]))
-    # ).permute(0, 2, 1).to(device)
-    # print("i shape: ", noise_i.shape)
-    # noise_t = noise_i.cumsum(dim=0)[-1:, :, :].to(device)
-    # print(noise_t.shape)
-    # noise_t = noise_multiplier * noise_t
-
-
-    # noise_t = noise_t + noise_i
-    # embedding_e = embedded_prompt + (noise_multiplier * noise_t) 
-    # noise_t += (noise_multiplier * noise_i)
     embedding_e = embedded_prompt + noise_t
     image_e = sd.generate_images_from_embeddings(
         seed=seed, 
@@ -261,7 +254,7 @@ if __name__ == "__main__":
 
     embedded_prompts, null_prompt = embed_and_save_prompts(PROMPTS)
     num_prompts = len(embedded_prompts)
-    sd = init_stable_diffusion(DEVICE, pt)    
+    sd = init_stable_diffusion(DEVICE, pt, n_steps=DDIM_STEPS)    
     
     image_encoder = CLIPImageEncoder(device=DEVICE)
     image_encoder.load_clip_model(**pt.clip_model)
