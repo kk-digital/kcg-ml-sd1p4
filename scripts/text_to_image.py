@@ -49,7 +49,7 @@ class Txt2Img(StableDiffusionBaseScript):
                  seed: int = 0,
                  batch_size: int = 1,
                  prompt: str,
-                 h: int = 512 * 4, w: int = 512 * 4,
+                 h: int = 512 * 2, w: int = 512 * 2,
                  uncond_scale: float = 7.5,
                  low_vram: bool = False,
                  noise_fn = torch.randn,
