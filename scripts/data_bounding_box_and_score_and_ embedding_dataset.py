@@ -51,11 +51,7 @@ prompt_list = ['chibi', 'waifu', 'scifi', 'side scrolling', 'character', 'side s
 
 
 parser = argparse.ArgumentParser("Embed prompts using CLIP")
-parser.add_argument(
-    "--prompt",
-    type=str,
-    help="The prompt to embed. Defaults to a randomly generated prompt",
-)
+
 parser.add_argument(
     "--save_embeddings",
     type=bool,
@@ -122,7 +118,6 @@ parser.add_argument(
 args = parser.parse_args()
 
 NULL_PROMPT = ""
-PROMPT = args.prompt
 NUM_ITERATIONS = args.num_iterations
 SEED = args.seed
 NOISE_MULTIPLIER = args.noise_multiplier
