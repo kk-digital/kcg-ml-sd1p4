@@ -47,7 +47,10 @@ prompt_list = ['chibi', 'waifu', 'scifi', 'side scrolling', 'character', 'side s
                'white background', 'centered', 'full character', 'no background', 
                'not centered', 'line drawing', 'sketch', 'black and white',
                 'colored', 'offset', 'video game','exotic', 'sureal', 'miltech', 'fantasy',
-                'frank frazetta', 'terraria', 'final fantasy', 'cortex command' ]
+                'frank frazetta', 'terraria', 'final fantasy', 'cortex command',
+                 'Dog', 'Cat', 'Space Ship', 'Airplane', 'Mech', 'Tank', 'Bicycle', 
+                 'Book', 'Chair', 'Table', 'Cup', 'Car', 'Tree', 'Flower', 'Mountain', 
+                 'Smartphone', 'Guitar', 'Sunflower', 'Laptop', 'Coffee Mug' ]
 
 
 parser = argparse.ArgumentParser("Embed prompts using CLIP")
