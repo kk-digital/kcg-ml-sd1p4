@@ -163,7 +163,7 @@ class StableDiffusionBaseScript:
                 autoencoder=autoencoder,
                 clip_text_embedder=clip_text_embedder,
                 unet_model = unet_model,
-                force_submodels_init=force_submodels_init
+                force_submodels_init=force_submodels_init,
             )
             self.initialize_sampler()
             # Move the model to device

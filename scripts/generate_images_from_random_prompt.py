@@ -19,7 +19,7 @@ from stable_diffusion.utils.utils import save_images, set_seed, get_autocast
 from labml import monit
 from stable_diffusion.model.unet.unet_attention import CrossAttention
 from cli_builder import CLI
-
+import random
 def get_prompts(prompt, prompts_file):
     prompts = []
     if prompts_file is not None:
@@ -213,9 +213,26 @@ def main():
 
     with monit.section('Generate', total_steps=len(prompts)) as section:
         for prompt in prompts:
-            print(f'Generating images for prompt: "{prompt}"')
+
+            prompt_list = prompt.split(',');
+
+
 
             for i in range(opt.num_images):
+                this_prompt = ''
+                this_prompt_list = []
+                num_prompts_per_image = 12
+                while num_prompts_per_image > 0:
+                    random_index = random.randint(0, len(prompt_list) - 1)
+                    chosen_string = prompt_list[random_index]
+                    if not chosen_string in this_prompt_list:
+                        this_prompt_list.append(chosen_string)
+                        num_prompts_per_image = num_prompts_per_image - 1
+
+                for prompt_item in this_prompt_list:
+                    this_prompt = this_prompt + prompt_item + ', '
+
+
                 print("Generating image " + str(i) + " out of " + str(opt.num_images));
                 start_time = time.time()
                 timestamp = datetime.now().strftime('%d-%m-%Y-%H-%M-%S')
@@ -223,7 +240,7 @@ def main():
 
                 images = txt2img.generate_images(
                     batch_size=opt.batch_size,
-                    prompt=opt.prompt,
+                    prompt=this_prompt,
                     uncond_scale=opt.cfg_scale,
                     low_vram=opt.low_vram,
                     seed=seed_array[i % len(seed_array)]
