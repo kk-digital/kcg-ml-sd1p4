@@ -317,7 +317,7 @@ def main():
     scores_path = join(OUTPUT_DIR, "scores.json")
 
     for i, (image, embedding, prompt_index) in enumerate(images_generator):  # Retrieve the prompt with the image and embedding
-        images_tensors.append(image)
+        # images_tensors.append(image)
         torch.cuda.empty_cache()
         get_memory_status()
 
@@ -368,9 +368,13 @@ def main():
         json_output_i["clip-vector"] = image_features.tolist()
 
         json_output.append(json_output_i)
+        if i % 64 == 0:
+            json.dump(json_output, open(json_output_path, "w"), indent=4)
+            json.dump(scores, open(scores_path, "w"), indent=4)
+            json.dump(manifest, open(manifest_path, "w"), indent=4)
 
-    images_grid = torch.cat(images_tensors)
-    save_image_grid(images_grid, join(IMAGES_DIR, "images_grid.png"), nrow=int(math.log(NUM_ITERATIONS, 2)), normalize=True, scale_each=True)
+    # images_grid = torch.cat(images_tensors)
+    # save_image_grid(images_grid, join(IMAGES_DIR, "images_grid.png"), nrow=int(math.log(NUM_ITERATIONS, 2)), normalize=True, scale_each=True)
     
     json.dump(json_output, open(json_output_path, "w"), indent=4)
     json.dump(scores, open(scores_path, "w"), indent=4)
