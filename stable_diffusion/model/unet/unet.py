@@ -23,6 +23,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchinfo import summary
+from safetensors.torch import save_file
 from .unet_attention import SpatialTransformer
 
 import os
@@ -140,8 +141,11 @@ class UNetModel(nn.Module):
             nn.Conv2d(channels, out_channels, 3, padding=1),
         )
         
-    def save(self, unet_path = UNET_PATH):
-        torch.save(self, unet_path)
+    def save(self, unet_path = UNET_PATH, use_safetensors = True):
+        if not use_safetensors:
+            torch.save(self, unet_path)
+        else:
+            save_file(self.state_dict(), unet_path)
 
     def time_step_embedding(self, time_steps: torch.Tensor, max_period: int = 10000):
         """

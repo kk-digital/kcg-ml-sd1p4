@@ -42,20 +42,20 @@ IMAGE_ENCODER_PATH = os.path.abspath(
     os.path.join(ROOT_MODELS_PATH, "clip_image_encoder/clip_image_encoder.ckpt")
 )
 
-UNET_PATH = os.path.abspath(os.path.join(ROOT_MODELS_PATH, "unet/unet.ckpt"))
+UNET_PATH = os.path.abspath(os.path.join(ROOT_MODELS_PATH, "unet/unet.safetensors"))
 
 AUTOENCODER_PATH = os.path.abspath(
-    os.path.join(ROOT_MODELS_PATH, "autoencoder/autoencoder.ckpt")
+    os.path.join(ROOT_MODELS_PATH, "autoencoder/autoencoder.safetensors")
 )
 ENCODER_PATH = os.path.abspath(
-    os.path.join(ROOT_MODELS_PATH, "autoencoder/encoder.ckpt")
+    os.path.join(ROOT_MODELS_PATH, "autoencoder/encoder.safetensors")
 )
 DECODER_PATH = os.path.abspath(
-    os.path.join(ROOT_MODELS_PATH, "autoencoder/decoder.ckpt")
+    os.path.join(ROOT_MODELS_PATH, "autoencoder/decoder.safetensors")
 )
 
 LATENT_DIFFUSION_PATH = os.path.abspath(
-    os.path.join(ROOT_MODELS_PATH, "latent_diffusion/latent_diffusion.ckpt")
+    os.path.join(ROOT_MODELS_PATH, "latent_diffusion/latent_diffusion.safetensors")
 )
 
 
@@ -101,20 +101,20 @@ class ModelsPathTree:
             )
         )
         self.unet_path = os.path.abspath(
-            os.path.join(self.root_models_path, "unet/unet.ckpt")
+            os.path.join(self.root_models_path, "unet/unet.safetensors")
         )
         self.autoencoder_path = os.path.abspath(
-            os.path.join(self.root_models_path, "autoencoder/autoencoder.ckpt")
+            os.path.join(self.root_models_path, "autoencoder/autoencoder.safetensors")
         )
         self.encoder_path = os.path.abspath(
-            os.path.join(self.root_models_path, "autoencoder/encoder.ckpt")
+            os.path.join(self.root_models_path, "autoencoder/encoder.safetensors")
         )
         self.decoder_path = os.path.abspath(
-            os.path.join(self.root_models_path, "autoencoder/decoder.ckpt")
+            os.path.join(self.root_models_path, "autoencoder/decoder.safetensors")
         )
         self.latent_diffusion_path = os.path.abspath(
             os.path.join(
-                self.root_models_path, "latent_diffusion/latent_diffusion.ckpt"
+                self.root_models_path, "latent_diffusion/latent_diffusion.safetensors"
             )
         )
 
@@ -258,20 +258,20 @@ def create_directory_tree_paths(base_directory: str = "./"):
         os.path.join(ROOT_MODELS_PATH, "clip_image_encoder/clip_image_encoder.ckpt")
     )
 
-    UNET_PATH = os.path.abspath(os.path.join(ROOT_MODELS_PATH, "unet/unet.ckpt"))
+    UNET_PATH = os.path.abspath(os.path.join(ROOT_MODELS_PATH, "unet/unet.safetensors"))
 
     AUTOENCODER_PATH = os.path.abspath(
-        os.path.join(ROOT_MODELS_PATH, "autoencoder/autoencoder.ckpt")
+        os.path.join(ROOT_MODELS_PATH, "autoencoder/autoencoder.safetensors")
     )
     ENCODER_PATH = os.path.abspath(
-        os.path.join(ROOT_MODELS_PATH, "autoencoder/encoder.ckpt")
+        os.path.join(ROOT_MODELS_PATH, "autoencoder/encoder.safetensors")
     )
     DECODER_PATH = os.path.abspath(
-        os.path.join(ROOT_MODELS_PATH, "autoencoder/decoder.ckpt")
+        os.path.join(ROOT_MODELS_PATH, "autoencoder/decoder.safetensors")
     )
 
     LATENT_DIFFUSION_PATH = os.path.abspath(
-        os.path.join(ROOT_MODELS_PATH, "latent_diffusion/latent_diffusion.ckpt")
+        os.path.join(ROOT_MODELS_PATH, "latent_diffusion/latent_diffusion.safetensors")
     )
 
     paths_dict = {
@@ -317,16 +317,16 @@ def create_latent_diffusion_submodels_tree_paths(base_directory: str = "./"):
         os.path.join(ROOT_MODELS_PATH, "clip_text_embedder/clip_transformer.ckpt")
     )
 
-    UNET_PATH = os.path.abspath(os.path.join(ROOT_MODELS_PATH, "unet/unet.ckpt"))
+    UNET_PATH = os.path.abspath(os.path.join(ROOT_MODELS_PATH, "unet/unet.safetensors"))
 
     AUTOENCODER_PATH = os.path.abspath(
-        os.path.join(ROOT_MODELS_PATH, "autoencoder/autoencoder.ckpt")
+        os.path.join(ROOT_MODELS_PATH, "autoencoder/autoencoder.safetensors")
     )
     ENCODER_PATH = os.path.abspath(
-        os.path.join(ROOT_MODELS_PATH, "autoencoder/encoder.ckpt")
+        os.path.join(ROOT_MODELS_PATH, "autoencoder/encoder.safetensors")
     )
     DECODER_PATH = os.path.abspath(
-        os.path.join(ROOT_MODELS_PATH, "autoencoder/decoder.ckpt")
+        os.path.join(ROOT_MODELS_PATH, "autoencoder/decoder.safetensors")
     )
 
     paths_dict = {

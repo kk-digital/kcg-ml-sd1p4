@@ -23,6 +23,7 @@ import torch
 from torch import nn, save
 from os.path import join
 from transformers import CLIPTokenizer, CLIPTextModel
+from safetensors.torch import save_file, load_file
 from stable_diffusion.constants import EMBEDDER_PATH, TOKENIZER_PATH, TRANSFORMER_PATH
 from stable_diffusion.utils.utils import check_device
 from torchinfo import summary
@@ -53,11 +54,18 @@ class CLIPTextEmbedder(nn.Module):
         self.to(self.device)
 
     def save_submodels(self, tokenizer_path: str = TOKENIZER_PATH, transformer_path: str = TRANSFORMER_PATH):
-        torch.save(self.tokenizer, tokenizer_path)
-        torch.save(self.transformer, transformer_path)
 
-    def save(self, embedder_path: str = EMBEDDER_PATH):
-        torch.save(self, embedder_path)
+        torch.save(self.tokenizer, tokenizer_path)
+        print("tokenizer saved to: ", tokenizer_path)
+        torch.save(self.transformer, transformer_path)
+        print("transformer saved to: ", transformer_path)
+
+
+    def save(self, embedder_path: str = EMBEDDER_PATH, use_safetensors = True):
+        if not use_safetensors:
+            torch.save(self, embedder_path)
+        else:
+            save_file(self.state_dict(), embedder_path)
     
     def load_submodels(self, tokenizer_path = TOKENIZER_PATH, transformer_path = TRANSFORMER_PATH):
 
