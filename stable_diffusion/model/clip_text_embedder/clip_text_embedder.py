@@ -24,7 +24,7 @@ from torch import nn, save
 from os.path import join
 from transformers import CLIPTokenizer, CLIPTextModel
 from stable_diffusion.constants import EMBEDDER_PATH, TOKENIZER_PATH, TRANSFORMER_PATH
-from stable_diffusion.utils.utils import check_device
+from stable_diffusion.utils.utils import get_device
 from torchinfo import summary
 # EMBEDDER_PATH = os.path.abspath('./input/model/clip/clip_embedder.ckpt')
 # TOKENIZER_PATH = os.path.abspath('./input/model/clip/clip_tokenizer.ckpt')
@@ -42,7 +42,7 @@ class CLIPTextEmbedder(nn.Module):
         """
         super().__init__()
 
-        self.device = check_device(device)
+        self.device = get_device(device)
 
         self.version = version
 

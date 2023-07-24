@@ -15,7 +15,7 @@ sys.path.insert(0, base_directory)
 
 from stable_diffusion.stable_diffusion import StableDiffusion
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
-from stable_diffusion.utils.utils import save_images, check_device, calculate_sha256
+from stable_diffusion.utils.utils import save_images, get_device, calculate_sha256
 
 from cli_builder import CLI
 from PIL import Image
@@ -27,7 +27,7 @@ FEATURES_DIR = join(OUTPUT_DIR, "features/")
 IMAGES_DIR = join(OUTPUT_DIR, "images/")
 
 def init_stable_diffusion(device, sampler_name="ddim", n_steps=20, ddim_eta=0.0):
-    device = check_device(device)
+    device = get_device(device)
     stable_diffusion = StableDiffusion(
         device=device, sampler_name=sampler_name, n_steps=n_steps, ddim_eta=ddim_eta
     )

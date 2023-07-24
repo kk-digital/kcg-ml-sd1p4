@@ -39,7 +39,7 @@ from .constants import (
     TOKENIZER_PATH,
     TRANSFORMER_PATH,
 )
-from .utils.utils import check_device
+from .utils.utils import get_device
 # from .utils.utils import SectionManager as section
 from labml.monit import section
 
@@ -98,7 +98,7 @@ class LatentDiffusion(nn.Module):
         """
         super().__init__()
 
-        self.device = check_device(device)
+        self.device = get_device(device)
 
         # Wrap the [U-Net](model/unet.html) to keep the same model structure as
         # [CompVis/stable-diffusion](https://github.com/CompVis/stable-diffusion).
