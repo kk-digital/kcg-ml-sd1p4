@@ -172,7 +172,7 @@ def embed_and_save_prompts(prompt: str, i: int, null_prompt = NULL_PROMPT):
 
     null_prompt = null_prompt
 
-    clip_text_embedder = CLIPTextEmbedder(device=check_device(DEVICE))
+    clip_text_embedder = CLIPTextEmbedder(device=check_device())
     clip_text_embedder.load_submodels()
 
     null_cond = clip_text_embedder(null_prompt)
