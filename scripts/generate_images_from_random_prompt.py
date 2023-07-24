@@ -223,7 +223,7 @@ def main():
                 this_prompt_list = []
                 num_prompts_per_image = 12
                 while num_prompts_per_image > 0:
-                    random_index = random.randint(0, len(prompt_list))
+                    random_index = random.randint(0, len(prompt_list) - 1)
                     chosen_string = prompt_list[random_index]
                     if not chosen_string in this_prompt_list:
                         this_prompt_list.append(chosen_string)
