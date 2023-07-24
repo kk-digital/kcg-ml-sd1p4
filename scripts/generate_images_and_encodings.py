@@ -110,11 +110,11 @@ def generate_images(
                 #     clip_vector_dest_path,
                 # )
                 # print(f"Saved clip vector at {clip_vector_dest_path}")
-
+                manifest_img_path = "./images/" + image_name
                 manifest_i =    {                     
                                     "file-name": image_name,
                                     "file-hash": image_hash,
-                                    "file-path": img_dest_path,
+                                    "file-path": manifest_img_path,
                                     # "clip-vector-path": clip_vector_dest_path,
                                 }
                 features_i = manifest_i.copy()
@@ -123,8 +123,14 @@ def generate_images(
                 features.append(features_i)
                 manifest.append(manifest_i)
                 image_counter += 1
+                if image_counter % 64 == 0:
+                    manifest_path = os.path.join(output_base_dir, "manifest.json")
+                    features_path = os.path.join(FEATURES_DIR, "features.json")
+                    json.dump(manifest, open(manifest_path, "w"), indent=4)
+                    json.dump(features, open(features_path, "w"), indent=4)
+
     manifest_path = os.path.join(output_base_dir, "manifest.json")
-    features_path = os.path.join(FEATURES_DIR, "manifest.json")
+    features_path = os.path.join(FEATURES_DIR, "features.json")
     json.dump(manifest, open(manifest_path, "w"), indent=4)
     json.dump(features, open(features_path, "w"), indent=4)
 
