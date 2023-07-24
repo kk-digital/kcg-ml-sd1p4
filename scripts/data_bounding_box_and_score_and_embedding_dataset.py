@@ -112,12 +112,6 @@ parser.add_argument(
     help="Avoid. If True, the output directory will be cleared before generating images. Defaults to False.",
 )
 
-parser.add_argument(
-    "--random_walk",
-    type=bool,
-    default=False,
-    help="Random walk on the embedding space, with the prompt embedding as origin. Defaults to False.",
-)
 args = parser.parse_args()
 
 NULL_PROMPT = ""
@@ -128,7 +122,6 @@ DEVICE = check_device(args.cuda_device)
 BATCH_SIZE = args.batch_size
 SAVE_EMBEDDINGS = args.save_embeddings
 CLEAR_OUTPUT_DIR = args.clear_output_dir
-RANDOM_WALK = args.random_walk
 os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
 
 pt = ModelsPathTree(base_directory=base_dir)
@@ -191,7 +184,7 @@ def embed_and_save_prompts(prompt: str, i: int, null_prompt = NULL_PROMPT):
     )
     
     get_memory_status()
-    clip_text_embedder.to("cpu")
+    #clip_text_embedder.to("cpu")
     del clip_text_embedder
     torch.cuda.empty_cache()
     get_memory_status()
@@ -207,75 +200,31 @@ def generate_images_from_disturbed_embeddings(
     noise_multiplier=NOISE_MULTIPLIER,
     batch_size=BATCH_SIZE
 ):
-    # generator = torch.Generator(device=device).manual_seed(seed)
-
-    # embedding_mean, embedding_std = embedded_prompt.mean(), embedded_prompt.std()
-    # embedding_shape = tuple(embedded_prompt.shape)
-
-    # noise = torch.normal(
-    #     mean=embedding_mean.item(),
-    #     std=embedding_std.item(),
-    #     size=embedding_shape,
-    #     device=device,
-    #     generator=generator,
-    # )
-    # test with standard normal distribution
-    # noise = torch.normal(
-    #     mean=0.0,
-    #     std=1.0,
-    #     size=embedding_shape,
-    #     device=device,
-    #     generator=generator,
-    # )
-    # embedded_prompt.mean(dim=2), embedded_prompt.std(dim=2)
-    # noise = torch.normal(
-    #     mean=embedded_prompt.mean(dim=2), std=embedded_prompt.std(dim=2)
-    # )
     dist = torch.distributions.normal.Normal(
         loc=embedded_prompt.mean(dim=2), scale=embedded_prompt.std(dim=2)
     )
 
+    for i in range(0, num_iterations):
 
-    if not RANDOM_WALK:
-        for i in range(0, num_iterations):
+        j = num_iterations - i
 
-            j = num_iterations - i
+        noise_i = (
+            dist.sample(sample_shape=torch.Size([768])).permute(1, 0, 2).permute(0, 2, 1)
+        ).to(device)
+        noise_j = (
+            dist.sample(sample_shape=torch.Size([768])).permute(1, 0, 2).permute(0, 2, 1)
+        ).to(device)
+        embedding_e = embedded_prompt + ((i * noise_multiplier) * noise_i + (j * noise_multiplier) * noise_j) / (2 * num_iterations)
 
-            noise_i = (
-                dist.sample(sample_shape=torch.Size([768])).permute(1, 0, 2).permute(0, 2, 1)
-            ).to(device)
-            noise_j = (
-                dist.sample(sample_shape=torch.Size([768])).permute(1, 0, 2).permute(0, 2, 1)
-            ).to(device)
-            embedding_e = embedded_prompt + ((i * noise_multiplier) * noise_i + (j * noise_multiplier) * noise_j) / (2 * num_iterations)
-
-            image_e = sd.generate_images_from_embeddings(
-                seed=seed, 
-                embedded_prompt=embedding_e, 
-                null_prompt=null_prompt, 
-                batch_size=batch_size
-            )
-            
-            yield (image_e, embedding_e)
-    else:
-    
-        noise_t = torch.zeros_like(embedded_prompt).to(device)
-    
-        for i in range(0, num_iterations):
-            noise_i = (
-                dist.sample(sample_shape=torch.Size([768])).permute(1, 0, 2).permute(0, 2, 1)
-            ).to(device)
-            noise_t = noise_t + noise_i
-            embedding_e = embedded_prompt + (noise_multiplier * noise_t) 
-
-            image_e = sd.generate_images_from_embeddings(
-                seed=seed, 
-                embedded_prompt=embedding_e, 
-                null_prompt=null_prompt, 
-                batch_size=batch_size
-            )
-            
-            yield (image_e, embedding_e)
+        image_e = sd.generate_images_from_embeddings(
+            seed=seed, 
+            embedded_prompt=embedding_e, 
+            null_prompt=null_prompt, 
+            batch_size=batch_size
+        )
+        
+        yield (image_e, embedding_e)
+        torch.cuda.empty_cache()
 
 
 def get_bounding_box_details(img):
@@ -342,6 +291,7 @@ def main():
         images_generator = generate_images_from_disturbed_embeddings(sd, embedded_prompts_list[i], null_prompt_list[i], batch_size = 1)  # Use the corresponding prompt for each iteration
         image, embedding = next(images_generator)
         images.append((image, embedding, prompts[i]))  # Include the prompt with the image and embedding
+        torch.cuda.empty_cache() 
 
     image_encoder = CLIPImageEncoder(device=DEVICE)
     image_encoder.load_clip_model(**pt.clip_model)
