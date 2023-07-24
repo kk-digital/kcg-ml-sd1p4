@@ -197,7 +197,6 @@ def embed_and_save_prompts(prompt: str, i: int, null_prompt = NULL_PROMPT):
     get_memory_status()
     return embedded_prompts, null_cond
 
-
 def generate_images_from_disturbed_embeddings(
     sd: StableDiffusion,
     embedded_prompt: torch.Tensor,
@@ -208,14 +207,38 @@ def generate_images_from_disturbed_embeddings(
     noise_multiplier=NOISE_MULTIPLIER,
     batch_size=BATCH_SIZE
 ):
+    # generator = torch.Generator(device=device).manual_seed(seed)
+
+    # embedding_mean, embedding_std = embedded_prompt.mean(), embedded_prompt.std()
+    # embedding_shape = tuple(embedded_prompt.shape)
+
+    # noise = torch.normal(
+    #     mean=embedding_mean.item(),
+    #     std=embedding_std.item(),
+    #     size=embedding_shape,
+    #     device=device,
+    #     generator=generator,
+    # )
+    # test with standard normal distribution
+    # noise = torch.normal(
+    #     mean=0.0,
+    #     std=1.0,
+    #     size=embedding_shape,
+    #     device=device,
+    #     generator=generator,
+    # )
+    # embedded_prompt.mean(dim=2), embedded_prompt.std(dim=2)
+    # noise = torch.normal(
+    #     mean=embedded_prompt.mean(dim=2), std=embedded_prompt.std(dim=2)
+    # )
+    dist = torch.distributions.normal.Normal(
+        loc=embedded_prompt.mean(dim=2), scale=embedded_prompt.std(dim=2)
+    )
+
 
     if not RANDOM_WALK:
         for i in range(0, num_iterations):
 
-            dist = torch.distributions.normal.Normal(
-                loc=embedded_prompt.mean(dim=2), scale=embedded_prompt.std(dim=2)
-            )
-            
             j = num_iterations - i
 
             noise_i = (
@@ -236,12 +259,9 @@ def generate_images_from_disturbed_embeddings(
             yield (image_e, embedding_e)
     else:
     
+        noise_t = torch.zeros_like(embedded_prompt).to(device)
+    
         for i in range(0, num_iterations):
-
-            dist = torch.distributions.normal.Normal(
-                loc=embedded_prompt.mean(dim=2), scale=embedded_prompt.std(dim=2)
-            )
-            
             noise_i = (
                 dist.sample(sample_shape=torch.Size([768])).permute(1, 0, 2).permute(0, 2, 1)
             ).to(device)
