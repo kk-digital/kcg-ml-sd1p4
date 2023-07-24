@@ -192,7 +192,7 @@ def embed_and_save_prompts(prompt: str, i: int, null_prompt = NULL_PROMPT):
 
 def generate_images_from_disturbed_embeddings(
     sd: StableDiffusion,
-    embedded_prompt: torch.Tensor,
+    embedded_prompts: List[torch.Tensor],
     null_prompt: torch.Tensor,
     device=DEVICE,
     seed=SEED,
@@ -200,12 +200,14 @@ def generate_images_from_disturbed_embeddings(
     noise_multiplier=NOISE_MULTIPLIER,
     batch_size=BATCH_SIZE
 ):
-    dist = torch.distributions.normal.Normal(
-        loc=embedded_prompt.mean(dim=2), scale=embedded_prompt.std(dim=2)
-    )
+
 
     for i in range(0, num_iterations):
-
+        embedded_prompt = embedded_prompts[i].unsqueeze(0).to(device)
+        print(embedded_prompt.shape)
+        dist = torch.distributions.normal.Normal(
+        loc=embedded_prompt.mean(dim=2), scale=embedded_prompt.std(dim=2)
+    )
         j = num_iterations - i
 
         noise_i = (
@@ -223,7 +225,7 @@ def generate_images_from_disturbed_embeddings(
             batch_size=batch_size
         )
         
-        yield (image_e, embedding_e)
+        yield (image_e, embedding_e, i)
         torch.cuda.empty_cache()
 
 
@@ -282,16 +284,19 @@ def main():
         PROMPT = generate_prompt()
         print(f"Prompt {i}: {PROMPT}")  # Print the generated prompt
         prompts.append(PROMPT)  # Store each prompt for later use
-        embedded_prompts, null_prompt = embed_and_save_prompts(PROMPT, i)
-        embedded_prompts_list.append(embedded_prompts)  # Store the embedded prompts
-        null_prompt_list.append(null_prompt)  # Store the null prompts
-        print(f"Image {i} generated.")  # Print when an image is generated
+    get_memory_status()        
+    embedded_prompts, null_prompt = embed_and_save_prompts(prompts, i)
+    embedded_prompts_list = [embedded_prompt for embedded_prompt in embedded_prompts]  # Store the embedded prompts
+    # null_prompt_list.append(null_prompt)  # Store the null prompts
+    # print(f"Image {i} generated.")  # Print when an image is generated
 
-    for i in range(NUM_ITERATIONS):
-        images_generator = generate_images_from_disturbed_embeddings(sd, embedded_prompts_list[i], null_prompt_list[i], batch_size = 1)  # Use the corresponding prompt for each iteration
-        image, embedding = next(images_generator)
-        images.append((image, embedding, prompts[i]))  # Include the prompt with the image and embedding
-        torch.cuda.empty_cache() 
+    images_generator = generate_images_from_disturbed_embeddings(sd, embedded_prompts, null_prompt, batch_size = 1)  # Use the corresponding prompt for each iteration
+    # for i in range(NUM_ITERATIONS):
+    #     image, embedding = next(images_generator)
+    #     images.append((image.cpu(), embedding.cpu(), prompts[i]))  # Include the prompt with the image and embedding
+    #     # images.append((image, embedding, prompts[i]))  # Include the prompt with the image and embedding
+    #     get_memory_status()
+    #     torch.cuda.empty_cache() 
 
     image_encoder = CLIPImageEncoder(device=DEVICE)
     image_encoder.load_clip_model(**pt.clip_model)
@@ -311,7 +316,7 @@ def main():
     manifest_path = join(OUTPUT_DIR, "manifest.json")
     scores_path = join(OUTPUT_DIR, "scores.json")
 
-    for i, (image, embedding, prompt) in enumerate(images):  # Retrieve the prompt with the image and embedding
+    for i, (image, embedding, prompt_index) in enumerate(images_generator):  # Retrieve the prompt with the image and embedding
         images_tensors.append(image)
         torch.cuda.empty_cache()
         get_memory_status()
@@ -350,7 +355,7 @@ def main():
         center_x, center_y, center_offset_x, center_offset_y, box_w, box_h = get_bounding_box_center_offset(largest_bounding_box, numpy_img.shape)
 
         json_output_i = manifest_i.copy()
-        json_output_i["prompt"] = prompt  # Retrieve the prompt associated with this image
+        json_output_i["prompt"] = prompts[prompt_index]  # Retrieve the prompt associated with this image
         json_output_i["score"] = score.item()
         json_output_i["cfg_strength"] = args.cfg_strength
         json_output_i["bounding_box_center_x"] = center_x
