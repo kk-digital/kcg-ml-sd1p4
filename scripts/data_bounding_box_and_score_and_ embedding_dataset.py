@@ -43,10 +43,10 @@ SCORER_CHECKPOINT_PATH = os.path.abspath("./input/model/aesthetic_scorer/chadsco
 
 # DEVICE = input("Set device: 'cuda:i' or 'cpu'")
 
-prompt_list = ['chibi', 'waifu', 'scifi', 'side scrolling', 'character', 'side scrolling'
+prompt_list = ['chibi', 'waifu', 'scifi', 'side scrolling', 'character', 'side scrolling',
                'white background', 'centered', 'full character', 'no background', 
                'not centered', 'line drawing', 'sketch', 'black and white',
-                'colored', 'offset', 'video game','exotic', 'sureal', 'miltech', 'fantasy'
+                'colored', 'offset', 'video game','exotic', 'sureal', 'miltech', 'fantasy',
                 'frank frazetta', 'terraria', 'final fantasy', 'cortex command' ]
 
 
@@ -357,8 +357,9 @@ def main():
         score = predictor(image_features.to(DEVICE).float())
         
         img_file_name = f"image_{i:06d}.png"
-        img_path = join(IMAGES_DIR, img_file_name)
-        pil_image.save(img_path)
+        full_img_path = join(IMAGES_DIR, img_file_name)
+        img_path = "./images/" + os.path.relpath(full_img_path, IMAGES_DIR)
+        pil_image.save(full_img_path)
 
         if SAVE_EMBEDDINGS:
             embedding_file_name = f"embedding_{i:06d}.pt"
