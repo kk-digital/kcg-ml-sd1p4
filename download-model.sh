@@ -13,5 +13,5 @@ fi
 # Check if the model file exists
 if [ ! -f "./input/model/v1-5-pruned-emaonly.safetensors" ]; then
     # Download the model file
-    transmission-cli --download-dir ./input/model/v1-5-pruned-emaonly.safetensors "magnet:?xt=urn:btih:H6ABMBQRGKWUUR26WM62YVU7HKEEDCLU&dn=v1-5-pruned-emaonly.safetensors&xl=4265146304&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce"
+    transmission-cli --download-dir ./input/model/ "./input/torrent/v1-5-pruned-emaonly.safetensors_v2.torrent"
 fi
