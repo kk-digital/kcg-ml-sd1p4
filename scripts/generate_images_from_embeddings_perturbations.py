@@ -51,8 +51,8 @@ parser.add_argument(
     "--prompts",
     nargs="+",
     type=str,
-    default=['A woman with flowers in her hair in a courtyard, in the style of Frank Frazetta', 'An oil painting of a computer virus', 'chibi, waifu'],
-    help="The prompts to embed. Defaults to ['A woman with flowers in her hair in a courtyard, in the style of Frank Frazetta', 'A computer virus painting a cow']",
+    default=None,
+    help="The prompts to embed. Defaults to `None`, in which case the script will generate the prompts randomly.",
 )
 
 parser.add_argument(
@@ -168,35 +168,60 @@ def init_stable_diffusion(device, pt, sampler_name="ddim", n_steps=DDIM_STEPS, d
 
     return stable_diffusion
 
-def embed_and_save_prompts(prompts: str, null_prompt = NULL_PROMPT):
+def generate_prompts_from_lists():
+    word_lists = dict(nouns = ['Castle',
+            'Adventure',
+            'Journalist',
+            'Enchanted forest',
+            'Mystery',
+            'Musician',
+            'Abandoned spaceship',
+            'Secret passage',
+            'Detective',
+            'Time-traveling device'
+            ],
+    adjectives = ['Haunted',
+                'Mysterious'
+                'Whimsical',
+                'Perilous',
+                'Curious',
+                'Haunting',
+                'Futuristic',
+                'Enigmatic',
+                'Eerie',
+                'Courageous',
+                'Intriguing'
+                ],
+    verbs = ['Uncover',
+        'Embark',
+        'Investigate',
+        'Encounter',
+        'Unravel',
+        'Compose',
+        'Discover',
+        'Navigate',
+        'Confront',
+        'Reveal',
+        'Explore'
+        ],
+    themes = ['Love and sacrifice',
+    'A journey of self-discovery',
+    'Redemption and forgiveness',
+    'An unexpected friendship',
+    'The power of dreams',
+    'Facing fears and overcoming challenges',
+    'Betrayal and revenge',
+    'Parallel universes',
+    'The pursuit of truth and justice',
+    'The consequences of time travel',
+    ])
+    num_words_classes = 4
+    prompt_seq = random.sample(['nouns', 'adjectives', 'verbs', 'themes'], num_words_classes)
+    prompt_words = [random.choice(word_lists[prompt_seq[i]]) for i in range(num_words_classes)]
+    print(prompt_words)
+    prompt = " ".join(prompt_words)
+    return prompt
 
-    null_prompt = null_prompt
-    prompts = prompts
-
-    clip_text_embedder = CLIPTextEmbedder(device=check_device(DEVICE))
-    clip_text_embedder.load_submodels()
-
-    null_cond = clip_text_embedder(null_prompt)
-    torch.save(null_cond, join(EMBEDDED_PROMPTS_DIR, "null_cond.pt"))
-    print(
-        "Null prompt embedding saved at: ",
-        f"{join(EMBEDDED_PROMPTS_DIR, 'null_cond.pt')}",
-    )
-
-    embedded_prompts = clip_text_embedder(prompts)
-    torch.save(embedded_prompts, join(EMBEDDED_PROMPTS_DIR, "embedded_prompts.pt"))
-    
-    print(
-        "Prompts embeddings saved at: ",
-        f"{join(EMBEDDED_PROMPTS_DIR, 'embedded_prompts.pt')}",
-    )
-    
-    get_memory_status()
-    clip_text_embedder.to("cpu")
-    del clip_text_embedder
-    torch.cuda.empty_cache()
-    get_memory_status()
-    return embedded_prompts, null_cond
 
 def generate_image_from_disturbed_embeddings(
     sd: StableDiffusion,
@@ -251,9 +276,16 @@ def calculate_sha256(tensor):
 if __name__ == "__main__":
 
     pt = ModelsPathTree(base_directory=base_dir)
+    
+    clip_text_embedder = CLIPTextEmbedder(device=check_device(DEVICE))
+    clip_text_embedder.load_submodels()
 
-    embedded_prompts, null_prompt = embed_and_save_prompts(PROMPTS)
-    num_prompts = len(embedded_prompts)
+    null_prompt = clip_text_embedder(NULL_PROMPT)
+    torch.save(null_prompt, join(EMBEDDED_PROMPTS_DIR, "null_prompt.pt"))
+    print(
+        "Null prompt embedding saved at: ",
+        f"{join(EMBEDDED_PROMPTS_DIR, 'null_prompt.pt')}",
+    )
     sd = init_stable_diffusion(DEVICE, pt, n_steps=DDIM_STEPS)    
     
     image_encoder = CLIPImageEncoder(device=DEVICE)
@@ -277,14 +309,21 @@ if __name__ == "__main__":
     img_counter = 0
     for i in range(0, NUM_ITERATIONS):
 
-        prompt_index = random.choice(range(0, num_prompts))
+        prompt = generate_prompts_from_lists().lower()
         num_noise_steps = random.choice(range(0, MAX_NOISE_STEPS))
 
-        print("prompt index: ", prompt_index)
+        print(f"prompt {i}: ", prompt)
         print("num noise steps: ", num_noise_steps)
 
-        embedded_prompt = embedded_prompts[prompt_index].to(DEVICE).unsqueeze(0)
-
+        
+        embedded_prompt = clip_text_embedder(prompt)
+        torch.save(embedded_prompt, join(EMBEDDED_PROMPTS_DIR, f"embedded_prompt_{i}.pt"))
+    
+        print(
+            "Prompts embeddings saved at: ",
+            f"{join(EMBEDDED_PROMPTS_DIR, f'embedded_prompt_{i}.pt')}",
+            )
+        
         dist = torch.distributions.normal.Normal(
             loc=embedded_prompt.mean(dim=2), scale=embedded_prompt.std(dim=2)
         )
@@ -298,14 +337,19 @@ if __name__ == "__main__":
             noise_t += (NOISE_MULTIPLIER * noise_i)
 
         embedding = embedded_prompt + noise_t
+
         image = sd.generate_images_from_embeddings(
             seed=SEED, 
             embedded_prompt=embedding, 
             null_prompt=null_prompt, 
             batch_size=BATCH_SIZE
-        )        
-        # images_tensors.append(image.cpu().detach())
+        )
+        # embedded_prompt.cpu()
+        # del embedded_prompt        
         get_memory_status()
+        # embedding
+        get_memory_status()
+        # images_tensors.append(image.cpu().detach())
         #compute hash
         img_hash = calculate_sha256(image.squeeze())
         pil_image = to_pil(image.squeeze())
@@ -333,8 +377,7 @@ if __name__ == "__main__":
         manifest.append(manifest_i)
 
         scores_i = manifest_i.copy()
-        scores_i["initial-prompt"] = PROMPTS[prompt_index]
-        scores_i["initial-prompt-index"] = prompt_index
+        scores_i["initial-prompt"] = prompt
         scores_i["score"] = score.item()
         scores_i["num-noise-steps"] = num_noise_steps
         scores.append(scores_i)
@@ -343,6 +386,15 @@ if __name__ == "__main__":
         json_output_i["embedding-tensor"] = embedding.tolist()
         json_output_i["clip-vector"] = image_features.tolist()
         json_output.append(json_output_i)
+
+        embedded_prompt.cpu()
+        del embedded_prompt
+        embedding.cpu()
+        del embedding
+        image.cpu()
+        del image
+        image_features.cpu()
+        del image_features
 
         if i%64 == 0:
             json.dump(json_output, open(json_output_path, "w"), indent=4)
