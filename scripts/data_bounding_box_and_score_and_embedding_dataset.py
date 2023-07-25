@@ -8,8 +8,6 @@ import shutil
 import math
 import cv2
 import numpy as np
-import shutil
-import zipfile
 import random
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -53,8 +51,6 @@ prompt_list = ['chibi', 'waifu', 'scifi', 'side scrolling', 'character', 'side s
                  'Dog', 'Cat', 'Space Ship', 'Airplane', 'Mech', 'Tank', 'Bicycle', 
                  'Book', 'Chair', 'Table', 'Cup', 'Car', 'Tree', 'Flower', 'Mountain', 
                  'Smartphone', 'Guitar', 'Sunflower', 'Laptop', 'Coffee Mug' ]
-
-MAX_ZIP_SIZE = 500 * 1024 * 1024  # 500MB in bytes
 
 
 parser = argparse.ArgumentParser("Embed prompts using CLIP")
@@ -252,12 +248,7 @@ def get_bounding_box_center_offset(largest_bounding_box, image_size):
     box_h /= image_size[0]
     return center_x, center_y, center_offset_x, center_offset_y, box_w, box_h
 
-def save_image_to_zip(image, image_file_path, zip_file_path):
-    with zipfile.ZipFile(zip_file_path, 'a', zipfile.ZIP_DEFLATED) as zipf:
-        zipf.write(image_file_path)
 
-def check_zip_file_size(zip_file_path):
-    return os.path.getsize(zip_file_path)
 
 def calculate_sha256(tensor):
     if tensor.device == "cpu":
@@ -326,8 +317,6 @@ def main():
     json_output_path = join(FEATURES_DIR, "features.json")
     manifest_path = join(OUTPUT_DIR, "manifest.json")
     scores_path = join(OUTPUT_DIR, "scores.json")
-    zip_count = 1
-    current_zip_file = f"{zip_count}.zip"
 
     for i, (image, embedding, prompt_index) in enumerate(images_generator):  # Retrieve the prompt with the image and embedding
         # images_tensors.append(image)
@@ -344,11 +333,8 @@ def main():
         
         img_file_name = f"image_{i:06d}.png"
         full_img_path = join(IMAGES_DIR, img_file_name)
-        cv2.imwrite(full_img_path, cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR))
-        save_image_to_zip(full_img_path, img_file_name, current_zip_file)
-        if check_zip_file_size(current_zip_file) >= MAX_ZIP_SIZE:
-            zip_count += 1
-            current_zip_file = f"{zip_count}.zip"
+        img_path = "./images/" + os.path.relpath(full_img_path, IMAGES_DIR)
+        pil_image.save(full_img_path)
 
         if SAVE_EMBEDDINGS:
             embedding_file_name = f"embedding_{i:06d}.pt"
@@ -357,7 +343,7 @@ def main():
 
         manifest_i = {                     
                         "file-name": img_file_name,
-                        "file-path": full_img_path,
+                        "file-path": img_path,
                         "file-hash": img_hash,
                     }
         manifest.append(manifest_i)
