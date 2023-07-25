@@ -24,7 +24,7 @@ pip3 install -r requirements.txt
 
 ## Downloading models
 
-Download the currently supported checkpoint, `v1-5-pruned-emaonly.ckpt`, to `./input/model/`.
+Download the currently supported checkpoint, `v1-5-pruned-emaonly.safetensors`, to `./input/model/`.
 
 ```bash
 ./download-model.sh
@@ -33,7 +33,7 @@ Download the currently supported checkpoint, `v1-5-pruned-emaonly.ckpt`, to `./i
 
 Start by running this.
 
-This script initializes a `LatentDiffusion` module, load its weights from a checkpoint file at `./input/model/v1-5-pruned-emaonly.ckpt` and then save all submodules.
+This script initializes a `LatentDiffusion` module, load its weights from a checkpoint file at `./input/model/v1-5-pruned-emaonly.safetensors` and then save all submodules.
 **Note**: saving these models will take an extra ~5GB of storage.
 
 ```bash
@@ -44,7 +44,7 @@ python3 ./scripts/save_models.py
 
 - `-g, --granularity`: Determines the height in the model tree on which to save the submodels. Defaults to `0`, saving all submodels of the `LatentDiffusion` class and all submodels thereof. If `1` is given, it saves only up to the first level, i.e., autoencoder, UNet and CLIP text embedder. *Note*: that the other scripts and notebooks expect this to be ran with `0`.
 - `--root_models_path`: Base directory for the models' folder structure. Defaults to the constant `ROOT_MODELS_PATH`, which is expected to be `./input/model/`.
-- `--checkpoint_path`: Relative path of the checkpoint file (*.ckpt). Defaults to the constant `CHECKPOINT_PATH`, which is expected to be `'./input/model/v1-5-pruned-emaonly.ckpt' = os.path.join(ROOT_MODELS_PATH, 'v1-5-pruned-emaonly.ckpt')`.
+- `--checkpoint_path`: Relative path of the checkpoint file (*.safetensors). Defaults to the constant `CHECKPOINT_PATH`, which is expected to be `'./input/model/v1-5-pruned-emaonly.safetensors' = os.path.join(ROOT_MODELS_PATH, 'v1-5-pruned-emaonly.safetensors')`.
 
 ### Text To Image
 
@@ -84,7 +84,7 @@ options:
 #### Example Usage:
 
 ``` shell
-python3 ./scripts/text_to_image.py --prompt "character, chibi, waifu, side scrolling, white background, centered" --checkpoint_path "./input/model/v1-5-pruned-emaonly.ckpt" --batch_size 1 --num_images 6
+python3 ./scripts/text_to_image.py --prompt "character, chibi, waifu, side scrolling, white background, centered" --checkpoint_path "./input/model/v1-5-pruned-emaonly.safetensors" --batch_size 1 --num_images 6
 ```
 
 ## Running `stable_diffusion` scripts
@@ -138,7 +138,7 @@ python3 ./scripts/generate_images_from_distributions.py -d 4 --params_steps 4 --
 
 - `-p, --prompt`: The prompt to generate images from. Defaults to `"A woman with flowers in her hair in a courtyard, in the style of Frank Frazetta"`.
 - `-od, --output_dir`: The output directory. Defaults to the `OUTPUT_DIR` constant, which should be `"./output/noise-tests/from_distributions"`.
-- `-cp, --checkpoint_path`: The path to the checkpoint file to load from. Defaults to the `CHECKPOINT_PATH` constant, which should be `"./input/model/v1-5-pruned-emaonly.ckpt"`.
+- `-cp, --checkpoint_path`: The path to the checkpoint file to load from. Defaults to the `CHECKPOINT_PATH` constant, which should be `"./input/model/v1-5-pruned-emaonly.safetensors"`.
 - `-F, --fully_initialize`: Whether to fully initialize or not. Defaults to `False`.
 - `-d, --distribution_index`: The distribution index to use. Defaults to `4`. Options: 0: "Normal", 1: "Cauchy", 2: "Gumbel", 3: "Laplace", 4: "Logistic".
 - `-bs, --batch_size`: The batch size to use. Defaults to `1`.
@@ -162,7 +162,7 @@ python3 ./scripts/generate_images_from_temperature_range.py -d 4 --params_range 
 
 - `-p, --prompt`: The prompt to generate images from. Defaults to `"A woman with flowers in her hair in a courtyard, in the style of Frank Frazetta"`.
 - `-od, --output_dir`: The output directory. Defaults to the `OUTPUT_DIR` constant, which is expected to be `"./output/noise-tests/temperature_range"`.
-- `-cp, --checkpoint_path`: The path to the checkpoint file to load from. Defaults to the `CHECKPOINT_PATH` constant, which is expected to be `"./input/model/v1-5-pruned-emaonly.ckpt"`.
+- `-cp, --checkpoint_path`: The path to the checkpoint file to load from. Defaults to the `CHECKPOINT_PATH` constant, which is expected to be `"./input/model/v1-5-pruned-emaonly.safetensors"`.
 - `-F, --fully_initialize`: Whether to fully initialize or not. Defaults to `False`.
 - `-d, --distribution_index`: The distribution index to use. Defaults to 4. Options: 0: "Normal", 1: "Cauchy", 2: "Gumbel", 3: "Laplace", 4: "Logistic".
 - `-s, --seed`: The seed value. Defaults to `2982`.
