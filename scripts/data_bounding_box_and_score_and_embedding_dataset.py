@@ -344,8 +344,11 @@ def main():
         
         img_file_name = f"image_{i:06d}.png"
         full_img_path = join(IMAGES_DIR, img_file_name)
-        img_path = "./images/" + os.path.relpath(full_img_path, IMAGES_DIR)
-        pil_image.save(full_img_path)
+        cv2.imwrite(full_img_path, cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR))
+        save_image_to_zip(full_img_path, img_file_name, current_zip_file)
+        if check_zip_file_size(current_zip_file) >= MAX_ZIP_SIZE:
+            zip_count += 1
+            current_zip_file = f"{zip_count}.zip"
 
         if SAVE_EMBEDDINGS:
             embedding_file_name = f"embedding_{i:06d}.pt"
@@ -354,7 +357,7 @@ def main():
 
         manifest_i = {                     
                         "file-name": img_file_name,
-                        "file-path": img_path,
+                        "file-path": full_img_path,
                         "file-hash": img_hash,
                     }
         manifest.append(manifest_i)
