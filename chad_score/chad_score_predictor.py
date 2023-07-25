@@ -1,12 +1,12 @@
 import torch
 from torch import nn
-from stable_diffusion.utils.utils import check_device
+from stable_diffusion.utils.utils import get_device
 
 class ChadPredictorModel(nn.Module):
     def __init__(self, input_size = 768, device = None):
         super().__init__()
         self.input_size = input_size
-        self.device = check_device(device)
+        self.device = get_device(device)
         self.layers = nn.Sequential(
             nn.Linear(self.input_size, 1024),
             # nn.ReLU(),

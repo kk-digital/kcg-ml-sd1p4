@@ -29,7 +29,7 @@ import sys
 sys.path.insert(0, os.getcwd())
 
 from stable_diffusion.constants import ENCODER_PATH, DECODER_PATH, AUTOENCODER_PATH
-from stable_diffusion.utils.utils import check_device
+from stable_diffusion.utils.utils import get_device
 # ENCODER_PATH = os.path.abspath('./input/model/autoencoder/encoder.ckpt')
 # DECODER_PATH = os.path.abspath('./input/model/autoencoder/decoder.ckpt')
 # AUTOENCODER_PATH = os.path.abspath('./input/model/autoencoder/autoencoder.ckpt')
@@ -50,7 +50,7 @@ class Autoencoder(nn.Module):
         """
         super().__init__()
 
-        self.device = check_device(device)
+        self.device = get_device(device)
 
         self.encoder = encoder
         self.decoder = decoder
