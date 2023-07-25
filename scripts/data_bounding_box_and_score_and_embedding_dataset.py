@@ -370,10 +370,10 @@ def main():
         json_output_i["clip-vector"] = image_features.tolist()
 
         json_output.append(json_output_i)
-        if i % 16 == 0:
-            json.dump(json_output, open(json_output_path, "w"), indent=4)
-            json.dump(scores, open(scores_path, "w"), indent=4)
-            json.dump(manifest, open(manifest_path, "w"), indent=4)
+        
+        json.dump(json_output, open(json_output_path, "w"), indent=4)
+        json.dump(scores, open(scores_path, "w"), indent=4)
+        json.dump(manifest, open(manifest_path, "w"), indent=4)
 
     # images_grid = torch.cat(images_tensors)
     # save_image_grid(images_grid, join(IMAGES_DIR, "images_grid.png"), nrow=int(math.log(NUM_ITERATIONS, 2)), normalize=True, scale_each=True)
