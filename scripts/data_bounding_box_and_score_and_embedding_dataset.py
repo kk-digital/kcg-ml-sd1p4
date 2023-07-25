@@ -1,12 +1,10 @@
 import os
 import sys
-import zipfile
-from pathlib import Path
-import shutil
 import argparse
 import torch
 import hashlib
 import json
+import shutil
 import math
 import cv2
 import numpy as np
@@ -320,11 +318,6 @@ def main():
     manifest_path = join(OUTPUT_DIR, "manifest.json")
     scores_path = join(OUTPUT_DIR, "scores.json")
 
-    zip_index = 1
-    current_zip_file_path = Path(f"{zip_index}.zip")
-    current_zip_file = zipfile.ZipFile(current_zip_file_path, 'w')
-    image_dir_path = Path(IMAGES_DIR)
-
     for i, (image, embedding, prompt_index) in enumerate(images_generator):  # Retrieve the prompt with the image and embedding
         # images_tensors.append(image)
         torch.cuda.empty_cache()
@@ -340,19 +333,8 @@ def main():
         
         img_file_name = f"image_{i:06d}.png"
         full_img_path = join(IMAGES_DIR, img_file_name)
-        save_image_grid(image, full_img_path)
-
-        current_zip_file_path.refresh()  # Refresh to get updated size
-        if current_zip_file_path.stat().st_size > 500 * 1024 * 1024:  # Check if the zip file is larger than 500MB
-            # If it is, close the current zip file and open a new one
-            current_zip_file.close()
-            zip_index += 1
-            current_zip_file_path = Path(f"{zip_index}.zip")
-            current_zip_file = zipfile.ZipFile(current_zip_file_path, 'w')
-
-        current_zip_file.write(full_img_path, arcname=f"images/{img_file_name}")
-        os.remove(full_img_path)
-
+        img_path = "./images/" + os.path.relpath(full_img_path, IMAGES_DIR)
+        pil_image.save(full_img_path)
 
         if SAVE_EMBEDDINGS:
             embedding_file_name = f"embedding_{i:06d}.pt"
@@ -392,9 +374,6 @@ def main():
             json.dump(json_output, open(json_output_path, "w"), indent=4)
             json.dump(scores, open(scores_path, "w"), indent=4)
             json.dump(manifest, open(manifest_path, "w"), indent=4)
-    
-    current_zip_file.close()
-    
 
     # images_grid = torch.cat(images_tensors)
     # save_image_grid(images_grid, join(IMAGES_DIR, "images_grid.png"), nrow=int(math.log(NUM_ITERATIONS, 2)), normalize=True, scale_each=True)
