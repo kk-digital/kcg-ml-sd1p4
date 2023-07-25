@@ -22,7 +22,7 @@ from stable_diffusion.constants import (
 )
 from stable_diffusion.stable_diffusion import StableDiffusion
 from labml.monit import section
-from stable_diffusion.utils.utils import save_image_grid, save_images, check_device
+from stable_diffusion.utils.utils import save_image_grid, save_images, get_device
 
 from os.path import join
 
@@ -71,7 +71,7 @@ NOISE_SEEDS = NOISE_SEEDS[:NUM_SEEDS]
 
 
 def init_stable_diffusion(device, sampler_name="ddim", n_steps=20, ddim_eta=0.0):
-    device = check_device(device)
+    device = get_device(device)
 
     stable_diffusion = StableDiffusion(
         device=device, sampler_name=sampler_name, n_steps=n_steps, ddim_eta=ddim_eta

@@ -25,7 +25,7 @@ from chad_score import ChadPredictor
 from stable_diffusion import StableDiffusion
 from stable_diffusion.constants import ModelsPathTree
 from stable_diffusion.utils.utils import (
-    check_device,
+    get_device,
     get_memory_status,
     to_pil,
     save_image_grid,
@@ -118,7 +118,7 @@ NULL_PROMPT = ""
 NUM_ITERATIONS = args.num_iterations
 SEED = args.seed
 NOISE_MULTIPLIER = args.noise_multiplier
-DEVICE = check_device(args.cuda_device)
+DEVICE = get_device(args.cuda_device)
 BATCH_SIZE = args.batch_size
 SAVE_EMBEDDINGS = args.save_embeddings
 CLEAR_OUTPUT_DIR = args.clear_output_dir
@@ -140,7 +140,7 @@ else:
     os.makedirs(IMAGES_DIR, exist_ok=True)
 
 def init_stable_diffusion(device, pt, sampler_name="ddim", n_steps=20, ddim_eta=0.0):
-    device = check_device(device)
+    device = get_device(device)
 
     stable_diffusion = StableDiffusion(
         device=device, sampler_name=sampler_name, n_steps=n_steps, ddim_eta=ddim_eta

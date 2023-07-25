@@ -10,7 +10,7 @@ import torch
 from os.path import join
 
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
-from stable_diffusion.utils.utils import check_device
+from stable_diffusion.utils.utils import get_device
 
 
 EMBEDDED_PROMPTS_DIR = os.path.abspath("./input/embedded_prompts/")
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     null_prompt = NULL_PROMPT
     prompts = PROMPTS
 
-    clip_text_embedder = CLIPTextEmbedder(device=check_device())
+    clip_text_embedder = CLIPTextEmbedder(device=get_device())
     clip_text_embedder.load_submodels()
 
     null_cond = clip_text_embedder(null_prompt)
