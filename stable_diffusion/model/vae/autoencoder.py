@@ -25,7 +25,8 @@ from torch import nn
 from .auxiliary_classes import *
 from .encoder import Encoder
 from .decoder import Decoder
-from stable_diffusion.utils.model import initialize_encoder, initialize_decoder
+# from stable_diffusion.utils.model import initialize_encoder, initialize_decoder
+from stable_diffusion.utils.utils import SectionManager as section
 import os
 import sys
 sys.path.insert(0, os.getcwd())
@@ -182,7 +183,38 @@ class Autoencoder(nn.Module):
         z = self.post_quant_conv(z)
         # Decode the image of shape `[batch_size, channels, height, width]`
         return self.decoder(z)
+def initialize_encoder(device = None, 
+                        z_channels=4,
+                        in_channels=3,
+                        channels=128,
+                        channel_multipliers=[1, 2, 4, 4],
+                        n_resnet_blocks=2) -> Encoder:
+    
+    with section('encoder initialization'):
+        device = check_device(device)
+    # Initialize the encoder
+        encoder = Encoder(z_channels=z_channels,
+                        in_channels=in_channels,
+                        channels=channels,
+                        channel_multipliers=channel_multipliers,
+                        n_resnet_blocks=n_resnet_blocks).to(device)
+    return encoder
 
+def initialize_decoder(device = None, 
+                        out_channels=3,
+                        z_channels=4,
+                        channels=128,
+                        channel_multipliers=[1, 2, 4, 4],
+                        n_resnet_blocks=2) -> Decoder:
+    
+    with section('decoder initialization'):
+        device = check_device(device)
+        decoder = Decoder(out_channels=out_channels,
+                        z_channels=z_channels,
+                        channels=channels,
+                        channel_multipliers=channel_multipliers,
+                        n_resnet_blocks=n_resnet_blocks).to(device)    
+    return decoder
 if __name__ == "__main__":
     prompts = ["", "A painting of a computer virus", "A photo of a computer virus"]
 

@@ -26,7 +26,7 @@ from typing import List
 import torch
 import torch.nn as nn
 from safetensors.torch import save_file, load_file
-from .model.vae.autoencoder import Autoencoder
+from .model.vae.autoencoder import Autoencoder, Encoder, Decoder
 from .model.clip_text_embedder.clip_text_embedder import CLIPTextEmbedder
 from .model.unet.unet import UNetModel
 from .constants import (
@@ -39,7 +39,7 @@ from .constants import (
     TOKENIZER_PATH,
     TRANSFORMER_PATH,
 )
-from .utils.model import initialize_autoencoder, initialize_clip_embedder, initialize_unet
+# from .utils.model import initialize_autoencoder, initialize_clip_embedder, initialize_unet
 from .utils.utils import check_device
 # from .utils.utils import SectionManager as section
 from labml.monit import section
@@ -328,3 +328,82 @@ class LatentDiffusion(nn.Module):
         $$\epsilon_\text{cond}(x_t, c)$$
         """
         return self.model(x, t, context)
+
+def initialize_encoder(device = None, 
+                        z_channels=4,
+                        in_channels=3,
+                        channels=128,
+                        channel_multipliers=[1, 2, 4, 4],
+                        n_resnet_blocks=2) -> Encoder:
+    
+    with section('encoder initialization'):
+        device = check_device(device)
+    # Initialize the encoder
+        encoder = Encoder(z_channels=z_channels,
+                        in_channels=in_channels,
+                        channels=channels,
+                        channel_multipliers=channel_multipliers,
+                        n_resnet_blocks=n_resnet_blocks).to(device)
+    return encoder
+
+def initialize_decoder(device = None, 
+                        out_channels=3,
+                        z_channels=4,
+                        channels=128,
+                        channel_multipliers=[1, 2, 4, 4],
+                        n_resnet_blocks=2) -> Decoder:
+    
+    with section('decoder initialization'):
+        device = check_device(device)
+        decoder = Decoder(out_channels=out_channels,
+                        z_channels=z_channels,
+                        channels=channels,
+                        channel_multipliers=channel_multipliers,
+                        n_resnet_blocks=n_resnet_blocks).to(device)    
+    return decoder
+    # Initialize the autoencoder    
+
+    
+def initialize_autoencoder(device = None, encoder = None, decoder = None, emb_channels = 4, z_channels = 4, force_submodels_init = False) -> Autoencoder:
+    # Initialize the autoencoder
+    
+    with section(f'autoencoder initialization'):
+        device = check_device(device)
+        if force_submodels_init:
+            if encoder is None:
+                encoder = initialize_encoder(device=device, z_channels=z_channels)
+            if decoder is None:
+                decoder = initialize_decoder(device=device, z_channels=z_channels)
+        
+        autoencoder = Autoencoder(emb_channels=emb_channels,
+                                    encoder=encoder,
+                                    decoder=decoder,
+                                    z_channels=z_channels).to(device)
+    return autoencoder
+
+def initialize_unet(device = None, 
+                    in_channels=4,
+                    out_channels=4,
+                    channels=320,
+                    attention_levels=[0, 1, 2],
+                    n_res_blocks=2,
+                    channel_multipliers=[1, 2, 4, 4],
+                    n_heads=8,
+                    tf_layers=1,
+                    d_cond=768) -> UNetModel:
+
+    # Initialize the U-Net
+    device = check_device(device)
+    with section('U-Net initialization'):
+        unet_model = UNetModel(in_channels=in_channels,
+                                out_channels=out_channels,
+                                channels=channels,
+                                attention_levels=attention_levels,
+                                n_res_blocks=n_res_blocks,
+                                channel_multipliers=channel_multipliers,
+                                n_heads=n_heads,
+                                tf_layers=tf_layers,
+                                d_cond=d_cond).to(device)
+            # unet_model.save()
+            # torch.save(unet_model, UNET_PATH)
+    return unet_model

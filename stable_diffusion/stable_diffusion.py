@@ -61,6 +61,10 @@ class StableDiffusion:
             print(
                 "WARNING: `LatentDiffusion` model is `None` given. Initialize one with the appropriate method."
             )
+        elif type(self._model) == LatentDiffusion:
+            
+            print("LatentDiffusion model given. Initializing sampler.")
+            self.model = self._model
             # print("WARNING: LatentDiffusion model not given. An empty model will be initialized.")
 
     @property
