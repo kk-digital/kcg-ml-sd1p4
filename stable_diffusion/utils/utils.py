@@ -180,7 +180,7 @@ def save_image_grid(
     im = Image.fromarray(ndarr)
     im.save(fp, format=format)        
 
-def check_device(device = None, cuda_fallback = 'cuda:0'):
+def get_device(device = None, cuda_fallback = 'cuda:0'):
     
     if device is None:
         device = torch.device(torch.cuda.current_device() if torch.cuda.is_available() else 'cpu')
@@ -199,22 +199,22 @@ def check_device(device = None, cuda_fallback = 'cuda:0'):
         print(f'INFO: Using CUDA device {device.index}: {torch.cuda.get_device_name(device)}.')
     except Exception as e:
         print(e)
-        print(f'Using {device}. Slow on CPU.')
+        print("WARNING: You are running this script without CUDA. It may be very slow.")
     
     return device
 
-def get_device(force_cpu: bool = False, cuda_fallback: str = 'cuda:0'):
-    """
-    ### Get device
-    """
-    if torch.cuda.is_available() and not force_cpu:
-        device_index = torch.cuda.current_device()
-        device_name = torch.cuda.get_device_name(device_index)
-        print("INFO: Using CUDA device: {}".format(device_name))
-        return torch.device(device_index)
+# def get_device(force_cpu: bool = False, cuda_fallback: str = 'cuda:0'):
+#     """
+#     ### Get device
+#     """
+#     if torch.cuda.is_available() and not force_cpu:
+#         device_index = torch.cuda.current_device()
+#         device_name = torch.cuda.get_device_name(device_index)
+#         print("INFO: Using CUDA device: {}".format(device_name))
+#         return torch.device(device_index)
 
-    print("WARNING: You are running this script without CUDA. It may be very slow.")
-    return 'cpu'
+#     print("WARNING: You are running this script without CUDA. It may be very slow.")
+#     return 'cpu'
 
 def get_memory_status(device = None): 
     if device == None:

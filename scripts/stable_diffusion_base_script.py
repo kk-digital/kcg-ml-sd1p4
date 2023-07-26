@@ -10,7 +10,7 @@ from stable_diffusion.latent_diffusion import LatentDiffusion
 from stable_diffusion.sampler import DiffusionSampler
 from stable_diffusion.constants import LATENT_DIFFUSION_PATH
 from labml.monit import section
-from stable_diffusion.utils.utils import get_device, load_img, check_device, get_autocast
+from stable_diffusion.utils.utils import get_device, load_img, get_device, get_autocast
 from typing import Union, Optional
 from pathlib import Path
 
