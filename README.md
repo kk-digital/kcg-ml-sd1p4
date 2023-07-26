@@ -5,7 +5,7 @@
 ## Summary
 
 - [kcg-ml-sd1p4](#kcg-ml-sd1p4)
-  - [Summary](#summary)
+  - [Installing requirements](#installing-requirements)
   - [Downloading models](#downloading-models)
   - [Saving submodels](#saving-submodels)
   - [Running `stable_diffusion` scripts](#running-stable_diffusion-scripts)
@@ -16,19 +16,25 @@
       - [Images and encodings](#images-and-encodings)
       - [Perturbations on prompts embeddings](#perturbations-on-prompts-embeddings)
   - [Notebooks](#notebooks)
+
+## Installing requirements
+```bash
+pip3 install -r requirements.txt
+```
+
 ## Downloading models
 
-Will download the currently supported checkpoint, `v1-5-pruned-emaonly.ckpt`, to `./input/model/`.
+Download the currently supported checkpoint, `v1-5-pruned-emaonly.safetensors`, to `./input/model/`.
 
 ```bash
-./stable_diffusion/download-model.sh
+./download-model.sh
 ```
 ## Saving submodels
 
 Start by running this.
 
-This script initializes a `LatentDiffusion` module, load its weights from a checkpoint file at `./input/model/v1-5-pruned-emaonly.ckpt` and then save all submodules.
-**Note**: saving these models will take an extra ~5GB of storage. 
+This script initializes a `LatentDiffusion` module, load its weights from a checkpoint file at `./input/model/v1-5-pruned-emaonly.safetensors` and then save all submodules.
+**Note**: saving these models will take an extra ~5GB of storage.
 
 ```bash
 python3 ./scripts/save_models.py
@@ -38,7 +44,7 @@ python3 ./scripts/save_models.py
 
 - `-g, --granularity`: Determines the height in the model tree on which to save the submodels. Defaults to `0`, saving all submodels of the `LatentDiffusion` class and all submodels thereof. If `1` is given, it saves only up to the first level, i.e., autoencoder, UNet and CLIP text embedder. *Note*: that the other scripts and notebooks expect this to be ran with `0`.
 - `--root_models_path`: Base directory for the models' folder structure. Defaults to the constant `ROOT_MODELS_PATH`, which is expected to be `./input/model/`.
-- `--checkpoint_path`: Relative path of the checkpoint file (*.ckpt). Defaults to the constant `CHECKPOINT_PATH`, which is expected to be `'./input/model/v1-5-pruned-emaonly.ckpt' = os.path.join(ROOT_MODELS_PATH, 'v1-5-pruned-emaonly.ckpt')`.
+- `--checkpoint_path`: Relative path of the checkpoint file (*.safetensors). Defaults to the constant `CHECKPOINT_PATH`, which is expected to be `'./input/model/v1-5-pruned-emaonly.safetensors' = os.path.join(ROOT_MODELS_PATH, 'v1-5-pruned-emaonly.safetensors')`.
 
 ### Text To Image
 
@@ -52,9 +58,9 @@ options:
   --batch_size   BATCH_SIZE
                         How many images to generate at once
   --output        OUTPUT
-                        Number of folders to 
+                        Number of folders to
   --sampler       SAMPLER
-                        Name of the sampler to use 
+                        Name of the sampler to use
   --checkpoint_path     CHECKPOINT_PATH
                         Path to the checkpoint file
   --flash         FLASH
@@ -78,7 +84,7 @@ options:
 #### Example Usage:
 
 ``` shell
-python3 ./scripts/text_to_image.py --prompt "character, chibi, waifu, side scrolling, white background, centered" --checkpoint_path "./input/model/v1-5-pruned-emaonly.ckpt" --batch_size 1 --num_images 6
+python3 ./scripts/text_to_image.py --prompt "character, chibi, waifu, side scrolling, white background, centered" --checkpoint_path "./input/model/v1-5-pruned-emaonly.safetensors" --batch_size 1 --num_images 6
 ```
 
 ## Running `stable_diffusion` scripts
@@ -99,7 +105,7 @@ python3 ./scripts/embed_prompts.py --prompts 'A painting of a computer virus', '
 
 - `-p, --prompts`: The prompts to embed. Defaults to `['A painting of a computer virus', 'An old photo of a computer scientist']`.
 - `--embedded_prompts_dir`: The path to the directory containing the embedded prompts tensors. Defaults to a constant `EMBEDDED_PROMPTS_DIR`, which is expected to be `'./input/embedded_prompts/'`.
-- 
+-
 #### Images from embeddings
 
 Only run this _after_ generating the embedded prompts with the [above script](#embed-prompts).
@@ -115,12 +121,12 @@ python3 ./scripts/generate_images_from_embeddings.py --num_seeds 4 --temperature
 - `-p, --embedded_prompts_dir`: The path to the directory containing the embedded prompts tensors. Defaults to the `EMBEDDED_PROMPTS_DIR` constant, which is expected to be `'./input/embedded_prompts/'`.
 - `-od, --output_dir`: The output directory. Defaults to the `OUTPUT_DIR` constant, which is expected to be `'./output/noise-tests/from_embeddings'`.
 - `--num_seeds`: Number of random seeds to use. Defaults to `3`. Ranges from `1` to `7`.
-- `-bs, --batch_size`: Batch size to use. Defaults to `1`. 
+- `-bs, --batch_size`: Batch size to use. Defaults to `1`.
 - `-t, --temperature`: Sampling temperature. Defaults to `1.0`.
 - `--ddim_eta`: Amount of noise to readd during the sampling process. Defaults to `0.0`.
 - `--clear_output_dir`: Either to clear or not the output directory before running. Defaults to `False`.
 - `--cuda_device`: CUDA device to use. Defaults to `cuda:0`.
- 
+
 #### Images from distributions
 
 Try running:
@@ -132,7 +138,7 @@ python3 ./scripts/generate_images_from_distributions.py -d 4 --params_steps 4 --
 
 - `-p, --prompt`: The prompt to generate images from. Defaults to `"A woman with flowers in her hair in a courtyard, in the style of Frank Frazetta"`.
 - `-od, --output_dir`: The output directory. Defaults to the `OUTPUT_DIR` constant, which should be `"./output/noise-tests/from_distributions"`.
-- `-cp, --checkpoint_path`: The path to the checkpoint file to load from. Defaults to the `CHECKPOINT_PATH` constant, which should be `"./input/model/v1-5-pruned-emaonly.ckpt"`.
+- `-cp, --checkpoint_path`: The path to the checkpoint file to load from. Defaults to the `CHECKPOINT_PATH` constant, which should be `"./input/model/v1-5-pruned-emaonly.safetensors"`.
 - `-F, --fully_initialize`: Whether to fully initialize or not. Defaults to `False`.
 - `-d, --distribution_index`: The distribution index to use. Defaults to `4`. Options: 0: "Normal", 1: "Cauchy", 2: "Gumbel", 3: "Laplace", 4: "Logistic".
 - `-bs, --batch_size`: The batch size to use. Defaults to `1`.
@@ -156,7 +162,7 @@ python3 ./scripts/generate_images_from_temperature_range.py -d 4 --params_range 
 
 - `-p, --prompt`: The prompt to generate images from. Defaults to `"A woman with flowers in her hair in a courtyard, in the style of Frank Frazetta"`.
 - `-od, --output_dir`: The output directory. Defaults to the `OUTPUT_DIR` constant, which is expected to be `"./output/noise-tests/temperature_range"`.
-- `-cp, --checkpoint_path`: The path to the checkpoint file to load from. Defaults to the `CHECKPOINT_PATH` constant, which is expected to be `"./input/model/v1-5-pruned-emaonly.ckpt"`.
+- `-cp, --checkpoint_path`: The path to the checkpoint file to load from. Defaults to the `CHECKPOINT_PATH` constant, which is expected to be `"./input/model/v1-5-pruned-emaonly.safetensors"`.
 - `-F, --fully_initialize`: Whether to fully initialize or not. Defaults to `False`.
 - `-d, --distribution_index`: The distribution index to use. Defaults to 4. Options: 0: "Normal", 1: "Cauchy", 2: "Gumbel", 3: "Laplace", 4: "Logistic".
 - `-s, --seed`: The seed value. Defaults to `2982`.
@@ -188,7 +194,7 @@ python3 ./scripts/generate_images_and_encodings.py --prompt "An oil painting of 
 
 Try running:
 ```bash
-python3 ./scripts/embed_prompts_and_generate_images.py 
+python3 ./scripts/embed_prompts_and_generate_images.py
 ```
 Outputs in: `./output/disturbing_embeddings`
 
@@ -199,4 +205,21 @@ Outputs in: `./output/disturbing_embeddings`
 - `--cuda_device`: The CUDA device to use. Defaults to `"cuda:0"`.
 
 
-## Notebooks
+#### Random Pormpts Generation and Disturbing Embeddings Image Generation
+
+Try running:
+
+```bash
+python3 ./scripts/data_bounding_box_and_score_and_embedding_dataset.py
+```
+
+- `--save_embeddings`: If True, the disturbed embeddings will be saved to disk. Defaults to `False`.
+- `cfg_strength`: Configuration strength. Defaults to `12`.
+- `embedded_prompts_dir`: The path to the directory containing the embedded prompts tensors. Defaults to a constant EMBEDDED_PROMPTS_DIR, which is expected to be `'./input/embedded_prompts/'`
+- `num_iterations`: The number of iterations to batch-generate images. Defaults to `8`.
+- `batch_size`: The number of images to generate per batch. Defaults to `1`.
+- `seed`: The noise seed used to generate the images. Defaults to `2982`.
+- `noise_multiplier`: The multiplier for the amount of noise used to disturb the prompt embedding. Defaults to `0.008`.
+- `cuda_device`: The CUDA device to use. Defaults to `'cuda:0'`.
+- `clear_output_dir`: If True, the output directory will be cleared before generating images. Defaults to `False`.
+- `random_walk`: Random walk on the embedding space, with the prompt embedding as origin. Defaults to False.
