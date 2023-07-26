@@ -14,7 +14,7 @@ CHECKPOINT = f"{DEFAULT_MODEL}.safetensors"
 
 ROOT_MODELS_PATH = (os.path.join(base_directory, ROOT_MODELS_PREFIX))
 SD_MODELS_DIR = os.path.join(ROOT_MODELS_PATH, "sd")
-SD_DEFAULT_MODEL_DIR = os.path.join(SD_MODELS_PATH, DEFAULT_MODEL)
+SD_DEFAULT_MODEL_DIR = os.path.join(SD_MODELS_DIR, DEFAULT_MODEL)
 
 CLIP_MODELS_DIR = os.path.join(ROOT_MODELS_PATH, "clip")
 
@@ -57,7 +57,8 @@ class ModelsPathTree:
     """returns dicts to be used as kwargs for loading submodels.
     the keys are the same as the kwargs used for the load methods."""
 
-    def __init__(self, base_directory: str = "./"):
+    def __init__(self, base_directory: str = "./", default_model = "v1-5-pruned-emaonly", root_models_prefix: str = "input/models/", root_outputs_prefix: str = "outputs/models/", checkpoint_format = ".safetensors"):
+        
         self.base_directory = base_directory
 
         self.root_models_path = (
@@ -65,16 +66,13 @@ class ModelsPathTree:
         )
         self.checkpoint_path = (
             os.path.join(self.root_models_path, CHECKPOINT)
-        )
-        self.checkpoint_path_st = (
-            os.path.join(self.root_models_path, CHECKPOINT_ST)
-        )        
+        )    
         self.embedder_path = (
             os.path.join(self.root_models_path, "clip_text_embedder/clip_embedder.ckpt")
         )
         self.tokenizer_path = (
             os.path.join(
-                self.root_models_path, "clip_text_embedder/clip_tokenizer.ckpt"
+                self.root_models_path, "clip_text_embedder/tokenizer"
             )
         )
         self.transformer_path = (
@@ -131,6 +129,11 @@ class ModelsPathTree:
                 -- clip_model: {self.clip_model_path}
                 -- image_processor: {self.image_processor_path}
             """
+
+    @property
+    def checkpoint(self):
+        """ "returns a dict {checkpoint_path: self.checkpoint_path}"""
+        return {"checkpoint_path": self.checkpoint_path}
 
     @property
     def encoder(self):
@@ -229,9 +232,6 @@ def create_directory_tree_paths(base_directory: str = "./"):
 
     CHECKPOINT_PATH = (
         os.path.join(ROOT_MODELS_PATH, CHECKPOINT)
-    )
-    CHECKPOINT_PATH_ST = (
-        os.path.join(ROOT_MODELS_PATH, CHECKPOINT_ST)
     )
     EMBEDDER_PATH = (
         os.path.join(ROOT_MODELS_PATH, "clip_text_embedder/clip_embedder.ckpt")
