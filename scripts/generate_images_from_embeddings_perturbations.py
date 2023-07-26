@@ -22,7 +22,7 @@ from chad_score import ChadPredictor
 from stable_diffusion import StableDiffusion
 from stable_diffusion.constants import ModelsPathTree
 from stable_diffusion.utils.utils import (
-    check_device,
+    get_device,
     get_memory_status,
     to_pil,
     save_image_grid,
@@ -130,7 +130,7 @@ PROMPTS = args.prompts
 NUM_ITERATIONS = args.num_iterations
 SEED = args.seed
 NOISE_MULTIPLIER = args.noise_multiplier
-DEVICE = check_device(args.cuda_device)
+DEVICE = get_device(args.cuda_device)
 # BATCH_SIZE = args.batch_size
 BATCH_SIZE = 1
 SAVE_EMBEDDINGS = args.save_embeddings
@@ -155,21 +155,21 @@ else:
     os.makedirs(FEATURES_DIR, exist_ok=True)
     os.makedirs(IMAGES_DIR, exist_ok=True)
 
-def init_stable_diffusion(device, pt, sampler_name="ddim", n_steps=DDIM_STEPS, ddim_eta=0.0):
-    device = check_device(device)
+def init_stable_diffusion(device, path_tree: ModelsPathTree, sampler_name="ddim", n_steps=DDIM_STEPS, ddim_eta=0.0):
+    device = get_device(device)
 
     stable_diffusion = StableDiffusion(
         device=device, sampler_name=sampler_name, n_steps=n_steps, ddim_eta=ddim_eta
     )
 
     stable_diffusion.quick_initialize()
-    stable_diffusion.model.load_unet(**pt.unet)
-    stable_diffusion.model.load_autoencoder(**pt.autoencoder).load_decoder(**pt.decoder)
+    stable_diffusion.model.load_unet(**path_tree.unet)
+    stable_diffusion.model.load_autoencoder(**path_tree.autoencoder).load_decoder(**path_tree.decoder)
 
     return stable_diffusion
 
 def generate_prompts_from_lists():
-    word_lists = dict(nouns = ['Castle',
+    word_lists = dict(nouns = list(map(str.lower, ['Castle',
             'Adventure',
             'Journalist',
             'Enchanted forest',
@@ -179,9 +179,9 @@ def generate_prompts_from_lists():
             'Secret passage',
             'Detective',
             'Time-traveling device'
-            ],
-    adjectives = ['Haunted',
-                'Mysterious'
+            ])),
+    adjectives = list(map(str.lower, ['Haunted',
+                'Mysterious',
                 'Whimsical',
                 'Perilous',
                 'Curious',
@@ -191,20 +191,20 @@ def generate_prompts_from_lists():
                 'Eerie',
                 'Courageous',
                 'Intriguing'
-                ],
-    verbs = ['Uncover',
-        'Embark',
-        'Investigate',
-        'Encounter',
-        'Unravel',
-        'Compose',
-        'Discover',
-        'Navigate',
-        'Confront',
-        'Reveal',
-        'Explore'
-        ],
-    themes = ['Love and sacrifice',
+                ])),
+    verbs = list(map(str.lower, ['Uncover',
+        'Embarks',
+        'Investigates',
+        'Encounters',
+        'Unravels',
+        'Composes',
+        'Discovers',
+        'Navigates',
+        'Confronts',
+        'Reveals',
+        'Explores'
+        ])),
+    themes = list(map(str.lower, ['Love and sacrifice',
     'A journey of self-discovery',
     'Redemption and forgiveness',
     'An unexpected friendship',
@@ -214,12 +214,16 @@ def generate_prompts_from_lists():
     'Parallel universes',
     'The pursuit of truth and justice',
     'The consequences of time travel',
-    ])
+    ]))
+    )
     num_words_classes = 4
-    prompt_seq = random.sample(['nouns', 'adjectives', 'verbs', 'themes'], num_words_classes)
-    prompt_words = [random.choice(word_lists[prompt_seq[i]]) for i in range(num_words_classes)]
-    print(prompt_words)
-    prompt = " ".join(prompt_words)
+    classes = ['nouns', 'adjectives', 'verbs', 'themes']
+    # prompt_seq = random.sample(['nouns', 'adjectives', 'verbs', 'themes'], num_words_classes)
+    # prompt_words = [random.choice(word_lists[prompt_seq[i]]) for i in range(num_words_classes)]
+    prompt_words = [random.choice(word_lists[word_class]) for word_class in classes]
+    prompt = f'A {prompt_words[1]} {prompt_words[0]} {prompt_words[2]} {prompt_words[3]} '
+    # print(prompt_words)
+    # prompt = ", ".join(prompt_words)
     return prompt
 
 
@@ -277,7 +281,7 @@ if __name__ == "__main__":
 
     pt = ModelsPathTree(base_directory=base_dir)
     
-    clip_text_embedder = CLIPTextEmbedder(device=check_device(DEVICE))
+    clip_text_embedder = CLIPTextEmbedder(device=get_device(DEVICE))
     clip_text_embedder.load_submodels()
 
     null_prompt = clip_text_embedder(NULL_PROMPT)
