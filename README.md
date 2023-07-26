@@ -29,6 +29,8 @@ Download the currently supported checkpoint, `v1-5-pruned-emaonly.safetensors`, 
 ```bash
 ./download-model.sh
 ```
+
+Alternatively, if you prefer to download directly, use [this link.](https://mega.nz/file/AVZnGbzL#EfXN4YINe0Wb7ukiqpCPa7THssugyCQU8pvpMpvxPAw)
 ## Saving submodels
 
 Start by running this.
