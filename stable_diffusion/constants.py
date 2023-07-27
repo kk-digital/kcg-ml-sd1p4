@@ -7,7 +7,7 @@ import argparse
 
 
 config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
-config.read("./path_tree.cfg")
+config.read("./config.ini")
 
 base = config["BASE"]
 # base_directory = "./"
@@ -40,7 +40,7 @@ CHECKPOINT_PATH = (
     os.path.join(ROOT_MODELS_DIR, CHECKPOINT)
 )
 TEXT_EMBEDDER_PATH = (
-    os.path.join(TEXT_EMBEDDER_DIR, "text_embedder.safetensors")
+    os.path.join(CLIP_MODELS_DIR, "text_embedder.safetensors")
 )
 TOKENIZER_PATH = (
     os.path.join(TEXT_EMBEDDER_DIR, "tokenizer/")
