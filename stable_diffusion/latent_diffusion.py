@@ -37,7 +37,7 @@ from .constants import (
     ENCODER_PATH,
     DECODER_PATH,
     TOKENIZER_PATH,
-    TRANSFORMER_PATH,
+    TEXT_MODEL_PATH,
 )
 # from .utils.model import initialize_autoencoder, initialize_clip_embedder, initialize_unet
 from .utils.utils import check_device
@@ -247,7 +247,7 @@ class LatentDiffusion(nn.Module):
         autoencoder_path=AUTOENCODER_PATH,
         embedder_path=EMBEDDER_PATH,
         tokenizer_path=TOKENIZER_PATH,
-        transformer_path=TRANSFORMER_PATH,
+        transformer_path=TEXT_MODEL_PATH,
         unet_path=UNET_PATH,
         use_safetensors = True,
     ):
