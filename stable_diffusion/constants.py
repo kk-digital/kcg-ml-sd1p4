@@ -1,24 +1,21 @@
 import os
 import sys
-import os
-import sys
 import configparser
 import argparse
-
-
-config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
-config.read("./config.ini")
-
-base = config["BASE"]
-# base_directory = "./"
-# sys.path.insert(0, base_directory)
 
 BASE_DIRECTORY = os.getcwd()
 
 sys.path.insert(0, BASE_DIRECTORY)
 
+config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
+config.read("../config.ini")
+
+base = config["BASE"]
+
+
 
 BASE_IO_DIRECTORY = base.get("base_io_directory")
+BASE_IO_DIRECTORY_PREFIX = base.get("base_io_directory_prefix")
 ROOT_MODELS_PREFIX = base.get("root_models_prefix")
 ROOT_OUTPUTS_PREFIX = base.get("root_outputs_prefix")
 MODEL = base.get("model_name")
@@ -118,7 +115,7 @@ class IODirectoryTree:
     the keys are the same as the kwargs used for the load methods."""
 
     def __init__(self, 
-                base_io_directory: str = BASE_IO_DIRECTORY, 
+                base_io_directory_prefix: str = BASE_IO_DIRECTORY_PREFIX, 
                 base_directory: str = "./", 
                 model_name = "v1-5-pruned-emaonly", 
                 clip_model_name = "vit-large-patch14", 
@@ -127,7 +124,8 @@ class IODirectoryTree:
                 checkpoint_format = ".safetensors"):
         
         self.base_directory = base_directory
-        self.base_io_directory = base_io_directory
+        self.base_io_directory_prefix = base_io_directory_prefix
+        self.base_io_directory = os.path.join(base_directory, base_io_directory_prefix)
 
         self.checkpoint_format = checkpoint_format
 
@@ -138,31 +136,42 @@ class IODirectoryTree:
         self.model_checkpoint = f"{self.model_name}{self.checkpoint_format}"
 
         self.clip_model_name = clip_model_name
-
-        self.root_models_dir = (
-            os.path.join(base_io_directory, root_models_prefix)
-        )
-        self.root_outputs_dir = (
-            os.path.join(base_io_directory, root_outputs_prefix)
-            )
         
+        self.root_dirs = []
+        
+        self.root_models_dir = (
+            os.path.join(self.base_io_directory, root_models_prefix)
+        )
+        self.root_dirs.append(self.root_models_dir)
+        self.root_outputs_dir = (
+            os.path.join(self.base_io_directory, root_outputs_prefix)
+            )
+        self.root_dirs.append(self.root_outputs_dir)
+        self.models_dirs = []        
         self.sd_model_dir = (
             os.path.join(self.root_models_dir, self.model_name)
         )
+        self.models_dirs.append(self.sd_model_dir)
         self.clip_models_dir = (
             os.path.join(self.root_models_dir, "clip")
         )
+        self.models_dirs.append(self.clip_models_dir)
         
         self.model_outputs_dir = (
             os.path.join(self.root_outputs_dir, self.model_name)
         )
+        self.models_dirs.append(self.model_outputs_dir)
         
         self.checkpoint_path = (
             os.path.join(self.root_models_dir, self.model_checkpoint)
-        )    
+        )
+        
+        self.submodels_dirs = []
+            
         self.text_embedder_dir = (
             os.path.join(self.clip_models_dir, "text_embedder")
-        )        
+        )
+        self.submodels_dirs.append(self.text_embedder_dir)
         self.text_embedder_path = (
             os.path.join(self.clip_models_dir, "text_embedder.safetensors")
         )
@@ -188,6 +197,7 @@ class IODirectoryTree:
                 self.clip_models_dir, "image_encoder"
             )
         )
+        self.submodels_dirs.append(self.image_encoder_dir)
         self.clip_model_path = (
             os.path.join(self.image_encoder_dir, "clip_model.ckpt")
         )
@@ -334,4 +344,40 @@ class IODirectoryTree:
     def autoencoder_submodels(self):
         return {"encoder_path": self.encoder_path, "decoder_path": self.decoder_path}
 
+    def create_directory_tree_folders(self):
 
+
+        for v in self.__getattribute__("ROOT_DIRS".lower()):
+            os.makedirs(v, exist_ok=True)    
+        for v in self.__getattribute__("MODELS_DIRS".lower()):
+            os.makedirs(v, exist_ok=True)
+        for v in self.__getattribute__("SUBMODELS_DIRS".lower()):
+            os.makedirs(v, exist_ok=True)
+
+        paths_dict = {
+            "root_models_path": ROOT_MODELS_DIR,
+            "checkpoint_path": CHECKPOINT_PATH,
+            "embedder_path": TEXT_EMBEDDER_PATH,
+            "embedder_submodels_paths": {
+                "tokenizer_path": TOKENIZER_PATH,
+                "transformer_path": TEXT_MODEL_PATH,
+            },
+            "image_encoder_path": IMAGE_ENCODER_PATH,
+            "image_encoder_submodels_paths": {
+                "image_processor_path": IMAGE_PROCESSOR_PATH,
+                "clip_model_path": CLIP_MODEL_PATH,
+            },
+            "unet_path": UNET_PATH,
+            "autoencoder_path": AUTOENCODER_PATH,
+            "autoencoder_submodels_paths": {
+                "encoder_path": ENCODER_PATH,
+                "decoder_path": DECODER_PATH,
+            },
+            "latent_diffusion_path": LATENT_DIFFUSION_PATH,
+            "latent_diffusion_submodels_paths": {
+                "embedder_path": TEXT_EMBEDDER_PATH,
+                "unet_path": UNET_PATH,
+                "autoencoder_path": AUTOENCODER_PATH,
+            },
+        }
+        return paths_dict

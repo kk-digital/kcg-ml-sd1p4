@@ -56,9 +56,9 @@ class CLIPTextEmbedder(nn.Module):
         self.to(self.device)
 
     def save_submodels(self, tokenizer_path: str = TOKENIZER_PATH, text_model_path: str = TEXT_MODEL_PATH):
-        self.tokenizer.save_pretrained(tokenizer_path)
+        self.tokenizer.save_pretrained(tokenizer_path, safe_serialization=True)
         print("tokenizer saved to: ", tokenizer_path)
-        self.text_model.save_pretrained(text_model_path, use_safetensors = True)
+        self.text_model.save_pretrained(text_model_path, safe_serialization=True)
         print("text_model saved to: ", text_model_path)
     
     def load_submodels(self, tokenizer_path = TOKENIZER_PATH, text_model_path = TEXT_MODEL_PATH):
@@ -87,7 +87,7 @@ class CLIPTextEmbedder(nn.Module):
 
     def save(self, text_embedder_path: str = TEXT_EMBEDDER_PATH, use_safetensors = True):
    
-            st.torch.save_file(self, text_embedder_path, use_safetensors=use_safetensors)
+            st.torch.save_model(self, text_embedder_path, use_safetensors=use_safetensors)
             print(f"CLIPTextEmbedder saved to: {text_embedder_path}")
 
     def forward(self, prompts: List[str]):
