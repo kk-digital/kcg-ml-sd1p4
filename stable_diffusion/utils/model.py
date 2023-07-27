@@ -268,9 +268,8 @@ def initialize_latent_diffusion(path: Union[str, Path] = None, device = None, au
 
         #
     model.to(device)
-    model.eval()
     
-    return model
+    return model.eval()
 
 def load_latent_diffusion(path: Union[str, Path] = LATENT_DIFFUSION_PATH, device = None) -> LatentDiffusion:
     """

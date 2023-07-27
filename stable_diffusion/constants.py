@@ -264,7 +264,7 @@ def create_directory_tree_paths(base_directory: str = "./"):
         os.path.join(ROOT_MODELS_PATH, CHECKPOINT)
     )
     EMBEDDER_PATH = (
-        os.path.join(ROOT_MODELS_PATH, "clip_text_embedder/clip_embedder.ckpt")
+        os.path.join(ROOT_MODELS_PATH, "clip_text_embedder/clip_embedder.safetensors")
     )
     TOKENIZER_PATH = (
         os.path.join(ROOT_MODELS_PATH, "clip_text_embedder/clip_tokenizer.ckpt")

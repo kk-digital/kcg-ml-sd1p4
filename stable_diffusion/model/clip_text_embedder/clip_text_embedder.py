@@ -64,8 +64,10 @@ class CLIPTextEmbedder(nn.Module):
     def save(self, embedder_path: str = EMBEDDER_PATH, use_safetensors = True):
         if not use_safetensors:
             torch.save(self, embedder_path)
+            print(f"Autoencoder saved to: {embedder_path}")
         else:
             save_file(self.state_dict(), embedder_path)
+            print(f"Autoencoder saved to: {embedder_path}")
     
     def load_submodels(self, tokenizer_path = TOKENIZER_PATH, transformer_path = TRANSFORMER_PATH):
 
