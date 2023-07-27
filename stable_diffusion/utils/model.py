@@ -172,7 +172,7 @@ def initialize_clip_embedder(device = None, tokenizer = None, transformer = None
             clip_text_embedder.tokenizer = tokenizer
 
         if transformer is None:
-            clip_text_embedder.load_transformer_from_lib()
+            clip_text_embedder.load_text_model_from_lib()
         else:
             clip_text_embedder.transformer = transformer
         

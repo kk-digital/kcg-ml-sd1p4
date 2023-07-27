@@ -26,7 +26,6 @@ from transformers import CLIPTokenizer, CLIPTextModel
 
 from safetensors.torch import save_file, load_file
 from stable_diffusion.constants import TEXT_EMBEDDER_PATH, TOKENIZER_PATH, TEXT_MODEL_PATH
-from stable_diffusion.constants import EMBEDDER_PATH, TOKENIZER_PATH, TRANSFORMER_PATH
 from stable_diffusion.utils.utils import get_device
 from torchinfo import summary
 # TEXT_EMBEDDER_PATH = os.path.abspath('./input/model/clip/clip_embedder.ckpt')
@@ -37,7 +36,7 @@ class CLIPTextEmbedder(nn.Module):
     ## CLIP Text Embedder
     """
 
-    def __init__(self, path_tree, device=None, max_length: int = 77, tokenizer = None, text_model = None):
+    def __init__(self, path_tree = None, version = "openai/clip-vit-large-patch14", device=None, max_length: int = 77, tokenizer = None, text_model = None):
         """
         :param version: is the model version
         :param device: is the device
@@ -110,9 +109,9 @@ class CLIPTextEmbedder(nn.Module):
         self.text_model = None
 
     def load_tokenizer_from_lib(self):
-        self.tokenizer = CLIPTokenizer.from_pretrained(self.path_tree.tokenizer_path, local_files_only=True)
+        self.tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14")
     def load_text_model_from_lib(self):
-        self.text_model = CLIPTextModel.from_pretrained(self.path_tree.text_model_path).eval().to(self.device)
+        self.text_model = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14").eval().to(self.device)
 
     def forward(self, prompts: List[str]):
         """
@@ -137,7 +136,7 @@ if __name__ == "__main__":
 
 
     clip.load_tokenizer_from_lib()
-    clip.load_transformer_from_lib()
+    clip.load_text_model_from_lib()
     embeddings1 = clip(prompts)
 
     summary(clip.transformer)
