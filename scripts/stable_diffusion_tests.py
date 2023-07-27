@@ -15,7 +15,7 @@ from stable_diffusion.latent_diffusion import LatentDiffusion, DiffusionWrapper
 from stable_diffusion.constants import CHECKPOINT_PATH, AUTOENCODER_PATH, UNET_PATH, TEXT_EMBEDDER_PATH, LATENT_DIFFUSION_PATH
 from labml.monit import section
 from stable_diffusion.utils.utils import save_images, save_image_grid
-from stable_diffusion.utils.model import initialize_autoencoder, initialize_encoder, initialize_decoder, check_device, get_device
+from stable_diffusion.utils.model import initialize_autoencoder, initialize_encoder, initialize_decoder, get_device, get_device
 from stable_diffusion.utils.model import initialize_clip_embedder, initialize_tokenizer, initialize_transformer 
 from stable_diffusion.utils.model import initialize_unet, initialize_latent_diffusion
 import safetensors.torch as st
@@ -175,7 +175,7 @@ def init_latent_diffusion_from_mode(mode):
             return latent_diffusion_model 
     if mode == 5:
         with section("to initialize latent diffusion empty and without loading weights, then load its submodels from disk"):
-            device = check_device(0)
+            device = get_device(0)
             latent_diffusion_model = LatentDiffusion(linear_start=0.00085,
                                 linear_end=0.0120,
                                 n_steps=1000,
@@ -209,7 +209,7 @@ def init_latent_diffusion_from_mode(mode):
             clip_text_embedder.load_submodels()
             unet_model = torch.load(UNET_PATH)
             unet_model.eval()
-            device = check_device(0)
+            device = get_device(0)
             latent_diffusion_model = LatentDiffusion(linear_start=0.00085,
                                 linear_end=0.0120,
                                 n_steps=1000,
@@ -222,7 +222,7 @@ def init_latent_diffusion_from_mode(mode):
             return latent_diffusion_model
     if mode == 8:
         with section("to initialize latent diffusion empty and without weights, then loading the submodels tree from disk"):
-            device = check_device(0)
+            device = get_device(0)
             latent_diffusion_model = LatentDiffusion(linear_start=0.00085,
                                 linear_end=0.0120,
                                 n_steps=1000,
@@ -245,7 +245,7 @@ def init_txt2img(
 
     if DEFAULT:
         with section("to default init"):
-            device = check_device(None)
+            device = get_device(None)
             latent_diffusion_model = LatentDiffusion(linear_start=0.00085,
                 linear_end=0.0120,
                 n_steps=1000,
@@ -256,7 +256,7 @@ def init_txt2img(
         return txt2img
     elif ALT:
         with section("to alt init"):
-            device = check_device(None)
+            device = get_device(None)
             latent_diffusion_model = LatentDiffusionModel(linear_start=0.00085,
                 linear_end=0.0120,
                 n_steps=1000,

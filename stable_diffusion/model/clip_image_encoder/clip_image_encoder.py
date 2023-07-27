@@ -19,7 +19,7 @@ from os.path import join
 
 
 from stable_diffusion.constants import IMAGE_PROCESSOR_PATH, CLIP_MODEL_PATH, IMAGE_ENCODER_PATH
-from stable_diffusion.utils.utils import check_device
+from stable_diffusion.utils.utils import get_device
 from torchinfo import summary
 
 
@@ -29,7 +29,7 @@ class CLIPImageEncoder(nn.Module):
 
         super().__init__()
 
-        self.device = check_device(device)
+        self.device = get_device(device)
 
         self.clip_model = clip_model
         # self._image_processor = image_processor

@@ -39,9 +39,11 @@ from .constants import (
     TOKENIZER_PATH,
     TEXT_MODEL_PATH,
 )
+
 # from .utils.model import initialize_autoencoder, initialize_clip_embedder, initialize_unet
-from .utils.utils import check_device
-# from .utils.utils import SectionManager as section
+
+from .utils.utils import get_device
+
 from labml.monit import section
 
 class UNetWrapper(nn.Module):
@@ -99,7 +101,7 @@ class LatentDiffusion(nn.Module):
         """
         super().__init__()
 
-        self.device = check_device(device)
+        self.device = get_device(device)
 
         # Wrap the [U-Net](model/unet.html) to keep the same model structure as
         # [CompVis/stable-diffusion](https://github.com/CompVis/stable-diffusion).

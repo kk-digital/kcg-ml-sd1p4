@@ -9,7 +9,6 @@ from stable_diffusion.sampler.ddim import DDIMSampler
 from stable_diffusion.sampler.ddpm import DDPMSampler
 from stable_diffusion.utils.model import initialize_latent_diffusion
 from stable_diffusion.utils.utils import (
-    check_device,
     get_device,
     load_img,
     get_memory_status,
@@ -49,8 +48,9 @@ class StableDiffusion:
         :param n_steps: is the number of sampling steps
         :param ddim_eta: is the [DDIM sampling](../sampler/ddim.html) $\eta$ constant
         """
-        self._device = check_device(device)
-        self._model = model.to(self._device)
+
+        self._device = get_device(device)
+        self._model = model
         self._ddim_steps = ddim_steps
         self._ddim_eta = ddim_eta
         self._sampler_name = sampler_name
@@ -73,7 +73,7 @@ class StableDiffusion:
 
     @device.setter
     def device(self, value):
-        self._device = check_device(value)
+        self._device = get_device(value)
         self._model.to(self._device)
         self.initialize_sampler()
 
