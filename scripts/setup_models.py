@@ -57,7 +57,7 @@ parser = argparse.ArgumentParser(description="")
 parser.add_argument("-g", "--granularity", type=int, default=0)
 parser.add_argument("--root_models_path", type=str, default=ROOT_MODELS_DIR)
 parser.add_argument("--checkpoint_path", type=str, default=CHECKPOINT_PATH)
-
+parser.add_argument("-ckpt", "--use_ckpt", type=bool, default=False)
 # parser.add_argument(
 #     "--without_weights",
 #     default=False,
@@ -81,8 +81,16 @@ GRANULARITY = args.granularity
 CHECKPOINT_PATH_ARG = args.checkpoint_path
 ROOT_MODELS_DIR = args.root_models_path
 SAVE_WITHOUT_WEIGHTS = False
+SAVE_UNET = False
+SAVE_CLIP = False
+SAVE_VAE = False
 IMAGE_ENCODER = True
-
+USE_CKPT = args.use_ckpt
+print("USE_CKPT", USE_CKPT)
+if USE_CKPT and not ".ckpt" in CHECKPOINT_PATH_ARG:
+    print("WARNING: .ckpt used but CHECKPOINT_PATH does not contain .ckpt")
+    print("Defaulting to configured default .ckpt checkpoint path")
+    CHECKPOINT_PATH_ARG = CHECKPOINT_PATH
 
 def create_folder_structure(root_dir: str = ROOT_MODELS_PREFIX) -> None:
     embedder_submodels_folder = os.path.abspath(
