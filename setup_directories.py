@@ -41,7 +41,7 @@ ROOT_MODELS_DIR = (os.path.join(BASE_IO_DIRECTORY, ROOT_MODELS_PREFIX))
 ROOT_OUTPUTS_DIR = (os.path.join(BASE_IO_DIRECTORY, ROOT_OUTPUTS_PREFIX))
 SD_DEFAULT_MODEL_OUTPUTS_DIR = (os.path.join(ROOT_OUTPUTS_PREFIX, MODEL_NAME))
 SD_DEFAULT_MODEL_DIR = os.path.join(ROOT_MODELS_DIR, MODEL_NAME)
-CLIP_MODELS_DIR = os.path.join(ROOT_MODELS_DIR, "clip")
+CLIP_MODELS_DIR = os.path.join(ROOT_MODELS_DIR, "clip/")
 TEXT_EMBEDDER_DIR = (
     os.path.join(CLIP_MODELS_DIR, "text_embedder/")
 )
@@ -66,7 +66,7 @@ config["STABLE_DIFFUSION_PATHS"] = dict(
     CHECKPOINT_PATH = os.path.join(ROOT_MODELS_DIR, CHECKPOINT),
     
     TEXT_EMBEDDER_PATH = (
-        os.path.join(TEXT_EMBEDDER_DIR, "text_embedder.safetensors")
+        os.path.join(CLIP_MODELS_DIR, "text_embedder.safetensors")
     ),
     UNET_PATH = (
         os.path.join(SD_DEFAULT_MODEL_DIR, "unet.safetensors")
@@ -89,12 +89,12 @@ config["CLIP_PATHS"] = dict(
         os.path.join(IMAGE_ENCODER_DIR, "clip_image_encoder.ckpt")
     ),
     TOKENIZER_PATH = (
-        os.path.join(TEXT_EMBEDDER_DIR, "tokenizer/")
+        os.path.join(TEXT_EMBEDDER_DIR, "tokenizer")
     ),
     TEXT_MODEL_PATH = (
         os.path.join(TEXT_EMBEDDER_DIR, CLIP_MODEL_NAME)
     ),
     )
 # Writing our configuration file to 'example.cfg'
-with open('path_tree.cfg', 'w') as configfile:
+with open('config.ini', 'w') as configfile:
     config.write(configfile)
