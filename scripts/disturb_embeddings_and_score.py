@@ -136,7 +136,9 @@ else:
     os.makedirs(FEATURES_DIR, exist_ok=True)
     os.makedirs(IMAGES_DIR, exist_ok=True)
 
+
 def init_stable_diffusion(device, path_tree: ModelsPathTree, sampler_name="ddim", n_steps=20, ddim_eta=0.0):
+
     device = get_device(device)
 
     stable_diffusion = StableDiffusion(

@@ -155,7 +155,9 @@ else:
     os.makedirs(FEATURES_DIR, exist_ok=True)
     os.makedirs(IMAGES_DIR, exist_ok=True)
 
+
 def init_stable_diffusion(device, path_tree: ModelsPathTree, sampler_name="ddim", n_steps=DDIM_STEPS, ddim_eta=0.0):
+
     device = get_device(device)
 
     stable_diffusion = StableDiffusion(
@@ -167,6 +169,21 @@ def init_stable_diffusion(device, path_tree: ModelsPathTree, sampler_name="ddim"
     stable_diffusion.model.load_autoencoder(**path_tree.autoencoder).load_decoder(**path_tree.decoder)
 
     return stable_diffusion
+
+
+def embed_and_save_prompts(prompts: str, null_prompt = NULL_PROMPT):
+
+    null_prompt = null_prompt
+    prompts = prompts
+
+    clip_text_embedder = CLIPTextEmbedder(device=get_device(DEVICE))
+    clip_text_embedder.load_submodels()
+
+    null_cond = clip_text_embedder(null_prompt)
+    torch.save(null_cond, join(EMBEDDED_PROMPTS_DIR, "null_cond.pt"))
+    print(
+        "Null prompt embedding saved at: ",
+        f"{join(EMBEDDED_PROMPTS_DIR, 'null_cond.pt')}",
 
 def generate_prompts_from_lists():
     word_lists = dict(nouns = list(map(str.lower, ['Castle',
@@ -215,6 +232,7 @@ def generate_prompts_from_lists():
     'The pursuit of truth and justice',
     'The consequences of time travel',
     ]))
+
     )
     num_words_classes = 4
     classes = ['nouns', 'adjectives', 'verbs', 'themes']

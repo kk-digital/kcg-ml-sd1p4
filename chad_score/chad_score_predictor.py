@@ -1,8 +1,9 @@
+import torch
 from torch import nn
 from stable_diffusion.utils.utils import get_device
 
-class ChadPredictor(nn.Module):
-    def __init__(self, input_size, device = None):
+class ChadPredictorModel(nn.Module):
+    def __init__(self, input_size = 768, device = None):
         super().__init__()
         self.input_size = input_size
         self.device = get_device(device)
@@ -23,3 +24,22 @@ class ChadPredictor(nn.Module):
         self.to(self.device)
     def forward(self, x):
         return self.layers(x)
+
+
+
+class ChadPredictor():
+    def __init__(self, input_size=768, device=None):
+        self.input_size = input_size
+        self.device = device
+        self.model = None
+
+    def load(self, model_path):
+        self.model = ChadPredictorModel(input_size=self.input_size, device=self.device)
+
+        state = torch.load(model_path, map_location=torch.device('cpu'))  # load the model you trained previously or the model available in this repo
+        self.model.load_state_dict(state)
+        self.model.eval()
+
+    def unload(self):
+        del self.model
+        torch.cuda.empty_cache()
