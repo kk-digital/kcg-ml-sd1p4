@@ -136,7 +136,9 @@ else:
     os.makedirs(FEATURES_DIR, exist_ok=True)
     os.makedirs(IMAGES_DIR, exist_ok=True)
 
-def init_stable_diffusion(device, pt, sampler_name="ddim", n_steps=20, ddim_eta=0.0):
+
+def init_stable_diffusion(device, path_tree: ModelsPathTree, sampler_name="ddim", n_steps=20, ddim_eta=0.0):
+
     device = get_device(device)
 
     stable_diffusion = StableDiffusion(
@@ -144,8 +146,8 @@ def init_stable_diffusion(device, pt, sampler_name="ddim", n_steps=20, ddim_eta=
     )
 
     stable_diffusion.quick_initialize()
-    stable_diffusion.model.load_unet(**pt.unet)
-    stable_diffusion.model.load_autoencoder(**pt.autoencoder).load_decoder(**pt.decoder)
+    stable_diffusion.model.load_unet(**path_tree.unet)
+    stable_diffusion.model.load_autoencoder(**path_tree.autoencoder).load_decoder(**path_tree.decoder)
 
     return stable_diffusion
 

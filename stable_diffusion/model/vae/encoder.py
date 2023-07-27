@@ -16,7 +16,7 @@ so that we can load the checkpoints directly.
 """
 
 from typing import List
-
+from safetensors.torch import save_file
 import torch
 import torch.nn.functional as F
 from torch import nn
@@ -84,8 +84,11 @@ class Encoder(nn.Module):
         self.norm_out = normalization(channels)
         self.conv_out = nn.Conv2d(channels, 2 * z_channels, 3, stride=1, padding=1)
 
-    def save(self, encoder_path: str = ENCODER_PATH):
-        torch.save(self, encoder_path)
+    def save(self, encoder_path: str = ENCODER_PATH, use_safetensors = True):
+        if use_safetensors:
+            save_file(self.state_dict(), encoder_path)
+        else:
+            torch.save(self, encoder_path)
 
     def forward(self, img: torch.Tensor):
         """

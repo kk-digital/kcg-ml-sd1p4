@@ -180,8 +180,9 @@ def save_image_grid(
     im = Image.fromarray(ndarr)
     im.save(fp, format=format)        
 
+
 def get_device(device = None):
-    
+
     if device is None:
         device = torch.device(torch.cuda.current_device() if torch.cuda.is_available() else 'cpu')
         print(f'INFO: `device` given is `None`. Falling back to device: {device}.')
@@ -200,6 +201,7 @@ def get_device(device = None):
     except Exception as e:
         print(e)
         print(f"WARNING: You are running this script without CUDA (current device: {device}). It may be very slow.")
+
     return device
 
 # def get_device(force_cpu: bool = False, cuda_fallback: str = 'cuda:0'):

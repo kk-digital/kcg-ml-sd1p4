@@ -139,7 +139,9 @@ else:
     os.makedirs(FEATURES_DIR, exist_ok=True)
     os.makedirs(IMAGES_DIR, exist_ok=True)
 
-def init_stable_diffusion(device, pt, sampler_name="ddim", n_steps=20, ddim_eta=0.0):
+
+def init_stable_diffusion(device, path_tree: ModelsPathTree, sampler_name="ddim", n_steps=20, ddim_eta=0.0):
+
     device = get_device(device)
 
     stable_diffusion = StableDiffusion(
@@ -147,8 +149,8 @@ def init_stable_diffusion(device, pt, sampler_name="ddim", n_steps=20, ddim_eta=
     )
 
     stable_diffusion.quick_initialize()
-    stable_diffusion.model.load_unet(**pt.unet)
-    stable_diffusion.model.load_autoencoder(**pt.autoencoder).load_decoder(**pt.decoder)
+    stable_diffusion.model.load_unet(**path_tree.unet)
+    stable_diffusion.model.load_autoencoder(**path_tree.autoencoder).load_decoder(**path_tree.decoder)
 
     return stable_diffusion
 
@@ -163,7 +165,11 @@ def generate_prompt():
 
 def embed_and_save_prompts(clip_text_embedder, prompt: str, i: int, null_prompt = NULL_PROMPT):
 
-    null_prompt = null_prompt
+
+    clip_text_embedder = CLIPTextEmbedder(device=get_device())
+    clip_text_embedder.load_submodels()
+
+
     null_cond = clip_text_embedder(null_prompt)
 
     torch.save(null_cond, join(EMBEDDED_PROMPTS_DIR, f"null_cond.pt"))
