@@ -22,11 +22,7 @@ ROOT_OUTPUTS_PREFIX = args.root_outputs_prefix
 MODEL_NAME = args.model_name
 CLIP_MODEL_NAME = args.clip_model_name
 CHECKPOINT = f"{MODEL_NAME}.safetensors"
-# Please note that using RawConfigParser's set functions, you can assign
-# non-string values to keys internally, but will receive an error when
-# attempting to write to a file or when you get it in non-raw mode. Setting
-# values using the mapping protocol or ConfigParser's set() does not allow
-# such assignments to take place.
+
 config["BASE"] = {
                     "BASE_IO_DIRECTORY": f"{BASE_IO_DIRECTORY}",
                     "BASE_DIRECTORY": f"{BASE_DIRECTORY}",
@@ -41,12 +37,12 @@ ROOT_MODELS_DIR = (os.path.join(BASE_IO_DIRECTORY, ROOT_MODELS_PREFIX))
 ROOT_OUTPUTS_DIR = (os.path.join(BASE_IO_DIRECTORY, ROOT_OUTPUTS_PREFIX))
 SD_DEFAULT_MODEL_OUTPUTS_DIR = (os.path.join(ROOT_OUTPUTS_PREFIX, MODEL_NAME))
 SD_DEFAULT_MODEL_DIR = os.path.join(ROOT_MODELS_DIR, MODEL_NAME)
-CLIP_MODELS_DIR = os.path.join(ROOT_MODELS_DIR, "clip/")
+CLIP_MODELS_DIR = os.path.join(ROOT_MODELS_DIR, "clip")
 TEXT_EMBEDDER_DIR = (
-    os.path.join(CLIP_MODELS_DIR, "text_embedder/")
+    os.path.join(CLIP_MODELS_DIR, "text_embedder")
 )
 IMAGE_ENCODER_DIR = (
-    os.path.join(CLIP_MODELS_DIR, "image_encoder/")
+    os.path.join(CLIP_MODELS_DIR, "image_encoder")
 )
 
 config["ROOT_DIRS"] = dict(
@@ -95,6 +91,6 @@ config["CLIP_PATHS"] = dict(
         os.path.join(TEXT_EMBEDDER_DIR, CLIP_MODEL_NAME)
     ),
     )
-# Writing our configuration file to 'example.cfg'
+
 with open('config.ini', 'w') as configfile:
     config.write(configfile)

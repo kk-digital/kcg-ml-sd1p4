@@ -31,10 +31,10 @@ ROOT_OUTPUTS_DIR = (os.path.join(BASE_IO_DIRECTORY, ROOT_OUTPUTS_PREFIX))
 SD_DEFAULT_MODEL_DIR = os.path.join(ROOT_MODELS_DIR, MODEL)
 CLIP_MODELS_DIR = os.path.join(ROOT_MODELS_DIR, "clip")
 TEXT_EMBEDDER_DIR = (
-    os.path.join(CLIP_MODELS_DIR, "text_embedder/")
+    os.path.join(CLIP_MODELS_DIR, "text_embedder")
 )
 IMAGE_ENCODER_DIR = (
-    os.path.join(CLIP_MODELS_DIR, "image_encoder/")
+    os.path.join(CLIP_MODELS_DIR, "image_encoder")
 )
 CHECKPOINT_PATH = (
     os.path.join(ROOT_MODELS_DIR, CHECKPOINT)
@@ -43,7 +43,7 @@ TEXT_EMBEDDER_PATH = (
     os.path.join(CLIP_MODELS_DIR, "text_embedder.safetensors")
 )
 TOKENIZER_PATH = (
-    os.path.join(TEXT_EMBEDDER_DIR, "tokenizer/")
+    os.path.join(TEXT_EMBEDDER_DIR, "tokenizer")
 )
 TEXT_MODEL_PATH = (
     os.path.join(TEXT_EMBEDDER_DIR, CLIP_MODEL)
@@ -150,7 +150,7 @@ class IODirectoryTree:
             os.path.join(self.root_models_dir, self.model_name)
         )
         self.clip_models_dir = (
-            os.path.join(self.root_models_dir, "clip/")
+            os.path.join(self.root_models_dir, "clip")
         )
         
         self.model_outputs_dir = (
@@ -161,14 +161,14 @@ class IODirectoryTree:
             os.path.join(self.root_models_dir, self.model_checkpoint)
         )    
         self.text_embedder_dir = (
-            os.path.join(self.clip_models_dir, "text_embedder/")
+            os.path.join(self.clip_models_dir, "text_embedder")
         )        
         self.text_embedder_path = (
             os.path.join(self.clip_models_dir, "text_embedder.safetensors")
         )
         self.tokenizer_path = (
             os.path.join(
-                self.text_embedder_dir, "tokenizer/"
+                self.text_embedder_dir, "tokenizer"
             )
         )
         self.text_model_path = (
@@ -185,7 +185,7 @@ class IODirectoryTree:
 
         self.image_encoder_dir = (
             os.path.join(
-                self.clip_models_dir, "image_encoder/"
+                self.clip_models_dir, "image_encoder"
             )
         )
         self.clip_model_path = (
@@ -215,8 +215,8 @@ class IODirectoryTree:
         )
 
     def __repr__(self):
-        return f"""ModelsPathTree:
-                {self.base_io_directory}/
+        return f"""IODirectoryTree:
+                - {self.base_io_directory}
                 -- model's root dir: {self.root_models_dir}
                 --- stable diffusion model checkpoint: {self.checkpoint_path}
                 --- stable diffusion submodels dir: {self.sd_model_dir}
