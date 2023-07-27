@@ -1,36 +1,42 @@
 import os
 import sys
 import dataclasses
+import json
 
 # base_directory = "./"
 # sys.path.insert(0, base_directory)
 
-base_directory = os.getcwd()
-sys.path.insert(0, base_directory)
+BASE_DIRECTORY = os.getcwd()
+
+sys.path.insert(0, BASE_DIRECTORY)
+
 BASE_IO_DIRECTORY = "E:\\ML\\"
 ROOT_MODELS_PREFIX = "input/models/"
+ROOT_OUTPUTS_PREFIX = "outputs/models/"
 MODEL = "v1-5-pruned-emaonly"
+CLIP_MODEL = "vit-large-patch14"
 CHECKPOINT = f"{MODEL}.safetensors"
 
-ROOT_MODELS_PATH = (os.path.join(BASE_IO_DIRECTORY, ROOT_MODELS_PREFIX))
-SD_MODELS_DIR = os.path.join(ROOT_MODELS_PATH, "sd")
+ROOT_MODELS_DIR = (os.path.join(BASE_IO_DIRECTORY, ROOT_MODELS_PREFIX))
+ROOT_OUTPUTS_DIR = (os.path.join(BASE_IO_DIRECTORY, ROOT_OUTPUTS_PREFIX))
 
-SD_DEFAULT_MODEL_DIR = os.path.join(SD_MODELS_DIR, MODEL)
-
-CLIP_MODELS_DIR = os.path.join(ROOT_MODELS_PATH, "clip")
+SD_DEFAULT_MODEL_DIR = os.path.join(ROOT_MODELS_DIR, MODEL)
+CLIP_MODELS_DIR = os.path.join(ROOT_MODELS_DIR, "clip")
 
 CHECKPOINT_PATH = (
-    os.path.join(SD_DEFAULT_MODEL_DIR, CHECKPOINT)
+    os.path.join(ROOT_MODELS_DIR, CHECKPOINT)
 )
-
+EMBEDDER_DIR = (
+    os.path.join(CLIP_MODELS_DIR, "text_embedder/")
+)
 EMBEDDER_PATH = (
-    os.path.join(CLIP_MODELS_DIR, "clip_text_embedder/clip_embedder.ckpt")
+    os.path.join(EMBEDDER_DIR, "text_embedder.safetensors")
 )
 TOKENIZER_PATH = (
-    os.path.join(CLIP_MODELS_DIR, "clip_text_embedder/clip_tokenizer.ckpt")
+    os.path.join(EMBEDDER_DIR, "tokenizer/")
 )
-TRANSFORMER_PATH = (
-    os.path.join(CLIP_MODELS_DIR, "clip_text_embedder/clip_transformer.ckpt")
+TEXT_MODEL_PATH = (
+    os.path.join(EMBEDDER_DIR, CLIP_MODEL)
 )
 
 IMAGE_PROCESSOR_PATH = (
@@ -41,10 +47,6 @@ CLIP_MODEL_PATH = (
 )
 IMAGE_ENCODER_PATH = (
     os.path.join(CLIP_MODELS_DIR, "clip_image_encoder/clip_image_encoder.ckpt")
-)
-
-TEXT_EMBEDDER_PATH = (
-    os.path.join(SD_DEFAULT_MODEL_DIR, "clip_text_embedder.ckpt")
 )
 
 UNET_PATH = (os.path.join(SD_DEFAULT_MODEL_DIR, "unet.safetensors"))
@@ -67,27 +69,26 @@ class ModelsPathTree:
     """returns dicts to be used as kwargs for loading submodels.
     the keys are the same as the kwargs used for the load methods."""
 
-    def __init__(self, base_io_directory: str = "./", base_directory: str = "./", model_name = "v1-5-pruned-emaonly", root_models_prefix: str = "input/models/", root_outputs_prefix: str = "outputs/models/", checkpoint_format = ".safetensors"):
+    def __init__(self, base_io_directory: str = "./", base_directory: str = "./", model_name = "v1-5-pruned-emaonly", clip_model_name = "vit-large-patch14", root_models_prefix: str = "input/models/", root_outputs_prefix: str = "output/models/", checkpoint_format = ".safetensors"):
         
         self.base_directory = base_directory
         self.base_io_directory = base_io_directory
         self.checkpoint_format = checkpoint_format
         self.root_models_prefix = root_models_prefix
+        self.root_outputs_prefix = root_outputs_prefix
         self.model_name = model_name
+        self.clip_model_name = clip_model_name
         self.model_checkpoint = f"{self.model_name}{self.checkpoint_format}"
         self.root_models_dir = (
             os.path.join(base_io_directory, root_models_prefix)
         )
-        self.root_sd_models_dir = (
-            os.path.join(self.root_models_dir, "sd")
-        )
-        self.root_sd_model_dir = (
+        self.sd_model_dir = (
             os.path.join(self.root_models_dir, self.model_name)
         )        
         self.root_clip_models_dir = (
             os.path.join(self.root_models_dir, "clip")
         )
-        self.root_outputs_prefix = root_outputs_prefix
+        
         self.root_outputs_dir = (
             os.path.join(base_io_directory, root_outputs_prefix)
             )
@@ -95,19 +96,22 @@ class ModelsPathTree:
             os.path.join(self.root_outputs_dir, self.model_name)
         )
         self.checkpoint_path = (
-            os.path.join(self.root_sd_model_dir, self.model_checkpoint)
+            os.path.join(self.root_models_dir, self.model_checkpoint)
         )    
+        self.embedder_dir = (
+            os.path.join(self.root_clip_models_dir, "text_embedder/")
+        )        
         self.embedder_path = (
-            os.path.join(self.root_sd_model_dir, "clip_text_embedder.ckpt")
+            os.path.join(self.embedder_dir, "text_embedder.safetensors")
         )
         self.tokenizer_path = (
             os.path.join(
-                self.root_models_dir, "clip_text_embedder/tokenizer"
+                self.embedder_dir, "tokenizer/"
             )
         )
-        self.transformer_path = (
+        self.text_model_path = (
             os.path.join(
-                self.root_models_dir, "clip_text_embedder/clip_transformer.ckpt"
+                self.embedder_dir, self.clip_model_name
             )
         )
         self.image_encoder_path = (
@@ -124,20 +128,20 @@ class ModelsPathTree:
             )
         )
         self.unet_path = (
-            os.path.join(self.root_sd_model_dir, "unet.safetensors")
+            os.path.join(self.sd_model_dir, "unet.safetensors")
         )
         self.autoencoder_path = (
-            os.path.join(self.root_sd_model_dir, "autoencoder.safetensors")
+            os.path.join(self.sd_model_dir, "autoencoder.safetensors")
         )
         self.encoder_path = (
-            os.path.join(self.root_sd_model_dir, "encoder.safetensors")
+            os.path.join(self.sd_model_dir, "encoder.safetensors")
         )
         self.decoder_path = (
-            os.path.join(self.root_sd_model_dir, "decoder.safetensors")
+            os.path.join(self.sd_model_dir, "decoder.safetensors")
         )
         self.latent_diffusion_path = (
             os.path.join(
-                self.root_sd_model_dir, "latent_diffusion.safetensors"
+                self.sd_model_dir, "latent_diffusion.safetensors"
             )
         )
 
@@ -151,7 +155,7 @@ class ModelsPathTree:
                 
                 -- embedder: {self.embedder_path}
                 --- tokenizer: {self.tokenizer_path}
-                --- transformer: {self.transformer_path}
+                --- text model: {self.text_model_path}
                 
                 -- unet: {self.unet_path}
 
@@ -196,9 +200,9 @@ class ModelsPathTree:
         return {"tokenizer_path": self.tokenizer_path}
 
     @property
-    def transformer(self):
-        """returns a dict {transformer_path: self.transformer_path}"""
-        return {"transformer_path": self.transformer_path}
+    def text_model(self):
+        """returns a dict {text_model_path: self.text_model_path}"""
+        return {"text_model_path": self.text_model_path}
 
     @property
     def image_processor(self):
@@ -258,54 +262,54 @@ class ModelsPathTree:
 
 
 def create_directory_tree_paths(base_directory: str = "./"):
-    ROOT_MODELS_PATH = (os.path.join(base_directory, ROOT_MODELS_PREFIX))
+    ROOT_MODELS_DIR = (os.path.join(base_directory, ROOT_MODELS_PREFIX))
 
     CHECKPOINT_PATH = (
-        os.path.join(ROOT_MODELS_PATH, CHECKPOINT)
+        os.path.join(ROOT_MODELS_DIR, CHECKPOINT)
     )
     EMBEDDER_PATH = (
-        os.path.join(ROOT_MODELS_PATH, "clip_text_embedder/clip_embedder.safetensors")
+        os.path.join(ROOT_MODELS_DIR, "clip_text_embedder/clip_embedder.safetensors")
     )
     TOKENIZER_PATH = (
-        os.path.join(ROOT_MODELS_PATH, "clip_text_embedder/clip_tokenizer.ckpt")
+        os.path.join(ROOT_MODELS_DIR, "clip_text_embedder/clip_tokenizer.ckpt")
     )
-    TRANSFORMER_PATH = (
-        os.path.join(ROOT_MODELS_PATH, "clip_text_embedder/clip_transformer.ckpt")
+    TEXT_MODEL_PATH = (
+        os.path.join(ROOT_MODELS_DIR, "clip_text_embedder/clip_transformer.ckpt")
     )
 
     IMAGE_PROCESSOR_PATH = (
-        os.path.join(ROOT_MODELS_PATH, "clip_image_encoder/image_processor.ckpt")
+        os.path.join(ROOT_MODELS_DIR, "clip_image_encoder/image_processor.ckpt")
     )
     CLIP_MODEL_PATH = (
-        os.path.join(ROOT_MODELS_PATH, "clip_image_encoder/clip_model.ckpt")
+        os.path.join(ROOT_MODELS_DIR, "clip_image_encoder/clip_model.ckpt")
     )
     IMAGE_ENCODER_PATH = (
-        os.path.join(ROOT_MODELS_PATH, "clip_image_encoder/clip_image_encoder.ckpt")
+        os.path.join(ROOT_MODELS_DIR, "clip_image_encoder/clip_image_encoder.ckpt")
     )
 
-    UNET_PATH = (os.path.join(ROOT_MODELS_PATH, "unet/unet.safetensors"))
+    UNET_PATH = (os.path.join(ROOT_MODELS_DIR, "unet/unet.safetensors"))
 
     AUTOENCODER_PATH = (
-        os.path.join(ROOT_MODELS_PATH, "autoencoder/autoencoder.safetensors")
+        os.path.join(ROOT_MODELS_DIR, "autoencoder/autoencoder.safetensors")
     )
     ENCODER_PATH = (
-        os.path.join(ROOT_MODELS_PATH, "autoencoder/encoder.safetensors")
+        os.path.join(ROOT_MODELS_DIR, "autoencoder/encoder.safetensors")
     )
     DECODER_PATH = (
-        os.path.join(ROOT_MODELS_PATH, "autoencoder/decoder.safetensors")
+        os.path.join(ROOT_MODELS_DIR, "autoencoder/decoder.safetensors")
     )
 
     LATENT_DIFFUSION_PATH = (
-        os.path.join(ROOT_MODELS_PATH, "latent_diffusion/latent_diffusion.safetensors")
+        os.path.join(ROOT_MODELS_DIR, "latent_diffusion/latent_diffusion.safetensors")
     )
 
     paths_dict = {
-        "root_models_path": ROOT_MODELS_PATH,
+        "root_models_path": ROOT_MODELS_DIR,
         "checkpoint_path": CHECKPOINT_PATH,
         "embedder_path": EMBEDDER_PATH,
         "embedder_submodels_paths": {
             "tokenizer_path": TOKENIZER_PATH,
-            "transformer_path": TRANSFORMER_PATH,
+            "transformer_path": TEXT_MODEL_PATH,
         },
         "image_encoder_path": IMAGE_ENCODER_PATH,
         "image_encoder_submodels_paths": {
@@ -330,34 +334,34 @@ def create_directory_tree_paths(base_directory: str = "./"):
 
 
 def create_latent_diffusion_submodels_tree_paths(base_directory: str = "./"):
-    ROOT_MODELS_PATH = (os.path.join(base_directory, ROOT_MODELS_PREFIX))
+    ROOT_MODELS_DIR = (os.path.join(base_directory, ROOT_MODELS_PREFIX))
 
     EMBEDDER_PATH = (
-        os.path.join(ROOT_MODELS_PATH, "clip_text_embedder/clip_embedder.ckpt")
+        os.path.join(ROOT_MODELS_DIR, "clip_text_embedder/clip_embedder.ckpt")
     )
     TOKENIZER_PATH = (
-        os.path.join(ROOT_MODELS_PATH, "clip_text_embedder/clip_tokenizer.ckpt")
+        os.path.join(ROOT_MODELS_DIR, "clip_text_embedder/clip_tokenizer.ckpt")
     )
-    TRANSFORMER_PATH = (
-        os.path.join(ROOT_MODELS_PATH, "clip_text_embedder/clip_transformer.ckpt")
+    TEXT_MODEL_PATH = (
+        os.path.join(ROOT_MODELS_DIR, "clip_text_embedder/clip_transformer.ckpt")
     )
 
-    UNET_PATH = (os.path.join(ROOT_MODELS_PATH, "unet/unet.safetensors"))
+    UNET_PATH = (os.path.join(ROOT_MODELS_DIR, "unet/unet.safetensors"))
 
     AUTOENCODER_PATH = (
-        os.path.join(ROOT_MODELS_PATH, "autoencoder/autoencoder.safetensors")
+        os.path.join(ROOT_MODELS_DIR, "autoencoder/autoencoder.safetensors")
     )
     ENCODER_PATH = (
-        os.path.join(ROOT_MODELS_PATH, "autoencoder/encoder.safetensors")
+        os.path.join(ROOT_MODELS_DIR, "autoencoder/encoder.safetensors")
     )
     DECODER_PATH = (
-        os.path.join(ROOT_MODELS_PATH, "autoencoder/decoder.safetensors")
+        os.path.join(ROOT_MODELS_DIR, "autoencoder/decoder.safetensors")
     )
 
     paths_dict = {
         "embedder_path": EMBEDDER_PATH,
         "tokenizer_path": TOKENIZER_PATH,
-        "transformer_path": TRANSFORMER_PATH,
+        "transformer_path": TEXT_MODEL_PATH,
         "autoencoder_path": AUTOENCODER_PATH,
         "encoder_path": ENCODER_PATH,
         "decoder_path": DECODER_PATH,
