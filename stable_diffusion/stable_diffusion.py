@@ -50,7 +50,7 @@ class StableDiffusion:
         :param ddim_eta: is the [DDIM sampling](../sampler/ddim.html) $\eta$ constant
         """
         self._device = check_device(device)
-        self._model = model
+        self._model = model.to(self._device)
         self._ddim_steps = ddim_steps
         self._ddim_eta = ddim_eta
         self._sampler_name = sampler_name
