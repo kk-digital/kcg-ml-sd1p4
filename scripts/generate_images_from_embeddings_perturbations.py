@@ -183,7 +183,7 @@ def embed_and_save_prompts(prompts: str, null_prompt = NULL_PROMPT):
     torch.save(null_cond, join(EMBEDDED_PROMPTS_DIR, "null_cond.pt"))
     print(
         "Null prompt embedding saved at: ",
-        f"{join(EMBEDDED_PROMPTS_DIR, 'null_cond.pt')}",
+        f"{join(EMBEDDED_PROMPTS_DIR, 'null_cond.pt')}")
 
 def generate_prompts_from_lists():
     word_lists = dict(nouns = list(map(str.lower, ['Castle',
