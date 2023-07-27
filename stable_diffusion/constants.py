@@ -12,9 +12,10 @@ sys.path.insert(0, BASE_DIRECTORY)
 
 BASE_IO_DIRECTORY = "E:\\ML\\"
 ROOT_MODELS_PREFIX = "input/models/"
-ROOT_OUTPUTS_PREFIX = "outputs/models/"
+ROOT_OUTPUTS_PREFIX = "output/models/"
 MODEL = "v1-5-pruned-emaonly"
 CLIP_MODEL = "vit-large-patch14"
+
 CHECKPOINT = f"{MODEL}.safetensors"
 
 ROOT_MODELS_DIR = (os.path.join(BASE_IO_DIRECTORY, ROOT_MODELS_PREFIX))
@@ -26,17 +27,17 @@ CLIP_MODELS_DIR = os.path.join(ROOT_MODELS_DIR, "clip")
 CHECKPOINT_PATH = (
     os.path.join(ROOT_MODELS_DIR, CHECKPOINT)
 )
-EMBEDDER_DIR = (
+TEXT_EMBEDDER_DIR = (
     os.path.join(CLIP_MODELS_DIR, "text_embedder/")
 )
-EMBEDDER_PATH = (
-    os.path.join(EMBEDDER_DIR, "text_embedder.safetensors")
+TEXT_EMBEDDER_PATH = (
+    os.path.join(TEXT_EMBEDDER_DIR, "text_embedder.safetensors")
 )
 TOKENIZER_PATH = (
-    os.path.join(EMBEDDER_DIR, "tokenizer/")
+    os.path.join(TEXT_EMBEDDER_DIR, "tokenizer/")
 )
 TEXT_MODEL_PATH = (
-    os.path.join(EMBEDDER_DIR, CLIP_MODEL)
+    os.path.join(TEXT_EMBEDDER_DIR, CLIP_MODEL)
 )
 
 IMAGE_PROCESSOR_PATH = (
@@ -267,7 +268,7 @@ def create_directory_tree_paths(base_directory: str = "./"):
     CHECKPOINT_PATH = (
         os.path.join(ROOT_MODELS_DIR, CHECKPOINT)
     )
-    EMBEDDER_PATH = (
+    TEXT_EMBEDDER_PATH = (
         os.path.join(ROOT_MODELS_DIR, "clip_text_embedder/clip_embedder.safetensors")
     )
     TOKENIZER_PATH = (
@@ -306,7 +307,7 @@ def create_directory_tree_paths(base_directory: str = "./"):
     paths_dict = {
         "root_models_path": ROOT_MODELS_DIR,
         "checkpoint_path": CHECKPOINT_PATH,
-        "embedder_path": EMBEDDER_PATH,
+        "embedder_path": TEXT_EMBEDDER_PATH,
         "embedder_submodels_paths": {
             "tokenizer_path": TOKENIZER_PATH,
             "transformer_path": TEXT_MODEL_PATH,
@@ -324,7 +325,7 @@ def create_directory_tree_paths(base_directory: str = "./"):
         },
         "latent_diffusion_path": LATENT_DIFFUSION_PATH,
         "latent_diffusion_submodels_paths": {
-            "embedder_path": EMBEDDER_PATH,
+            "embedder_path": TEXT_EMBEDDER_PATH,
             "unet_path": UNET_PATH,
             "autoencoder_path": AUTOENCODER_PATH,
         },
@@ -336,7 +337,7 @@ def create_directory_tree_paths(base_directory: str = "./"):
 def create_latent_diffusion_submodels_tree_paths(base_directory: str = "./"):
     ROOT_MODELS_DIR = (os.path.join(base_directory, ROOT_MODELS_PREFIX))
 
-    EMBEDDER_PATH = (
+    TEXT_EMBEDDER_PATH = (
         os.path.join(ROOT_MODELS_DIR, "clip_text_embedder/clip_embedder.ckpt")
     )
     TOKENIZER_PATH = (
@@ -359,7 +360,7 @@ def create_latent_diffusion_submodels_tree_paths(base_directory: str = "./"):
     )
 
     paths_dict = {
-        "embedder_path": EMBEDDER_PATH,
+        "embedder_path": TEXT_EMBEDDER_PATH,
         "tokenizer_path": TOKENIZER_PATH,
         "transformer_path": TEXT_MODEL_PATH,
         "autoencoder_path": AUTOENCODER_PATH,
