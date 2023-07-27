@@ -17,6 +17,7 @@ import hashlib
 
 from stable_diffusion.utils.logger import logger
 
+
 class SectionManager:
     def __init__(self, name: str):
         self.t0 = None
@@ -191,7 +192,7 @@ def get_device(device=None):
     device_priority = {
         'cuda': [torch.cuda.is_available,
                  lambda x: logger.info(f'Using CUDA device {x.index}: {torch.cuda.get_device_name(x)}')],
-        'mps': [torch.backends.mps.is_available, lambda _: logger.info(f'Using MPS device')],
+        'mps': [torch.backends.mps.is_available, lambda _: logger.info('Using MPS device')],
         'cpu': [lambda: True, lambda x: logger.warning(
             f'You are running this script without CUDA or MPS (current device: {x}). It may be very slow')]
     }
@@ -210,23 +211,10 @@ def get_device(device=None):
     raise Exception(f'Device {device if device else "any"} not available.')
 
 
-# def get_device(force_cpu: bool = False, cuda_fallback: str = 'cuda:0'):
-#     """
-#     ### Get device
-#     """
-#     if torch.cuda.is_available() and not force_cpu:
-#         device_index = torch.cuda.current_device()
-#         device_name = torch.cuda.get_device_name(device_index)
-#         print("INFO: Using CUDA device: {}".format(device_name))
-#         return torch.device(device_index)
-
-#     print("WARNING: You are running this script without CUDA. It may be very slow.")
-#     return 'cpu'
-
 def get_memory_status(device=None):
     logger.info(f'Using device: {device}')
     if device == None:
-       logger.warning(f'No device specified.')
+        logger.warning('No device specified.')
     elif device.type == 'cuda':
         t = torch.cuda.get_device_properties(device).total_memory // 1024 ** 2
         r = torch.cuda.memory_reserved(device) // 1024 ** 2
