@@ -7,7 +7,7 @@ import argparse
 
 
 config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
-config.read("./path_tree.cfg")
+config.read("./config.ini")
 
 base = config["BASE"]
 # base_directory = "./"
