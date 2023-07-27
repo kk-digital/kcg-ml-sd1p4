@@ -18,7 +18,7 @@ from stable_diffusion.constants import (
     ENCODER_PATH,
     DECODER_PATH,
     TOKENIZER_PATH,
-    TRANSFORMER_PATH,
+    TEXT_MODEL_PATH,
 )
 from stable_diffusion.stable_diffusion import StableDiffusion
 from labml.monit import section
