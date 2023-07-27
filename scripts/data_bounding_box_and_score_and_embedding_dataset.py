@@ -102,7 +102,7 @@ parser.add_argument(
 parser.add_argument(
     "--cuda_device",
     type=str,
-    default="cuda:0",
+    default=get_device(),
     help="The cuda device to use. Defaults to 'cuda:0'.",
 )
 parser.add_argument(
@@ -118,7 +118,7 @@ NULL_PROMPT = ""
 NUM_ITERATIONS = args.num_iterations
 SEED = args.seed
 NOISE_MULTIPLIER = args.noise_multiplier
-DEVICE = get_device(args.cuda_device)
+DEVICE = args.cuda_device
 BATCH_SIZE = args.batch_size
 SAVE_EMBEDDINGS = args.save_embeddings
 CLEAR_OUTPUT_DIR = args.clear_output_dir
@@ -180,10 +180,10 @@ def embed_and_save_prompts(clip_text_embedder, prompt: str, i: int, null_prompt 
         f"{join(EMBEDDED_PROMPTS_DIR, f'embedded_prompt_{i}.pt')}",
     )
     
-    get_memory_status()
+    get_memory_status(DEVICE)
     #clip_text_embedder.to("cpu")
     torch.cuda.empty_cache()
-    get_memory_status()
+    get_memory_status(DEVICE)
     return embedded_prompt, null_cond
 
 def generate_images_from_disturbed_embeddings(
@@ -273,7 +273,7 @@ def main():
     
     pt = ModelsPathTree(base_directory=base_dir)
     sd = init_stable_diffusion(DEVICE, pt, n_steps=20, sampler_name="ddim", ddim_eta=0.0)
-    clip_text_embedder = CLIPTextEmbedder(device=check_device())
+    clip_text_embedder = CLIPTextEmbedder(device=DEVICE)
     clip_text_embedder.load_submodels()
     images = []
     prompts = []
@@ -304,10 +304,8 @@ def main():
     image_encoder.load_clip_model(**pt.clip_model)
     image_encoder.initialize_preprocessor()
     
-    loaded_model = torch.load(SCORER_CHECKPOINT_PATH)
     predictor = ChadPredictor(768, device=DEVICE)
-    predictor.load_state_dict(loaded_model)
-    predictor.eval()
+    predictor.load(SCORER_CHECKPOINT_PATH)
 
     json_output = []
     manifest = []
@@ -321,7 +319,7 @@ def main():
     for i, (image, embedding, prompt_index) in enumerate(images_generator):  # Retrieve the prompt with the image and embedding
         # images_tensors.append(image)
         torch.cuda.empty_cache()
-        get_memory_status()
+        get_memory_status(DEVICE)
 
         img_hash = calculate_sha256(image.squeeze())
         pil_image = to_pil(image.squeeze())
@@ -329,7 +327,7 @@ def main():
         prep_img = image_encoder.preprocess_input(pil_image)
         image_features = image_encoder(prep_img)
         image_features /= image_features.norm(dim=-1, keepdim=True)
-        score = predictor(image_features.to(DEVICE).float())
+        score = predictor.model(image_features.to(DEVICE).float())
         
         img_file_name = f"image_{i:06d}.png"
         full_img_path = join(IMAGES_DIR, img_file_name)

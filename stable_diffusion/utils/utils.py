@@ -1,4 +1,3 @@
-
 import time
 
 import random
@@ -6,6 +5,7 @@ import numpy as np
 
 import torch
 import torchvision
+from torch.mps import current_allocated_memory as mps_current_allocated_memory
 
 import PIL
 from PIL import Image
@@ -15,12 +15,13 @@ from pathlib import Path
 from typing import Union, BinaryIO, List, Optional
 import hashlib
 
+from stable_diffusion.utils.logger import logger
+
 class SectionManager:
     def __init__(self, name: str):
         self.t0 = None
         self.t1 = None
         self.section_name = name
-
 
     def __enter__(self):
         print(f"Starting section: {self.section_name}...")
@@ -31,6 +32,7 @@ class SectionManager:
         self.t1 = time.time()
         print(f"Finished section: {self.section_name} in {(self.t1 - self.t0):.2f} seconds\n")
 
+
 def calculate_sha256(tensor):
     if tensor.device == "cpu":
         tensor_bytes = tensor.numpy().tobytes()  # Convert tensor to a byte array
@@ -39,8 +41,10 @@ def calculate_sha256(tensor):
     sha256_hash = hashlib.sha256(tensor_bytes)
     return sha256_hash.hexdigest()
 
+
 def to_pil(image):
     return ToPILImage()(torch.clamp((image + 1.0) / 2.0, min=0.0, max=1.0))
+
 
 def save_images(images: torch.Tensor, dest_path: str, img_format: str = 'jpeg'):
     """
@@ -63,11 +67,12 @@ def save_images(images: torch.Tensor, dest_path: str, img_format: str = 'jpeg'):
         img = Image.fromarray((255. * img).astype(np.uint8))
         img.save(dest_path, format=img_format)
 
+
 def save_image_grid(
-    tensor: Union[torch.Tensor, List[torch.Tensor]],
-    fp: Union[str, Path, BinaryIO],
-    format: Optional[str] = None,
-    **kwargs,
+        tensor: Union[torch.Tensor, List[torch.Tensor]],
+        fp: Union[str, Path, BinaryIO],
+        format: Optional[str] = None,
+        **kwargs,
 ) -> None:
     """
     Save a given Tensor into an image file.
@@ -87,9 +92,10 @@ def save_image_grid(
     im = Image.fromarray(ndarr)
     im.save(fp, format=format)
 
+
 def show_image_grid(
-    tensor: Union[torch.Tensor, List[torch.Tensor]],
-    **kwargs,
+        tensor: Union[torch.Tensor, List[torch.Tensor]],
+        **kwargs,
 ) -> None:
     """
     Save a given Tensor into an image file.
@@ -108,7 +114,6 @@ def show_image_grid(
     ndarr = grid.mul(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to("cpu", torch.uint8).numpy()
     im = Image.fromarray(ndarr)
     return im
-    
 
 
 def load_img(path: str):
@@ -156,11 +161,12 @@ def save_images(images: torch.Tensor, dest_path: str, img_format: str = 'jpeg'):
         img = Image.fromarray((255. * img).astype(np.uint8))
         img.save(dest_path, format=img_format)
 
+
 def save_image_grid(
-    tensor: Union[torch.Tensor, List[torch.Tensor]],
-    fp: Union[str, Path, BinaryIO],
-    format: Optional[str] = None,
-    **kwargs,
+        tensor: Union[torch.Tensor, List[torch.Tensor]],
+        fp: Union[str, Path, BinaryIO],
+        format: Optional[str] = None,
+        **kwargs,
 ) -> None:
     """
     Save a given Tensor into an image file.
@@ -178,29 +184,31 @@ def save_image_grid(
     # Add 0.5 after unnormalizing to [0, 255] to round to the nearest integer
     ndarr = grid.mul(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to("cpu", torch.uint8).numpy()
     im = Image.fromarray(ndarr)
-    im.save(fp, format=format)        
+    im.save(fp, format=format)
 
-def get_device(device = None):
-    
-    if device is None:
-        device = torch.device(torch.cuda.current_device() if torch.cuda.is_available() else 'cpu')
-        print(f'INFO: `device` given is `None`. Falling back to device: {device}.')
-    else:
-        try:
-            device = torch.device(device)
-            print(f'INFO: Device given: {device}. Using device {device}.')
-        except Exception as e:
-            print(f'INFO: The given device raised an exception.')
-            print(e)
-            raise e
-            # device = torch.device(torch.cuda.current_device() if torch.cuda.is_available() else 'cpu')
-            # print(f'INFO: `device` is None. Falling back to current device: {device}.')
-    try:
-        print(f'INFO: Using CUDA device {device.index}: {torch.cuda.get_device_name(device)}.')
-    except Exception as e:
-        print(e)
-        print(f"WARNING: You are running this script without CUDA (current device: {device}). It may be very slow.")
-    return device
+
+def get_device(device=None):
+    device_priority = {
+        'cuda': [torch.cuda.is_available,
+                 lambda x: logger.info(f'Using CUDA device {x.index}: {torch.cuda.get_device_name(x)}')],
+        'mps': [torch.backends.mps.is_available, lambda _: logger.info(f'Using MPS device')],
+        'cpu': [lambda: True, lambda x: logger.warning(
+            f'You are running this script without CUDA or MPS (current device: {x}). It may be very slow')]
+    }
+
+    if device is None or device not in device_priority:
+        for _device, (availability_check, log_msg) in device_priority.items():
+            if availability_check():
+                log_msg(_device)
+                return torch.device(_device)
+
+    availability_check, log_msg = device_priority[device]
+    if availability_check():
+        log_msg(device)
+        return torch.device(device)
+
+    raise Exception(f'Device {device if device else "any"} not available.')
+
 
 # def get_device(force_cpu: bool = False, cuda_fallback: str = 'cuda:0'):
 #     """
@@ -215,27 +223,37 @@ def get_device(device = None):
 #     print("WARNING: You are running this script without CUDA. It may be very slow.")
 #     return 'cpu'
 
-def get_memory_status(device = None): 
+def get_memory_status(device=None):
+    logger.info(f'Using device: {device}')
     if device == None:
-        free, total = torch.tensor(torch.cuda.mem_get_info(device = device)) // 1024 ** 2
-        used = total - free
-        print(f'Total: {total.item()} MiB\nFree: {free.item()} MiB\nUsed: {used.item()} MiB')
-    else:
+       logger.warning(f'No device specified.')
+    elif device.type == 'cuda':
         t = torch.cuda.get_device_properties(device).total_memory // 1024 ** 2
         r = torch.cuda.memory_reserved(device) // 1024 ** 2
         a = torch.cuda.memory_allocated(device) // 1024 ** 2
         f = t - (r + a)
-        print(f'Total: {t} MiB\nFree: {f} MiB\nReserved: {r} MiB\nAllocated: {a} MiB')
+        logger.info(f'Total: {t} MiB\nFree: {f} MiB\nReserved: {r} MiB\nAllocated: {a} MiB')
+    elif device.type == 'mps':
+        # get total memory from cpu
+        a = mps_current_allocated_memory() // 1024 ** 2
+        logger.info(f'Total: ? MiB - Free: ? MiB - Reserved: ? MiB - Allocated: {a} MiB')
+    else:
+        logger.warning(f'Unknown device: {device}')
+
 
 def get_autocast(force_cpu: bool = False):
     """
     ### Get autocast
     """
     if torch.cuda.is_available() and not force_cpu:
-        return torch.cuda.amp.autocast()
+        return torch.autocast(device_type='cuda')
 
-    print("WARNING: You are running this script without CUDA. It may be very slow.")
-    return torch.cpu.amp.autocast()
+    if torch.backends.mps.is_available() and not force_cpu:
+        logger.warning("MPS device does not support autocast.")
+        return torch.autocast(device_type='cpu')
+
+    logger.warning("You are running this script without CUDA. It may be very slow.")
+    return torch.autocast(device_type='cpu')
 
 
 def set_seed(seed: int):

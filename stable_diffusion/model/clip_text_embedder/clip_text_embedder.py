@@ -42,7 +42,7 @@ class CLIPTextEmbedder(nn.Module):
         """
         super().__init__()
 
-        self.device = get_device(device)
+        self.device = device if device is not None else get_device()
 
         self.version = version
 
