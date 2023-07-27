@@ -39,6 +39,7 @@ config["BASE"] = {
 
 ROOT_MODELS_DIR = (os.path.join(BASE_IO_DIRECTORY, ROOT_MODELS_PREFIX))
 ROOT_OUTPUTS_DIR = (os.path.join(BASE_IO_DIRECTORY, ROOT_OUTPUTS_PREFIX))
+SD_DEFAULT_MODEL_OUTPUTS_DIR = (os.path.join(ROOT_OUTPUTS_PREFIX, MODEL_NAME))
 SD_DEFAULT_MODEL_DIR = os.path.join(ROOT_MODELS_DIR, MODEL_NAME)
 CLIP_MODELS_DIR = os.path.join(ROOT_MODELS_DIR, "clip")
 TEXT_EMBEDDER_DIR = (
@@ -47,28 +48,37 @@ TEXT_EMBEDDER_DIR = (
 IMAGE_ENCODER_DIR = (
     os.path.join(CLIP_MODELS_DIR, "image_encoder/")
 )
-config["DIRS"] = dict(
+
+config["ROOT_DIRS"] = dict(
         ROOT_MODELS_DIR = ROOT_MODELS_DIR,
         ROOT_OUTPUTS_DIR = ROOT_OUTPUTS_DIR,
+        )
+config["MODELS_DIRS"] = dict(
         SD_DEFAULT_MODEL_DIR = SD_DEFAULT_MODEL_DIR,
         CLIP_MODELS_DIR = CLIP_MODELS_DIR,
+        )
+config["SUBMODELS_DIRS"] = dict(
         TEXT_EMBEDDER_DIR = TEXT_EMBEDDER_DIR,
         IMAGE_ENCODER_DIR = IMAGE_ENCODER_DIR
-        )
-
-config["PATHS"] = dict(
-    CHECKPOINT_PATH = (
-    os.path.join(ROOT_MODELS_DIR, CHECKPOINT)
-    ),
+)
+config["STABLE_DIFFUSION_PATHS"] = dict(
+    
+    CHECKPOINT_PATH = os.path.join(ROOT_MODELS_DIR, CHECKPOINT),
+    
     TEXT_EMBEDDER_PATH = (
         os.path.join(TEXT_EMBEDDER_DIR, "text_embedder.safetensors")
     ),
-    TOKENIZER_PATH = (
-        os.path.join(TEXT_EMBEDDER_DIR, "tokenizer/")
+    UNET_PATH = (
+        os.path.join(SD_DEFAULT_MODEL_DIR, "unet.safetensors")
     ),
-    TEXT_MODEL_PATH = (
-        os.path.join(TEXT_EMBEDDER_DIR, CLIP_MODEL_NAME)
+    AUTOENCODER_PATH = (
+        os.path.join(SD_DEFAULT_MODEL_DIR, "autoencoder.safetensors")
     ),
+    LATENT_DIFFUSION_PATH = (
+        os.path.join(SD_DEFAULT_MODEL_DIR, "latent_diffusion.safetensors")
+    )
+)
+config["CLIP_PATHS"] = dict(
     IMAGE_PROCESSOR_PATH = (
         os.path.join(IMAGE_ENCODER_DIR, "image_processor.ckpt")
     ),
@@ -78,23 +88,13 @@ config["PATHS"] = dict(
     IMAGE_ENCODER_PATH = (
         os.path.join(IMAGE_ENCODER_DIR, "clip_image_encoder.ckpt")
     ),
-    UNET_PATH = (
-        os.path.join(SD_DEFAULT_MODEL_DIR, "unet.safetensors")
+    TOKENIZER_PATH = (
+        os.path.join(TEXT_EMBEDDER_DIR, "tokenizer/")
     ),
-    AUTOENCODER_PATH = (
-        os.path.join(SD_DEFAULT_MODEL_DIR, "autoencoder.safetensors")
+    TEXT_MODEL_PATH = (
+        os.path.join(TEXT_EMBEDDER_DIR, CLIP_MODEL_NAME)
     ),
-    ENCODER_PATH = (
-        os.path.join(SD_DEFAULT_MODEL_DIR, "encoder.safetensors")
-    ),
-    DECODER_PATH = (
-        os.path.join(SD_DEFAULT_MODEL_DIR, "decoder.safetensors")
-    ),
-    LATENT_DIFFUSION_PATH = (
-        os.path.join(SD_DEFAULT_MODEL_DIR, "latent_diffusion.safetensors")
     )
-)
-
 # Writing our configuration file to 'example.cfg'
-with open('config.cfg', 'w') as configfile:
+with open('path_tree.cfg', 'w') as configfile:
     config.write(configfile)

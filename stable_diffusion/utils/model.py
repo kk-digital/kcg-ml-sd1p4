@@ -22,7 +22,7 @@ from PIL import Image
 from safetensors.torch import load_file
 
 from stable_diffusion.constants import AUTOENCODER_PATH, ENCODER_PATH, DECODER_PATH
-from stable_diffusion.constants import EMBEDDER_PATH, TOKENIZER_PATH, TEXT_MODEL_PATH
+from stable_diffusion.constants import TEXT_EMBEDDER_PATH, TOKENIZER_PATH, TEXT_MODEL_PATH
 from stable_diffusion.constants import UNET_PATH
 from stable_diffusion.constants import LATENT_DIFFUSION_PATH
 
@@ -180,7 +180,7 @@ def initialize_clip_embedder(device = None, tokenizer = None, transformer = None
 
     return clip_text_embedder
 
-def load_clip_embedder(path: Union[str, Path] = EMBEDDER_PATH, device = None) -> CLIPTextEmbedder:
+def load_clip_embedder(path: Union[str, Path] = TEXT_EMBEDDER_PATH, device = None) -> CLIPTextEmbedder:
     
     with section(f"CLIP embedder loading, from {path}"):
         device = check_device(device)

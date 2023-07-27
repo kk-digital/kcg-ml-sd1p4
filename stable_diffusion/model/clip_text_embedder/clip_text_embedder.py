@@ -24,10 +24,10 @@ from torch import nn, save
 from os.path import join
 from transformers import CLIPTokenizer, CLIPTextModel
 from safetensors.torch import save_file, load_file
-from stable_diffusion.constants import EMBEDDER_PATH, TOKENIZER_PATH, TEXT_MODEL_PATH
+from stable_diffusion.constants import TEXT_EMBEDDER_PATH, TOKENIZER_PATH, TEXT_MODEL_PATH
 from stable_diffusion.utils.utils import check_device
 from torchinfo import summary
-# EMBEDDER_PATH = os.path.abspath('./input/model/clip/clip_embedder.ckpt')
+# TEXT_EMBEDDER_PATH = os.path.abspath('./input/model/clip/clip_embedder.ckpt')
 # TOKENIZER_PATH = os.path.abspath('./input/model/clip/clip_tokenizer.ckpt')
 # TEXT_MODEL_PATH = os.path.abspath('./input/model/clip/clip_transformer.ckpt')
 class CLIPTextEmbedder(nn.Module):
@@ -60,7 +60,7 @@ class CLIPTextEmbedder(nn.Module):
         print("text_model saved to: ", text_model_path)
 
 
-    def save(self, embedder_path: str = EMBEDDER_PATH, use_safetensors = True):
+    def save(self, embedder_path: str = TEXT_EMBEDDER_PATH, use_safetensors = True):
         if not use_safetensors:
             torch.save(self, embedder_path)
             print(f"CLIPTextEmbedder saved to: {embedder_path}")
@@ -148,7 +148,7 @@ if __name__ == "__main__":
 
     assert torch.allclose(embeddings1, embeddings2)
 
-    clip = torch.load(EMBEDDER_PATH, map_location="cuda:0")
+    clip = torch.load(TEXT_EMBEDDER_PATH, map_location="cuda:0")
     print(clip)
     embeddings3 = clip(prompts)
     assert torch.allclose(embeddings1, embeddings3), "embeddings1 != embeddings3"

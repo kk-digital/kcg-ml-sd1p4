@@ -13,7 +13,7 @@ from stable_diffusion.constants import (
     CHECKPOINT_PATH,
     AUTOENCODER_PATH,
     UNET_PATH,
-    EMBEDDER_PATH,
+    TEXT_EMBEDDER_PATH,
     LATENT_DIFFUSION_PATH,
     ENCODER_PATH,
     DECODER_PATH,
