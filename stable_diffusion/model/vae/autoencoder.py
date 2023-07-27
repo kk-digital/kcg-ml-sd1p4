@@ -121,13 +121,14 @@ class Autoencoder(nn.Module):
         self.encoder = None
 
     def unload_submodels(self):
-        self.encoder.to('cpu')
-        self.decoder.to('cpu')
-        del self.encoder
-        del self.decoder
-        torch.cuda.empty_cache()
-        self.encoder = None
-        self.decoder = None
+        if self.encoder is not None:
+            self.encoder.to('cpu')
+            del self.encoder
+            self.encoder = None
+        if self.decoder is not None:
+            self.decoder.to('cpu')
+            del self.decoder
+            self.decoder = None
 
     def encode(self, img: torch.Tensor) -> 'GaussianDistribution':
         """
