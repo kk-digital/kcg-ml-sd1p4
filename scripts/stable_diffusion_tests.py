@@ -12,7 +12,7 @@ from text_to_image import Txt2Img
 
 from stable_diffusion.latent_diffusion import LatentDiffusion, DiffusionWrapper
 # from stable_diffusion.latent_diffusion_model import LatentDiffusionModel
-from stable_diffusion.constants import CHECKPOINT_PATH, AUTOENCODER_PATH, UNET_PATH, EMBEDDER_PATH, LATENT_DIFFUSION_PATH
+from stable_diffusion.constants import CHECKPOINT_PATH, AUTOENCODER_PATH, UNET_PATH, TEXT_EMBEDDER_PATH, LATENT_DIFFUSION_PATH
 from labml.monit import section
 from stable_diffusion.utils.utils import save_images, save_image_grid
 from stable_diffusion.utils.model import initialize_autoencoder, initialize_encoder, initialize_decoder, get_device, get_device
@@ -24,9 +24,9 @@ import safetensors.torch as st
 
 CHECKPOINT_PATH = os.path.abspath('./input/model/v1-5-pruned-emaonly.ckpt')
 
-EMBEDDER_PATH = os.path.abspath('./input/model/clip/clip_embedder.ckpt')
+TEXT_EMBEDDER_PATH = os.path.abspath('./input/model/clip/clip_embedder.ckpt')
 TOKENIZER_PATH = os.path.abspath('./input/model/clip/clip_tokenizer.ckpt')
-TRANSFORMER_PATH = os.path.abspath('./input/model/clip/clip_transformer.ckpt')
+TEXT_MODEL_PATH = os.path.abspath('./input/model/clip/clip_transformer.ckpt')
 
 UNET_PATH = os.path.abspath('./input/model/unet/unet.ckpt')
 
@@ -191,7 +191,7 @@ def init_latent_diffusion_from_mode(mode):
             autoencoder = torch.load(AUTOENCODER_PATH)
             autoencoder.eval()
             autoencoder.load_submodels()
-            clip_text_embedder = torch.load(EMBEDDER_PATH)
+            clip_text_embedder = torch.load(TEXT_EMBEDDER_PATH)
             clip_text_embedder.eval()
             clip_text_embedder.load_submodels()
             unet_model = torch.load(UNET_PATH)
@@ -204,7 +204,7 @@ def init_latent_diffusion_from_mode(mode):
             autoencoder = torch.load(AUTOENCODER_PATH)
             autoencoder.eval()
             autoencoder.load_submodels()
-            clip_text_embedder = torch.load(EMBEDDER_PATH)
+            clip_text_embedder = torch.load(TEXT_EMBEDDER_PATH)
             clip_text_embedder.eval()
             clip_text_embedder.load_submodels()
             unet_model = torch.load(UNET_PATH)

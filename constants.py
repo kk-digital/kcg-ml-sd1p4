@@ -74,7 +74,67 @@ LATENT_DIFFUSION_PATH = (
     os.path.join(SD_DEFAULT_MODEL_DIR, "latent_diffusion.safetensors")
 )
 
-class ModelsPathTree:
+
+def create_folder_tree(base) -> None:
+
+    BASE_IO_DIRECTORY = base.get("base_io_directory")
+    ROOT_MODELS_PREFIX = base.get("root_models_prefix")
+    ROOT_OUTPUTS_PREFIX = base.get("root_outputs_prefix")
+    MODEL = base.get("model_name")
+    CLIP_MODEL = base.get("clip_model_name")
+
+    CHECKPOINT = f"{MODEL}.safetensors"
+
+    ROOT_MODELS_DIR = (os.path.join(BASE_IO_DIRECTORY, ROOT_MODELS_PREFIX))
+    ROOT_OUTPUTS_DIR = (os.path.join(BASE_IO_DIRECTORY, ROOT_OUTPUTS_PREFIX))
+    SD_DEFAULT_MODEL_DIR = os.path.join(ROOT_MODELS_DIR, MODEL)
+    CLIP_MODELS_DIR = os.path.join(ROOT_MODELS_DIR, "clip")
+    TEXT_EMBEDDER_DIR = (
+        os.path.join(CLIP_MODELS_DIR, "text_embedder/")
+    )
+    IMAGE_ENCODER_DIR = (
+        os.path.join(CLIP_MODELS_DIR, "image_encoder/")
+    )
+    CHECKPOINT_PATH = (
+        os.path.join(ROOT_MODELS_DIR, CHECKPOINT)
+    )
+    TEXT_EMBEDDER_PATH = (
+        os.path.join(TEXT_EMBEDDER_DIR, "text_embedder.safetensors")
+    )
+    TOKENIZER_PATH = (
+        os.path.join(TEXT_EMBEDDER_DIR, "tokenizer/")
+    )
+    TEXT_MODEL_PATH = (
+        os.path.join(TEXT_EMBEDDER_DIR, CLIP_MODEL)
+    )
+
+    IMAGE_PROCESSOR_PATH = (
+        os.path.join(IMAGE_ENCODER_DIR, "image_processor.ckpt")
+    )
+    CLIP_MODEL_PATH = (
+        os.path.join(IMAGE_ENCODER_DIR, "clip_model.ckpt")
+    )
+    IMAGE_ENCODER_PATH = (
+        os.path.join(IMAGE_ENCODER_DIR, "clip_image_encoder.ckpt")
+    )
+
+    UNET_PATH = (os.path.join(SD_DEFAULT_MODEL_DIR, "unet.safetensors"))
+
+    AUTOENCODER_PATH = (
+        os.path.join(SD_DEFAULT_MODEL_DIR, "autoencoder.safetensors")
+    )
+    ENCODER_PATH = (
+        os.path.join(SD_DEFAULT_MODEL_DIR, "encoder.safetensors")
+    )
+    DECODER_PATH = (
+        os.path.join(SD_DEFAULT_MODEL_DIR, "decoder.safetensors")
+    )
+    LATENT_DIFFUSION_PATH = (
+        os.path.join(SD_DEFAULT_MODEL_DIR, "latent_diffusion.safetensors")
+    )
+
+
+class IOPathHandler:
     """returns dicts to be used as kwargs for loading submodels.
     the keys are the same as the kwargs used for the load methods."""
 
