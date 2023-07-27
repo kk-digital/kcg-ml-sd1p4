@@ -7,7 +7,7 @@ import argparse
 
 
 config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
-config.read("path_tree.cfg")
+config.read("./path_tree.cfg")
 
 base = config["BASE"]
 # base_directory = "./"
@@ -74,66 +74,87 @@ LATENT_DIFFUSION_PATH = (
     os.path.join(SD_DEFAULT_MODEL_DIR, "latent_diffusion.safetensors")
 )
 
-class ModelsPathTree:
+class IODirectoryTree:
     """returns dicts to be used as kwargs for loading submodels.
     the keys are the same as the kwargs used for the load methods."""
 
-    def __init__(self, base_io_directory: str = "./", base_directory: str = "./", model_name = "v1-5-pruned-emaonly", clip_model_name = "vit-large-patch14", root_models_prefix: str = "input/models/", root_outputs_prefix: str = "output/models/", checkpoint_format = ".safetensors"):
+    def __init__(self, 
+                base_io_directory: str = BASE_IO_DIRECTORY, 
+                base_directory: str = "./", 
+                model_name = "v1-5-pruned-emaonly", 
+                clip_model_name = "vit-large-patch14", 
+                root_models_prefix: str = "input/model/", 
+                root_outputs_prefix: str = "output/model/", 
+                checkpoint_format = ".safetensors"):
         
         self.base_directory = base_directory
         self.base_io_directory = base_io_directory
+
         self.checkpoint_format = checkpoint_format
+
         self.root_models_prefix = root_models_prefix
         self.root_outputs_prefix = root_outputs_prefix
+
         self.model_name = model_name
-        self.clip_model_name = clip_model_name
         self.model_checkpoint = f"{self.model_name}{self.checkpoint_format}"
+
+        self.clip_model_name = clip_model_name
+
         self.root_models_dir = (
             os.path.join(base_io_directory, root_models_prefix)
         )
-        self.sd_model_dir = (
-            os.path.join(self.root_models_dir, self.model_name)
-        )        
-        self.root_clip_models_dir = (
-            os.path.join(self.root_models_dir, "clip")
-        )
-        
         self.root_outputs_dir = (
             os.path.join(base_io_directory, root_outputs_prefix)
             )
-        self.root_model_outputs_dir = (
+        
+        self.sd_model_dir = (
+            os.path.join(self.root_models_dir, self.model_name)
+        )
+        self.clip_models_dir = (
+            os.path.join(self.root_models_dir, "clip/")
+        )
+        
+        self.model_outputs_dir = (
             os.path.join(self.root_outputs_dir, self.model_name)
         )
+        
         self.checkpoint_path = (
             os.path.join(self.root_models_dir, self.model_checkpoint)
         )    
-        self.embedder_dir = (
-            os.path.join(self.root_clip_models_dir, "text_embedder/")
+        self.text_embedder_dir = (
+            os.path.join(self.clip_models_dir, "text_embedder/")
         )        
-        self.embedder_path = (
-            os.path.join(self.embedder_dir, "text_embedder.safetensors")
+        self.text_embedder_path = (
+            os.path.join(self.clip_models_dir, "text_embedder.safetensors")
         )
         self.tokenizer_path = (
             os.path.join(
-                self.embedder_dir, "tokenizer/"
+                self.text_embedder_dir, "tokenizer/"
             )
         )
         self.text_model_path = (
             os.path.join(
-                self.embedder_dir, self.clip_model_name
+                self.text_embedder_dir, self.clip_model_name
             )
         )
+
         self.image_encoder_path = (
             os.path.join(
-                self.root_models_dir, "clip_image_encoder/clip_image_encoder.ckpt"
+                self.clip_models_dir, "image_encoder.safetensors"
+            )
+        )
+
+        self.image_encoder_dir = (
+            os.path.join(
+                self.clip_models_dir, "image_encoder/"
             )
         )
         self.clip_model_path = (
-            os.path.join(self.root_models_dir, "clip_image_encoder/clip_model.ckpt")
+            os.path.join(self.image_encoder_dir, "clip_model.ckpt")
         )
         self.image_processor_path = (
             os.path.join(
-                self.root_models_dir, "clip_image_encoder/image_processor.ckpt"
+                self.image_encoder_dir, "image_processor.ckpt"
             )
         )
         self.unet_path = (
@@ -155,22 +176,27 @@ class ModelsPathTree:
         )
 
     def __repr__(self):
-        return f"""ModelsPathTree(base_directory={self.base_directory})
-                - latent_diffusion: {self.latent_diffusion_path}
-                
-                -- autoencoder: {self.autoencoder_path}
-                --- encoder: {self.encoder_path}
-                --- decoder: {self.decoder_path}
-                
-                -- embedder: {self.embedder_path}
-                --- tokenizer: {self.tokenizer_path}
-                --- text model: {self.text_model_path}
-                
-                -- unet: {self.unet_path}
-
-                - image_encoder: {self.image_encoder_path}
-                -- clip_model: {self.clip_model_path}
-                -- image_processor: {self.image_processor_path}
+        return f"""ModelsPathTree:
+                {self.base_io_directory}/
+                -- model's root dir: {self.root_models_dir}
+                --- stable diffusion model checkpoint: {self.checkpoint_path}
+                --- stable diffusion submodels dir: {self.sd_model_dir}
+                ---- unet model: {self.unet_path}
+                ---- autoencoder model: {self.autoencoder_path}
+                ---- encoder model: {self.encoder_path}
+                ---- decoder model: {self.decoder_path}
+                ---- latent_diffusion model: {self.latent_diffusion_path}
+                --- clip models' root dir: {self.clip_models_dir}
+                ---- clip image encoder checkpoint path: {self.image_encoder_path}
+                ---- clip text embedder checkpoint path: {self.text_embedder_path}
+                ---- clip text embedder submodels dir: {self.text_embedder_dir}
+                ----- tokenizer: {self.tokenizer_path}
+                ----- text model: {self.text_model_path}
+                ---- clip image encoder submodels dir: {self.image_encoder_dir}
+                ----- clip_model: {self.clip_model_path}
+                ----- image_processor: {self.image_processor_path}
+                -- models' outputs root'dir: {self.root_outputs_dir}
+                --- model's outputs dir: {self.model_outputs_dir}
             """
 
     @property
