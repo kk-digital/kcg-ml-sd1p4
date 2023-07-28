@@ -23,7 +23,7 @@ from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
 from chad_score import ChadPredictor
 from stable_diffusion import StableDiffusion
-from stable_diffusion.constants import ModelsPathTree
+from stable_diffusion.constants import IODirectoryTree
 from stable_diffusion.utils.utils import (
     get_device,
     get_memory_status,
@@ -124,7 +124,7 @@ SAVE_EMBEDDINGS = args.save_embeddings
 CLEAR_OUTPUT_DIR = args.clear_output_dir
 os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
 
-pt = ModelsPathTree(base_directory=base_dir)
+pt = IODirectoryTree(base_directory=base_dir)
 
 
 try: 
@@ -140,7 +140,7 @@ else:
     os.makedirs(IMAGES_DIR, exist_ok=True)
 
 
-def init_stable_diffusion(device, path_tree: ModelsPathTree, sampler_name="ddim", n_steps=20, ddim_eta=0.0):
+def init_stable_diffusion(device, path_tree: IODirectoryTree, sampler_name="ddim", n_steps=20, ddim_eta=0.0):
 
     device = get_device(device)
 
@@ -277,9 +277,9 @@ def get_image_features(
 
 def main():
     
-    pt = ModelsPathTree(base_directory=base_dir)
+    pt = IODirectoryTree(base_directory=base_dir)
     sd = init_stable_diffusion(DEVICE, pt, n_steps=20, sampler_name="ddim", ddim_eta=0.0)
-    clip_text_embedder = CLIPTextEmbedder(device=check_device())
+    clip_text_embedder = CLIPTextEmbedder(device=get_device())
     clip_text_embedder.load_submodels()
     images = []
     prompts = []

@@ -192,7 +192,7 @@ def initialize_encoder(device = None,
                         n_resnet_blocks=2) -> Encoder:
     
     with section('encoder initialization'):
-        device = check_device(device)
+        device = get_device(device)
     # Initialize the encoder
         encoder = Encoder(z_channels=z_channels,
                         in_channels=in_channels,
@@ -209,7 +209,7 @@ def initialize_decoder(device = None,
                         n_resnet_blocks=2) -> Decoder:
     
     with section('decoder initialization'):
-        device = check_device(device)
+        device = get_device(device)
         decoder = Decoder(out_channels=out_channels,
                         z_channels=z_channels,
                         channels=channels,

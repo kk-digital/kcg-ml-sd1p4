@@ -20,7 +20,7 @@ from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
 from chad_score import ChadPredictor
 from stable_diffusion import StableDiffusion
-from stable_diffusion.constants import ModelsPathTree
+from stable_diffusion.constants import IODirectoryTree
 from stable_diffusion.utils.utils import (
     get_device,
     get_memory_status,
@@ -140,7 +140,7 @@ MAX_NOISE_STEPS = args.max_noise_steps
 DDIM_STEPS = args.ddim_steps
 os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
 
-pt = ModelsPathTree(base_directory=base_dir)
+pt = IODirectoryTree(base_directory=base_dir)
 
 
 try: 
@@ -156,7 +156,7 @@ else:
     os.makedirs(IMAGES_DIR, exist_ok=True)
 
 
-def init_stable_diffusion(device, path_tree: ModelsPathTree, sampler_name="ddim", n_steps=DDIM_STEPS, ddim_eta=0.0):
+def init_stable_diffusion(device, path_tree: IODirectoryTree, sampler_name="ddim", n_steps=DDIM_STEPS, ddim_eta=0.0):
 
     device = get_device(device)
 
@@ -297,7 +297,7 @@ def calculate_sha256(tensor):
 
 if __name__ == "__main__":
 
-    pt = ModelsPathTree(base_directory=base_dir)
+    pt = IODirectoryTree(base_directory=base_dir)
     
     clip_text_embedder = CLIPTextEmbedder(device=get_device(DEVICE))
     clip_text_embedder.load_submodels()

@@ -339,7 +339,7 @@ def initialize_encoder(device = None,
                         n_resnet_blocks=2) -> Encoder:
     
     with section('encoder initialization'):
-        device = check_device(device)
+        device = get_device(device)
     # Initialize the encoder
         encoder = Encoder(z_channels=z_channels,
                         in_channels=in_channels,
@@ -356,7 +356,7 @@ def initialize_decoder(device = None,
                         n_resnet_blocks=2) -> Decoder:
     
     with section('decoder initialization'):
-        device = check_device(device)
+        device = get_device(device)
         decoder = Decoder(out_channels=out_channels,
                         z_channels=z_channels,
                         channels=channels,
@@ -370,7 +370,7 @@ def initialize_autoencoder(device = None, encoder = None, decoder = None, emb_ch
     # Initialize the autoencoder
     
     with section(f'autoencoder initialization'):
-        device = check_device(device)
+        device = get_device(device)
         if force_submodels_init:
             if encoder is None:
                 encoder = initialize_encoder(device=device, z_channels=z_channels)
@@ -395,7 +395,7 @@ def initialize_unet(device = None,
                     d_cond=768) -> UNetModel:
 
     # Initialize the U-Net
-    device = check_device(device)
+    device = get_device(device)
     with section('U-Net initialization'):
         unet_model = UNetModel(in_channels=in_channels,
                                 out_channels=out_channels,

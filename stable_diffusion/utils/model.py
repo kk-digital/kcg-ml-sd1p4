@@ -166,16 +166,18 @@ def initialize_clip_embedder(device = None, tokenizer = None, transformer = None
                 device=device,
             )
 
-        if tokenizer is None:
-            clip_text_embedder.load_tokenizer_from_lib()
-        else:
-            clip_text_embedder.tokenizer = tokenizer
+        # if tokenizer is None:
+        #     clip_text_embedder.load_tokenizer_from_lib()
+        # else:
+        #     clip_text_embedder.tokenizer = tokenizer
 
-        if transformer is None:
-            clip_text_embedder.load_text_model_from_lib()
-        else:
-            clip_text_embedder.transformer = transformer
+        # if transformer is None:
+        #     clip_text_embedder.load_transformer_from_lib()
+        # else:
+        #     clip_text_embedder.transformer = transformer
         
+        clip_text_embedder.load_submodels()
+
         clip_text_embedder.to(device)
 
     return clip_text_embedder
