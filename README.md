@@ -127,13 +127,13 @@ python3 ./scripts/generate_images_from_embeddings.py --num_seeds 4 --temperature
 - `-t, --temperature`: Sampling temperature. Defaults to `1.0`.
 - `--ddim_eta`: Amount of noise to readd during the sampling process. Defaults to `0.0`.
 - `--clear_output_dir`: Either to clear or not the output directory before running. Defaults to `False`.
-- `--cuda_device`: CUDA device to use. Defaults to `cuda:0`.
+- `--cuda_device`: CUDA device to use. Defaults to `get_device()`.
 
 #### Images from distributions
 
 Try running:
 ```bash
-python3 ./scripts/generate_images_from_distributions.py -d 4 --params_steps 4 --params_range 0.49, 0.54 --num_seeds 4 --temperature 1.2 --ddim_eta 1.2
+python3 ./scripts/generate_images_from_distributions.py -d 4 --params_steps 4 --params_range 0.49 0.54 --num_seeds 4 --temperature 1.2 --ddim_eta 1.2
 ```
 
 **Command line arguments**
@@ -150,7 +150,7 @@ python3 ./scripts/generate_images_from_distributions.py -d 4 --params_steps 4 --
 - `-t, --temperature`: Sampling temperature. Defaults to `1.0`.
 - `--ddim_eta`: Amount of noise to readd during the sampling process. Defaults to `0.0`.
 - `--clear_output_dir`: Either to clear or not the output directory before running. Defaults to `False`.
-- `--cuda_device`: CUDA device to use. Defaults to `"cuda:0"`.
+- `--cuda_device`: CUDA device to use. Defaults to `"get_device()"`.
 
 #### Images from temperature range
 
@@ -175,7 +175,7 @@ python3 ./scripts/generate_images_from_temperature_range.py -d 4 --params_range 
 - `--temperature_range`: The range of temperature. Defaults to `[1.0, 4.0]`.
 - `--ddim_eta`: The value of ddim_eta. Defaults to `0.1`.
 - `--clear_output_dir`: Whether to clear the output directory or not. Defaults to `False`.
-- `--cuda_device`: The CUDA device to use. Defaults to `"cuda:0"`.
+- `--cuda_device`: The CUDA device to use. Defaults to `"get_device()"`.
 
 
 #### Images and encodings
@@ -190,7 +190,7 @@ python3 ./scripts/generate_images_and_encodings.py --prompt "An oil painting of 
 - `--batch_size`: How many images to generate at once. Defaults to `1`.
 - `--num_iterations`: How many times to iterate the generation of a batch of images. Defaults to `10`.
 - `--prompt`: The prompt to render. It is an optional argument. Defaults to `"a painting of a cute monkey playing guitar"`.
-- `--cuda_device`: CUDA device to use for generation. Defaults to "cuda:0".
+- `--cuda_device`: CUDA device to use for generation. Defaults to `"get_device()"`.
 
 #### Perturbations on prompts embeddings
 
@@ -204,7 +204,7 @@ Outputs in: `./output/disturbing_embeddings`
 - `--num_iterations`: The number of iterations to batch-generate images. Defaults to `8`.
 - `--seed`: The noise seed used to generate the images. Defaults to `2982`.
 - `--noise_multiplier`: The multiplier for the amount of noise used to disturb the prompt embedding. Defaults to `0.01`.
-- `--cuda_device`: The CUDA device to use. Defaults to `"cuda:0"`.
+- `--cuda_device`: The CUDA device to use. Defaults to `"get_device()"`.
 
 
 #### Random Pormpts Generation and Disturbing Embeddings Image Generation
@@ -222,6 +222,6 @@ python3 ./scripts/data_bounding_box_and_score_and_embedding_dataset.py
 - `batch_size`: The number of images to generate per batch. Defaults to `1`.
 - `seed`: The noise seed used to generate the images. Defaults to `2982`.
 - `noise_multiplier`: The multiplier for the amount of noise used to disturb the prompt embedding. Defaults to `0.008`.
-- `cuda_device`: The CUDA device to use. Defaults to `'cuda:0'`.
+- `cuda_device`: The CUDA device to use. Defaults to `'get_device()'`.
 - `clear_output_dir`: If True, the output directory will be cleared before generating images. Defaults to `False`.
 - `random_walk`: Random walk on the embedding space, with the prompt embedding as origin. Defaults to False.

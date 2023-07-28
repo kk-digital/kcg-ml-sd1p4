@@ -2,8 +2,9 @@ import torch
 from torch import nn
 from stable_diffusion.utils.utils import get_device
 
+
 class ChadPredictorModel(nn.Module):
-    def __init__(self, input_size = 768, device = None):
+    def __init__(self, input_size=768, device=None):
         super().__init__()
         self.input_size = input_size
         self.device = get_device(device)
@@ -22,13 +23,13 @@ class ChadPredictorModel(nn.Module):
             nn.Linear(16, 1)
         )
         self.to(self.device)
+
     def forward(self, x):
         return self.layers(x)
 
 
-
 class ChadPredictor():
-    def __init__(self, input_size=768, device=None):
+    def __init__(self, input_size=768, device=get_device()):
         self.input_size = input_size
         self.device = device
         self.model = None
@@ -36,7 +37,8 @@ class ChadPredictor():
     def load(self, model_path):
         self.model = ChadPredictorModel(input_size=self.input_size, device=self.device)
 
-        state = torch.load(model_path, map_location=torch.device('cpu'))  # load the model you trained previously or the model available in this repo
+        state = torch.load(model_path,
+                           map_location=self.device)  # load the model you trained previously or the model available in this repo
         self.model.load_state_dict(state)
         self.model.eval()
 

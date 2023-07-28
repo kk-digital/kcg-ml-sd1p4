@@ -62,10 +62,10 @@ class CLIPTextEmbedder(nn.Module):
         print("text_model saved to: ", text_model_path)
     
     def load_submodels(self, tokenizer_path = TOKENIZER_PATH, text_model_path = TEXT_MODEL_PATH):
-        
+
         self.tokenizer = CLIPTokenizer.from_pretrained(tokenizer_path, local_files_only=True)
         print(f"Tokenizer successfully loaded from : {tokenizer_path}\n")
-        self.text_model = CLIPTextModel.from_pretrained(text_model_path, local_files_only=True, use_safetensors = True).eval().to(self.device)    
+        self.text_model = CLIPTextModel.from_pretrained(text_model_path, local_files_only=True, use_safetensors = True).eval().to(self.device)
         print(f"CLIP text model successfully loaded from : {text_model_path}\n")
         return self
 
@@ -83,10 +83,10 @@ class CLIPTextEmbedder(nn.Module):
             self.text_model = None
         torch.cuda.empty_cache()
         print("Memory status after the unloading: \n")
-        get_memory_status()        
+        get_memory_status()
 
     def save(self, text_embedder_path: str = TEXT_EMBEDDER_PATH, use_safetensors = True):
-   
+
             st.torch.save_model(self, text_embedder_path, use_safetensors=use_safetensors)
             print(f"CLIPTextEmbedder saved to: {text_embedder_path}")
 
@@ -111,8 +111,8 @@ if __name__ == "__main__":
 
 
 
-    
-    
+
+
     embeddings1 = clip(prompts)
 
     summary(clip.transformer)
