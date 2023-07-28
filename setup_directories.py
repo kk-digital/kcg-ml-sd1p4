@@ -8,7 +8,7 @@ import json
 config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
 parser = argparse.ArgumentParser(description="Setup a config file with the default IO directory structure.")
 
-parser.add_argument("--base_io_directory_prefix", type=str, default="io/")
+parser.add_argument("--base_io_directory_prefix", type=str, default="")
 parser.add_argument("--base_directory", type=str, default="./")
 parser.add_argument("--root_models_prefix", type=str, default="input/model/")
 parser.add_argument("--root_outputs_prefix", type=str, default="output/model/")
@@ -34,7 +34,7 @@ config["BASE"] = {
                     "ROOT_OUTPUTS_PREFIX": f"{ROOT_OUTPUTS_PREFIX}",
                     "MODEL_NAME": f"{MODEL_NAME}",
                     "CLIP_MODEL_NAME": f"{CLIP_MODEL_NAME}",
-                    "CHECKPOINT": CHECKPOINT
+                    "CHECKPOINT": "${MODEL_NAME}.safetensors"
                     }
 
 print("config.ini [BASE]: ", json.dumps({k: v for k, v in config["BASE"].items()}, indent=4))
@@ -52,14 +52,14 @@ IMAGE_ENCODER_DIR = (
 )
 
 config["ROOT_DIRS"] = {
-        'ROOT_MODELS_DIR':  '${BASE:base_io_directory}/${BASE:root_models_prefix}',
-        'ROOT_OUTPUTS_DIR':  '${BASE:base_io_directory}/${BASE:root_outputs_prefix}',
+        'ROOT_MODELS_DIR':  '${BASE:base_io_directory}${BASE:root_models_prefix}',
+        'ROOT_OUTPUTS_DIR':  '${BASE:base_io_directory}${BASE:root_outputs_prefix}',
     }
 
 print_section(config, "ROOT_DIRS")
 config["MODELS_DIRS"] = {
-        'SD_DEFAULT_MODEL_DIR':  '${ROOT_DIRS:ROOT_MODELS_DIR}${BASE:MODEL_NAME}',
-        'CLIP_MODELS_DIR':  '${ROOT_DIRS:ROOT_MODELS_DIR}clip',
+        'SD_DEFAULT_MODEL_DIR':  '${ROOT_DIRS:ROOT_MODELS_DIR}${BASE:MODEL_NAME}/',
+        'CLIP_MODELS_DIR':  '${ROOT_DIRS:ROOT_MODELS_DIR}clip/',
 }
 # config["MODELS_DIRS"] = dict(
 #         SD_DEFAULT_MODEL_DIR = SD_DEFAULT_MODEL_DIR,
@@ -68,8 +68,8 @@ config["MODELS_DIRS"] = {
 
 print_section(config, "MODELS_DIRS")
 config["SUBMODELS_DIRS"] = {
-        'TEXT_EMBEDDER_DIR': '${MODELS_DIRS:CLIP_MODELS_DIR}/text_embedder/',
-        'IMAGE_ENCODER_DIR': '${MODELS_DIRS:CLIP_MODELS_DIR}/image_encoder/'
+        'TEXT_EMBEDDER_DIR': '${MODELS_DIRS:CLIP_MODELS_DIR}text_embedder/',
+        'IMAGE_ENCODER_DIR': '${MODELS_DIRS:CLIP_MODELS_DIR}image_encoder/'
 }
 
 # config["SUBMODELS_DIRS"] = dict(
@@ -114,6 +114,18 @@ config["CLIP_PATHS"] = dict(
         os.path.join(TEXT_EMBEDDER_DIR, CLIP_MODEL_NAME)
     ),
     )
+
 print_section(config, "CLIP_PATHS")
+
 with open('config.ini', 'w') as configfile:
     config.write(configfile)
+    
+    
+def create_directory_tree_folders(config):
+    for section in config.sections():
+        if section.endswith("_DIRS"):
+            for k, v in config[section].items():
+                os.makedirs(v, exist_ok=True)
+        
+if __name__ == "__main__":
+    create_directory_tree_folders(config)
