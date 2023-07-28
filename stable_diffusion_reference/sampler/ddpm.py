@@ -18,7 +18,7 @@ from typing import Optional, List
 import numpy as np
 import torch
 
-from labml import monit
+from utility.labml import monit
 from stable_diffusion_reference.latent_diffusion import LatentDiffusion
 from stable_diffusion_reference.sampler import DiffusionSampler
 

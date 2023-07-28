@@ -44,7 +44,7 @@ from .constants import (
 
 from .utils.utils import get_device
 
-from labml.monit import section
+from utility.labml.monit import section
 
 class UNetWrapper(nn.Module):
     """

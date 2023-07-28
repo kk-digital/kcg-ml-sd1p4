@@ -21,8 +21,8 @@ import numpy as np
 import torch
 from PIL import Image
 
-from labml import monit
-from labml.logger import inspect
+from utility.labml import monit
+from utility.labml.logger import inspect
 from stable_diffusion_reference.latent_diffusion import LatentDiffusion
 from stable_diffusion_reference.model.autoencoder import Encoder, Decoder, Autoencoder
 from stable_diffusion_reference.model.clip_embedder import CLIPTextEmbedder

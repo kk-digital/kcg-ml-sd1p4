@@ -13,7 +13,7 @@ from text_to_image import Txt2Img
 from stable_diffusion.latent_diffusion import LatentDiffusion, DiffusionWrapper
 # from stable_diffusion.latent_diffusion_model import LatentDiffusionModel
 from stable_diffusion.constants import CHECKPOINT_PATH, AUTOENCODER_PATH, UNET_PATH, TEXT_EMBEDDER_PATH, LATENT_DIFFUSION_PATH
-from labml.monit import section
+from utility.labml.monit import section
 from stable_diffusion.utils.utils import save_images, save_image_grid
 from stable_diffusion.utils.model import initialize_autoencoder, initialize_encoder, initialize_decoder, get_device, get_device
 from stable_diffusion.utils.model import initialize_clip_embedder, initialize_tokenizer, initialize_transformer 
