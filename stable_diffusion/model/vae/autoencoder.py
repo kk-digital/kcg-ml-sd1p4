@@ -104,11 +104,11 @@ class Autoencoder(nn.Module):
             return self
         else:
             self.encoder = initialize_encoder(device = self.device)
-            self.encoder.load_state_dict(load_file(encoder_path, device=self.device))
+            self.encoder.load_state_dict(load_file(encoder_path))
             self.encoder.eval()
             print(f"Encoder loaded from: {encoder_path}")
             self.decoder = initialize_encoder(device = self.device)
-            self.decoder.load_state_dict(load_file(decoder_path, device=self.device))
+            self.decoder.load_state_dict(load_file(decoder_path))
             self.decoder.eval()
             print(f"Decoder loaded from: {decoder_path}")
             return self

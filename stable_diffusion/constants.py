@@ -8,7 +8,10 @@ BASE_DIRECTORY = os.getcwd()
 sys.path.insert(0, BASE_DIRECTORY)
 
 config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
-config.read('config.ini')
+if BASE_DIRECTORY.endswith('kcg-ml-sd1p4'):
+    config.read('config.ini')
+else:
+    config.read(BASE_DIRECTORY.split('kcg-ml-sd1p4')[0] + 'kcg-ml-sd1p4/config.ini')
 base = config['BASE']
 
 BASE_IO_DIRECTORY = base.get("base_io_directory")

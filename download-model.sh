@@ -1,7 +1,9 @@
 #!/bin/bash
 
-# Make model directory if not there
-mkdir -p ./input/model
+# Check if the './input/model' directory exists if not create it
+if [ ! -d "./input/model" ]; then
+    mkdir -p "./input/model"
+fi
 
 # Function to construct the download URL for megacmd, based on the Ubuntu version
 get_download_url() {
@@ -37,3 +39,29 @@ if [ -e "$model_path" ]; then
 else
     mega-get --ignore-quota-warn "https://mega.nz/file/AVZnGbzL#EfXN4YINe0Wb7ukiqpCPa7THssugyCQU8pvpMpvxPAw" "$model_path"
 fi
+
+
+#Intall git-lfs
+#On linux
+if [ "$(uname)" == "Darwin" ]; then
+    brew install git-lfs
+elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
+    sudo apt-get install git-lfs
+elif [ "$(expr substr $(uname -s) 1 10)" == "MINGW64_NT" ]; then
+    echo "Windows not needed"
+fi
+
+# Download the clip-vit-large-patch14
+clip_vit_path="io/input/model/clip/text_embedder"
+clip_vit_dir="${clip_vit_path}/clip-vit-large-patch14"
+# check if the clip-vit-large-patch14 directory exists if not create it
+if [ ! -d "$clip_vit_dir" ];
+then
+  cd $clip_vit_path
+  git lfs install
+  git clone https://huggingface.co/openai/clip-vit-large-patch14
+  cd -
+else
+  echo "clip-vit-large-patch14 directory already exists"
+fi
+
