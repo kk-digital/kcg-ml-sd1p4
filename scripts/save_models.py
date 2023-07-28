@@ -30,8 +30,8 @@ sys.path.insert(0, base_directory)
 
 # from labml.logger import inspect
 from labml.monit import section
-from stable_diffusion.constants import CHECKPOINT_PATH, CHECKPOINT_PATH_ST
-from stable_diffusion.constants import ROOT_MODELS_PATH, ROOT_MODELS_PREFIX
+from stable_diffusion.constants import CHECKPOINT_PATH
+from stable_diffusion.constants import ROOT_MODELS_DIR, ROOT_MODELS_PREFIX
 
 
 from stable_diffusion.utils.model import (
@@ -55,23 +55,8 @@ parser = argparse.ArgumentParser(description="")
 
 
 parser.add_argument("-g", "--granularity", type=int, default=0)
-parser.add_argument("--root_models_path", type=str, default=ROOT_MODELS_PATH)
-parser.add_argument("--checkpoint_path", type=str, default=CHECKPOINT_PATH_ST)
-parser.add_argument("-ckpt", "--use_ckpt", type=bool, default=False)
-# parser.add_argument(
-#     "--without_weights",
-#     default=False,
-#     action="store_true",
-#     help="Save the submodels without loading weights from checkpoint",
-# )
-# parser.add_argument("--unet", default=False, action="store_true")
-# parser.add_argument(
-#     "--clip",
-#     default=False,
-#     action="store_true",
-# )
-# parser.add_argument("--vae", default=False, action="store_true")
-# parser.add_argument("--image_encoder", type=bool, default=True)
+parser.add_argument("--root_models_dir", type=str, default=ROOT_MODELS_DIR)
+parser.add_argument("--checkpoint_path", type=str, default=CHECKPOINT_PATH)
 
 args = parser.parse_args()
 
@@ -79,11 +64,7 @@ args = parser.parse_args()
 # print(args)
 GRANULARITY = args.granularity
 CHECKPOINT_PATH_ARG = args.checkpoint_path
-ROOT_MODELS_PATH = args.root_models_path
-SAVE_WITHOUT_WEIGHTS = False
-SAVE_UNET = False
-SAVE_CLIP = False
-SAVE_VAE = False
+ROOT_MODELS_DIR = args.root_models_dir
 IMAGE_ENCODER = True
 USE_CKPT = args.use_ckpt
 print("USE_CKPT", USE_CKPT)
@@ -118,75 +99,101 @@ def create_folder_structure(root_dir: str = ROOT_MODELS_PREFIX) -> None:
 
 
 if __name__ == "__main__":
-    create_folder_structure(root_dir=ROOT_MODELS_PATH)
-    if SAVE_WITHOUT_WEIGHTS:
-        print("saving without weights")
-        if SAVE_CLIP:
-            embedder = initialize_clip_embedder()
-            summary(embedder)
-            with section("save submodels"):
-                embedder.save_submodels()
-            with section("save embedder"):
-                embedder.save()
-        if SAVE_VAE:
-            autoencoder = initialize_autoencoder()
-            summary(autoencoder)
-            with section("save submodels"):
-                autoencoder.save_submodels()
-            with section("save autoencoder"):
-                autoencoder.save()
-        if SAVE_UNET:
-            unet = initialize_unet()
-            summary(unet)
-            with section("save unet"):
-                unet.save()
+    create_folder_structure(root_dir=ROOT_MODELS_DIR)
 
-    else:
-        model = initialize_latent_diffusion(
-            path=CHECKPOINT_PATH_ARG, force_submodels_init=True, use_ckpt=USE_CKPT
-        )
-        summary(model)
-        if GRANULARITY == 0:
-            if IMAGE_ENCODER:
-                with section(
-                    "initialize CLIP image encoder and load submodels from lib"
-                ):
-                    img_encoder = CLIPImageEncoder()
-                    img_encoder.load_from_lib()
-                with section("save image encoder submodels"):
-                    img_encoder.save_submodels()
-                    img_encoder.unload_submodels()
-                    img_encoder.save()
-            with section("save vae submodels"):
-                model.first_stage_model.save_submodels()  # saves autoencoder submodels (encoder, decoder) with loaded state dict
-            with section("unload vae submodels"):
-                model.first_stage_model.unload_submodels()  # unloads autoencoder submodels
-            with section("save embedder submodels"):
-                model.cond_stage_model.save_submodels()  # saves text embedder submodels (tokenizer, transformer) with loaded state dict
-            with section("unload embedder submodels"):
-                model.cond_stage_model.unload_submodels()  # unloads text embedder submodels
-            with section("save latent diffusion submodels"):
-                model.save_submodels()  # saves latent diffusion submodels (autoencoder, clip_embedder, unet) with loaded state dict and unloaded submodels (when it applies)
-            with section("unload latent diffusion submodels"):
-                model.unload_submodels()  # unloads latent diffusion submodels
-            with section("save latent diffusion model"):
-                model.save()  # saves latent diffusion model with loaded state dict and unloaded submodels
-        elif GRANULARITY == 1:
-            if IMAGE_ENCODER:
-                with section(
-                    "initialize CLIP image encoder and load submodels from lib"
-                ):
-                    img_encoder = CLIPImageEncoder()
-                    img_encoder.load_from_lib()
-                with section("save image encoder"):
-                    img_encoder.save()
-                    img_encoder.unload_submodels()
-            with section("save latent diffusion submodels"):
-                model.save_submodels()  # saves latent diffusion submodels (autoencoder, clip_embedder and unet) with loaded state dict loaded submodels
-            with section("unload latent diffusion submodels"):
-                model.unload_submodels()  # unloads latent diffusion submodels
-            with section("save latent diffusion model"):
-                model.save()  # saves latent diffusion model with loaded state dict and unloaded submodels
-        elif GRANULARITY == 2:
-            with section("save latent diffusion model"):
-                model.save()  # saves latent diffusion model with loaded state dict and loaded submodels
+    model = initialize_latent_diffusion(
+        path=CHECKPOINT_PATH_ARG, force_submodels_init=True
+    )
+    summary(model)
+    if GRANULARITY == 0:
+        if IMAGE_ENCODER:
+            with section(
+                "initialize CLIP image encoder and load submodels from lib"
+            ):
+                img_encoder = CLIPImageEncoder()
+                img_encoder.load_from_lib()
+            with section("save image encoder submodels"):
+                img_encoder.save_submodels()
+                img_encoder.unload_submodels()
+                img_encoder.save()
+        with section("save vae submodels"):
+            model.first_stage_model.save_submodels()  # saves autoencoder submodels (encoder, decoder) with loaded state dict
+        with section("unload vae submodels"):
+            model.first_stage_model.unload_submodels()  # unloads autoencoder submodels
+        with section("save embedder submodels"):
+            model.cond_stage_model.save_submodels()  # saves text embedder submodels (tokenizer, transformer) with loaded state dict
+        with section("unload embedder submodels"):
+            model.cond_stage_model.unload_submodels()  # unloads text embedder submodels
+        with section("save latent diffusion submodels"):
+            model.save_submodels()  # saves latent diffusion submodels (autoencoder, clip_embedder, unet) with loaded state dict and unloaded submodels (when it applies)
+        with section("unload latent diffusion submodels"):
+            model.unload_submodels()  # unloads latent diffusion submodels
+        with section("save latent diffusion model"):
+            model.save()  # saves latent diffusion model with loaded state dict and unloaded submodels
+    elif GRANULARITY == 1:
+        if IMAGE_ENCODER:
+            with section(
+                "initialize CLIP image encoder and load submodels from lib"
+            ):
+                img_encoder = CLIPImageEncoder()
+                img_encoder.load_from_lib()
+            with section("save image encoder"):
+                img_encoder.save()
+                img_encoder.unload_submodels()
+        with section("save latent diffusion submodels"):
+            model.save_submodels()  # saves latent diffusion submodels (autoencoder, clip_embedder and unet) with loaded state dict loaded submodels
+        with section("unload latent diffusion submodels"):
+            model.unload_submodels()  # unloads latent diffusion submodels
+        with section("save latent diffusion model"):
+            model.save()  # saves latent diffusion model with loaded state dict and unloaded submodels
+    elif GRANULARITY == 2:
+        with section("save latent diffusion model"):
+            model.save()  # saves latent diffusion model with loaded state dict and loaded submodels
+    model = initialize_latent_diffusion(
+        path=CHECKPOINT_PATH_ARG, force_submodels_init=True
+    )
+    summary(model)
+    if GRANULARITY == 0:
+        if IMAGE_ENCODER:
+            with section(
+                "initialize CLIP image encoder and load submodels from lib"
+            ):
+                img_encoder = CLIPImageEncoder()
+                img_encoder.load_from_lib()
+            with section("save image encoder submodels"):
+                img_encoder.save_submodels()
+                img_encoder.unload_submodels()
+                img_encoder.save()
+        with section("save vae submodels"):
+            model.first_stage_model.save_submodels()  # saves autoencoder submodels (encoder, decoder) with loaded state dict
+        with section("unload vae submodels"):
+            model.first_stage_model.unload_submodels()  # unloads autoencoder submodels
+        with section("save embedder submodels"):
+            model.cond_stage_model.save_submodels()  # saves text embedder submodels (tokenizer, transformer) with loaded state dict
+        with section("unload embedder submodels"):
+            model.cond_stage_model.unload_submodels()  # unloads text embedder submodels
+        with section("save latent diffusion submodels"):
+            model.save_submodels()  # saves latent diffusion submodels (autoencoder, clip_embedder, unet) with loaded state dict and unloaded submodels (when it applies)
+        with section("unload latent diffusion submodels"):
+            model.unload_submodels()  # unloads latent diffusion submodels
+        with section("save latent diffusion model"):
+            model.save()  # saves latent diffusion model with loaded state dict and unloaded submodels
+    elif GRANULARITY == 1:
+        if IMAGE_ENCODER:
+            with section(
+                "initialize CLIP image encoder and load submodels from lib"
+            ):
+                img_encoder = CLIPImageEncoder()
+                img_encoder.load_from_lib()
+            with section("save image encoder"):
+                img_encoder.save()
+                img_encoder.unload_submodels()
+        with section("save latent diffusion submodels"):
+            model.save_submodels()  # saves latent diffusion submodels (autoencoder, clip_embedder and unet) with loaded state dict loaded submodels
+        with section("unload latent diffusion submodels"):
+            model.unload_submodels()  # unloads latent diffusion submodels
+        with section("save latent diffusion model"):
+            model.save()  # saves latent diffusion model with loaded state dict and unloaded submodels
+    elif GRANULARITY == 2:
+        with section("save latent diffusion model"):
+            model.save()  # saves latent diffusion model with loaded state dict and loaded submodels

@@ -19,6 +19,7 @@ from typing import List
 
 import torch
 import torch.nn.functional as F
+from safetensors.torch import save_file
 from torch import nn
 from .auxiliary_classes import *
 import os
@@ -87,8 +88,11 @@ class Decoder(nn.Module):
         self.norm_out = normalization(channels)
         self.conv_out = nn.Conv2d(channels, out_channels, 3, stride=1, padding=1)
 
-    def save(self, decoder_path: str = DECODER_PATH):
-        torch.save(self, decoder_path)
+    def save(self, decoder_path: str = DECODER_PATH, use_safetensors = True):
+        if use_safetensors:
+            save_file(self.state_dict(), decoder_path)
+        else:
+            torch.save(self, decoder_path)
 
     def forward(self, z: torch.Tensor):
         """

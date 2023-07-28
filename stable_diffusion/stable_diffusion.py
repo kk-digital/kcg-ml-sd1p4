@@ -10,7 +10,6 @@ from stable_diffusion.sampler.ddpm import DDPMSampler
 from stable_diffusion.utils.model import initialize_latent_diffusion
 from stable_diffusion.utils.utils import (
     get_device,
-    get_device,
     load_img,
     get_memory_status,
     set_seed,
@@ -22,7 +21,7 @@ from stable_diffusion.constants import LATENT_DIFFUSION_PATH
 from labml.monit import section
 from typing import Union, Optional
 from pathlib import Path
-
+from safetensors.torch import load_file, save_file
 
 class ModelLoadError(Exception):
     pass
@@ -49,6 +48,7 @@ class StableDiffusion:
         :param n_steps: is the number of sampling steps
         :param ddim_eta: is the [DDIM sampling](../sampler/ddim.html) $\eta$ constant
         """
+
         self._device = get_device(device)
         self._model = model
         self._ddim_steps = ddim_steps
@@ -61,6 +61,10 @@ class StableDiffusion:
             print(
                 "WARNING: `LatentDiffusion` model is `None` given. Initialize one with the appropriate method."
             )
+        elif type(self._model) == LatentDiffusion:
+            
+            print("LatentDiffusion model given. Initializing sampler.")
+            self.model = self._model
             # print("WARNING: LatentDiffusion model not given. An empty model will be initialized.")
 
     @property
@@ -211,10 +215,15 @@ class StableDiffusion:
 
         return x
 
-    def load_model(self, model_path=LATENT_DIFFUSION_PATH):
+    def load_model(self, model_path=LATENT_DIFFUSION_PATH, use_safetensors = True):
         with section(f"Latent Diffusion model loading, from {model_path}"):
-            self.model = torch.load(model_path, map_location=self.device)
-            self.model.eval()
+            if not use_safetensors:
+                self.model = torch.load(model_path, map_location=self.device)
+                self.model.eval()
+                return self.model
+            else:
+                self.model = self.quick_initialize().load_state_dict(load_file(model_path, device=self.device))
+                return self.model
 
     def unload_model(self):
         # del self.model.autoencoder.encoder
@@ -224,9 +233,12 @@ class StableDiffusion:
         del self.model.model
         torch.cuda.empty_cache()
 
-    def save_model(self, model_path=LATENT_DIFFUSION_PATH):
+    def save_model(self, model_path=LATENT_DIFFUSION_PATH, use_safetensors = True):
         with section(f"Latent Diffusion model saving, to {model_path}"):
-            torch.save(self.model, model_path)
+            if not use_safetensors:
+                torch.save(self.model, model_path)
+            else:
+                save_file(self.model.state_dict(), model_path)
 
     def initialize_from_model(self, model: LatentDiffusion):
         self.model = model

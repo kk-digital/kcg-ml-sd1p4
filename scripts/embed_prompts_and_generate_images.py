@@ -18,7 +18,7 @@ from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
 from chad_score import ChadPredictor
 from stable_diffusion import StableDiffusion
-from stable_diffusion.constants import ModelsPathTree
+from stable_diffusion.constants import IODirectoryTree
 from stable_diffusion.utils.utils import (
     get_device,
     get_memory_status,
@@ -114,7 +114,7 @@ CLEAR_OUTPUT_DIR = args.clear_output_dir
 RANDOM_WALK = args.random_walk
 os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
 
-pt = ModelsPathTree(base_directory=base_dir)
+pt = IODirectoryTree(base_directory=base_dir)
 
 try:
     shutil.rmtree(OUTPUT_DIR)
@@ -129,7 +129,7 @@ else:
     os.makedirs(IMAGES_DIR, exist_ok=True)
 
 
-def init_stable_diffusion(device, pt, sampler_name="ddim", n_steps=20, ddim_eta=0.0):
+def init_stable_diffusion(device, path_tree: IODirectoryTree, sampler_name="ddim", n_steps=20, ddim_eta=0.0):
     device = get_device(device)
 
     stable_diffusion = StableDiffusion(
@@ -137,8 +137,8 @@ def init_stable_diffusion(device, pt, sampler_name="ddim", n_steps=20, ddim_eta=
     )
 
     stable_diffusion.quick_initialize()
-    stable_diffusion.model.load_unet(**pt.unet)
-    stable_diffusion.model.load_autoencoder(**pt.autoencoder).load_decoder(**pt.decoder)
+    stable_diffusion.model.load_unet(**path_tree.unet)
+    stable_diffusion.model.load_autoencoder(**path_tree.autoencoder).load_decoder(**path_tree.decoder)
 
     return stable_diffusion
 
@@ -275,7 +275,7 @@ def get_image_features(
 
 
 def main():
-    pt = ModelsPathTree(base_directory=base_dir)
+    pt = IODirectoryTree(base_directory=base_dir)
     embedded_prompts, null_prompt = embed_and_save_prompts(PROMPT)
     sd = init_stable_diffusion(DEVICE, pt, n_steps=20, sampler_name="ddim", ddim_eta=0.0)
 

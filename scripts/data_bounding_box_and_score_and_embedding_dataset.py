@@ -23,7 +23,7 @@ from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
 from chad_score import ChadPredictor
 from stable_diffusion import StableDiffusion
-from stable_diffusion.constants import ModelsPathTree
+from stable_diffusion.constants import IODirectoryTree
 from stable_diffusion.utils.utils import (
     get_device,
     get_memory_status,
@@ -124,7 +124,7 @@ SAVE_EMBEDDINGS = args.save_embeddings
 CLEAR_OUTPUT_DIR = args.clear_output_dir
 os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
 
-pt = ModelsPathTree(base_directory=base_dir)
+pt = IODirectoryTree(base_directory=base_dir)
 
 
 try: 
@@ -139,7 +139,9 @@ else:
     os.makedirs(FEATURES_DIR, exist_ok=True)
     os.makedirs(IMAGES_DIR, exist_ok=True)
 
-def init_stable_diffusion(device, pt, sampler_name="ddim", n_steps=20, ddim_eta=0.0):
+
+def init_stable_diffusion(device, path_tree: IODirectoryTree, sampler_name="ddim", n_steps=20, ddim_eta=0.0):
+
     device = get_device(device)
 
     stable_diffusion = StableDiffusion(
@@ -147,8 +149,8 @@ def init_stable_diffusion(device, pt, sampler_name="ddim", n_steps=20, ddim_eta=
     )
 
     stable_diffusion.quick_initialize()
-    stable_diffusion.model.load_unet(**pt.unet)
-    stable_diffusion.model.load_autoencoder(**pt.autoencoder).load_decoder(**pt.decoder)
+    stable_diffusion.model.load_unet(**path_tree.unet)
+    stable_diffusion.model.load_autoencoder(**path_tree.autoencoder).load_decoder(**path_tree.decoder)
 
     return stable_diffusion
 
@@ -163,7 +165,11 @@ def generate_prompt():
 
 def embed_and_save_prompts(clip_text_embedder, prompt: str, i: int, null_prompt = NULL_PROMPT):
 
-    null_prompt = null_prompt
+
+    clip_text_embedder = CLIPTextEmbedder(device=get_device())
+    clip_text_embedder.load_submodels()
+
+
     null_cond = clip_text_embedder(null_prompt)
 
     torch.save(null_cond, join(EMBEDDED_PROMPTS_DIR, f"null_cond.pt"))
@@ -271,7 +277,7 @@ def get_image_features(
 
 def main():
     
-    pt = ModelsPathTree(base_directory=base_dir)
+    pt = IODirectoryTree(base_directory=base_dir)
     sd = init_stable_diffusion(DEVICE, pt, n_steps=20, sampler_name="ddim", ddim_eta=0.0)
     clip_text_embedder = CLIPTextEmbedder(device=DEVICE)
     clip_text_embedder.load_submodels()
@@ -303,7 +309,7 @@ def main():
     image_encoder = CLIPImageEncoder(device=DEVICE)
     image_encoder.load_clip_model(**pt.clip_model)
     image_encoder.initialize_preprocessor()
-    
+
     predictor = ChadPredictor(768, device=DEVICE)
     predictor.load(SCORER_CHECKPOINT_PATH)
 

@@ -194,7 +194,8 @@ def get_device(device=None):
                  lambda x: logger.info(f'Using CUDA device {x.index}: {torch.cuda.get_device_name(x)}')],
         'mps': [torch.backends.mps.is_available, lambda _: logger.info('Using MPS device')],
         'cpu': [lambda: True, lambda x: logger.warning(
-            f'You are running this script without CUDA or MPS (current device: {x}). It may be very slow')]
+            f'You are running this script without CUDA or MPS (current device: {x}). It may be very slow')
+]
     }
 
     if device is None or device not in device_priority:

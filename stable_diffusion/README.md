@@ -37,8 +37,8 @@ python3 ./scripts/save_models.py
 **Command line arguments**
 
 - `-g, --granularity`: Determines the height in the model tree on which to save the submodels. Defaults to `0`, saving all submodels of the `LatentDiffusion` class and all submodels thereof. If `1` is given, it saves only up to the first level, i.e., autoencoder, UNet and CLIP text embedder. *Note*: that the other scripts and notebooks expect this to be ran with `0`.
-- `--root_models_path`: Base directory for the models' folder structure. Defaults to the constant `ROOT_MODELS_PATH`, which is expected to be `./input/model/`.
-- `--checkpoint_path`: Relative path of the checkpoint file (*.ckpt). Defaults to the constant `CHECKPOINT_PATH`, which is expected to be `'./input/model/v1-5-pruned-emaonly.ckpt' = os.path.join(ROOT_MODELS_PATH, 'v1-5-pruned-emaonly.ckpt')`.
+- `--root_models_path`: Base directory for the models' folder structure. Defaults to the constant `ROOT_MODELS_DIR`, which is expected to be `./input/model/`.
+- `--checkpoint_path`: Relative path of the checkpoint file (*.ckpt). Defaults to the constant `CHECKPOINT_PATH`, which is expected to be `'./input/model/v1-5-pruned-emaonly.ckpt' = os.path.join(ROOT_MODELS_DIR, 'v1-5-pruned-emaonly.ckpt')`.
 
 ## Running `stable_diffusion` scripts
 
