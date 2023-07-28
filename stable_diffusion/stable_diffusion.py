@@ -18,7 +18,7 @@ from stable_diffusion.utils.utils import (
 from stable_diffusion.latent_diffusion import LatentDiffusion
 from stable_diffusion.sampler import DiffusionSampler
 from stable_diffusion.constants import LATENT_DIFFUSION_PATH
-from labml.monit import section
+from utility.labml.monit import section
 from typing import Union, Optional
 from pathlib import Path
 from safetensors.torch import load_file, save_file

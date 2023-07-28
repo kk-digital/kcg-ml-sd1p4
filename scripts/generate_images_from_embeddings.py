@@ -21,7 +21,7 @@ from stable_diffusion.constants import (
     TEXT_MODEL_PATH,
 )
 from stable_diffusion.stable_diffusion import StableDiffusion
-from labml.monit import section
+from utility.labml.monit import section
 from stable_diffusion.utils.utils import save_image_grid, save_images, get_device
 
 from os.path import join

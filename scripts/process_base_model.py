@@ -28,8 +28,8 @@ from PIL import Image
 base_directory = "./"
 sys.path.insert(0, base_directory)
 
-# from labml.logger import inspect
-from labml.monit import section
+# from utility.labml.logger import inspect
+from utility.labml.monit import section
 from stable_diffusion.constants import CHECKPOINT_PATH
 from stable_diffusion.constants import ROOT_MODELS_DIR, ROOT_MODELS_PREFIX
 
@@ -40,7 +40,7 @@ from stable_diffusion.utils.model import (
     initialize_unet,
     initialize_latent_diffusion,
 )
-# from labml.monit import section
+# from utility.labml.monit import section
 
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
 

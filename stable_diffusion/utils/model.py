@@ -26,7 +26,7 @@ from stable_diffusion.constants import TEXT_EMBEDDER_PATH, TOKENIZER_PATH, TEXT_
 from stable_diffusion.constants import UNET_PATH
 from stable_diffusion.constants import LATENT_DIFFUSION_PATH
 
-from labml.monit import section
+from utility.labml.monit import section
 
 from stable_diffusion.latent_diffusion import LatentDiffusion
 from stable_diffusion.model.vae import Autoencoder, Encoder, Decoder
