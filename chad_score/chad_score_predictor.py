@@ -29,7 +29,7 @@ class ChadPredictorModel(nn.Module):
 
 
 class ChadPredictor():
-    def __init__(self, input_size=768, device=None):
+    def __init__(self, input_size=768, device=get_device()):
         self.input_size = input_size
         self.device = device
         self.model = None
