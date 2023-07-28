@@ -72,7 +72,7 @@ LATENT_DIFFUSION_PATH = (
 )
 
 # def create_directory_tree_paths(base_io_directory: str = BASE_IO_DIRECTORY, base_directory: str = BASE_DIRECTORY, model_name = MODEL, clip_model_name = CLIP_MODEL, root_models_prefix: str = ROOT_MODELS_PREFIX, root_outputs_prefix: str = ROOT_OUTPUTS_PREFIX, checkpoint_format = ".safetensors"):
-def create_directory_tree_paths(config: configparser.ConfigParser):
+def create_directory_tree_folders(config: configparser.ConfigParser):
 
 
     for k, v in config["ROOT_DIRS"].items():
