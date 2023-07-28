@@ -1,10 +1,12 @@
 from pathlib import PurePath
 from typing import Dict, List, Optional, Callable, Union, Tuple
+import os, sys
+sys.path.append(os.path.dirname(__file__))
 
-from labml.internal import util
-from labml.internal.lab import lab_singleton, LabYamlNotfoundError
-from labml.internal.util import strings
-from labml.internal.util.colors import StyleCode
+from internal import util
+from internal.lab import lab_singleton, LabYamlNotfoundError
+from internal.util import strings
+from internal.util.colors import StyleCode
 from .indicators import Indicator
 from .indicators.factory import load_indicator_from_dict, create_default_indicator
 from .indicators.numeric import Scalar

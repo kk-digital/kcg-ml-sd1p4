@@ -1,6 +1,8 @@
 from typing import List, Union, Tuple, Optional
+import sys
+sys.path.append("./")
 
-from labml.internal.util.colors import StyleCode
+from utility.labml.internal.util.colors import StyleCode
 
 
 class Destination:

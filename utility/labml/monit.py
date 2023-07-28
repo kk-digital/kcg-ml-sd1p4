@@ -1,9 +1,12 @@
+import os,sys
 import functools
 from typing import Iterable, Sized, Collection, Callable, Tuple, Any, Dict
 from typing import Union, Optional, overload
 
-from labml.internal.monitor import TimeSummary
-from labml.internal.monitor import monitor_singleton as _internal
+sys.path.append(os.path.dirname(__file__))
+
+from internal.monitor import TimeSummary
+from internal.monitor import monitor_singleton as _internal
 
 
 def clear():

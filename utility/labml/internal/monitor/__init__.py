@@ -1,7 +1,9 @@
 import typing
 from typing import Optional, List, Union, Tuple
+import sys, os
+sys.path.append(os.path.dirname(__file__))
 
-from labml.internal.util.colors import StyleCode
+from internal.util.colors import StyleCode
 from .iterator import Iterator
 from .loop import Loop
 from .mix import Mix

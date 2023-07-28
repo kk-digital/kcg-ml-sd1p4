@@ -1,6 +1,8 @@
 from typing import Union, List, Tuple, overload, Dict
+import os, sys
+sys.path.append(os.path.dirname(__file__))
 
-from labml.internal.util.colors import StyleCode
+from internal.util.colors import StyleCode
 
 
 class Style(StyleCode):
