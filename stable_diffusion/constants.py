@@ -8,11 +8,8 @@ BASE_DIRECTORY = os.getcwd()
 sys.path.insert(0, BASE_DIRECTORY)
 
 config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
-config.read("../config.ini")
-
-base = config["BASE"]
-
-
+config.read('config.ini')
+base = config['BASE']
 
 BASE_IO_DIRECTORY = base.get("base_io_directory")
 BASE_IO_DIRECTORY_PREFIX = base.get("base_io_directory_prefix")
