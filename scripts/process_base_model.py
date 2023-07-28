@@ -53,10 +53,10 @@ except:
 
 parser = argparse.ArgumentParser(description="")
 
-
+parser.add_argument("checkpoint_path", type=str, default=CHECKPOINT_PATH)
+parser.add_argument("--use_ckpt", type=int, default=False)
 parser.add_argument("-g", "--granularity", type=int, default=0)
 parser.add_argument("--root_models_dir", type=str, default=ROOT_MODELS_DIR)
-parser.add_argument("--checkpoint_path", type=str, default=CHECKPOINT_PATH)
 
 args = parser.parse_args()
 
@@ -67,7 +67,7 @@ CHECKPOINT_PATH_ARG = args.checkpoint_path
 ROOT_MODELS_DIR = args.root_models_dir
 IMAGE_ENCODER = True
 USE_CKPT = args.use_ckpt
-print("USE_CKPT", USE_CKPT)
+
 if USE_CKPT and not ".ckpt" in CHECKPOINT_PATH_ARG:
     print("WARNING: .ckpt used but CHECKPOINT_PATH does not contain .ckpt")
     print("Defaulting to configured default .ckpt checkpoint path")

@@ -39,7 +39,7 @@ This script initializes a `LatentDiffusion` module, load its weights from a chec
 **Note**: saving these models will take an extra ~5GB of storage.
 
 ```bash
-python3 ./scripts/save_models.py
+python scripts/process_base_model.py input/model/v1-5-pruned-emaonly.safetensors
 ```
 
 **Command line arguments**
@@ -91,7 +91,7 @@ python3 ./scripts/text_to_image.py --prompt "character, chibi, waifu, side scrol
 
 ## Running `stable_diffusion` scripts
 
-There are five other new scripts besides `scripts/save_models.py`.
+There are five other new scripts besides `scripts/process_base_model.py`.
 
 #### Embed prompts
 
