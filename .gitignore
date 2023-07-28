@@ -154,3 +154,4 @@ data.json
 
 # ignore pycharm
 .idea
+/io/input/model/clip/text_embedder/clip-vit-large-patch14/

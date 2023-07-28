@@ -74,11 +74,9 @@ class CLIPTextEmbedder(nn.Module):
         print("Memory status before unloading submodels: \n")
         get_memory_status()
         if self.tokenizer is not None:
-            self.tokenizer.to("cpu")
             del self.tokenizer
             self.tokenizer = None
         if self.text_model is not None:
-            self.text_model.to("cpu")
             del self.text_model
             self.text_model = None
         torch.cuda.empty_cache()
