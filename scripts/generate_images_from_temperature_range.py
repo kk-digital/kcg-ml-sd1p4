@@ -4,6 +4,8 @@ import torch
 import shutil
 import argparse
 
+from stable_diffusion.utils_backend import get_device
+
 sys.path.insert(0, os.getcwd())
 from auxiliary_functions import get_torch_distribution_from_name
 from stable_diffusion.utils_image import save_image_grid, save_images
@@ -54,7 +56,7 @@ parser.add_argument("--temperature_steps", type=int, default=3)
 parser.add_argument("--temperature_range", nargs="+", type=float, default=[1.0, 4.0])
 parser.add_argument("--ddim_eta", type=float, default=0.1)
 parser.add_argument("--clear_output_dir", type=bool, default=False)
-parser.add_argument("--cuda_device", type=str, default="cuda:0")
+parser.add_argument("--cuda_device", type=str, default=None)
 
 args = parser.parse_args()
 
@@ -71,7 +73,7 @@ TEMPERATURE_STEPS = args.temperature_steps
 TEMPERATURE_RANGE = args.temperature_range
 DDIM_ETA = args.ddim_eta
 CLEAR_OUTPUT_DIR = args.clear_output_dir
-DEVICE = args.cuda_device
+DEVICE = get_device(args.cuda_device)
 
 TEMP_RANGE = torch.linspace(*TEMPERATURE_RANGE, TEMPERATURE_STEPS)
 
