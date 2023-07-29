@@ -2,8 +2,7 @@ import argparse
 import os, sys
 
 sys.path.append(os.path.join(".", "stable_diffusion/utils"))
-from stable_diffusion_reference.utils.cli import check_folder_existence, check_file_existence
-
+from stable_diffusion_reference.cli import check_folder_existence, check_file_existence
 from typing import Union, Callable
 
 

@@ -3,20 +3,15 @@ import torch
 import shutil
 import argparse
 import sys
-
+from tqdm import tqdm
 base_directory = "./"
 sys.path.insert(0, base_directory)
 
-from tqdm import tqdm
-
 from auxiliary_functions import get_torch_distribution_from_name
-
-# from text_to_image import Txt2Img
-
 from stable_diffusion.stable_diffusion import StableDiffusion
 from stable_diffusion.constants import CHECKPOINT_PATH
-from utility.labml.monit import section
-from stable_diffusion.utils.utils import save_image_grid, save_images, get_device
+from stable_diffusion.utils_backend import get_device
+from stable_diffusion.utils_image import save_images, save_image_grid
 
 OUTPUT_DIR = os.path.abspath("./output/noise-tests/from_distributions")
 
@@ -105,7 +100,7 @@ DISTRIBUTIONS = {
 
 
 def create_folder_structure(
-    distributions_dict: dict, root_dir: str = OUTPUT_DIR
+        distributions_dict: dict, root_dir: str = OUTPUT_DIR
 ) -> None:
     for i, distribution_name in enumerate(distributions_dict.keys()):
         distribution_outputs = os.path.join(root_dir, distribution_name)
@@ -147,13 +142,13 @@ def show_summary(total_time, partial_time, total_images, output_dir):
 
 
 def generate_images_from_dist_dict(
-    stable_diffusion: StableDiffusion,
-    distributions: dict,
-    output_dir: str = OUTPUT_DIR,
-    clear_output_dir: bool = CLEAR_OUTPUT_DIR,
-    prompt: str = PROMPT,
-    batch_size: int = BATCH_SIZE,
-    temperature: float = TEMPERATURE,
+        stable_diffusion: StableDiffusion,
+        distributions: dict,
+        output_dir: str = OUTPUT_DIR,
+        clear_output_dir: bool = CLEAR_OUTPUT_DIR,
+        prompt: str = PROMPT,
+        batch_size: int = BATCH_SIZE,
+        temperature: float = TEMPERATURE,
 ):
     # Clear the output directory
     if clear_output_dir:
@@ -172,13 +167,13 @@ def generate_images_from_dist_dict(
     img_counter = 0
 
     for distribution_index, (distribution_name, params) in enumerate(
-        distributions.items()
+            distributions.items()
     ):
-        
+
         with torch.no_grad():
             with tqdm(
-                total=total_images,
-                desc="Generating images",
+                    total=total_images,
+                    desc="Generating images",
             ) as pbar:
                 print(f"Generating images for {distribution_name}")
                 noise_fn = (
@@ -192,7 +187,7 @@ def generate_images_from_dist_dict(
                 grid_rows = []
 
                 for seed_index, noise_seed in enumerate(NOISE_SEEDS):
-                    p_bar_description = f"Generating image {img_counter+1} of {total_images}. Distribution: {DIST_NAME}{params}"
+                    p_bar_description = f"Generating image {img_counter + 1} of {total_images}. Distribution: {DIST_NAME}{params}"
                     pbar.set_description(p_bar_description)
 
                     # image_name = f"n{noise_seed:04d}_d{distribution_name}p{'_'.join(list(params.values())):04d}.jpg"

@@ -4,31 +4,19 @@ import argparse
 import torch
 import hashlib
 import json
-import clip
 import shutil
-import math
 import random
-import numpy.random as npr
+from os.path import join
 
 base_dir = "./"
 sys.path.insert(0, base_dir)
-
-from typing import List
-from os.path import join
-
+from stable_diffusion.utils_backend import get_device, get_memory_status
+from stable_diffusion.utils_image import to_pil
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
 from chad_score import ChadPredictor
 from stable_diffusion import StableDiffusion
 from stable_diffusion.constants import IODirectoryTree
-from stable_diffusion.utils.utils import (
-    get_device,
-    get_memory_status,
-    to_pil,
-    save_image_grid,
-    show_image_grid,
-    set_seed
-)
 
 EMBEDDED_PROMPTS_DIR = os.path.abspath("./input/embedded_prompts/")
 OUTPUT_DIR = "./output/data/"
@@ -37,12 +25,7 @@ IMAGES_DIR = join(OUTPUT_DIR, "images/")
 # SCORER_CHECKPOINT_PATH = os.path.abspath("./input/model/aesthetic_scorer/sac+logos+ava1-l14-linearMSE.pth")
 SCORER_CHECKPOINT_PATH = os.path.abspath("./input/model/aesthetic_scorer/chadscorer.pth")
 
-
-
 # DEVICE = input("Set device: 'cuda:i' or 'cpu'")
-
-
-
 
 
 parser = argparse.ArgumentParser("Embed prompts using CLIP")
@@ -142,8 +125,7 @@ os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
 
 pt = IODirectoryTree(base_directory=base_dir)
 
-
-try: 
+try:
     shutil.rmtree(OUTPUT_DIR)
 except Exception as e:
     print(e, "\n", "Creating the paths...")
@@ -157,7 +139,6 @@ else:
 
 
 def init_stable_diffusion(device, path_tree: IODirectoryTree, sampler_name="ddim", n_steps=DDIM_STEPS, ddim_eta=0.0):
-
     device = get_device(device)
 
     stable_diffusion = StableDiffusion(
@@ -171,8 +152,7 @@ def init_stable_diffusion(device, path_tree: IODirectoryTree, sampler_name="ddim
     return stable_diffusion
 
 
-def embed_and_save_prompts(prompts: str, null_prompt = NULL_PROMPT):
-
+def embed_and_save_prompts(prompts: str, null_prompt=NULL_PROMPT):
     null_prompt = null_prompt
     prompts = prompts
 
@@ -185,55 +165,56 @@ def embed_and_save_prompts(prompts: str, null_prompt = NULL_PROMPT):
         "Null prompt embedding saved at: ",
         f"{join(EMBEDDED_PROMPTS_DIR, 'null_cond.pt')}")
 
-def generate_prompts_from_lists():
-    word_lists = dict(nouns = list(map(str.lower, ['Castle',
-            'Adventure',
-            'Journalist',
-            'Enchanted forest',
-            'Mystery',
-            'Musician',
-            'Abandoned spaceship',
-            'Secret passage',
-            'Detective',
-            'Time-traveling device'
-            ])),
-    adjectives = list(map(str.lower, ['Haunted',
-                'Mysterious',
-                'Whimsical',
-                'Perilous',
-                'Curious',
-                'Haunting',
-                'Futuristic',
-                'Enigmatic',
-                'Eerie',
-                'Courageous',
-                'Intriguing'
-                ])),
-    verbs = list(map(str.lower, ['Uncover',
-        'Embarks',
-        'Investigates',
-        'Encounters',
-        'Unravels',
-        'Composes',
-        'Discovers',
-        'Navigates',
-        'Confronts',
-        'Reveals',
-        'Explores'
-        ])),
-    themes = list(map(str.lower, ['Love and sacrifice',
-    'A journey of self-discovery',
-    'Redemption and forgiveness',
-    'An unexpected friendship',
-    'The power of dreams',
-    'Facing fears and overcoming challenges',
-    'Betrayal and revenge',
-    'Parallel universes',
-    'The pursuit of truth and justice',
-    'The consequences of time travel',
-    ]))
 
-    )
+def generate_prompts_from_lists():
+    word_lists = dict(nouns=list(map(str.lower, ['Castle',
+                                                 'Adventure',
+                                                 'Journalist',
+                                                 'Enchanted forest',
+                                                 'Mystery',
+                                                 'Musician',
+                                                 'Abandoned spaceship',
+                                                 'Secret passage',
+                                                 'Detective',
+                                                 'Time-traveling device'
+                                                 ])),
+                      adjectives=list(map(str.lower, ['Haunted',
+                                                      'Mysterious',
+                                                      'Whimsical',
+                                                      'Perilous',
+                                                      'Curious',
+                                                      'Haunting',
+                                                      'Futuristic',
+                                                      'Enigmatic',
+                                                      'Eerie',
+                                                      'Courageous',
+                                                      'Intriguing'
+                                                      ])),
+                      verbs=list(map(str.lower, ['Uncover',
+                                                 'Embarks',
+                                                 'Investigates',
+                                                 'Encounters',
+                                                 'Unravels',
+                                                 'Composes',
+                                                 'Discovers',
+                                                 'Navigates',
+                                                 'Confronts',
+                                                 'Reveals',
+                                                 'Explores'
+                                                 ])),
+                      themes=list(map(str.lower, ['Love and sacrifice',
+                                                  'A journey of self-discovery',
+                                                  'Redemption and forgiveness',
+                                                  'An unexpected friendship',
+                                                  'The power of dreams',
+                                                  'Facing fears and overcoming challenges',
+                                                  'Betrayal and revenge',
+                                                  'Parallel universes',
+                                                  'The pursuit of truth and justice',
+                                                  'The consequences of time travel',
+                                                  ]))
+
+                      )
     num_words_classes = 4
     classes = ['nouns', 'adjectives', 'verbs', 'themes']
     # prompt_seq = random.sample(['nouns', 'adjectives', 'verbs', 'themes'], num_words_classes)
@@ -246,17 +227,16 @@ def generate_prompts_from_lists():
 
 
 def generate_image_from_disturbed_embeddings(
-    sd: StableDiffusion,
-    embedded_prompts: torch.Tensor,
-    null_prompt: torch.Tensor,
-    device=DEVICE,
-    seed=SEED,
-    num_iterations=NUM_ITERATIONS,
-    noise_multiplier=NOISE_MULTIPLIER,
-    max_noise_steps = MAX_NOISE_STEPS,
-    batch_size=BATCH_SIZE
+        sd: StableDiffusion,
+        embedded_prompts: torch.Tensor,
+        null_prompt: torch.Tensor,
+        device=DEVICE,
+        seed=SEED,
+        num_iterations=NUM_ITERATIONS,
+        noise_multiplier=NOISE_MULTIPLIER,
+        max_noise_steps=MAX_NOISE_STEPS,
+        batch_size=BATCH_SIZE
 ):
-    
     num_prompts = len(embedded_prompts)
     prompt_index = random.choice(range(0, num_prompts))
     num_noise_steps = random.choice(range(0, max_noise_steps))
@@ -264,7 +244,7 @@ def generate_image_from_disturbed_embeddings(
     print("prompt index: ", prompt_index)
     print("num noise steps: ", num_noise_steps)
     embedded_prompt = embedded_prompts[prompt_index].to(device).unsqueeze(0)
-   
+
     dist = torch.distributions.normal.Normal(
         loc=embedded_prompt.mean(dim=2), scale=embedded_prompt.std(dim=2)
     )
@@ -274,17 +254,18 @@ def generate_image_from_disturbed_embeddings(
             dist.sample(sample_shape=torch.Size([768]))
         ).permute(1, 0, 2).permute(0, 2, 1).to(device)
         print(noise_i.shape)
-        noise_t = noise_t + (noise_multiplier * noise_i)   
+        noise_t = noise_t + (noise_multiplier * noise_i)
 
     embedding_e = embedded_prompt + noise_t
     image_e = sd.generate_images_from_embeddings(
-        seed=seed, 
-        embedded_prompt=embedding_e, 
-        null_prompt=null_prompt, 
+        seed=seed,
+        embedded_prompt=embedding_e,
+        null_prompt=null_prompt,
         batch_size=batch_size
     )
-        
+
     return (image_e, embedding_e, prompt_index, num_noise_steps)
+
 
 def calculate_sha256(tensor):
     if tensor.device == "cpu":
@@ -298,7 +279,7 @@ def calculate_sha256(tensor):
 if __name__ == "__main__":
 
     pt = IODirectoryTree(base_directory=base_dir)
-    
+
     clip_text_embedder = CLIPTextEmbedder(device=get_device(DEVICE))
     clip_text_embedder.load_submodels()
 
@@ -308,12 +289,12 @@ if __name__ == "__main__":
         "Null prompt embedding saved at: ",
         f"{join(EMBEDDED_PROMPTS_DIR, 'null_prompt.pt')}",
     )
-    sd = init_stable_diffusion(DEVICE, pt, n_steps=DDIM_STEPS)    
-    
+    sd = init_stable_diffusion(DEVICE, pt, n_steps=DDIM_STEPS)
+
     image_encoder = CLIPImageEncoder(device=DEVICE)
     image_encoder.load_clip_model(**pt.clip_model)
     image_encoder.initialize_preprocessor()
-    
+
     loaded_model = torch.load(SCORER_CHECKPOINT_PATH)
     predictor = ChadPredictor(768, device=DEVICE)
     predictor.load_state_dict(loaded_model)
@@ -337,19 +318,18 @@ if __name__ == "__main__":
         print(f"prompt {i}: ", prompt)
         print("num noise steps: ", num_noise_steps)
 
-        
         embedded_prompt = clip_text_embedder(prompt)
         torch.save(embedded_prompt, join(EMBEDDED_PROMPTS_DIR, f"embedded_prompt_{i}.pt"))
-    
+
         print(
             "Prompts embeddings saved at: ",
             f"{join(EMBEDDED_PROMPTS_DIR, f'embedded_prompt_{i}.pt')}",
-            )
-        
+        )
+
         dist = torch.distributions.normal.Normal(
             loc=embedded_prompt.mean(dim=2), scale=embedded_prompt.std(dim=2)
         )
-        
+
         noise_t = torch.zeros_like(embedded_prompt).to(DEVICE)
 
         for k in range(num_noise_steps):
@@ -361,9 +341,9 @@ if __name__ == "__main__":
         embedding = embedded_prompt + noise_t
 
         image = sd.generate_images_from_embeddings(
-            seed=SEED, 
-            embedded_prompt=embedding, 
-            null_prompt=null_prompt, 
+            seed=SEED,
+            embedded_prompt=embedding,
+            null_prompt=null_prompt,
             batch_size=BATCH_SIZE
         )
         # embedded_prompt.cpu()
@@ -372,14 +352,14 @@ if __name__ == "__main__":
         # embedding
         get_memory_status()
         # images_tensors.append(image.cpu().detach())
-        #compute hash
+        # compute hash
         img_hash = calculate_sha256(image.squeeze())
         pil_image = to_pil(image.squeeze())
-        #compute aesthetic score
+        # compute aesthetic score
         prep_img = image_encoder.preprocess_input(pil_image)
         image_features = image_encoder(prep_img)
         image_features /= image_features.norm(dim=-1, keepdim=True)
-        score = predictor(image_features.to(DEVICE).float()).cpu()
+        score = predictor.model(image_features.to(DEVICE).float()).cpu()
         img_file_name = f"image_{img_counter:06d}.png"
         img_path = join(IMAGES_DIR, img_file_name)
         pil_image.save(img_path)
@@ -391,11 +371,11 @@ if __name__ == "__main__":
             torch.save(embedding, embedding_path)
             print(f"Embedding saved at: {embedding_path}")
 
-        manifest_i = {                     
-                        "file-name": img_file_name,
-                        "file-path": "./images/"+img_file_name,
-                        "file-hash": img_hash,
-                    }
+        manifest_i = {
+            "file-name": img_file_name,
+            "file-path": "./images/" + img_file_name,
+            "file-hash": img_hash,
+        }
         manifest.append(manifest_i)
 
         scores_i = manifest_i.copy()
@@ -418,13 +398,13 @@ if __name__ == "__main__":
         image_features.cpu()
         del image_features
 
-        if i%64 == 0:
+        if i % 64 == 0:
             json.dump(json_output, open(json_output_path, "w"), indent=4)
             print(f"features.json saved at: {json_output_path}")
-            
+
             json.dump(scores, open(scores_path, "w"), indent=4)
             print(f"scores.json saved at: {scores_path}")
-            
+
             json.dump(manifest, open(manifest_path, "w"), indent=4)
             print(f"manifest.json saved at: {manifest_path}")
         img_counter += 1

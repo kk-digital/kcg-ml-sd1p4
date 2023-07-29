@@ -13,37 +13,20 @@ summary: >
 else saves latent diffusion model with state dict loaded from checkpoint
 """
 
-import random
 import os
 import sys
 import argparse
-from pathlib import Path
-from typing import Union
-
-import PIL
-import numpy as np
-import torch
-from PIL import Image
 
 base_directory = "./"
 sys.path.insert(0, base_directory)
 
-# from utility.labml.logger import inspect
 from utility.labml.monit import section
 from stable_diffusion.constants import CHECKPOINT_PATH
 from stable_diffusion.constants import ROOT_MODELS_DIR, ROOT_MODELS_PREFIX
-
-
-from stable_diffusion.utils.model import (
-    initialize_autoencoder,
-    initialize_clip_embedder,
-    initialize_unet,
+from stable_diffusion.utils_model import (
     initialize_latent_diffusion,
 )
-# from utility.labml.monit import section
-
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
-
 
 try:
     from torchinfo import summary
@@ -60,7 +43,6 @@ parser.add_argument("--root_models_dir", type=str, default=ROOT_MODELS_DIR)
 
 args = parser.parse_args()
 
-
 # print(args)
 GRANULARITY = args.granularity
 CHECKPOINT_PATH_ARG = args.checkpoint_path
@@ -72,6 +54,7 @@ if USE_CKPT and not ".ckpt" in CHECKPOINT_PATH_ARG:
     print("WARNING: .ckpt used but CHECKPOINT_PATH does not contain .ckpt")
     print("Defaulting to configured default .ckpt checkpoint path")
     CHECKPOINT_PATH_ARG = CHECKPOINT_PATH
+
 
 def create_folder_structure(root_dir: str = ROOT_MODELS_PREFIX) -> None:
     embedder_submodels_folder = os.path.abspath(
@@ -108,7 +91,7 @@ if __name__ == "__main__":
     if GRANULARITY == 0:
         if IMAGE_ENCODER:
             with section(
-                "initialize CLIP image encoder and load submodels from lib"
+                    "initialize CLIP image encoder and load submodels from lib"
             ):
                 img_encoder = CLIPImageEncoder()
                 img_encoder.load_from_lib()
@@ -133,7 +116,7 @@ if __name__ == "__main__":
     elif GRANULARITY == 1:
         if IMAGE_ENCODER:
             with section(
-                "initialize CLIP image encoder and load submodels from lib"
+                    "initialize CLIP image encoder and load submodels from lib"
             ):
                 img_encoder = CLIPImageEncoder()
                 img_encoder.load_from_lib()
@@ -156,7 +139,7 @@ if __name__ == "__main__":
     if GRANULARITY == 0:
         if IMAGE_ENCODER:
             with section(
-                "initialize CLIP image encoder and load submodels from lib"
+                    "initialize CLIP image encoder and load submodels from lib"
             ):
                 img_encoder = CLIPImageEncoder()
                 img_encoder.load_from_lib()
@@ -181,7 +164,7 @@ if __name__ == "__main__":
     elif GRANULARITY == 1:
         if IMAGE_ENCODER:
             with section(
-                "initialize CLIP image encoder and load submodels from lib"
+                    "initialize CLIP image encoder and load submodels from lib"
             ):
                 img_encoder = CLIPImageEncoder()
                 img_encoder.load_from_lib()

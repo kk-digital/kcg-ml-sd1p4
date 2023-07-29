@@ -1,5 +1,6 @@
 import os
 
+
 def check_folder_existence(folder_path: str):
     """
     ### Check if a folder exists
@@ -7,6 +8,7 @@ def check_folder_existence(folder_path: str):
     :param folder_path: is the path of the folder
     """
     os.makedirs(folder_path, exist_ok=True)
+
 
 def check_file_existence(file_path: str):
     """

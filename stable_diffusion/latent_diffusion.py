@@ -39,11 +39,7 @@ from .constants import (
     TOKENIZER_PATH,
     TEXT_MODEL_PATH,
 )
-
-# from .utils.model import initialize_autoencoder, initialize_clip_embedder, initialize_unet
-
-from .utils.utils import get_device
-
+from .utils_backend import get_device
 from utility.labml.monit import section
 
 class UNetWrapper(nn.Module):
@@ -78,15 +74,15 @@ class LatentDiffusion(nn.Module):
     clip_embedder: CLIPTextEmbedder
 
     def __init__(
-        self,
-        latent_scaling_factor: float,
-        n_steps: int,
-        linear_start: float,
-        linear_end: float,
-        unet_model: UNetModel = None,
-        autoencoder: Autoencoder = None,
-        clip_embedder: CLIPTextEmbedder = None,
-        device=None,
+            self,
+            latent_scaling_factor: float,
+            n_steps: int,
+            linear_start: float,
+            linear_end: float,
+            unet_model: UNetModel = None,
+            autoencoder: Autoencoder = None,
+            clip_embedder: CLIPTextEmbedder = None,
+            device=None,
     ):
         """
         :param unet_model: is the [U-Net](model/unet.html) that predicts noise
@@ -117,10 +113,10 @@ class LatentDiffusion(nn.Module):
 
         # $\beta$ schedule
         beta = (
-            torch.linspace(
-                linear_start**0.5, linear_end**0.5, n_steps, dtype=torch.float64
-            )
-            ** 2
+                torch.linspace(
+                    linear_start ** 0.5, linear_end ** 0.5, n_steps, dtype=torch.float64
+                )
+                ** 2
         )
         self.beta = nn.Parameter(beta.to(torch.float32), requires_grad=False)
         # $\alpha_t = 1 - \beta_t$
@@ -143,11 +139,11 @@ class LatentDiffusion(nn.Module):
         return self.model
 
     def save_submodels(
-        self,
-        autoencoder_path=AUTOENCODER_PATH,
-        embedder_path=TEXT_EMBEDDER_PATH,
-        unet_path=UNET_PATH,
-        use_safetensors = True
+            self,
+            autoencoder_path=AUTOENCODER_PATH,
+            embedder_path=TEXT_EMBEDDER_PATH,
+            unet_path=UNET_PATH,
+            use_safetensors=True
     ):
         if not use_safetensors:
             self.first_stage_model.save(autoencoder_path=autoencoder_path)
@@ -158,20 +154,20 @@ class LatentDiffusion(nn.Module):
             save_file(self.cond_stage_model.state_dict(), embedder_path)
             save_file(self.model.diffusion_model.state_dict(), unet_path)
 
-    def save(self, latent_diffusion_path=LATENT_DIFFUSION_PATH, use_safetensors = True):
+    def save(self, latent_diffusion_path=LATENT_DIFFUSION_PATH, use_safetensors=True):
         if not use_safetensors:
             torch.save(self, latent_diffusion_path)
         else:
             save_file(self.state_dict(), latent_diffusion_path)
 
-    def load_autoencoder(self, autoencoder_path=AUTOENCODER_PATH, use_safetensors = True):
+    def load_autoencoder(self, autoencoder_path=AUTOENCODER_PATH, use_safetensors=True):
         if not use_safetensors:
             self.first_stage_model = torch.load(autoencoder_path, map_location=self.device)
             self.first_stage_model.eval()
             print(f"Autoencoder loaded from: {autoencoder_path}")
             return self.first_stage_model
         else:
-            self.first_stage_model = initialize_autoencoder(device = self.device)
+            self.first_stage_model = initialize_autoencoder(device=self.device)
             self.first_stage_model.load_state_dict(load_file(autoencoder_path))
             self.first_stage_model.eval()
             print(f"Autoencoder loaded from: {autoencoder_path}")
@@ -182,14 +178,14 @@ class LatentDiffusion(nn.Module):
         torch.cuda.empty_cache()
         self.first_stage_model = None
 
-    def load_unet(self, unet_path=UNET_PATH, use_safetensors = True):
+    def load_unet(self, unet_path=UNET_PATH, use_safetensors=True):
         if not use_safetensors:
             unet = torch.load(unet_path, map_location=self.device)
             unet.eval()
             self.model = UNetWrapper(unet)
             return self.model
         else:
-            unet = initialize_unet(device = self.device)
+            unet = initialize_unet(device=self.device)
             unet.load_state_dict(load_file(unet_path))
             unet.eval()
             self.model = UNetWrapper(unet)
@@ -211,11 +207,11 @@ class LatentDiffusion(nn.Module):
         self.cond_stage_model = None
 
     def load_submodels(
-        self,
-        autoencoder_path=AUTOENCODER_PATH,
-        embedder_path=TEXT_EMBEDDER_PATH,
-        unet_path=UNET_PATH,
-        use_safetensors = True
+            self,
+            autoencoder_path=AUTOENCODER_PATH,
+            embedder_path=TEXT_EMBEDDER_PATH,
+            unet_path=UNET_PATH,
+            use_safetensors=True
     ):
         """
         ### Load the model from a checkpoint
@@ -230,28 +226,28 @@ class LatentDiffusion(nn.Module):
             )
             return self
         else:
-            self.first_stage_model = initialize_autoencoder(device = self.device, force_submodels_init=True)
+            self.first_stage_model = initialize_autoencoder(device=self.device, force_submodels_init=True)
             self.first_stage_model.load_state_dict(load_file(autoencoder_path))
             self.first_stage_model.eval()
-            self.cond_stage_model = initialize_clip_embedder(device = self.device, force_submodels_init=True)
+            # TODO: Resolve the circular dependency between latent_diffusion.py and utils_model.py
+            self.cond_stage_model = initialize_clip_embedder(device=self.device, force_submodels_init=True)
             self.cond_stage_model.load_state_dict(load_file(embedder_path))
             self.cond_stage_model.eval()
-            unet = initialize_unet(device = self.device).eval()
+            unet = initialize_unet(device=self.device).eval()
             unet.load_state_dict(load_file(unet_path))
             self.model = UNetWrapper(unet)
             return self
 
-
     def load_submodel_tree(
-        self,
-        encoder_path=ENCODER_PATH,
-        decoder_path=DECODER_PATH,
-        autoencoder_path=AUTOENCODER_PATH,
-        embedder_path=TEXT_EMBEDDER_PATH,
-        tokenizer_path=TOKENIZER_PATH,
-        transformer_path=TEXT_MODEL_PATH,
-        unet_path=UNET_PATH,
-        use_safetensors = True,
+            self,
+            encoder_path=ENCODER_PATH,
+            decoder_path=DECODER_PATH,
+            autoencoder_path=AUTOENCODER_PATH,
+            embedder_path=TEXT_EMBEDDER_PATH,
+            tokenizer_path=TOKENIZER_PATH,
+            transformer_path=TEXT_MODEL_PATH,
+            unet_path=UNET_PATH,
+            use_safetensors=True,
     ):
         with section("load submodel tree"):
             if not use_safetensors:
@@ -272,7 +268,7 @@ class LatentDiffusion(nn.Module):
                 )
                 return self
             else:
-                self.first_stage_model = initialize_autoencoder(device = self.device).load_submodels(use_safetensors=use_safetensors)
+                self.first_stage_model = initialize_autoencoder(device=self.device).load_submodels(use_safetensors=use_safetensors)
                 self.first_stage_model.load_state_dict(load_file(autoencoder_path))
                 self.first_stage_model.eval()
                 self.cond_stage_model = torch.load(embedder_path, map_location=self.device)
@@ -280,11 +276,10 @@ class LatentDiffusion(nn.Module):
                 self.cond_stage_model.load_submodels(
                     tokenizer_path=tokenizer_path, transformer_path=transformer_path
                 )
-                unet = initialize_unet(device = self.device).eval()
+                unet = initialize_unet(device=self.device).eval()
                 unet.load_state_dict(load_file(unet_path))
-                self.model = UNetWrapper(unet)                
+                self.model = UNetWrapper(unet)
                 return self
-    
 
     def unload_submodels(self):
         del self.first_stage_model
@@ -309,7 +304,7 @@ class LatentDiffusion(nn.Module):
         We sample from that and multiply by the scaling factor.
         """
         return (
-            self.latent_scaling_factor * self.first_stage_model.encode(image).sample()
+                self.latent_scaling_factor * self.first_stage_model.encode(image).sample()
         )
 
     def autoencoder_decode(self, z: torch.Tensor):
@@ -331,59 +326,61 @@ class LatentDiffusion(nn.Module):
         """
         return self.model(x, t, context)
 
-def initialize_encoder(device = None, 
-                        z_channels=4,
-                        in_channels=3,
-                        channels=128,
-                        channel_multipliers=[1, 2, 4, 4],
-                        n_resnet_blocks=2) -> Encoder:
-    
+
+def initialize_encoder(device=None,
+                       z_channels=4,
+                       in_channels=3,
+                       channels=128,
+                       channel_multipliers=[1, 2, 4, 4],
+                       n_resnet_blocks=2) -> Encoder:
     with section('encoder initialization'):
         device = get_device(device)
-    # Initialize the encoder
+        # Initialize the encoder
         encoder = Encoder(z_channels=z_channels,
-                        in_channels=in_channels,
-                        channels=channels,
-                        channel_multipliers=channel_multipliers,
-                        n_resnet_blocks=n_resnet_blocks).to(device)
+                          in_channels=in_channels,
+                          channels=channels,
+                          channel_multipliers=channel_multipliers,
+                          n_resnet_blocks=n_resnet_blocks).to(device)
     return encoder
 
-def initialize_decoder(device = None, 
-                        out_channels=3,
-                        z_channels=4,
-                        channels=128,
-                        channel_multipliers=[1, 2, 4, 4],
-                        n_resnet_blocks=2) -> Decoder:
-    
+
+def initialize_decoder(device=None,
+                       out_channels=3,
+                       z_channels=4,
+                       channels=128,
+                       channel_multipliers=[1, 2, 4, 4],
+                       n_resnet_blocks=2) -> Decoder:
     with section('decoder initialization'):
         device = get_device(device)
         decoder = Decoder(out_channels=out_channels,
-                        z_channels=z_channels,
-                        channels=channels,
-                        channel_multipliers=channel_multipliers,
-                        n_resnet_blocks=n_resnet_blocks).to(device)    
+                          z_channels=z_channels,
+                          channels=channels,
+                          channel_multipliers=channel_multipliers,
+                          n_resnet_blocks=n_resnet_blocks).to(device)
     return decoder
     # Initialize the autoencoder    
 
-    
-def initialize_autoencoder(device = None, encoder = None, decoder = None, emb_channels = 4, z_channels = 4, force_submodels_init = False) -> Autoencoder:
+
+def initialize_autoencoder(device=None, encoder=None, decoder=None, emb_channels=4, z_channels=4,
+                           force_submodels_init=False) -> Autoencoder:
     # Initialize the autoencoder
-    
-    with section(f'autoencoder initialization'):
+
+    with section('autoencoder initialization'):
         device = get_device(device)
         if force_submodels_init:
             if encoder is None:
                 encoder = initialize_encoder(device=device, z_channels=z_channels)
             if decoder is None:
                 decoder = initialize_decoder(device=device, z_channels=z_channels)
-        
+
         autoencoder = Autoencoder(emb_channels=emb_channels,
-                                    encoder=encoder,
-                                    decoder=decoder,
-                                    z_channels=z_channels).to(device)
+                                  encoder=encoder,
+                                  decoder=decoder,
+                                  z_channels=z_channels).to(device)
     return autoencoder
 
-def initialize_unet(device = None, 
+
+def initialize_unet(device=None,
                     in_channels=4,
                     out_channels=4,
                     channels=320,
@@ -393,19 +390,18 @@ def initialize_unet(device = None,
                     n_heads=8,
                     tf_layers=1,
                     d_cond=768) -> UNetModel:
-
     # Initialize the U-Net
     device = get_device(device)
     with section('U-Net initialization'):
         unet_model = UNetModel(in_channels=in_channels,
-                                out_channels=out_channels,
-                                channels=channels,
-                                attention_levels=attention_levels,
-                                n_res_blocks=n_res_blocks,
-                                channel_multipliers=channel_multipliers,
-                                n_heads=n_heads,
-                                tf_layers=tf_layers,
-                                d_cond=d_cond).to(device)
-            # unet_model.save()
-            # torch.save(unet_model, UNET_PATH)
+                               out_channels=out_channels,
+                               channels=channels,
+                               attention_levels=attention_levels,
+                               n_res_blocks=n_res_blocks,
+                               channel_multipliers=channel_multipliers,
+                               n_heads=n_heads,
+                               tf_layers=tf_layers,
+                               d_cond=d_cond).to(device)
+        # unet_model.save()
+        # torch.save(unet_model, UNET_PATH)
     return unet_model

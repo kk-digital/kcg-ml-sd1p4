@@ -2,29 +2,26 @@ import os
 import sys
 import shutil
 import torch
-import time
-from tqdm import tqdm
 import numpy as np
 import json
-import hashlib
-
 from os.path import join
+from PIL import Image
 
 base_directory = "./"
 sys.path.insert(0, base_directory)
 
 from stable_diffusion.stable_diffusion import StableDiffusion
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
-from stable_diffusion.utils.utils import save_images, get_device, calculate_sha256
-
 from cli_builder import CLI
-from PIL import Image
+from stable_diffusion.utils_backend import get_device
+from stable_diffusion.utils_image import calculate_sha256
 
 noise_seeds = [2982, 4801, 1995, 3598, 987, 3688, 8872, 762]
 
 OUTPUT_DIR = "./output/stable_diffusion/"
 FEATURES_DIR = join(OUTPUT_DIR, "features/")
 IMAGES_DIR = join(OUTPUT_DIR, "images/")
+
 
 def init_stable_diffusion(device, sampler_name="ddim", n_steps=20, ddim_eta=0.0):
     device = get_device(device)
@@ -53,13 +50,13 @@ def show_summary(total_time, partial_time, total_images, output_dir):
 
 # main function, called when the script is run
 def generate_images(
-    prompt: str = "An oil painting of a computer generated image of a geometric pattern",
-    output_base_dir: str = OUTPUT_DIR ,
-    sampler_name: str = "ddim",
-    n_steps: int = 20,
-    batch_size: int = 1,
-    num_iterations: int = 10,
-    device=None,
+        prompt: str = "An oil painting of a computer generated image of a geometric pattern",
+        output_base_dir: str = OUTPUT_DIR,
+        sampler_name: str = "ddim",
+        n_steps: int = 20,
+        batch_size: int = 1,
+        num_iterations: int = 10,
+        device=None,
 ):
     images_dir = os.path.join(output_base_dir, "images/")
     shutil.rmtree(images_dir, ignore_errors=True)
@@ -99,7 +96,7 @@ def generate_images(
                 img_dest_path = os.path.join(images_dir, image_name)
                 # img_hash = hashlib.sha256(img.tobytes())
                 img = Image.fromarray((255.0 * img).astype(np.uint8))
-                
+
                 img.save(img_dest_path)
                 print(f"Saved image at {img_dest_path}.jpg")
                 prep_img = image_encoder.preprocess_input(img)
@@ -111,12 +108,12 @@ def generate_images(
                 # )
                 # print(f"Saved clip vector at {clip_vector_dest_path}")
                 manifest_img_path = "./images/" + image_name
-                manifest_i =    {                     
-                                    "file-name": image_name,
-                                    "file-hash": image_hash,
-                                    "file-path": manifest_img_path,
-                                    # "clip-vector-path": clip_vector_dest_path,
-                                }
+                manifest_i = {
+                    "file-name": image_name,
+                    "file-hash": image_hash,
+                    "file-path": manifest_img_path,
+                    # "clip-vector-path": clip_vector_dest_path,
+                }
                 features_i = manifest_i.copy()
                 features_i["clip-vector"] = clip_vector.tolist()
 

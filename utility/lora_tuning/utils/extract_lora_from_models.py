@@ -5,7 +5,7 @@
 import argparse
 import os
 import torch
-from safetensors.torch import load_file, save_file
+from safetensors.torch import save_file
 from tqdm import tqdm
 import library.model_util as model_util
 import lora

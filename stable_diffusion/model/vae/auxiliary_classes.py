@@ -1,8 +1,7 @@
-from typing import List
-
 import torch
 import torch.nn.functional as F
 from torch import nn
+
 
 class GaussianDistribution:
     """
@@ -86,6 +85,7 @@ class UpSample(nn.Module):
     """
     ## Up-sampling layer
     """
+
     def __init__(self, channels: int):
         """
         :param channels: is the number of channels
@@ -108,6 +108,7 @@ class DownSample(nn.Module):
     """
     ## Down-sampling layer
     """
+
     def __init__(self, channels: int):
         """
         :param channels: is the number of channels
@@ -130,6 +131,7 @@ class ResnetBlock(nn.Module):
     """
     ## ResNet Block
     """
+
     def __init__(self, in_channels: int, out_channels: int):
         """
         :param in_channels: is the number of channels in the input

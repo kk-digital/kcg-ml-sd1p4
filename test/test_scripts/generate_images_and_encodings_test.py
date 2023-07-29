@@ -1,19 +1,9 @@
-import os
 import sys
-import shutil
-import torch
-import time
-from tqdm import tqdm
-import numpy as np
-import json
-import hashlib
-
-from os.path import join
 
 base_directory = "./"
 sys.path.insert(0, base_directory)
-
 from scripts.generate_images_and_encodings import generate_images
+
 
 def test_generate_images_and_encodings():
     prompt = 'human, tall, salt, food, table, stake, centered, cartoon'
