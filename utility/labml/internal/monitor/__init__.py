@@ -1,17 +1,19 @@
 import typing
 from typing import Optional, List, Union, Tuple
+import sys, os
+sys.path.append("./")
 
-from labml.internal.util.colors import StyleCode
-from .iterator import Iterator
-from .loop import Loop
-from .mix import Mix
-from .sections import Section, OuterSection
-from .time_recorder import TimeRecorder, Summary as TimeSummary
-from ..logger import logger_singleton as logger
-from ..logger.types import LogPart
-from ..tracker import tracker_singleton as tracker
-from ...logger import Text
-from ...utils.notice import labml_notice
+from utility.labml.internal.util.colors import StyleCode
+from utility.labml.internal.monitor.iterator import Iterator
+from utility.labml.internal.monitor.loop import Loop
+from utility.labml.internal.monitor.mix import Mix
+from utility.labml.internal.monitor.sections import Section, OuterSection
+from utility.labml.internal.monitor.time_recorder import TimeRecorder, Summary as TimeSummary
+from utility.labml.internal.logger import logger_singleton as logger
+from utility.labml.internal.logger.types import LogPart
+from utility.labml.internal.tracker import tracker_singleton as tracker
+from utility.labml.logger import Text
+from utility.labml.utils.notice import labml_notice
 
 
 class Monitor:

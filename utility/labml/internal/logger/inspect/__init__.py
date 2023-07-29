@@ -1,9 +1,11 @@
 import collections
 import math
 from typing import TYPE_CHECKING, List, Tuple
+import sys
+sys.path.append("./")
 
-from labml.internal.util.colors import StyleCode
-from ....logger import Text
+from utility.labml.internal.util.colors import StyleCode
+from utility.labml.logger import Text
 
 if TYPE_CHECKING:
     from . import Logger
