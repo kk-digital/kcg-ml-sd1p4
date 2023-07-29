@@ -22,9 +22,9 @@ sys.path.insert(0, os.getcwd())
 from typing import List
 import torch
 from torch import nn
-from transformers import CLIPTokenizer, CLIPTextModel
+from transformers import CLIPTokenizer, CLIPTextModel, CLIPTextConfig
 
-import safetensors as st
+import safetensors
 
 from stable_diffusion.constants import TEXT_EMBEDDER_PATH, TOKENIZER_PATH, TEXT_MODEL_PATH
 from stable_diffusion.utils.utils import get_device, get_memory_status
@@ -37,7 +37,7 @@ class CLIPTextEmbedder(nn.Module):
     ## CLIP Text Embedder
     """
 
-    def __init__(self, path_tree = None, device=None, max_length: int = 77, tokenizer = None, text_model = None):
+    def __init__(self, path_tree = None, device=None, max_length: int = 77, tokenizer = None, transformer = None):
         """
         :param version: is the model version
         :param device: is the device
@@ -50,23 +50,33 @@ class CLIPTextEmbedder(nn.Module):
         self.device = get_device(device)
 
         self.tokenizer = tokenizer
-        self.text_model = text_model
+        self.transformer = transformer
         
         self.max_length = max_length
         self.to(self.device)
 
-    def save_submodels(self, tokenizer_path: str = TOKENIZER_PATH, text_model_path: str = TEXT_MODEL_PATH):
-        self.tokenizer.save_pretrained(tokenizer_path, safe_serialization=True)
-        print("tokenizer saved to: ", tokenizer_path)
-        self.text_model.save_pretrained(text_model_path, safe_serialization=True)
-        print("text_model saved to: ", text_model_path)
+    def init_submodels(self, tokenizer_path: str = TOKENIZER_PATH, transformer_path: str = TEXT_MODEL_PATH):
+        
+        config = CLIPTextConfig.from_pretrained(transformer_path, local_files_only=True)
+        self.transformer = CLIPTextModel(config).eval().to(self.device)
+        
+        return self
+        
+    def save_submodels(self, tokenizer_path: str = TOKENIZER_PATH, transformer_path: str = TEXT_MODEL_PATH):
+        # self.tokenizer.save_pretrained(tokenizer_path, safe_serialization=True)
+        # print("tokenizer saved to: ", tokenizer_path)
+        self.transformer.save_pretrained(transformer_path, safe_serialization=True)
+        # safetensors.torch.save_model(self.transformer, os.path.join(transformer_path, '/model.safetensors'))
+        print("transformer saved to: ", transformer_path)
     
-    def load_submodels(self, tokenizer_path = TOKENIZER_PATH, text_model_path = TEXT_MODEL_PATH):
+    def load_submodels(self, tokenizer_path = TOKENIZER_PATH, transformer_path = TEXT_MODEL_PATH):
         
         self.tokenizer = CLIPTokenizer.from_pretrained(tokenizer_path, local_files_only=True)
         print(f"Tokenizer successfully loaded from : {tokenizer_path}\n")
-        self.text_model = CLIPTextModel.from_pretrained(text_model_path, local_files_only=True, use_safetensors = True).eval().to(self.device)    
-        print(f"CLIP text model successfully loaded from : {text_model_path}\n")
+        self.transformer = CLIPTextModel.from_pretrained(transformer_path, local_files_only=True, use_safetensors = True).eval().to(self.device)  
+        # self.init_submodels(tokenizer_path = tokenizer_path, transformer_path = transformer_path)
+        # safetensors.torch.load_model(self.transformer, os.path.join(transformer_path, '/model.safetensors'))
+        print(f"CLIP text model successfully loaded from : {transformer_path}\n")
         return self
 
     def unload_submodels(self):
@@ -77,17 +87,17 @@ class CLIPTextEmbedder(nn.Module):
             self.tokenizer.to("cpu")
             del self.tokenizer
             self.tokenizer = None
-        if self.text_model is not None:
-            self.text_model.to("cpu")
-            del self.text_model
-            self.text_model = None
+        if self.transformer is not None:
+            self.transformer.to("cpu")
+            del self.transformer
+            self.transformer = None
         torch.cuda.empty_cache()
         print("Memory status after the unloading: \n")
         get_memory_status()        
 
-    def save(self, text_embedder_path: str = TEXT_EMBEDDER_PATH, use_safetensors = True):
+    def save(self, text_embedder_path: str = TEXT_EMBEDDER_PATH):
    
-            st.torch.save_model(self, text_embedder_path, use_safetensors=use_safetensors)
+            safetensors.torch.save_model(self, text_embedder_path)
             print(f"CLIPTextEmbedder saved to: {text_embedder_path}")
 
     def forward(self, prompts: List[str]):
@@ -101,7 +111,7 @@ class CLIPTextEmbedder(nn.Module):
         tokens = batch_encoding["input_ids"].to(self.device)
         
         # Get CLIP embeddings
-        return self.text_model(input_ids=tokens).last_hidden_state
+        return self.transformer(input_ids=tokens).last_hidden_state
 #%%
 
 if __name__ == "__main__":
