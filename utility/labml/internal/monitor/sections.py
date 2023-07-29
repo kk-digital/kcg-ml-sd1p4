@@ -2,13 +2,13 @@ import math
 import time
 from typing import TYPE_CHECKING, List
 import os,sys
-sys.path.append(os.path.dirname(__file__))
+sys.path.append("./")
 
-from logger import Text
-from ..tracker import tracker_singleton as tracker
+from utility.labml.logger import Text
+from utility.labml.internal.tracker import tracker_singleton as tracker
 
 if TYPE_CHECKING:
-    from ..monitor import Monitor
+    from utility.labml.internal.monitor import Monitor
 
 
 class Section:
