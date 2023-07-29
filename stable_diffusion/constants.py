@@ -156,7 +156,17 @@ class IODirectoryTree:
             os.path.join(self.root_models_dir, "clip")
         )
         self.models_dirs.append(self.clip_models_dir)
+        self.text_embedder_dir = (
+            os.path.join(self.clip_models_dir, "text_embedder")
+        )
+        self.models_dirs.append(self.text_embedder_dir)
         
+        self.image_encoder_dir = (
+            os.path.join(
+                self.clip_models_dir, "image_encoder"
+            )
+        )        
+        self.models_dirs.append(self.image_encoder_dir)
         self.model_outputs_dir = (
             os.path.join(self.root_outputs_dir, self.model_name)
         )
@@ -168,36 +178,31 @@ class IODirectoryTree:
         
         self.submodels_dirs = []
             
-        self.text_embedder_dir = (
-            os.path.join(self.clip_models_dir, "text_embedder")
-        )
-        self.submodels_dirs.append(self.text_embedder_dir)
-        self.text_embedder_path = (
-            os.path.join(self.clip_models_dir, "text_embedder.safetensors")
-        )
         self.tokenizer_path = (
             os.path.join(
                 self.text_embedder_dir, "tokenizer"
             )
         )
+        self.submodels_dirs.append(self.tokenizer_path)
+        
         self.text_model_path = (
             os.path.join(
-                self.text_embedder_dir, self.clip_model_name
+                self.text_embedder_dir, 'text_model'
             )
+        )        
+        
+        self.submodels_dirs.append(self.text_model_path)
+        
+        self.text_embedder_path = (
+            os.path.join(self.clip_models_dir, "text_embedder.safetensors")
         )
+        
 
         self.image_encoder_path = (
             os.path.join(
                 self.clip_models_dir, "image_encoder.safetensors"
             )
         )
-
-        self.image_encoder_dir = (
-            os.path.join(
-                self.clip_models_dir, "image_encoder"
-            )
-        )
-        self.submodels_dirs.append(self.image_encoder_dir)
         self.clip_model_path = (
             os.path.join(self.image_encoder_dir, "clip_model.ckpt")
         )
