@@ -12,7 +12,7 @@ import torch
 from utility.labml import monit
 
 from stable_diffusion_base_script import StableDiffusionBaseScript
-from stable_diffusion_reference.utils.model import save_images, set_seed, get_autocast
+from stable_diffusion_reference.utils_model import save_images, set_seed, get_autocast
 from cli_builder import CLI
 
 class Img2Img(StableDiffusionBaseScript):

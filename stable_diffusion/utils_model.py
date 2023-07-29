@@ -8,75 +8,62 @@ summary: >
 # Utility functions for [stable diffusion](index.html)
 """
 
-
-from pathlib import Path
-from typing import Union, BinaryIO, List, Optional
-
-
-import PIL
-import numpy as np
 import torch
-import torchvision
+from pathlib import Path
+from typing import Union
 
-from PIL import Image
 from safetensors.torch import load_file
-
 from stable_diffusion.constants import AUTOENCODER_PATH, ENCODER_PATH, DECODER_PATH
 from stable_diffusion.constants import TEXT_EMBEDDER_PATH, TOKENIZER_PATH, TEXT_MODEL_PATH
 from stable_diffusion.constants import UNET_PATH
 from stable_diffusion.constants import LATENT_DIFFUSION_PATH
-
+from stable_diffusion.utils_backend import get_device
 from utility.labml.monit import section
-
 from stable_diffusion.latent_diffusion import LatentDiffusion
 from stable_diffusion.model.vae import Autoencoder, Encoder, Decoder
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion.model.unet import UNetModel
-
-from stable_diffusion.utils.utils import get_device
-
 from transformers import CLIPTokenizer, CLIPTextModel
 
-# from stable_diffusion.model.unet import UNetModel
 
-def initialize_encoder(device = None, 
-                        z_channels=4,
-                        in_channels=3,
-                        channels=128,
-                        channel_multipliers=[1, 2, 4, 4],
-                        n_resnet_blocks=2) -> Encoder:
-    
+def initialize_encoder(device=None,
+                       z_channels=4,
+                       in_channels=3,
+                       channels=128,
+                       channel_multipliers=[1, 2, 4, 4],
+                       n_resnet_blocks=2) -> Encoder:
     with section('encoder initialization'):
         device = get_device(device)
-    # Initialize the encoder
+        # Initialize the encoder
         encoder = Encoder(z_channels=z_channels,
-                        in_channels=in_channels,
-                        channels=channels,
-                        channel_multipliers=channel_multipliers,
-                        n_resnet_blocks=n_resnet_blocks).to(device)
+                          in_channels=in_channels,
+                          channels=channels,
+                          channel_multipliers=channel_multipliers,
+                          n_resnet_blocks=n_resnet_blocks).to(device)
     return encoder
 
-def initialize_decoder(device = None, 
-                        out_channels=3,
-                        z_channels=4,
-                        channels=128,
-                        channel_multipliers=[1, 2, 4, 4],
-                        n_resnet_blocks=2) -> Decoder:
-    
+
+def initialize_decoder(device=None,
+                       out_channels=3,
+                       z_channels=4,
+                       channels=128,
+                       channel_multipliers=[1, 2, 4, 4],
+                       n_resnet_blocks=2) -> Decoder:
     with section('decoder initialization'):
         device = get_device(device)
         decoder = Decoder(out_channels=out_channels,
-                        z_channels=z_channels,
-                        channels=channels,
-                        channel_multipliers=channel_multipliers,
-                        n_resnet_blocks=n_resnet_blocks).to(device)    
+                          z_channels=z_channels,
+                          channels=channels,
+                          channel_multipliers=channel_multipliers,
+                          n_resnet_blocks=n_resnet_blocks).to(device)
     return decoder
     # Initialize the autoencoder    
 
-    
-def initialize_autoencoder(device = None, encoder = None, decoder = None, emb_channels = 4, z_channels = 4, force_submodels_init = False) -> Autoencoder:
+
+def initialize_autoencoder(device=None, encoder=None, decoder=None, emb_channels=4, z_channels=4,
+                           force_submodels_init=False) -> Autoencoder:
     # Initialize the autoencoder
-    
+
     with section(f'autoencoder initialization'):
         device = get_device(device)
         if force_submodels_init:
@@ -84,14 +71,15 @@ def initialize_autoencoder(device = None, encoder = None, decoder = None, emb_ch
                 encoder = initialize_encoder(device=device, z_channels=z_channels)
             if decoder is None:
                 decoder = initialize_decoder(device=device, z_channels=z_channels)
-        
+
         autoencoder = Autoencoder(emb_channels=emb_channels,
-                                    encoder=encoder,
-                                    decoder=decoder,
-                                    z_channels=z_channels).to(device)
+                                  encoder=encoder,
+                                  decoder=decoder,
+                                  z_channels=z_channels).to(device)
     return autoencoder
 
-def load_autoencoder(path: Union[str, Path] = AUTOENCODER_PATH, device = None) -> Autoencoder:
+
+def load_autoencoder(path: Union[str, Path] = AUTOENCODER_PATH, device=None) -> Autoencoder:
     """
     ### Load [`Autoencoder` model](autoencoder.html)
     """
@@ -106,8 +94,8 @@ def load_autoencoder(path: Union[str, Path] = AUTOENCODER_PATH, device = None) -
     #     autoencoder.eval()
     return autoencoder
 
-def load_encoder(path: Union[str, Path] = ENCODER_PATH, device = None) -> Encoder:
 
+def load_encoder(path: Union[str, Path] = ENCODER_PATH, device=None) -> Encoder:
     with section(f"encoder model loading, from {path}"):
         device = get_device(device)
         encoder = torch.load(path, map_location=device).eval()
@@ -117,8 +105,8 @@ def load_encoder(path: Union[str, Path] = ENCODER_PATH, device = None) -> Encode
     #     encoder.eval()
     return encoder
 
-def load_decoder(path: Union[str, Path] = DECODER_PATH, device = None) -> Decoder:
 
+def load_decoder(path: Union[str, Path] = DECODER_PATH, device=None) -> Decoder:
     with section(f"decoder model loading, from {path}"):
         device = get_device(device)
         decoder = torch.load(path, map_location=device).eval()
@@ -129,26 +117,27 @@ def load_decoder(path: Union[str, Path] = DECODER_PATH, device = None) -> Decode
     return decoder
 
 
-def initialize_tokenizer(device = None, version="openai/clip-vit-large-patch14") -> CLIPTokenizer:
+def initialize_tokenizer(device=None, version="openai/clip-vit-large-patch14") -> CLIPTokenizer:
     get_device(device)
     tokenizer = CLIPTokenizer.from_pretrained(version)
     return tokenizer
 
-def load_tokenizer(path: Union[str, Path] = TOKENIZER_PATH, device = None) -> CLIPTokenizer:
 
+def load_tokenizer(path: Union[str, Path] = TOKENIZER_PATH, device=None) -> CLIPTokenizer:
     with section(f"CLIP tokenizer loading, from {path}"):
         device = get_device(device)
         tokenizer = torch.load(path, map_location=device).eval()
 
     return tokenizer
 
-def initialize_transformer(device = None, version = "openai/clip-vit-large-patch14") -> CLIPTextModel:
+
+def initialize_transformer(device=None, version="openai/clip-vit-large-patch14") -> CLIPTextModel:
     get_device(device)
-    transformer = CLIPTextModel.from_pretrained(version).eval().to(device)        
+    transformer = CLIPTextModel.from_pretrained(version).eval().to(device)
     return transformer
 
-def load_transformer(path: Union[str, Path] = TEXT_MODEL_PATH, device = None) -> CLIPTextModel:
 
+def load_transformer(path: Union[str, Path] = TEXT_MODEL_PATH, device=None) -> CLIPTextModel:
     with section(f"CLIP transformer loading, from {path}"):
         device = get_device(device)
         transformer = torch.load(path, map_location=device).eval()
@@ -156,15 +145,15 @@ def load_transformer(path: Union[str, Path] = TEXT_MODEL_PATH, device = None) ->
     return transformer
 
 
-def initialize_clip_embedder(device = None, tokenizer = None, transformer = None, force_submodels_init = False) -> CLIPTextEmbedder:
-
+def initialize_clip_embedder(device=None, tokenizer=None, transformer=None,
+                             force_submodels_init=False) -> CLIPTextEmbedder:
     # Initialize the CLIP text embedder
-    
+
     with section('CLIP Embedder initialization'):
         device = get_device(device)
         clip_text_embedder = CLIPTextEmbedder(
-                device=device,
-            )
+            device=device,
+        )
 
         # if tokenizer is None:
         #     clip_text_embedder.load_tokenizer_from_lib()
@@ -175,22 +164,23 @@ def initialize_clip_embedder(device = None, tokenizer = None, transformer = None
         #     clip_text_embedder.load_transformer_from_lib()
         # else:
         #     clip_text_embedder.transformer = transformer
-        
+
         clip_text_embedder.load_submodels()
 
         clip_text_embedder.to(device)
 
     return clip_text_embedder
 
-def load_clip_embedder(path: Union[str, Path] = TEXT_EMBEDDER_PATH, device = None) -> CLIPTextEmbedder:
-    
+
+def load_clip_embedder(path: Union[str, Path] = TEXT_EMBEDDER_PATH, device=None) -> CLIPTextEmbedder:
     with section(f"CLIP embedder loading, from {path}"):
         device = get_device(device)
         clip_text_embedder = torch.load(path, map_location=device).eval()
 
     return clip_text_embedder
 
-def initialize_unet(device = None, 
+
+def initialize_unet(device=None,
                     in_channels=4,
                     out_channels=4,
                     channels=320,
@@ -200,31 +190,33 @@ def initialize_unet(device = None,
                     n_heads=8,
                     tf_layers=1,
                     d_cond=768) -> UNetModel:
-
     # Initialize the U-Net
     device = get_device(device)
     with section('U-Net initialization'):
         unet_model = UNetModel(in_channels=in_channels,
-                                out_channels=out_channels,
-                                channels=channels,
-                                attention_levels=attention_levels,
-                                n_res_blocks=n_res_blocks,
-                                channel_multipliers=channel_multipliers,
-                                n_heads=n_heads,
-                                tf_layers=tf_layers,
-                                d_cond=d_cond).to(device)
-            # unet_model.save()
-            # torch.save(unet_model, UNET_PATH)
+                               out_channels=out_channels,
+                               channels=channels,
+                               attention_levels=attention_levels,
+                               n_res_blocks=n_res_blocks,
+                               channel_multipliers=channel_multipliers,
+                               n_heads=n_heads,
+                               tf_layers=tf_layers,
+                               d_cond=d_cond).to(device)
+        # unet_model.save()
+        # torch.save(unet_model, UNET_PATH)
     return unet_model
-def load_unet(path: Union[str, Path] = UNET_PATH, device = None) -> UNetModel:
 
+
+def load_unet(path: Union[str, Path] = UNET_PATH, device=None) -> UNetModel:
     with section(f"U-Net model loading, from {path}"):
         device = get_device(device)
         unet_model = torch.load(path, map_location=device).eval()
 
     return unet_model
 
-def initialize_latent_diffusion(path: Union[str, Path] = None, device = None, autoencoder = None, clip_text_embedder = None, unet_model = None, force_submodels_init = False, use_ckpt = False) -> LatentDiffusion:
+
+def initialize_latent_diffusion(path: Union[str, Path] = None, device=None, autoencoder=None, clip_text_embedder=None,
+                                unet_model=None, force_submodels_init=False, use_ckpt=False) -> LatentDiffusion:
     """
     ### Load [`LatentDiffusion` model](latent_diffusion.html)
     """
@@ -248,7 +240,7 @@ def initialize_latent_diffusion(path: Union[str, Path] = None, device = None, au
                                 clip_embedder=clip_text_embedder,
                                 unet_model=unet_model)
     if path is not None:
-    # Load the checkpoint
+        # Load the checkpoint
         if not use_ckpt:
             with section(f"stable diffusion checkpoint loading, from {path}"):
                 tensors_dict = load_file(path, device="cpu")
@@ -270,10 +262,11 @@ def initialize_latent_diffusion(path: Union[str, Path] = None, device = None, au
 
         #
     model.to(device)
-    
+
     return model.eval()
 
-def load_latent_diffusion(path: Union[str, Path] = LATENT_DIFFUSION_PATH, device = None) -> LatentDiffusion:
+
+def load_latent_diffusion(path: Union[str, Path] = LATENT_DIFFUSION_PATH, device=None) -> LatentDiffusion:
     """
     ### Load [`LatentDiffusion` model](latent_diffusion.html)
     """
@@ -284,5 +277,4 @@ def load_latent_diffusion(path: Union[str, Path] = LATENT_DIFFUSION_PATH, device
 
     # Initialize the Latent Diffusion model
 
-    
     return latent_diffusion_model

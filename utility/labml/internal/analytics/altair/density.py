@@ -1,5 +1,4 @@
 from typing import List
-
 import altair as alt
 
 
@@ -65,8 +64,8 @@ def _render_density(table: alt.Data, *,
 
         areas.append(
             alt.Chart(table)
-                .mark_area(opacity=alpha ** i)
-                .encode(**encode)
+            .mark_area(opacity=alpha ** i)
+            .encode(**encode)
         )
 
     encode = dict(x=alt.X('step:Q', scale=x_scale, title=x_name),
@@ -78,8 +77,8 @@ def _render_density(table: alt.Data, *,
 
     line: alt.Chart = (
         alt.Chart(table)
-            .mark_line()
-            .encode(**encode)
+        .mark_line()
+        .encode(**encode)
     )
     if selection is not None:
         line = line.add_selection(selection)

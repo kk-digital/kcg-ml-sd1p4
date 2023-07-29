@@ -31,7 +31,9 @@ if ! command -v mega-get &> /dev/null; then
     rm "$package_name"
 fi
 
+#
 # Attempting to download v1-5-pruned-emaonly.safetensors
+#
 model_path="input/model/v1-5-pruned-emaonly.safetensors"
 
 if [ -e "$model_path" ]; then
@@ -39,6 +41,18 @@ if [ -e "$model_path" ]; then
 else
     mega-get --ignore-quota-warn "https://mega.nz/file/AVZnGbzL#EfXN4YINe0Wb7ukiqpCPa7THssugyCQU8pvpMpvxPAw" "$model_path"
 fi
+
+
+#
+# Attempting to download v1-5-pruned-emaonly.ckpt
+#
+
+#model_path="input/model/v1-5-pruned-emaonly.ckpt"
+#if [ -e "$model_path" ]; then
+#    echo "Model already exists in $model_path"
+#else
+#    wget https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.ckpt -O "$model_path"
+#fi
 
 
 #Intall git-lfs

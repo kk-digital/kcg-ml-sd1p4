@@ -1,22 +1,20 @@
 import os, sys
-sys.path.append(os.path.abspath(''))
-
 import torch
+
+sys.path.append(os.path.abspath(''))
 
 from stable_diffusion_reference.sampler.ddim import DDIMSampler
 from stable_diffusion_reference.sampler.ddpm import DDPMSampler
-from stable_diffusion_reference.utils.model import load_model, get_device
+from stable_diffusion_reference.utils_model import load_model, get_device, load_img
 from stable_diffusion_reference.latent_diffusion import LatentDiffusion
 from stable_diffusion_reference.sampler import DiffusionSampler
-
-from stable_diffusion_reference.utils.model import load_img
-
 from typing import Union, Optional
-
 from pathlib import Path
+
 
 class ModelLoadError(Exception):
     pass
+
 
 class StableDiffusionBaseScript:
     model: LatentDiffusion
@@ -26,9 +24,9 @@ class StableDiffusionBaseScript:
                  ddim_steps: int = 50,
                  ddim_eta: float = 0.0,
                  force_cpu: bool = False,
-                 sampler_name: str='ddim',
+                 sampler_name: str = 'ddim',
                  n_steps: int = 50,
-                 cuda_device: str = 'cuda:0',
+                 cuda_device: str = None,
                  ):
         """
         :param checkpoint_path: is the path of the checkpoint
@@ -109,11 +107,11 @@ class StableDiffusionBaseScript:
         x = self.sampler.q_sample(orig, t_index, noise=orig_noise)
         # Reconstruct from the noisy image
         x = self.sampler.paint(x, cond, t_index,
-                                orig=orig_2,
-                                mask=mask,
-                                orig_noise=orig_noise,
-                                uncond_scale=uncond_scale,
-                                uncond_cond=un_cond)
+                               orig=orig_2,
+                               mask=mask,
+                               orig_noise=orig_noise,
+                               uncond_scale=uncond_scale,
+                               uncond_cond=un_cond)
 
         return x
 
@@ -132,7 +130,8 @@ class StableDiffusionBaseScript:
             # Move the model to device
             self.model.to(self.device)
         except EOFError:
-                raise ModelLoadError("Stable Diffusion model couldn't be loaded. Check that the ckpt file exists in the specified location (path), and that it is not corrupted.")
+            raise ModelLoadError(
+                "Stable Diffusion model couldn't be loaded. Check that the ckpt file exists in the specified location (path), and that it is not corrupted.")
 
     def initialize_sampler(self):
         if self.sampler_name == 'ddim':

@@ -4,15 +4,13 @@ import torch
 import shutil
 import argparse
 
-from tqdm import tqdm
-
+sys.path.insert(0, os.getcwd())
 from auxiliary_functions import get_torch_distribution_from_name
+from stable_diffusion.utils_image import save_image_grid, save_images
 from text_to_image import Txt2Img
-
 from stable_diffusion.constants import CHECKPOINT_PATH
 from utility.labml.monit import section
-from stable_diffusion.utils.utils import save_image_grid, save_images
-from stable_diffusion.utils.model import initialize_latent_diffusion
+from stable_diffusion.utils_model import initialize_latent_diffusion
 
 # CHECKPOINT_PATH = os.path.abspath('./input/model/v1-5-pruned-emaonly.ckpt')
 OUTPUT_DIR = os.path.abspath("./output/noise-tests/temperature_range")
@@ -96,7 +94,7 @@ DISTRIBUTIONS = {
 
 
 def create_folder_structure(
-    distributions_dict: dict, root_dir: str = OUTPUT_DIR
+        distributions_dict: dict, root_dir: str = OUTPUT_DIR
 ) -> None:
     for i, distribution_name in enumerate(distributions_dict.keys()):
         distribution_outputs = os.path.join(root_dir, distribution_name)
@@ -108,13 +106,13 @@ def create_folder_structure(
 
 
 def init_txt2img(
-    checkpoint_path: str = CHECKPOINT_PATH,
-    sampler_name: str = "ddim",
-    n_steps: int = 20,
-    ddim_eta: float = 0.0,
-    autoencoder=None,
-    unet_model=None,
-    clip_text_embedder=None,
+        checkpoint_path: str = CHECKPOINT_PATH,
+        sampler_name: str = "ddim",
+        n_steps: int = 20,
+        ddim_eta: float = 0.0,
+        autoencoder=None,
+        unet_model=None,
+        clip_text_embedder=None,
 ):
     txt2img = Txt2Img(
         checkpoint_path=checkpoint_path,
@@ -157,14 +155,14 @@ def show_summary(total_time, partial_time, total_images, output_dir):
 
 
 def generate_images_from_temp_range(
-    distributions: dict,
-    txt2img: Txt2Img,
-    output_dir: str = OUTPUT_DIR,
-    clear_output_dir: bool = CLEAR_OUTPUT_DIR,
-    prompt: str = PROMPT,
-    noise_seed: int = NOISE_SEED,
-    batch_size: int = BATCH_SIZE,
-    temperature_range=TEMP_RANGE,
+        distributions: dict,
+        txt2img: Txt2Img,
+        output_dir: str = OUTPUT_DIR,
+        clear_output_dir: bool = CLEAR_OUTPUT_DIR,
+        prompt: str = PROMPT,
+        noise_seed: int = NOISE_SEED,
+        batch_size: int = BATCH_SIZE,
+        temperature_range=TEMP_RANGE,
 ):
     # Clear the output directory
 
@@ -181,7 +179,7 @@ def generate_images_from_temp_range(
     # Generate the images
     img_grids = []
     for distribution_index, (distribution_name, params) in enumerate(
-        distributions.items()
+            distributions.items()
     ):
         noise_fn = (
             lambda shape, device=None: get_torch_distribution_from_name(DIST_NAME)(

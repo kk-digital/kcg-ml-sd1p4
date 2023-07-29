@@ -1,7 +1,6 @@
 import os
 import datetime
 import time
-import requests
 import libtorrent as lt
 
 if not os.path.exists('/tmp/output'):

@@ -9,9 +9,7 @@ summary: >
 """
 import os.path
 import random
-import string
 from pathlib import Path
-from typing import Union
 from typing import BinaryIO, List, Optional, Union
 
 import torchvision
@@ -38,13 +36,14 @@ def set_seed(seed: int):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
-def load_model(path: Union[str, Path] = '', device = 'cuda:0') -> LatentDiffusion:
+
+def load_model(path: Union[str, Path] = '', device=None) -> LatentDiffusion:
     """
     ### Load [`LatentDiffusion` model](latent_diffusion.html)
     """
 
     # Initialize the autoencoder
-    
+
     with monit.section('Initialize autoencoder'):
         encoder = Encoder(z_channels=4,
                           in_channels=3,
@@ -62,16 +61,14 @@ def load_model(path: Union[str, Path] = '', device = 'cuda:0') -> LatentDiffusio
                                   encoder=encoder,
                                   decoder=decoder,
                                   z_channels=4)
-    
-    
+
     # Initialize the CLIP text embedder
 
     with monit.section('Initialize CLIP Embedder'):
         clip_text_embedder = CLIPTextEmbedder(
             device=device,
         )
-    
-    
+
     # Initialize the U-Net
 
     with monit.section('Initialize U-Net'):
@@ -84,7 +81,6 @@ def load_model(path: Union[str, Path] = '', device = 'cuda:0') -> LatentDiffusio
                                n_heads=8,
                                tf_layers=1,
                                d_cond=768)
-        
 
     # Initialize the Latent Diffusion model
     with monit.section('Initialize Latent Diffusion model'):
@@ -113,6 +109,7 @@ def load_model(path: Union[str, Path] = '', device = 'cuda:0') -> LatentDiffusio
     model.eval()
     return model
 
+
 def load_img(path: str):
     """
     ### Load an image
@@ -136,6 +133,7 @@ def load_img(path: str):
     # Convert to torch
     return torch.from_numpy(image)
 
+
 def save_image(images: torch.Tensor, dest_path: str, img_format: str = 'jpeg'):
     """
     ### Save an image
@@ -156,6 +154,7 @@ def save_image(images: torch.Tensor, dest_path: str, img_format: str = 'jpeg'):
     for i, img in enumerate(images):
         img = Image.fromarray((255. * img).astype(np.uint8))
         img.save(dest_path, format=img_format)
+
 
 def save_images(images: torch.Tensor, dest_path: str, img_format: str = 'jpeg'):
     """
@@ -185,11 +184,12 @@ def save_images(images: torch.Tensor, dest_path: str, img_format: str = 'jpeg'):
 
         img.save(final_path, format=img_format)
 
+
 def save_image_grid(
-    tensor: Union[torch.Tensor, List[torch.Tensor]],
-    fp: Union[str, Path, BinaryIO],
-    format: Optional[str] = None,
-    **kwargs,
+        tensor: Union[torch.Tensor, List[torch.Tensor]],
+        fp: Union[str, Path, BinaryIO],
+        format: Optional[str] = None,
+        **kwargs,
 ) -> None:
     """
     Save a given Tensor into an image file.
@@ -209,7 +209,8 @@ def save_image_grid(
     im = Image.fromarray(ndarr)
     im.save(fp, format=format)
 
-def get_device(device = None, cuda_fallback: str = 'cuda:0'):
+
+def get_device(device=None, cuda_fallback: str = 'cuda:0'):
     """
     ### Get device
     """
@@ -223,8 +224,8 @@ def get_device(device = None, cuda_fallback: str = 'cuda:0'):
     except Exception as e:
         print(e)
         print(f'Using {device}. Slow on CPU.')
-    
-    return device    
+
+    return device
 
 
 def get_autocast(force_cpu: bool = False):

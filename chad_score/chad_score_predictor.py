@@ -1,6 +1,7 @@
 import torch
 from torch import nn
-from stable_diffusion.utils.utils import get_device
+
+from stable_diffusion.utils_backend import get_device
 
 
 class ChadPredictorModel(nn.Module):

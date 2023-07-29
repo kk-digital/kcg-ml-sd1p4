@@ -4,9 +4,7 @@ import subprocess
 import sys
 import threading
 import time
-from typing import List
-
-from typing.io import IO
+from typing import List, IO
 
 from labml import logger, experiment
 from labml.experiment import generate_uuid
