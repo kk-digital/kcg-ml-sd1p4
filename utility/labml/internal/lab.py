@@ -1,13 +1,15 @@
 from copy import deepcopy
 from pathlib import PurePath, Path
 from typing import List, Optional, Dict
+import sys
+sys.path.append("./")
 
+from utility import labml
 from labml.internal import util
-from labml.internal.api.configs import WebAPIConfigs
-from labml.internal.util import is_colab, is_kaggle
-from labml.logger import Text
-from labml.utils import get_caller_file
-from labml.utils.notice import labml_notice
+from utility.labml.internal.util import is_colab, is_kaggle
+from utility.labml.logger import Text
+from utility.labml.utils import get_caller_file
+from utility.labml.utils.notice import labml_notice
 
 _CONFIG_FILE_NAME = '.labml.yaml'
 
@@ -26,7 +28,6 @@ class Lab:
     data_path: Optional[Path]
     check_repo_dirty: Optional[bool]
     path: Optional[Path]
-    web_api: Optional[WebAPIConfigs]
 
     def __init__(self, path: Optional[Path] = None):
         self.indicators = {}
@@ -94,22 +95,7 @@ class Lab:
 
         self.check_repo_dirty = self.configs['check_repo_dirty']
         self.indicators = self.configs['indicators']
-        if self.configs['web_api']:
-            web_api_url = self.configs['web_api']
-            if web_api_url[0:4] != 'http':
-                web_api_url = f"https://api.labml.ai/api/v1/track?labml_token={web_api_url}&"
-            is_default = web_api_url == self.__default_config()['web_api']
-            # if is_default:
-            #     from labml.internal.computer.configs import computer_singleton
-            #     if not computer_singleton().web_api.is_default:
-            #         web_api_url = computer_singleton().web_api.url
-            self.web_api = WebAPIConfigs(url=web_api_url,
-                                         frequency=self.configs['web_api_frequency'],
-                                         verify_connection=self.configs['web_api_verify_connection'],
-                                         open_browser=self.configs['web_api_open_browser'],
-                                         is_default=is_default)
-        else:
-            self.web_api = None
+        self.web_api = None
 
     def set_configurations(self, configs: Dict[str, any]):
         self.custom_configs.append(configs)
