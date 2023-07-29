@@ -7,11 +7,12 @@ import urllib.request
 from dataclasses import dataclass
 from queue import Queue
 from typing import Dict, Optional, Set, List
-
-import labml
-from labml import logger
-from labml.logger import Text
-from labml.utils.notice import labml_notice
+import sys
+sys.path.append("./")
+import utility.labml
+from utility.labml import logger
+from utility.labml.logger import Text
+from utility.labml.utils.notice import labml_notice
 
 UPDATING_APP_MESSAGE = 'Updating App. Please wait'
 

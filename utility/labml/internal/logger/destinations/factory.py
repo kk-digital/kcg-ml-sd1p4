@@ -1,11 +1,12 @@
 from typing import List
-
-from labml.internal.logger.destinations import Destination
-from labml.internal.util import is_ipynb, is_ipynb_pycharm
+import sys
+sys.path.append("./")
+from utility.labml.internal.logger.destinations import Destination
+from utility.labml.internal.util import is_ipynb, is_ipynb_pycharm
 
 
 def create_destination() -> List[Destination]:
-    from labml.internal.logger.destinations.console import ConsoleDestination
+    from utility.labml.internal.logger.destinations.console import ConsoleDestination
 
     if is_ipynb():
         if is_ipynb_pycharm():

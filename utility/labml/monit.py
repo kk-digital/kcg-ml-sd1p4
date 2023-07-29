@@ -1,10 +1,12 @@
+import os,sys
 import functools
 from typing import Iterable, Sized, Collection, Callable, Tuple, Any, Dict
 from typing import Union, Optional, overload
 
-from labml.internal.monitor import monitor_singleton as _internal
-from utility.labml.internal.monitor.time_recorder import TimeRecorder, Summary as TimeSummary
+sys.path.append("./")
 
+from utility.labml.internal.monitor import TimeSummary
+from utility.labml.internal.monitor import monitor_singleton as _internal
 
 def clear():
     _internal().clear()

@@ -1,2 +1,0 @@
-CONFIGS_FOLDER = '.labml'
-
