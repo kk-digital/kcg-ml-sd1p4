@@ -5,7 +5,7 @@ import sys
 sys.path.append("./")
 
 from utility.labml.internal.util.colors import StyleCode
-from ....logger import Text
+from utility.labml.logger import Text
 
 if TYPE_CHECKING:
     from . import Logger

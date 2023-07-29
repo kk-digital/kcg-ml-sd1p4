@@ -1,8 +1,7 @@
 from typing import List, Union, Tuple, Optional
 
-from labml.internal.api.logs import API_LOGS
-from labml.internal.logger.destinations import Destination
-from labml.internal.util.colors import StyleCode, ANSI_RESET
+from utility.labml.internal.logger.destinations import Destination
+from utility.labml.internal.util.colors import StyleCode, ANSI_RESET
 
 
 class ConsoleDestination(Destination):
@@ -48,7 +47,4 @@ class ConsoleDestination(Destination):
             self.print(text, end_char)
 
     def print(self, text: str, end_char: str):
-        if self.is_screen:
-            print(text, end=end_char, flush=True)
-        else:
-            API_LOGS.outputs(logger_=text + end_char)
+        print(text, end=end_char, flush=True)
