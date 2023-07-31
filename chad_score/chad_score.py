@@ -42,7 +42,7 @@ def get_chad_model(model_path):
     model.eval()
     return model
 
-def get_chad_score(image_features, model_path="chad_score/models/chad-score-v1.pth"):
+def get_chad_score(image_features, model_path="input/models/chad_score/chad-score-v1.pth"):
     chadModel = get_chad_model(model_path)
     chad_score = chadModel(image_features)
     return chad_score
