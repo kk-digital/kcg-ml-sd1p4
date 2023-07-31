@@ -267,7 +267,7 @@ def main():
 
                 # Save the data to a JSON file
                 json_filename = os.path.join(opt.output, f'{timestamp}-{i}.json')
-                with open(os. json_filename, 'w') as file:
+                with open(json_filename, 'w') as file:
                     json.dump(jsonData, file)
 
                 # Capture the ending time
