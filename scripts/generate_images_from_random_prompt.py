@@ -170,7 +170,6 @@ class Txt2Img(StableDiffusionBaseScript):
 
 def main():
     opt = CLI('Generate images using stable diffusion with a prompt') \
-        .prompt() \
         .prompts_file(check_exists=True, required=False) \
         .batch_size() \
         .output() \
@@ -186,8 +185,16 @@ def main():
         .seed() \
         .parse()
 
-    # prompts = get_prompts(opt.prompt, opt.prompts_file)
-    prompts = [opt.prompt]
+    # Hard coded prompts
+    arg_prompt = r"chibi, waifu, scifi, side scrolling, character, side scrolling, white background, centered," \
+             r" full character, no background, not centered, line drawing, sketch, black and white," \
+             r" colored, offset, video game,exotic, sureal, miltech, fantasy, frank frazetta," \
+             r" terraria, final fantasy, cortex command, surreal, water color expressionist, david mckean, " \
+             r" jock, esad ribic, chris bachalo, expressionism, Jackson Pollock, Alex Kanevskyg, Francis Bacon, Trash Polka," \
+             r" abstract realism, andrew salgado, alla prima technique, alla prima, expressionist alla prima, expressionist alla prima technique"
+
+
+    prompts = [arg_prompt]
 
     # Split the numbers_string into a list of substrings using the comma as the delimiter
     seed_string_array = opt.seed.split(',')
@@ -248,6 +255,12 @@ def main():
 
                 print(images.shape)
                 save_images(images, filename)
+
+
+                jsonData = {
+                    "prompt":
+                }
+
 
                 # Capture the ending time
                 end_time = time.time()
