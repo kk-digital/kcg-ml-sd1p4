@@ -149,9 +149,9 @@ class UNetModel(nn.Module):
     def save(self, unet_path = UNET_PATH):
         try:
             safetensors.torch.save_model(self, unet_path)
-            print(f"Autoencoder saved to: {unet_path}")
+            print(f"UNet saved to: {unet_path}")
         except Exception as e:
-            print(f"Error saving autoencoder to {unet_path}: {e}")
+            print(f"Error saving UNet to {unet_path}: {e}")
 
     def time_step_embedding(self, time_steps: torch.Tensor, max_period: int = 10000):
         """
