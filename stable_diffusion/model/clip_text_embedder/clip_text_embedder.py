@@ -67,7 +67,6 @@ class CLIPTextEmbedder(nn.Module):
         print(f"CLIP text model successfully loaded from : {text_model_path}\n")
         return self
 
-
     def load_submodels_auto(self):
 
         self.tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14")
