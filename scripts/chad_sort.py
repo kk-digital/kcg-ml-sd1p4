@@ -80,8 +80,7 @@ def main():
 
     # make sure the output path exists
     if not os.path.exists(output_path):
-        print("Output path does not exist")
-        return
+        os.mkdir(output_path)
 
     # Clean the output folder
     remove_all_files_and_folders(output_path)
