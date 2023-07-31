@@ -10,8 +10,12 @@ summary: >
 
 import time
 import os
+import sys
 import torch
 from datetime import datetime
+
+base_directory = "./"
+sys.path.insert(0, base_directory)
 
 from stable_diffusion.utils_backend import get_autocast, set_seed
 from stable_diffusion.utils_image import save_images
@@ -20,7 +24,7 @@ from utility.labml import monit
 from stable_diffusion.model.unet.unet_attention import CrossAttention
 from cli_builder import CLI
 import random
-
+import json
 
 def get_prompts(prompt, prompts_file):
     prompts = []
@@ -258,9 +262,13 @@ def main():
 
 
                 jsonData = {
-                    "prompt":
+                    "prompt": this_prompt
                 }
 
+                # Save the data to a JSON file
+                json_filename = os.path.join(opt.output, f'{timestamp}-{i}.json')
+                with open(os. json_filename, 'w') as file:
+                    json.dump(jsonData, file)
 
                 # Capture the ending time
                 end_time = time.time()
