@@ -236,3 +236,58 @@ The Image Grid Creator is a script that generates a grid of images from a direct
 Run the script with the following command:
 
     python script_name.py --input_path <input_path> --n <number of images width> --m <number of images height> --img_size <size of grid image>
+
+
+
+### Chad Score
+
+To get the chad score of an image, these are the available CLI arguments:
+
+```
+options:
+  --image-path IMAGE_PATH
+                        Path to the image to be scored
+  --model-path MODEL_PATH
+                        Path to the model used for scoring the image
+```
+
+#### Example Usage:
+
+#### using python3
+``` shell
+python3 ./scripts/chad_score.py --model-path="chad_score/models/chad-score-v1.pth" --image-path="test/test_images/test_img.jpg"
+```
+
+#### using python
+``` shell
+python ./scripts/chad_score.py --model-path="chad_score/models/chad-score-v1.pth" --image-path="test/test_images/test_img.jpg"
+```
+
+### Chad Sort
+
+Takes in an image dataset
+Sorts the images in the dataset by chad score into multiple folders
+
+These are the available CLI arguments:
+
+```
+options:
+  --dataset-path DATASET_PATH
+                        Path to the dataset to be sorted
+  --output-path OUTPUT_PATH
+                        Path to the output folder
+  --num-classes NUM_CLASSES
+                        Number of folders to output
+```
+
+#### Example Usage:
+
+#### using python3
+``` shell
+python3 ./scripts/chad_sort.py --dataset-path "test/test_zip_files/test-dataset-correct-format.zip" --output-path "/output/chad_sort/"
+```
+
+#### using python
+``` shell
+python ./scripts/chad_sort.py --dataset-path "test/test_zip_files/test-dataset-correct-format.zip" --output-path "./output/chad_sort/"
+```
