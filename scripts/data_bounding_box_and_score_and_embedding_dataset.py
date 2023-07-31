@@ -43,14 +43,14 @@ SCORER_CHECKPOINT_PATH = os.path.abspath("./input/model/aesthetic_scorer/chadsco
 prompt_list = ['chibi', 'waifu', 'scifi', 'side scrolling', 'character', 'side scrolling',
                'white background', 'centered', 'full character', 'no background', 
                'not centered', 'line drawing', 'sketch', 'black and white',
-                'colored', 'offset', 'video game','exotic', 'sureal', 'miltech', 'fantasy',
-                'frank frazetta', 'terraria', 'final fantasy', 'cortex command',
-                 'Dog', 'Cat', 'Space Ship', 'Airplane', 'Mech', 'Tank', 'Bicycle', 
-                 'Book', 'Chair', 'Table', 'Cup', 'Car', 'Tree', 'Flower', 'Mountain', 
-                 'Smartphone', 'Guitar', 'Sunflower', 'Laptop', 'Coffee Mug', 'water color expressionist',
-                  'david mckean', 'jock', 'esad ribic', 'chris bachalo', 'expressionism', 'Jackson Pollock',
-                   'Alex Kanevskyg', 'Francis Bacon', 'Trash Polka', 'abstract realism', 'andrew salgado', 'alla prima technique',
-                    'alla prima', 'expressionist alla prima', 'expressionist alla prima technique' ]
+               'colored', 'offset', 'video game','exotic', 'sureal', 'miltech', 'fantasy',
+               'frank frazetta', 'terraria', 'final fantasy', 'cortex command',
+               'Dog', 'Cat', 'Space Ship', 'Airplane', 'Mech', 'Tank', 'Bicycle', 
+               'Book', 'Chair', 'Table', 'Cup', 'Car', 'Tree', 'Flower', 'Mountain', 
+               'Smartphone', 'Guitar', 'Sunflower', 'Laptop', 'Coffee Mug', 'water color expressionist',
+               'david mckean', 'jock', 'esad ribic', 'chris bachalo', 'expressionism', 'Jackson Pollock',
+               'Alex Kanevskyg', 'Francis Bacon', 'Trash Polka', 'abstract realism', 'andrew salgado', 'alla prima technique',
+               'alla prima', 'expressionist alla prima', 'expressionist alla prima technique' ]
 
 
 parser = argparse.ArgumentParser("Embed prompts using CLIP")
