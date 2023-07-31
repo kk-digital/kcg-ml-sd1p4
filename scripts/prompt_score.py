@@ -128,7 +128,7 @@ def main():
     print('validation_inputs : shape : ', validation_inputs.shape);
     print('validation_outputs : shape : ', validation_outputs.shape);
 
-    num_epochs = 100
+    num_epochs = 1
     for epoch in range(num_epochs):
         # Forward pass
         outputs = linear_regression_model(train_inputs)
@@ -160,18 +160,17 @@ def main():
         print('predicted : ', predicted)
         print('validation_outputs : ', validation_outputs)
         for index, prediction in enumerate(predicted):
-            if (abs(predicted[index] - validation_outputs[index]) < epsilon):
+            if (abs(predicted[index][0] - validation_outputs[index][0]) < epsilon):
                 corrects += 1
 
+    validation_accuracy = corrects / validation_inputs.size(0)
 
-
-
-    print('loss : ' + loss)
-    print('corrects : ' + corrects)
-    print('rate : ' + (corrects / num_inputs))
-    print('total number of images : ' + num_inputs)
-    print('total train image count ' + train_inputs.size(0))
-    print('total validation image count ' + validation_inputs.size(0))
+    print('loss : ', loss)
+    print('validation_accuracy : ', validation_accuracy)
+    print('rate : ', (corrects / num_inputs))
+    print('total number of images : ', num_inputs)
+    print('total train image count ', train_inputs.size(0))
+    print('total validation image count ', validation_inputs.size(0))
 
 if __name__ == '__main__':
     main()
