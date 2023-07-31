@@ -42,6 +42,7 @@ from .constants import (
 from .utils_backend import get_device
 from utility.labml.monit import section
 
+
 class UNetWrapper(nn.Module):
     """
     *This is an empty wrapper class around the [U-Net](model/unet.html).
@@ -268,8 +269,10 @@ class LatentDiffusion(nn.Module):
                 )
                 return self
             else:
-                self.first_stage_model = initialize_autoencoder(device=self.device).load_submodels(use_safetensors=use_safetensors)
-                self.first_stage_model.load_state_dict(load_file(autoencoder_path))
+                device = "cpu" if self.device.type == "mps" else self.device
+                self.first_stage_model = initialize_autoencoder(device=self.device).load_submodels(
+                    use_safetensors=use_safetensors)
+                self.first_stage_model.load_state_dict(load_file(autoencoder_path, device=device))
                 self.first_stage_model.eval()
                 self.cond_stage_model = torch.load(embedder_path, map_location=self.device)
                 self.cond_stage_model.eval()
@@ -277,7 +280,7 @@ class LatentDiffusion(nn.Module):
                     tokenizer_path=tokenizer_path, transformer_path=transformer_path
                 )
                 unet = initialize_unet(device=self.device).eval()
-                unet.load_state_dict(load_file(unet_path))
+                unet.load_state_dict(load_file(unet_path, device=device))
                 self.model = UNetWrapper(unet)
                 return self
 
