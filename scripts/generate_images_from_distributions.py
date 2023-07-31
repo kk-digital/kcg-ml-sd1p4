@@ -60,7 +60,7 @@ parser.add_argument("--num_seeds", type=int, default=3)
 parser.add_argument("-t", "--temperature", type=float, default=1.0)
 parser.add_argument("--ddim_eta", type=float, default=0.0)
 parser.add_argument("--clear_output_dir", type=bool, default=False)
-parser.add_argument("--cuda_device", type=str, default=get_device())
+parser.add_argument("--cuda_device", type=str, default=None)
 
 args = parser.parse_args()
 
@@ -76,7 +76,7 @@ PARAMS_RANGE = args.params_range
 TEMPERATURE = args.temperature
 DDIM_ETA = args.ddim_eta
 CLEAR_OUTPUT_DIR = args.clear_output_dir
-DEVICE = args.cuda_device
+DEVICE = get_device(args.cuda_device)
 
 NOISE_SEEDS = NOISE_SEEDS[:NUM_SEEDS]
 
