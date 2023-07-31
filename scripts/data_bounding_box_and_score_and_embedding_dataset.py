@@ -43,11 +43,14 @@ SCORER_CHECKPOINT_PATH = os.path.abspath("./input/model/aesthetic_scorer/chadsco
 prompt_list = ['chibi', 'waifu', 'scifi', 'side scrolling', 'character', 'side scrolling',
                'white background', 'centered', 'full character', 'no background', 
                'not centered', 'line drawing', 'sketch', 'black and white',
-                'colored', 'offset', 'video game','exotic', 'sureal', 'miltech', 'fantasy',
-                'frank frazetta', 'terraria', 'final fantasy', 'cortex command',
-                 'Dog', 'Cat', 'Space Ship', 'Airplane', 'Mech', 'Tank', 'Bicycle', 
-                 'Book', 'Chair', 'Table', 'Cup', 'Car', 'Tree', 'Flower', 'Mountain', 
-                 'Smartphone', 'Guitar', 'Sunflower', 'Laptop', 'Coffee Mug' ]
+               'colored', 'offset', 'video game','exotic', 'sureal', 'miltech', 'fantasy',
+               'frank frazetta', 'terraria', 'final fantasy', 'cortex command',
+               'Dog', 'Cat', 'Space Ship', 'Airplane', 'Mech', 'Tank', 'Bicycle', 
+               'Book', 'Chair', 'Table', 'Cup', 'Car', 'Tree', 'Flower', 'Mountain', 
+               'Smartphone', 'Guitar', 'Sunflower', 'Laptop', 'Coffee Mug', 'water color expressionist',
+               'david mckean', 'jock', 'esad ribic', 'chris bachalo', 'expressionism', 'Jackson Pollock',
+               'Alex Kanevskyg', 'Francis Bacon', 'Trash Polka', 'abstract realism', 'andrew salgado', 'alla prima technique',
+               'alla prima', 'expressionist alla prima', 'expressionist alla prima technique' ]
 
 
 parser = argparse.ArgumentParser("Embed prompts using CLIP")
@@ -153,7 +156,7 @@ def init_stable_diffusion(device, path_tree: IODirectoryTree, sampler_name="ddim
 
 def generate_prompt():
     # Select 12 items randomly from the prompt_list
-    selected_prompts = random.sample(prompt_list, 12)
+    selected_prompts = random.sample(prompt_list, 15)
 
     # Join all selected prompts into a single string, separated by commas
     prompt = ', '.join(selected_prompts)
@@ -287,10 +290,11 @@ def main():
     #     print(f"Prompt {i}: {prompt}")  # Print the generated prompt
         prompts.append(prompt)  # Store each prompt for later use
     #     get_memory_status()        
-    #     embedded_prompt, null_prompt = embed_and_save_prompts(clip_text_embedder, prompt, i)
+        embedded_prompt, null_prompt = embed_and_save_prompts(clip_text_embedder, prompt, i)
     #     embedded_prompts_list.append(embedded_prompt.cpu())  # Store the embedded prompts
     #     get_memory_status() 
-    #     torch.cuda.empty_cache()
+        torch.save(embedded_prompt, f'{EMBEDDED_PROMPTS_DIR}/embedded_prompt_{i}.pt')    
+        torch.cuda.empty_cache()
     # embedded_prompts_list = [embedded_prompt for embedded_prompt in embedded_prompts]  # Store the embedded prompts
     # null_prompt_list.append(null_prompt)  # Store the null prompts
     # print(f"Image {i} generated.")  # Print when an image is generated
