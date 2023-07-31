@@ -84,7 +84,7 @@ class CLIPTextEmbedder(nn.Module):
         print("Memory status before unloading submodels: \n")
         get_memory_status()
         if self.tokenizer is not None:
-            self.tokenizer.to("cpu")
+            self.tokenizer
             del self.tokenizer
             self.tokenizer = None
         if self.transformer is not None:
