@@ -290,12 +290,12 @@ options:
 
 #### using python3
 ``` shell
-python3 ./scripts/chad_score.py --model-path="input/models/chad_score/chad-score-v1.pth" --image-path="test/test_images/test_img.jpg"
+python3 ./scripts/chad_score.py --model-path="input/model/chad_score/chad-score-v1.pth" --image-path="test/test_images/test_img.jpg"
 ```
 
 #### using python
 ``` shell
-python ./scripts/chad_score.py --model-path="input/models/chad_score/chad-score-v1.pth" --image-path="test/test_images/test_img.jpg"
+python ./scripts/chad_score.py --model-path="input/model/chad_score/chad-score-v1.pth" --image-path="test/test_images/test_img.jpg"
 ```
 
 ### Chad Sort

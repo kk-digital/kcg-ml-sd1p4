@@ -13,7 +13,7 @@ def test_chad_scorer():
     # parameters
 
     img_path = 'test/test_images/clip_segmentation/getty_481292845_77896.jpg'
-    model_path = "input/models/chad_score/chad-score-v1.pth"
+    model_path = "input/model/chad_score/chad-score-v1.pth"
 
     batch_size = 1
     clip_model = "ViT-L/14"
