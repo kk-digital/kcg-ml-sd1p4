@@ -18,7 +18,7 @@ so that we can load the checkpoints directly.
 from typing import List
 
 import torch
-from safetensors.torch import save_file, load_file
+import safetensors
 import os
 import torch.nn.functional as F
 from torch import nn
@@ -44,7 +44,7 @@ class Autoencoder(nn.Module):
     This consists of the encoder and decoder modules.
     """
 
-    def __init__(self, emb_channels: int, z_channels: int, encoder = None, decoder = None, device = None):
+    def __init__(self, emb_channels: int = 4, z_channels: int = 4, encoder = None, decoder = None, device = None):
         """
         :param encoder: is the encoder
         :param decoder: is the decoder
@@ -67,27 +67,22 @@ class Autoencoder(nn.Module):
         self.post_quant_conv = nn.Conv2d(emb_channels, z_channels, 1)
         self.to(self.device)
 
-    def save_submodels(self, encoder_path = ENCODER_PATH, decoder_path = DECODER_PATH, use_safetensors = True):
-        """
-        ### Save the model to a checkpoint
-        """
-        self.encoder.save(encoder_path, use_safetensors = use_safetensors)
-        print(f"Encoder saved to: {encoder_path}")
-        self.decoder.save(decoder_path, use_safetensors = use_safetensors)
-        print(f"Decoder saved to: {decoder_path}")
-        # torch.save(self.encoder, encoder_path)
-        # torch.save(self.decoder, decoder_path)
+    def save_submodels(self, encoder_path = ENCODER_PATH, decoder_path = DECODER_PATH):
+        
+        self.encoder.save(encoder_path)
+        self.decoder.save(decoder_path)
+        
 
-    def save(self, autoencoder_path = AUTOENCODER_PATH, use_safetensors = True):
+    def save(self, autoencoder_path = AUTOENCODER_PATH):
         """
         ### Save the model to a checkpoint
         """
-        if not use_safetensors:
-            torch.save(self, autoencoder_path)
+
+        try:
+            safetensors.torch.save_model(self, autoencoder_path)
             print(f"Autoencoder saved to: {autoencoder_path}")
-        else:
-            save_file(self.state_dict(), autoencoder_path)
-            print(f"Autoencoder saved to: {autoencoder_path}")
+        except Exception as e:
+            print(f"Autoencoder not saved. Error: {e}")
 
     def load_submodels(self, encoder_path = ENCODER_PATH, decoder_path = DECODER_PATH, use_safetensors = True):
         
