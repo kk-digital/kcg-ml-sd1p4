@@ -47,7 +47,10 @@ prompt_list = ['chibi', 'waifu', 'scifi', 'side scrolling', 'character', 'side s
                 'frank frazetta', 'terraria', 'final fantasy', 'cortex command',
                  'Dog', 'Cat', 'Space Ship', 'Airplane', 'Mech', 'Tank', 'Bicycle', 
                  'Book', 'Chair', 'Table', 'Cup', 'Car', 'Tree', 'Flower', 'Mountain', 
-                 'Smartphone', 'Guitar', 'Sunflower', 'Laptop', 'Coffee Mug' ]
+                 'Smartphone', 'Guitar', 'Sunflower', 'Laptop', 'Coffee Mug', 'water color expressionist',
+                  'david mckean', 'jock', 'esad ribic', 'chris bachalo', 'expressionism', 'Jackson Pollock',
+                   'Alex Kanevskyg', 'Francis Bacon', 'Trash Polka', 'abstract realism', 'andrew salgado', 'alla prima technique',
+                    'alla prima', 'expressionist alla prima', 'expressionist alla prima technique' ]
 
 
 parser = argparse.ArgumentParser("Embed prompts using CLIP")
@@ -153,7 +156,7 @@ def init_stable_diffusion(device, path_tree: IODirectoryTree, sampler_name="ddim
 
 def generate_prompt():
     # Select 12 items randomly from the prompt_list
-    selected_prompts = random.sample(prompt_list, 12)
+    selected_prompts = random.sample(prompt_list, 15)
 
     # Join all selected prompts into a single string, separated by commas
     prompt = ', '.join(selected_prompts)
