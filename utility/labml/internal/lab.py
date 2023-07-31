@@ -5,7 +5,7 @@ import sys
 sys.path.append("./")
 
 from utility import labml
-from labml.internal import util
+from utility.labml.internal import util
 from utility.labml.internal.util import is_colab, is_kaggle
 from utility.labml.logger import Text
 from utility.labml.utils import get_caller_file
