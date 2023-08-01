@@ -95,17 +95,17 @@ class CLIPTextEmbedder(nn.Module):
         print("Memory status after the unloading: \n")
         get_memory_status()        
 
-    def save(self, text_embedder_path: str = TEXT_EMBEDDER_PATH):
+    def save(self, embedder_path: str = TEXT_EMBEDDER_PATH):
         try:
-            safetensors.torch.save_model(self, text_embedder_path)
-            print(f"CLIPTextEmbedder saved to: {text_embedder_path}")
+            safetensors.torch.save_model(self, embedder_path)
+            print(f"CLIPTextEmbedder saved to: {embedder_path}")
         except Exception as e:
             print(f"CLIPTextEmbedder not saved. Error: {e}")
             
-    def load(self, text_embedder_path: str = TEXT_EMBEDDER_PATH):
+    def load(self, embedder_path: str = TEXT_EMBEDDER_PATH):
         try:
-            safetensors.torch.load_model(self, text_embedder_path, strict=True)
-            print(f"CLIPTextEmbedder loaded from: {text_embedder_path}")
+            safetensors.torch.load_model(self, embedder_path, strict=True)
+            print(f"CLIPTextEmbedder loaded from: {embedder_path}")
             return self
         except Exception as e:
             print(f"CLIPTextEmbedder not loaded. Error: {e}")
