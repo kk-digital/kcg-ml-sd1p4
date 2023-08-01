@@ -155,11 +155,19 @@ def init_stable_diffusion(device, path_tree: IODirectoryTree, sampler_name="ddim
     return stable_diffusion
 
 def generate_prompt():
-    # Select 12 items randomly from the prompt_list
-    selected_prompts = random.sample(prompt_list, 15)
+    # Your mandatory phrases
+    mandatory_phrases = ['no background', 'white background', 'centered']
 
-    # Join all selected prompts into a single string, separated by commas
-    prompt = ', '.join(selected_prompts)
+    # Add the mandatory phrases to the prompt multiple times (e.g., 3 times)
+    mandatory_prompts = mandatory_phrases * 3
+
+    # Select remaining items randomly from the prompt_list
+    remaining_items = 9  # 15 - 3 mandatory phrases * 3 occurrences each = 9
+    random_prompts = random.sample(set(prompt_list) - set(mandatory_phrases), remaining_items)
+
+    # Join all selected prompts and mandatory prompts into a single string, separated by commas
+    prompt = ', '.join(mandatory_prompts + random_prompts)
+    
     print(f"Generated prompt: {prompt}")
     return prompt
 
