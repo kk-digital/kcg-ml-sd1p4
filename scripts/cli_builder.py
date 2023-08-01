@@ -31,7 +31,7 @@ class CLI:
         self.parser.add_argument(
             '--model',
             help='Filename of model to download, showed in --list-models',
-            default='sd-v1-4.ckpt'
+            default='v1-5-pruned-emaonly.safetensors'
         )
 
         return self
@@ -83,8 +83,8 @@ class CLI:
         self.parser.add_argument(
             '--checkpoint_path',
             type=str,
-            default='./input/model/sd-v1-4.ckpt',
-            help='Path to the checkpoint file (default: \'./input/model/sd-v1-4.ckpt\')'
+            default='./input/model/v1-5-pruned-emaonly.safetensors',
+            help='Path to the checkpoint file (default: \'./input/model/v1-5-pruned-emaonly.safetensors\')'
         )
 
         if check_exists:
