@@ -288,12 +288,12 @@ def main():
     for i in range(NUM_ITERATIONS):
         prompt = generate_prompt()
     #     print(f"Prompt {i}: {prompt}")  # Print the generated prompt
-        prompts.append(prompt)  # Store each prompt for later use
+    #     prompts.append(prompt)  # Store each prompt for later use
     #     get_memory_status()        
-        embedded_prompt, null_prompt = embed_and_save_prompts(clip_text_embedder, prompt, i)
+    #     embedded_prompt, null_prompt = embed_and_save_prompts(clip_text_embedder, prompt, i)
     #     embedded_prompts_list.append(embedded_prompt.cpu())  # Store the embedded prompts
     #     get_memory_status() 
-        torch.save(embedded_prompt, f'{EMBEDDED_PROMPTS_DIR}/embedded_prompt_{i}.pt')    
+    #     torch.save(embedded_prompt, f'{EMBEDDED_PROMPTS_DIR}/embedded_prompt_{i}.pt')    
         torch.cuda.empty_cache()
     # embedded_prompts_list = [embedded_prompt for embedded_prompt in embedded_prompts]  # Store the embedded prompts
     # null_prompt_list.append(null_prompt)  # Store the null prompts
