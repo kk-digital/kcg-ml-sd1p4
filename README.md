@@ -236,3 +236,93 @@ The Image Grid Creator is a script that generates a grid of images from a direct
 Run the script with the following command:
 
     python script_name.py --input_path <input_path> --n <number of images width> --m <number of images height> --img_size <size of grid image>
+
+
+### Generate Images Random Prompt
+
+To generate images from random prompt, these are the available CLI arguments:
+
+```
+options:
+  --batch_size   BATCH_SIZE
+                        How many images to generate at once
+  --output        OUTPUT
+                        Number of folders to
+  --sampler       SAMPLER
+                        Name of the sampler to use
+  --checkpoint_path     CHECKPOINT_PATH
+                        Path to the checkpoint file
+  --flash         FLASH
+                        Whether to use flash attention
+  --steps         STEPS
+                        Number of steps to use
+  --cgf_scale         SCALE
+                        Unconditional guidance scale: eps = eps(x, empty) + scale * (eps(x, cond) - eps(x, empty))
+  --seed      SEED
+                        Array of seed for the image generation: example '0, 1, 0, 7', Its better if the size of the array is the same as the number of generated images
+  --low-vram      LOW_VRAM
+                        Limit vram usage
+  --force_cpu     FORCE_CPU
+                        Force cpu usage
+  --cuda_device   CUDA_DEVICE
+                        Cuda device to use for generation process
+  --num_images    NUM_IMAGES
+                        Number of images to output
+```
+
+``` shell
+python3 ./scripts/generate_images_from_random_prompt.py --checkpoint_path "./input/model/v1-5-pruned-emaonly.safetensors" --cfg_scale 7 --num_images 10 --output "/output/"
+```
+
+### Chad Score
+
+To get the chad score of an image, these are the available CLI arguments:
+
+```
+options:
+  --image-path IMAGE_PATH
+                        Path to the image to be scored
+  --model-path MODEL_PATH
+                        Path to the model used for scoring the image
+```
+
+#### Example Usage:
+
+#### using python3
+``` shell
+python3 ./scripts/chad_score.py --model-path="input/model/chad_score/chad-score-v1.pth" --image-path="test/test_images/test_img.jpg"
+```
+
+#### using python
+``` shell
+python ./scripts/chad_score.py --model-path="input/model/chad_score/chad-score-v1.pth" --image-path="test/test_images/test_img.jpg"
+```
+
+### Chad Sort
+
+Takes in an image dataset
+Sorts the images in the dataset by chad score into multiple folders
+
+These are the available CLI arguments:
+
+```
+options:
+  --dataset-path DATASET_PATH
+                        Path to the dataset to be sorted
+  --output-path OUTPUT_PATH
+                        Path to the output folder
+  --num-classes NUM_CLASSES
+                        Number of folders to output
+```
+
+#### Example Usage:
+
+#### using python3
+``` shell
+python3 ./scripts/chad_sort.py --dataset-path "test/test_zip_files/test-dataset-correct-format.zip" --output-path "/output/chad_sort/"
+```
+
+#### using python
+``` shell
+python ./scripts/chad_sort.py --dataset-path "test/test_zip_files/test-dataset-correct-format.zip" --output-path "./output/chad_sort/"
+```

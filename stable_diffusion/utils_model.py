@@ -165,7 +165,8 @@ def initialize_clip_embedder(device=None, tokenizer=None, transformer=None,
         # else:
         #     clip_text_embedder.transformer = transformer
 
-        clip_text_embedder.load_submodels()
+        # This is temporary, we should call load_submodels instead
+        clip_text_embedder.load_submodels_auto()
 
         clip_text_embedder.to(device)
 
