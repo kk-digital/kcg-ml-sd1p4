@@ -188,7 +188,7 @@ class LatentDiffusion(nn.Module):
             return self.model
         else:
             unet = initialize_unet(device=self.device)
-            unet.load_state_dict(load_file(unet_path))
+            unet.load_state_dict(load_file(unet_path,device=self.device.type))
             unet.eval()
             self.model = UNetWrapper(unet)
             return self.model
@@ -229,14 +229,14 @@ class LatentDiffusion(nn.Module):
             return self
         else:
             self.first_stage_model = initialize_autoencoder(device=self.device, force_submodels_init=True)
-            self.first_stage_model.load_state_dict(load_file(autoencoder_path))
+            self.first_stage_model.load_state_dict(load_file(autoencoder_path,device=self.device.type))
             self.first_stage_model.eval()
             # TODO: Resolve the circular dependency between latent_diffusion.py and utils_model.py
             self.cond_stage_model = initialize_clip_embedder(device=self.device, force_submodels_init=True)
-            self.cond_stage_model.load_state_dict(load_file(embedder_path))
+            self.cond_stage_model.load_state_dict(load_file(embedder_path,device=self.device.type))
             self.cond_stage_model.eval()
             unet = initialize_unet(device=self.device).eval()
-            unet.load_state_dict(load_file(unet_path))
+            unet.load_state_dict(load_file(unet_path,device=self.device.type))
             self.model = UNetWrapper(unet)
             return self
 
