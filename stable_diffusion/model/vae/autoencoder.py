@@ -25,7 +25,6 @@ from torch import nn
 import time
 
 
-from stable_diffusion.utils_backend import get_device
 from .auxiliary_classes import *
 from .encoder import Encoder
 from .decoder import Decoder
@@ -34,6 +33,7 @@ import sys
 
 sys.path.insert(0, os.getcwd())
 
+from stable_diffusion.utils_backend import get_device
 from stable_diffusion.constants import ENCODER_PATH, DECODER_PATH, AUTOENCODER_PATH
 
 

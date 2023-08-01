@@ -19,7 +19,7 @@ from stable_diffusion.constants import UNET_PATH
 from stable_diffusion.constants import LATENT_DIFFUSION_PATH
 from stable_diffusion.utils_backend import get_device
 from utility.labml.monit import section
-from stable_diffusion.latent_diffusion import LatentDiffusion, initialize_autoencoder
+from stable_diffusion.latent_diffusion import LatentDiffusion
 from stable_diffusion.model.vae import Autoencoder, Encoder, Decoder
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion.model.unet import UNetModel

@@ -18,7 +18,7 @@ from os.path import join
 
 
 from stable_diffusion.constants import IMAGE_PROCESSOR_PATH, VISION_MODEL_PATH, IMAGE_ENCODER_PATH
-from stable_diffusion.utils.utils import get_device
+from stable_diffusion.utils_backend import get_device
 from torchinfo import summary
 
 from transformers import CLIPImageProcessor, CLIPVisionModelWithProjection
@@ -140,24 +140,3 @@ class CLIPImageEncoder(nn.Module):
                 (0.26862954, 0.26130258, 0.27577711)
             ) if do_normalize else Lambda(lambda x: x),
         ])
-
-        # self._image_processor_tensor = Compose([
-        #                         Resize(size),
-        #                         CenterCrop(size),
-        #                         Normalize(
-        #                             (0.48145466, 0.4578275, 0.40821073), 
-        #                             (0.26862954, 0.26130258, 0.27577711)
-        #                             ),
-        #                         ])     
-        # self._image_processor_image = Compose([
-        #                         Resize(size),
-        #                         CenterCrop(size),
-        #                         self.convert_image_to_rgb,
-        #                         ToTensor(),
-        #                         Lambda(lambda x: x * (2/255) - 1.0),
-        #                         Normalize(
-        #                             (0.48145466, 0.4578275, 0.40821073), 
-        #                             (0.26862954, 0.26130258, 0.27577711)
-        #                             ),
-        #                         Lambda(lambda x: x.unsqueeze(0)),
-        #                         ])

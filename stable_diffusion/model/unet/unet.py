@@ -30,7 +30,7 @@ import os
 import sys
 sys.path.insert(0, os.getcwd())
 from stable_diffusion.constants import UNET_PATH
-from stable_diffusion.utils.utils import get_device
+from stable_diffusion.utils_backend import get_device
 # UNET_PATH = os.path.abspath('./input/model/unet/unet.ckpt')
 
 class UNetModel(nn.Module):

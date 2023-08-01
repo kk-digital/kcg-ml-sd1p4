@@ -23,8 +23,8 @@ from torch import nn
 from .auxiliary_classes import *
 import os
 import sys
-from stable_diffusion.utils.utils import get_device
 sys.path.insert(0, os.getcwd())
+from stable_diffusion.utils_backend import get_device
 from stable_diffusion.constants import ENCODER_PATH
 
 
