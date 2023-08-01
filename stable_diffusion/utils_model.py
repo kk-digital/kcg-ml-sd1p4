@@ -19,7 +19,7 @@ from stable_diffusion.constants import UNET_PATH
 from stable_diffusion.constants import LATENT_DIFFUSION_PATH
 from stable_diffusion.utils_backend import get_device
 from utility.labml.monit import section
-from stable_diffusion.latent_diffusion import LatentDiffusion
+from stable_diffusion.latent_diffusion import LatentDiffusion, initialize_autoencoder
 from stable_diffusion.model.vae import Autoencoder, Encoder, Decoder
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion.model.unet import UNetModel
@@ -57,26 +57,7 @@ def initialize_decoder(device=None,
                           channel_multipliers=channel_multipliers,
                           n_resnet_blocks=n_resnet_blocks).to(device)
     return decoder
-    # Initialize the autoencoder    
-
-
-def initialize_autoencoder(device=None, encoder=None, decoder=None, emb_channels=4, z_channels=4,
-                           force_submodels_init=False) -> Autoencoder:
     # Initialize the autoencoder
-
-    with section(f'autoencoder initialization'):
-        device = get_device(device)
-        if force_submodels_init:
-            if encoder is None:
-                encoder = initialize_encoder(device=device, z_channels=z_channels)
-            if decoder is None:
-                decoder = initialize_decoder(device=device, z_channels=z_channels)
-
-        autoencoder = Autoencoder(emb_channels=emb_channels,
-                                  encoder=encoder,
-                                  decoder=decoder,
-                                  z_channels=z_channels).to(device)
-    return autoencoder
 
 
 def load_autoencoder(path: Union[str, Path] = AUTOENCODER_PATH, device=None) -> Autoencoder:
@@ -132,8 +113,7 @@ def load_tokenizer(path: Union[str, Path] = TOKENIZER_PATH, device=None) -> CLIP
 
 
 def initialize_transformer(device=None, version="openai/clip-vit-large-patch14") -> CLIPTextModel:
-    get_device(device)
-    transformer = CLIPTextModel.from_pretrained(version).eval().to(device)
+    transformer = CLIPTextModel.from_pretrained(version).eval().to(get_device(device))
     return transformer
 
 
@@ -145,8 +125,7 @@ def load_transformer(path: Union[str, Path] = TEXT_MODEL_PATH, device=None) -> C
     return transformer
 
 
-def initialize_clip_embedder(device=None, tokenizer=None, transformer=None,
-                             force_submodels_init=False) -> CLIPTextEmbedder:
+def initialize_clip_embedder(device=None, init_transformer=False) -> CLIPTextEmbedder:
     # Initialize the CLIP text embedder
 
     with section('CLIP Embedder initialization'):
@@ -155,15 +134,8 @@ def initialize_clip_embedder(device=None, tokenizer=None, transformer=None,
             device=device,
         )
 
-        # if tokenizer is None:
-        #     clip_text_embedder.load_tokenizer_from_lib()
-        # else:
-        #     clip_text_embedder.tokenizer = tokenizer
-
-        # if transformer is None:
-        #     clip_text_embedder.load_transformer_from_lib()
-        # else:
-        #     clip_text_embedder.transformer = transformer
+        if init_transformer:
+            initialize_transformer().save_pretrained(TEXT_MODEL_PATH)
 
         # This is temporary, we should call load_submodels instead
         clip_text_embedder.load_submodels_auto()
@@ -227,7 +199,7 @@ def initialize_latent_diffusion(path: Union[str, Path] = None, device=None, auto
         if autoencoder is None:
             autoencoder = initialize_autoencoder(device=device, force_submodels_init=force_submodels_init)
         if clip_text_embedder is None:
-            clip_text_embedder = initialize_clip_embedder(device=device, force_submodels_init=force_submodels_init)
+            clip_text_embedder = initialize_clip_embedder(device=device, init_transformer=True)
         if unet_model is None:
             unet_model = initialize_unet(device=device)
 

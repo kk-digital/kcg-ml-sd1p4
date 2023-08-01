@@ -1,5 +1,5 @@
 {
-  "_name_or_path": "./io/input/model/clip-vit-large-patch14",
+  "_name_or_path": "./io/input/model/clip/text_embedder/vit-large-patch14",
   "architectures": [
     "CLIPTextModel"
   ],

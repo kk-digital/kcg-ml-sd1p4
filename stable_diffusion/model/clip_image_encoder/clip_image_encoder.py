@@ -75,6 +75,12 @@ class CLIPImageEncoder(nn.Module):
         torch.save(self, image_encoder_path)
 
     def save_submodels(self, image_processor_path=IMAGE_PROCESSOR_PATH, clip_model_path=CLIP_MODEL_PATH):
+        # check if the dir of image_processor_path and clip_model_path exist, if not create them
+        if not os.path.exists(os.path.dirname(image_processor_path)):
+            os.makedirs(os.path.dirname(image_processor_path))
+        if not os.path.exists(os.path.dirname(clip_model_path)):
+            os.makedirs(os.path.dirname(clip_model_path))
+
         # Save the model to the specified folder
         torch.save(self.image_processor, image_processor_path)
         torch.save(self.clip_model, clip_model_path)

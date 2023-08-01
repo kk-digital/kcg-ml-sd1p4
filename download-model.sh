@@ -53,29 +53,3 @@ fi
 #else
 #    wget https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.ckpt -O "$model_path"
 #fi
-
-
-#Intall git-lfs
-#On linux
-if [ "$(uname)" == "Darwin" ]; then
-    brew install git-lfs
-elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
-    sudo apt-get install git-lfs
-elif [ "$(expr substr $(uname -s) 1 10)" == "MINGW64_NT" ]; then
-    echo "Windows not needed"
-fi
-
-# Download the clip-vit-large-patch14
-clip_vit_path="io/input/model/clip/text_embedder"
-clip_vit_dir="${clip_vit_path}/clip-vit-large-patch14"
-# check if the clip-vit-large-patch14 directory exists if not create it
-if [ ! -d "$clip_vit_dir" ];
-then
-  cd $clip_vit_path
-  git lfs install
-  git clone https://huggingface.co/openai/clip-vit-large-patch14
-  cd -
-else
-  echo "clip-vit-large-patch14 directory already exists"
-fi
-
