@@ -7,14 +7,22 @@ import argparse
 from tqdm import tqdm
 base_dir = "./"
 sys.path.insert(0, base_dir)
+from stable_diffusion.utils_backend import get_device
+
+sys.path.insert(0, os.getcwd())
 from auxiliary_functions import get_torch_distribution_from_name
 
 
+from stable_diffusion.utils_image import save_image_grid, save_images
+from text_to_image import Txt2Img
 from stable_diffusion.constants import CHECKPOINT_PATH
 from labml.monit import section
 from stable_diffusion.utils.utils import save_image_grid, save_images
 from stable_diffusion.utils.model import initialize_latent_diffusion
 from stable_diffusion import StableDiffusion
+from utility.labml.monit import section
+from stable_diffusion.utils_model import initialize_latent_diffusion
+
 # CHECKPOINT_PATH = os.path.abspath('./input/model/v1-5-pruned-emaonly.ckpt')
 OUTPUT_DIR = os.path.abspath("./output/noise-tests/temperature_range")
 
@@ -54,7 +62,7 @@ parser.add_argument("--temperature_steps", type=int, default=3)
 parser.add_argument("--temperature_range", nargs="+", type=float, default=[1.0, 4.0])
 parser.add_argument("--ddim_eta", type=float, default=0.1)
 parser.add_argument("--clear_output_dir", type=bool, default=False)
-parser.add_argument("--cuda_device", type=str, default="cuda:0")
+parser.add_argument("--cuda_device", type=str, default=None)
 
 args = parser.parse_args()
 
@@ -71,7 +79,7 @@ TEMPERATURE_STEPS = args.temperature_steps
 TEMPERATURE_RANGE = args.temperature_range
 DDIM_ETA = args.ddim_eta
 CLEAR_OUTPUT_DIR = args.clear_output_dir
-DEVICE = args.cuda_device
+DEVICE = get_device(args.cuda_device)
 
 TEMP_RANGE = torch.linspace(*TEMPERATURE_RANGE, TEMPERATURE_STEPS)
 
@@ -94,7 +102,7 @@ DISTRIBUTIONS = {
 
 
 def create_folder_structure(
-    distributions_dict: dict, root_dir: str = OUTPUT_DIR
+        distributions_dict: dict, root_dir: str = OUTPUT_DIR
 ) -> None:
     for i, distribution_name in enumerate(distributions_dict.keys()):
         distribution_outputs = os.path.join(root_dir, distribution_name)
@@ -174,7 +182,7 @@ def generate_images_from_temp_range(
     # Generate the images
     img_grids = []
     for distribution_index, (distribution_name, params) in enumerate(
-        distributions.items()
+            distributions.items()
     ):
         noise_fn = (
             lambda shape, device=None: get_torch_distribution_from_name(DIST_NAME)(

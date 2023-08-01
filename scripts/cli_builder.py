@@ -2,8 +2,7 @@ import argparse
 import os, sys
 
 sys.path.append(os.path.join(".", "stable_diffusion/utils"))
-from stable_diffusion_reference.utils.cli import check_folder_existence, check_file_existence
-
+from stable_diffusion_reference.cli import check_folder_existence, check_file_existence
 from typing import Union, Callable
 
 
@@ -122,6 +121,26 @@ class CLI:
             type=int,
             default=1,
             help='How many images to generate at once (default: %(default)s)'
+        )
+
+        return self
+
+    def image_width(self):
+        self.parser.add_argument(
+            '--image_width',
+            type=int,
+            default=512,
+            help='Generate image width (default: %(default)s)'
+        )
+
+        return self
+
+    def image_height(self):
+        self.parser.add_argument(
+            '--image_height',
+            type=int,
+            default=512,
+            help='Generate image height (default: %(default)s)'
         )
 
         return self
@@ -272,6 +291,15 @@ class CLI:
             "--low_vram",
             action='store_true',
             help="limit VRAM usage"
+        )
+
+        return self
+
+    def output_metadata(self):
+        self.parser.add_argument(
+            "--output_metadata",
+            action='store_true',
+            help="outputs the metadata"
         )
 
         return self

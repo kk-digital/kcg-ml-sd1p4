@@ -1,0 +1,75 @@
+
+import json
+import numpy as np
+
+class GenerationTaskResult:
+    def __init__(self, clip_embedding, latent, image_name, image_hash, image_latent, image_clip_vector, chad_score_model, chad_score, seed, cfg_strength):
+        self.clip_embedding = clip_embedding
+        self.latent = latent
+        self.image_name = image_name
+        self.image_hash = image_hash
+        self.image_latent = image_latent
+        self.image_clip_vector = image_clip_vector
+        self.chad_score_model = chad_score_model
+        self.chad_score = chad_score
+        self.seed = seed
+        self.cfg_strength = cfg_strength
+
+    def to_dict(self):
+        return {
+            "clip_embedding": self.clip_embedding,
+            "latent": self.latent,
+            "image_name": self.image_name,
+            "image_hash": self.image_hash,
+            "image_latent": self.image_latent,
+            "image_clip_vector": self.image_clip_vector,
+            "chad_score_model": self.chad_score_model,
+            "chad_score": self.chad_score,
+            "seed": self.seed,
+            "cfg_strength": self.cfg_strength
+        }
+
+
+    def from_dict(data):
+        return GenerationTaskResult(
+        clip_embedding=data['clip_embedding'],
+        latent=data['latent'],
+        image_name=data['image_name'],
+        image_hash=data['image_hash'],
+        image_latent=data['image_latent'],
+        image_clip_vector=data['image_clip_vector'],
+        chad_score_model=data['chad_score_model'],
+        chad_score=data['chad_score'],
+        seed=data['seed'],
+        cfg_strength=data['cfg_strength'])
+
+
+    def save_to_json(self, filename):
+        with open(filename, 'w') as file:
+            json.dump(self.to_dict(), file, ensure_ascii=False, cls=NumpyArrayEncoder)
+
+    def load_from_json(self, filename):
+        with open(filename, 'r') as file:
+            data = json.load(file, cls=NumpyArrayDecoder)
+            return GenerationTaskResult.from_dict(data)
+
+
+
+class NumpyArrayDecoder(json.JSONDecoder):
+    def __init__(self, *args, **kwargs):
+        json.JSONDecoder.__init__(self, object_hook=self.json_to_ndarray, *args, **kwargs)
+
+    def json_to_ndarray(self, dct):
+        if '__ndarray__' in dct:
+            data = np.array(dct['data'], dtype=dct['dtype'])
+            if 'shape' in dct:
+                data = data.reshape(dct['shape'])
+            return data
+        return dct
+
+# Custom encoder to handle NumPy arrays
+class NumpyArrayEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return json.JSONEncoder.default(self, obj)

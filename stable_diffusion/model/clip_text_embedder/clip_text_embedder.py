@@ -1,5 +1,4 @@
-
-#%%
+# %%
 
 
 """
@@ -16,19 +15,19 @@ It uses HuggingFace Transformers CLIP model.
 """
 import os
 import sys
-
 sys.path.insert(0, os.getcwd())
 
-from typing import List
 import torch
+import safetensors as st
 from torch import nn
 from transformers import CLIPTokenizer, CLIPTextModel, CLIPTextConfig
 
 import safetensors
 
 from stable_diffusion.constants import TEXT_EMBEDDER_PATH, TOKENIZER_PATH, TEXT_MODEL_PATH
-from stable_diffusion.utils.utils import get_device, get_memory_status
-from torchinfo import summary
+from stable_diffusion.utils_backend import get_device, get_memory_status
+
+
 # TEXT_EMBEDDER_PATH = os.path.abspath('./input/model/clip/clip_embedder.ckpt')
 # TOKENIZER_PATH = os.path.abspath('./input/model/clip/clip_tokenizer.ckpt')
 # TEXT_MODEL_PATH = os.path.abspath('./input/model/clip/clip_transformer.ckpt')
@@ -44,7 +43,6 @@ class CLIPTextEmbedder(nn.Module):
         :param max_length: is the max length of the tokenized prompt
         """
         super().__init__()
-
 
         self.path_tree = path_tree
         self.device = get_device(device)
@@ -80,6 +78,11 @@ class CLIPTextEmbedder(nn.Module):
         print(f"CLIP text model successfully loaded from : {transformer_path}\n")
         return self
 
+    def load_submodels_auto(self):
+
+        self.tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14")
+        self.text_model = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14").eval().to(self.device)
+        return self
     def unload_submodels(self):
 
         print("Memory status before unloading submodels: \n")
@@ -94,7 +97,7 @@ class CLIPTextEmbedder(nn.Module):
             self.transformer = None
         torch.cuda.empty_cache()
         print("Memory status after the unloading: \n")
-        get_memory_status()        
+        get_memory_status()
 
     def save(self, embedder_path: str = TEXT_EMBEDDER_PATH):
         try:
@@ -120,7 +123,7 @@ class CLIPTextEmbedder(nn.Module):
                                         return_overflowing_tokens=False, padding="max_length", return_tensors="pt")
         # Get token ids
         tokens = batch_encoding["input_ids"].to(self.device)
-        
+
         # Get CLIP embeddings
         return self.transformer(input_ids=tokens).last_hidden_state
 #%%
@@ -130,17 +133,13 @@ if __name__ == "__main__":
 
     clip = CLIPTextEmbedder()
 
-
-
-    
-    
     embeddings1 = clip(prompts)
 
     summary(clip.transformer)
     print("embeddings: ", embeddings1)
     print("embeddings.shape: ", embeddings1.shape)
 
-    clip.save()  
+    clip.save()
 
     clip.unload_submodels()
 
@@ -156,4 +155,3 @@ if __name__ == "__main__":
     assert torch.allclose(embeddings1, embeddings3), "embeddings1 != embeddings3"
     assert torch.allclose(embeddings2, embeddings3), "embeddings2 != embeddings3"
     print(os.getcwd())
-# %%

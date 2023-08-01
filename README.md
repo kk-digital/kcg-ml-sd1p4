@@ -39,7 +39,7 @@ This script initializes a `LatentDiffusion` module, load its weights from a chec
 **Note**: saving these models will take an extra ~5GB of storage.
 
 ```bash
-python3 ./scripts/save_models.py
+python scripts/process_base_model.py input/model/v1-5-pruned-emaonly.safetensors
 ```
 
 **Command line arguments**
@@ -91,7 +91,7 @@ python3 ./scripts/text_to_image.py --prompt "character, chibi, waifu, side scrol
 
 ## Running `stable_diffusion` scripts
 
-There are five other new scripts besides `scripts/save_models.py`.
+There are five other new scripts besides `scripts/process_base_model.py`.
 
 #### Embed prompts
 
@@ -127,13 +127,13 @@ python3 ./scripts/generate_images_from_embeddings.py --num_seeds 4 --temperature
 - `-t, --temperature`: Sampling temperature. Defaults to `1.0`.
 - `--ddim_eta`: Amount of noise to readd during the sampling process. Defaults to `0.0`.
 - `--clear_output_dir`: Either to clear or not the output directory before running. Defaults to `False`.
-- `--cuda_device`: CUDA device to use. Defaults to `cuda:0`.
+- `--cuda_device`: CUDA device to use. Defaults to `get_device()`.
 
 #### Images from distributions
 
 Try running:
 ```bash
-python3 ./scripts/generate_images_from_distributions.py -d 4 --params_steps 4 --params_range 0.49, 0.54 --num_seeds 4 --temperature 1.2 --ddim_eta 1.2
+python3 ./scripts/generate_images_from_distributions.py -d 4 --params_steps 4 --params_range 0.49 0.54 --num_seeds 4 --temperature 1.2 --ddim_eta 1.2
 ```
 
 **Command line arguments**
@@ -150,7 +150,7 @@ python3 ./scripts/generate_images_from_distributions.py -d 4 --params_steps 4 --
 - `-t, --temperature`: Sampling temperature. Defaults to `1.0`.
 - `--ddim_eta`: Amount of noise to readd during the sampling process. Defaults to `0.0`.
 - `--clear_output_dir`: Either to clear or not the output directory before running. Defaults to `False`.
-- `--cuda_device`: CUDA device to use. Defaults to `"cuda:0"`.
+- `--cuda_device`: CUDA device to use. Defaults to `"get_device()"`.
 
 #### Images from temperature range
 
@@ -175,7 +175,7 @@ python3 ./scripts/generate_images_from_temperature_range.py -d 4 --params_range 
 - `--temperature_range`: The range of temperature. Defaults to `[1.0, 4.0]`.
 - `--ddim_eta`: The value of ddim_eta. Defaults to `0.1`.
 - `--clear_output_dir`: Whether to clear the output directory or not. Defaults to `False`.
-- `--cuda_device`: The CUDA device to use. Defaults to `"cuda:0"`.
+- `--cuda_device`: The CUDA device to use. Defaults to `"get_device()"`.
 
 
 #### Images and encodings
@@ -190,7 +190,7 @@ python3 ./scripts/generate_images_and_encodings.py --prompt "An oil painting of 
 - `--batch_size`: How many images to generate at once. Defaults to `1`.
 - `--num_iterations`: How many times to iterate the generation of a batch of images. Defaults to `10`.
 - `--prompt`: The prompt to render. It is an optional argument. Defaults to `"a painting of a cute monkey playing guitar"`.
-- `--cuda_device`: CUDA device to use for generation. Defaults to "cuda:0".
+- `--cuda_device`: CUDA device to use for generation. Defaults to `"get_device()"`.
 
 #### Perturbations on prompts embeddings
 
@@ -204,7 +204,7 @@ Outputs in: `./output/disturbing_embeddings`
 - `--num_iterations`: The number of iterations to batch-generate images. Defaults to `8`.
 - `--seed`: The noise seed used to generate the images. Defaults to `2982`.
 - `--noise_multiplier`: The multiplier for the amount of noise used to disturb the prompt embedding. Defaults to `0.01`.
-- `--cuda_device`: The CUDA device to use. Defaults to `"cuda:0"`.
+- `--cuda_device`: The CUDA device to use. Defaults to `"get_device()"`.
 
 
 #### Random Pormpts Generation and Disturbing Embeddings Image Generation
@@ -212,7 +212,7 @@ Outputs in: `./output/disturbing_embeddings`
 Try running:
 
 ```bash
-python3 ./scripts/data_bounding_box_and_score_and_embedding_dataset.py
+python3 ./scripts/data_bounding_box_and_score_and_embedding_dataset.py --num_iterations 10
 ```
 
 - `--save_embeddings`: If True, the disturbed embeddings will be saved to disk. Defaults to `False`.
@@ -222,6 +222,134 @@ python3 ./scripts/data_bounding_box_and_score_and_embedding_dataset.py
 - `batch_size`: The number of images to generate per batch. Defaults to `1`.
 - `seed`: The noise seed used to generate the images. Defaults to `2982`.
 - `noise_multiplier`: The multiplier for the amount of noise used to disturb the prompt embedding. Defaults to `0.008`.
-- `cuda_device`: The CUDA device to use. Defaults to `'cuda:0'`.
+- `cuda_device`: The CUDA device to use. Defaults to `'get_device()'`.
 - `clear_output_dir`: If True, the output directory will be cleared before generating images. Defaults to `False`.
-- `random_walk`: Random walk on the embedding space, with the prompt embedding as origin. Defaults to False.
+
+
+#### Image Grid Generator
+
+The Image Grid generator is a script that generates a grid of images from a directory or a zip file containing images. 
+
+##### Usage
+
+Run the script with the following command:
+
+    python ./utility/scripts/grid_generator.py --input_path ./test/test_images/clip_segmentation --output_path ./tmp --rows 3 --columns 2  --img_size 256
+
+
+### Generate Images Random Prompt
+
+To generate images from random prompt, these are the available CLI arguments:
+
+```
+options:
+  --batch_size   BATCH_SIZE
+                        How many images to generate at once
+  --output        OUTPUT
+                        Number of folders to
+  --sampler       SAMPLER
+                        Name of the sampler to use
+  --checkpoint_path     CHECKPOINT_PATH
+                        Path to the checkpoint file
+  --flash         FLASH
+                        Whether to use flash attention
+  --steps         STEPS
+                        Number of steps to use
+  --cgf_scale         SCALE
+                        Unconditional guidance scale: eps = eps(x, empty) + scale * (eps(x, cond) - eps(x, empty))
+  --seed      SEED
+                        Array of seed for the image generation: example '0, 1, 0, 7', Its better if the size of the array is the same as the number of generated images
+  --low-vram      LOW_VRAM
+                        Limit vram usage
+  --force_cpu     FORCE_CPU
+                        Force cpu usage
+  --cuda_device   CUDA_DEVICE
+                        Cuda device to use for generation process
+  --num_images    NUM_IMAGES
+                        Number of images to output
+  --image_width IMAGE_WIDTH
+                        Generated image width, default is 512
+  --image_height IMAGE_HEIGHT
+                        Generated image width, default is 512
+```
+
+``` shell
+python3 ./scripts/generate_images_from_random_prompt.py --checkpoint_path "./input/model/v1-5-pruned-emaonly.safetensors" --cfg_scale 7 --num_images 10 --output "/output/"
+```
+
+### Chad Score
+
+To get the chad score of an image, these are the available CLI arguments:
+
+```
+options:
+  --image-path IMAGE_PATH
+                        Path to the image to be scored
+  --model-path MODEL_PATH
+                        Path to the model used for scoring the image
+```
+
+#### Example Usage:
+
+#### using python3
+``` shell
+python3 ./scripts/chad_score.py --model-path="input/model/chad_score/chad-score-v1.pth" --image-path="test/test_images/test_img.jpg"
+```
+
+#### using python
+``` shell
+python ./scripts/chad_score.py --model-path="input/model/chad_score/chad-score-v1.pth" --image-path="test/test_images/test_img.jpg"
+```
+
+### Chad Sort
+
+Takes in an image dataset
+Sorts the images in the dataset by chad score into multiple folders
+
+These are the available CLI arguments:
+
+```
+options:
+  --dataset-path DATASET_PATH
+                        Path to the dataset to be sorted
+  --output-path OUTPUT_PATH
+                        Path to the output folder
+  --num-classes NUM_CLASSES
+                        Number of folders to output
+```
+
+#### Example Usage:
+
+#### using python3
+``` shell
+python3 ./scripts/chad_sort.py --dataset-path "test/test_zip_files/test-dataset-correct-format.zip" --output-path "/output/chad_sort/"
+```
+
+#### using python
+``` shell
+python ./scripts/chad_sort.py --dataset-path "test/test_zip_files/test-dataset-correct-format.zip" --output-path "./output/chad_sort/"
+```
+
+### Running GenerationTask
+
+Runs a generation task from .json file
+
+These are the available CLI arguments:
+
+```
+options:
+  --task_path TASK_PATH
+                        Path to the task .json file
+```
+
+#### Example Usage:
+
+#### using python3
+``` shell
+python3 ./scripts/run_generation_task.py --task_path './test/test_generation_task/text_to_image_v1.json'
+```
+
+#### using python
+``` shell
+python ./scripts/run_generation_task.py --task_path './test/test_generation_task/text_to_image_v1.json'
+```

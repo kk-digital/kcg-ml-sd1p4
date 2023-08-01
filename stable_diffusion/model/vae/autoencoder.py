@@ -22,20 +22,21 @@ import safetensors
 import os
 import torch.nn.functional as F
 from torch import nn
+import time
+
+
+from stable_diffusion.utils_backend import get_device
 from .auxiliary_classes import *
 from .encoder import Encoder
 from .decoder import Decoder
-# from stable_diffusion.utils.model import initialize_encoder, initialize_decoder
-from stable_diffusion.utils.utils import SectionManager as section
 import os
 import sys
+
 sys.path.insert(0, os.getcwd())
 
 from stable_diffusion.constants import ENCODER_PATH, DECODER_PATH, AUTOENCODER_PATH
-from stable_diffusion.utils.utils import get_device
-# ENCODER_PATH = os.path.abspath('./input/model/autoencoder/encoder.ckpt')
-# DECODER_PATH = os.path.abspath('./input/model/autoencoder/decoder.ckpt')
-# AUTOENCODER_PATH = os.path.abspath('./input/model/autoencoder/autoencoder.ckpt')
+
+
 
 class Autoencoder(nn.Module):
     """
@@ -185,12 +186,11 @@ if __name__ == "__main__":
 
     vae = Autoencoder(emb_channels=4, z_channels=4)
 
-
     vae.initialize_submodels()
     # embeddings1 = vae(prompts)
 
-    vae.save()  
-    vae.save_submodels()  
+    vae.save()
+    vae.save_submodels()
     vae.unload_submodels()
 
     vae.load_submodels()

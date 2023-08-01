@@ -3,11 +3,10 @@ import sys
 sys.path.insert(0, os.getcwd())
 
 import clip
+from stable_diffusion.utils_backend import get_device
 import hashlib
-import time
 import torch
 import numpy as np
-import tqdm
 import PIL
 from PIL import Image
 from torchvision.transforms import Compose, Resize, CenterCrop, ToTensor, Normalize, Lambda
@@ -38,7 +37,8 @@ class CLIPImageEncoder(nn.Module):
         # self.input_mode = input_mode
 
         if image_processor is None:
-            print("WARNING: image_processor has not been given. Initialize one with the `.initialize_preprocessor()` method.")
+            print(
+                "WARNING: image_processor has not been given. Initialize one with the `.initialize_preprocessor()` method.")
             # self.initialize_preprocessor()
 
         self.to(self.device)
@@ -92,7 +92,7 @@ class CLIPImageEncoder(nn.Module):
         return torch.from_numpy(np.array(image)) \
             .permute(2, 0, 1) \
             .unsqueeze(0) \
-            .to(self.device) * (2/255.) - 1.0
+            .to(self.device) * (2 / 255.) - 1.0
 
     def preprocess_input(self, image):
         # Preprocess image
@@ -115,11 +115,11 @@ class CLIPImageEncoder(nn.Module):
     def compute_sha256(image_data):
         # Compute SHA256
         return hashlib.sha256(image_data).hexdigest()
-    
+
     @staticmethod
     def convert_image_to_rgb(image):
         return image.convert("RGB")
-    
+
     @staticmethod
     def get_input_type(image):
         if isinstance(image, PIL.Image.Image):
@@ -128,19 +128,19 @@ class CLIPImageEncoder(nn.Module):
             return torch.Tensor
         else:
             raise ValueError("Image must be PIL Image or Tensor")
-        
-    def initialize_preprocessor(self, size = 224, do_resize = True, do_center_crop = True, do_normalize = True):
+
+    def initialize_preprocessor(self, size=224, do_resize=True, do_center_crop=True, do_normalize=True):
         print("Initializing image preprocessor...")
-        
+
         self.image_processor = Compose([
-                                Resize(size) if do_resize else Lambda(lambda x: x),
-                                CenterCrop(size) if do_center_crop else Lambda(lambda x: x),
-                                Normalize(
-                                    (0.48145466, 0.4578275, 0.40821073), 
-                                    (0.26862954, 0.26130258, 0.27577711)
-                                    ) if do_normalize else Lambda(lambda x: x),
-                                ])
-        
+            Resize(size) if do_resize else Lambda(lambda x: x),
+            CenterCrop(size) if do_center_crop else Lambda(lambda x: x),
+            Normalize(
+                (0.48145466, 0.4578275, 0.40821073),
+                (0.26862954, 0.26130258, 0.27577711)
+            ) if do_normalize else Lambda(lambda x: x),
+        ])
+
         # self._image_processor_tensor = Compose([
         #                         Resize(size),
         #                         CenterCrop(size),

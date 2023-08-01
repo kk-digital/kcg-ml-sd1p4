@@ -14,7 +14,6 @@ We have kept to the model definition and naming unchanged from
 [CompVis/stable-diffusion](https://github.com/CompVis/stable-diffusion)
 so that we can load the checkpoints directly.
 """
-
 from typing import List
 
 import torch
@@ -24,6 +23,7 @@ from torch import nn
 from .auxiliary_classes import *
 import os
 import sys
+
 sys.path.insert(0, os.getcwd())
 from stable_diffusion.constants import DECODER_PATH
 from stable_diffusion.utils.utils import get_device
@@ -141,4 +141,3 @@ class Decoder(nn.Module):
 
         #
         return img
-

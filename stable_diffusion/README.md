@@ -18,7 +18,8 @@
   - [Notebooks](#notebooks)
 ## Downloading models
 
-Will download the currently supported checkpoint, `v1-5-pruned-emaonly.ckpt`, to `./input/model/`.
+Uncomment the **Attempting to download v1-5-pruned-emaonly.ckpt** in the [download-model.sh](./stable_diffusion/download-model.sh) script.
+And run it to download the currently supported checkpoint, `v1-5-pruned-emaonly.ckpt`, to `./input/model/`.
 
 ```bash
 ./stable_diffusion/download-model.sh

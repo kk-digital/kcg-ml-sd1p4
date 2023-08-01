@@ -140,6 +140,7 @@ dmypy.json
 # /input/model/clip
 # /input/model/unet
 # Ignore all downloaded models, we don't have enough storage for that!
+/input/
 *.ckpt
 *.safetensors
 *.pt
@@ -154,3 +155,4 @@ data.json
 
 # ignore pycharm
 .idea
+/io/input/model/clip/text_embedder/clip-vit-large-patch14/

@@ -3,28 +3,15 @@ import torch
 import shutil
 import argparse
 import sys
+from tqdm import tqdm
+from os.path import join
 
 base_directory = "./"
 sys.path.insert(0, base_directory)
 
-
-from tqdm import tqdm
-from stable_diffusion.constants import (
-    CHECKPOINT_PATH,
-    AUTOENCODER_PATH,
-    UNET_PATH,
-    TEXT_EMBEDDER_PATH,
-    LATENT_DIFFUSION_PATH,
-    ENCODER_PATH,
-    DECODER_PATH,
-    TOKENIZER_PATH,
-    TEXT_MODEL_PATH,
-)
 from stable_diffusion.stable_diffusion import StableDiffusion
-from labml.monit import section
-from stable_diffusion.utils.utils import save_image_grid, save_images, get_device
-
-from os.path import join
+from stable_diffusion.utils_backend import get_device
+from stable_diffusion.utils_image import save_images, save_image_grid
 
 # CHECKPOINT_PATH = os.path.abspath('./input/model/v1-5-pruned-emaonly.ckpt')
 
@@ -54,7 +41,7 @@ parser.add_argument("-bs", "--batch_size", type=int, default=1)
 parser.add_argument("-t", "--temperature", type=float, default=1.0)
 parser.add_argument("--ddim_eta", type=float, default=0.0)
 parser.add_argument("--clear_output_dir", type=bool, default=False)
-parser.add_argument("--cuda_device", type=str, default="cuda:0")
+parser.add_argument("--cuda_device", type=str, default=None)
 
 args = parser.parse_args()
 
@@ -65,7 +52,7 @@ BATCH_SIZE = args.batch_size
 TEMPERATURE = args.temperature
 DDIM_ETA = args.ddim_eta
 CLEAR_OUTPUT_DIR = args.clear_output_dir
-DEVICE = args.cuda_device
+DEVICE = get_device(args.cuda_device)
 
 NOISE_SEEDS = NOISE_SEEDS[:NUM_SEEDS]
 
@@ -85,16 +72,16 @@ def init_stable_diffusion(device, sampler_name="ddim", n_steps=20, ddim_eta=0.0)
 
 
 def generate_images_from_embeddings(
-    embeddings_dir: str = EMBEDDED_PROMPTS_DIR,
-    output_dir: str = OUTPUT_DIR,
-    sampler_name: str = "ddim",
-    n_steps: int = 20,
-    batch_size: int = BATCH_SIZE,
-    noise_seeds: list = NOISE_SEEDS,
-    clear_output_dir: bool = CLEAR_OUTPUT_DIR,
-    ddim_eta: float = DDIM_ETA,
-    cfg_scale : float = 7.5,
-    cuda_device: str = DEVICE,
+        embeddings_dir: str = EMBEDDED_PROMPTS_DIR,
+        output_dir: str = OUTPUT_DIR,
+        sampler_name: str = "ddim",
+        n_steps: int = 20,
+        batch_size: int = BATCH_SIZE,
+        noise_seeds: list = NOISE_SEEDS,
+        clear_output_dir: bool = CLEAR_OUTPUT_DIR,
+        ddim_eta: float = DDIM_ETA,
+        cfg_scale: float = 7.5,
+        cuda_device: str = DEVICE,
 ):
     null_cond = torch.load(join(embeddings_dir, "null_cond.pt"), map_location=DEVICE)
     # print(null_cond.shape)
@@ -123,8 +110,8 @@ def generate_images_from_embeddings(
 
     with torch.no_grad():
         with tqdm(
-            total=total_images,
-            desc="Generating images",
+                total=total_images,
+                desc="Generating images",
         ) as pbar:
             img_count = 0
             img_grid = []
@@ -132,11 +119,11 @@ def generate_images_from_embeddings(
                 img_row = []
                 for seed_index, noise_seed in enumerate(noise_seeds):
                     p_bar_description = (
-                        f"Generating image {img_count+1} of {total_images}"
+                        f"Generating image {img_count + 1} of {total_images}"
                     )
                     pbar.set_description(p_bar_description)
 
-                    image_name = f"n{noise_seed:04d}_a{prompt_index+1:04d}.jpg"
+                    image_name = f"n{noise_seed:04d}_a{prompt_index + 1:04d}.jpg"
                     dest_path = join(output_dir, image_name)
 
                     images = stable_diffusion.generate_images_from_embeddings(

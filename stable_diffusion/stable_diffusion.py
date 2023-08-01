@@ -1,27 +1,21 @@
 import os, sys
-
-sys.path.append(os.path.abspath(""))
-
 import torch
 import time
 
+sys.path.append(os.path.abspath(""))
+
+from stable_diffusion.utils_backend import get_device, get_autocast, set_seed
+from stable_diffusion.utils_image import load_img
 from stable_diffusion.sampler.ddim import DDIMSampler
 from stable_diffusion.sampler.ddpm import DDPMSampler
-from stable_diffusion.utils.model import initialize_latent_diffusion
-from stable_diffusion.utils.utils import (
-    get_device,
-    load_img,
-    get_memory_status,
-    set_seed,
-    get_autocast,
-)
+from stable_diffusion.utils_model import initialize_latent_diffusion
 from stable_diffusion.latent_diffusion import LatentDiffusion
 from stable_diffusion.sampler import DiffusionSampler
 from stable_diffusion.constants import LATENT_DIFFUSION_PATH
-from labml.monit import section
-from typing import Union, Optional
-from pathlib import Path
+from utility.labml.monit import section
+from typing import Optional
 import safetensors
+
 
 class ModelLoadError(Exception):
     pass
@@ -62,7 +56,7 @@ class StableDiffusion:
                 "WARNING: `LatentDiffusion` model is `None` given. Initialize one with the appropriate method."
             )
         elif type(self._model) == LatentDiffusion:
-            
+
             print("LatentDiffusion model given. Initializing sampler.")
             self.model = self._model
             # print("WARNING: LatentDiffusion model not given. An empty model will be initialized.")
@@ -159,7 +153,7 @@ class StableDiffusion:
         # we set a sample mask to preserve the bottom half of the image
         if mask is None:
             mask = torch.zeros_like(orig, device=self.device)
-            mask[:, :, mask.shape[2] // 2 :, :] = 1.0
+            mask[:, :, mask.shape[2] // 2:, :] = 1.0
         else:
             mask = mask.to(self.device)
 
@@ -172,7 +166,7 @@ class StableDiffusion:
         return t_index
 
     def get_text_conditioning(
-        self, uncond_scale: float, prompts: list, batch_size: int = 1
+            self, uncond_scale: float, prompts: list, batch_size: int = 1
     ):
         # In unconditional scaling is not $1$ get the embeddings for empty prompts (no conditioning).
         if uncond_scale != 1.0:
@@ -186,14 +180,14 @@ class StableDiffusion:
         return un_cond, cond
 
     def paint(
-        self,
-        orig: torch.Tensor,
-        cond: torch.Tensor,
-        t_index: int,
-        uncond_scale: float = 1.0,
-        un_cond: Optional[torch.Tensor] = None,
-        mask: Optional[torch.Tensor] = None,
-        orig_noise: Optional[torch.Tensor] = None,
+            self,
+            orig: torch.Tensor,
+            cond: torch.Tensor,
+            t_index: int,
+            uncond_scale: float = 1.0,
+            un_cond: Optional[torch.Tensor] = None,
+            mask: Optional[torch.Tensor] = None,
+            orig_noise: Optional[torch.Tensor] = None,
     ):
         orig_2 = None
         # If we have a mask and noise, it's in-painting
@@ -242,12 +236,12 @@ class StableDiffusion:
         return self.model
 
     def initialize_latent_diffusion(
-        self,
-        path=None,
-        autoencoder=None,
-        clip_text_embedder=None,
-        unet_model=None,
-        force_submodels_init=False,
+            self,
+            path=None,
+            autoencoder=None,
+            clip_text_embedder=None,
+            unet_model=None,
+            force_submodels_init=False,
     ):
         try:
             self.model = initialize_latent_diffusion(
@@ -276,17 +270,17 @@ class StableDiffusion:
 
     @torch.no_grad()
     def generate_images(
-        self,
-        *,
-        seed: int = 0,
-        batch_size: int = 1,
-        prompt: str,
-        h: int = 512,
-        w: int = 512,
-        uncond_scale: float = 7.5,
-        low_vram: bool = False,
-        noise_fn=torch.randn,
-        temperature: float = 1.0,
+            self,
+            *,
+            seed: int = 0,
+            batch_size: int = 1,
+            prompt: str,
+            h: int = 512,
+            w: int = 512,
+            uncond_scale: float = 7.5,
+            low_vram: bool = False,
+            noise_fn=torch.randn,
+            temperature: float = 1.0,
     ):
         """
         :param seed: the seed to use when generating the images
@@ -304,7 +298,7 @@ class StableDiffusion:
         # Image to latent space resolution reduction
         f = 8
         if seed == 0:
-            seed = time.time_ns() % 2**32
+            seed = time.time_ns() % 2 ** 32
         set_seed(seed)
         # Adjust batch size based on VRAM availability
         if low_vram:
@@ -333,18 +327,18 @@ class StableDiffusion:
 
     @torch.no_grad()
     def generate_images_from_embeddings(
-        self,
-        *,
-        seed: int = 0,
-        batch_size: int = 1,
-        embedded_prompt: torch.Tensor,
-        null_prompt: torch.Tensor,
-        h: int = 512,
-        w: int = 512,
-        uncond_scale: float = 7.5,
-        low_vram: bool = False,
-        noise_fn=torch.randn,
-        temperature: float = 1.0,
+            self,
+            *,
+            seed: int = 0,
+            batch_size: int = 1,
+            embedded_prompt: torch.Tensor,
+            null_prompt: torch.Tensor,
+            h: int = 512,
+            w: int = 512,
+            uncond_scale: float = 7.5,
+            low_vram: bool = False,
+            noise_fn=torch.randn,
+            temperature: float = 1.0,
     ):
         """
         :param seed: the seed to use when generating the images
@@ -363,7 +357,7 @@ class StableDiffusion:
         f = 8
 
         if seed == 0:
-            seed = time.time_ns() % 2**32
+            seed = time.time_ns() % 2 ** 32
 
         set_seed(seed)
         # Adjust batch size based on VRAM availability

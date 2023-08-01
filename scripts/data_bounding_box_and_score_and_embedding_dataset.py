@@ -1,20 +1,23 @@
 import os
 import sys
+
+base_dir = "./"
+sys.path.insert(0, base_dir)
+
 import argparse
 import torch
 import hashlib
 import json
 import shutil
-import math
 import cv2
 import numpy as np
 import random
 import warnings
+
+from stable_diffusion.utils_backend import get_device, get_memory_status
+from stable_diffusion.utils_image import to_pil
+
 warnings.filterwarnings("ignore", category=UserWarning)
-
-
-base_dir = "./"
-sys.path.insert(0, base_dir)
 
 from typing import List
 from os.path import join
@@ -24,13 +27,7 @@ from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
 from chad_score import ChadPredictor
 from stable_diffusion import StableDiffusion
 from stable_diffusion.constants import IODirectoryTree
-from stable_diffusion.utils.utils import (
-    get_device,
-    get_memory_status,
-    to_pil,
-    save_image_grid,
-    show_image_grid,
-)
+
 
 EMBEDDED_PROMPTS_DIR = os.path.abspath("./input/embedded_prompts/")
 OUTPUT_DIR = "./output/disturbing_embeddings/"
@@ -46,11 +43,14 @@ SCORER_CHECKPOINT_PATH = os.path.abspath("./input/model/aesthetic_scorer/chadsco
 prompt_list = ['chibi', 'waifu', 'scifi', 'side scrolling', 'character', 'side scrolling',
                'white background', 'centered', 'full character', 'no background', 
                'not centered', 'line drawing', 'sketch', 'black and white',
-                'colored', 'offset', 'video game','exotic', 'sureal', 'miltech', 'fantasy',
-                'frank frazetta', 'terraria', 'final fantasy', 'cortex command',
-                 'Dog', 'Cat', 'Space Ship', 'Airplane', 'Mech', 'Tank', 'Bicycle', 
-                 'Book', 'Chair', 'Table', 'Cup', 'Car', 'Tree', 'Flower', 'Mountain', 
-                 'Smartphone', 'Guitar', 'Sunflower', 'Laptop', 'Coffee Mug' ]
+               'colored', 'offset', 'video game','exotic', 'sureal', 'miltech', 'fantasy',
+               'frank frazetta', 'terraria', 'final fantasy', 'cortex command',
+               'Dog', 'Cat', 'Space Ship', 'Airplane', 'Mech', 'Tank', 'Bicycle', 
+               'Book', 'Chair', 'Table', 'Cup', 'Car', 'Tree', 'Flower', 'Mountain', 
+               'Smartphone', 'Guitar', 'Sunflower', 'Laptop', 'Coffee Mug', 'water color expressionist',
+               'david mckean', 'jock', 'esad ribic', 'chris bachalo', 'expressionism', 'Jackson Pollock',
+               'Alex Kanevskyg', 'Francis Bacon', 'Trash Polka', 'abstract realism', 'andrew salgado', 'alla prima technique',
+               'alla prima', 'expressionist alla prima', 'expressionist alla prima technique' ]
 
 
 parser = argparse.ArgumentParser("Embed prompts using CLIP")
@@ -102,7 +102,7 @@ parser.add_argument(
 parser.add_argument(
     "--cuda_device",
     type=str,
-    default="cuda:0",
+    default=get_device(),
     help="The cuda device to use. Defaults to 'cuda:0'.",
 )
 parser.add_argument(
@@ -118,7 +118,7 @@ NULL_PROMPT = ""
 NUM_ITERATIONS = args.num_iterations
 SEED = args.seed
 NOISE_MULTIPLIER = args.noise_multiplier
-DEVICE = get_device(args.cuda_device)
+DEVICE = args.cuda_device
 BATCH_SIZE = args.batch_size
 SAVE_EMBEDDINGS = args.save_embeddings
 CLEAR_OUTPUT_DIR = args.clear_output_dir
@@ -156,7 +156,7 @@ def init_stable_diffusion(device, path_tree: IODirectoryTree, sampler_name="ddim
 
 def generate_prompt():
     # Select 12 items randomly from the prompt_list
-    selected_prompts = random.sample(prompt_list, 12)
+    selected_prompts = random.sample(prompt_list, 15)
 
     # Join all selected prompts into a single string, separated by commas
     prompt = ', '.join(selected_prompts)
@@ -186,10 +186,10 @@ def embed_and_save_prompts(clip_text_embedder, prompt: str, i: int, null_prompt 
         f"{join(EMBEDDED_PROMPTS_DIR, f'embedded_prompt_{i}.pt')}",
     )
     
-    get_memory_status()
+    get_memory_status(DEVICE)
     #clip_text_embedder.to("cpu")
     torch.cuda.empty_cache()
-    get_memory_status()
+    get_memory_status(DEVICE)
     return embedded_prompt, null_cond
 
 def generate_images_from_disturbed_embeddings(
@@ -279,7 +279,7 @@ def main():
     
     pt = IODirectoryTree(base_directory=base_dir)
     sd = init_stable_diffusion(DEVICE, pt, n_steps=20, sampler_name="ddim", ddim_eta=0.0)
-    clip_text_embedder = CLIPTextEmbedder(device=get_device())
+    clip_text_embedder = CLIPTextEmbedder(device=DEVICE)
     clip_text_embedder.load_submodels()
     images = []
     prompts = []
@@ -290,10 +290,11 @@ def main():
     #     print(f"Prompt {i}: {prompt}")  # Print the generated prompt
         prompts.append(prompt)  # Store each prompt for later use
     #     get_memory_status()        
-    #     embedded_prompt, null_prompt = embed_and_save_prompts(clip_text_embedder, prompt, i)
+        embedded_prompt, null_prompt = embed_and_save_prompts(clip_text_embedder, prompt, i)
     #     embedded_prompts_list.append(embedded_prompt.cpu())  # Store the embedded prompts
     #     get_memory_status() 
-    #     torch.cuda.empty_cache()
+        torch.save(embedded_prompt, f'{EMBEDDED_PROMPTS_DIR}/embedded_prompt_{i}.pt')    
+        torch.cuda.empty_cache()
     # embedded_prompts_list = [embedded_prompt for embedded_prompt in embedded_prompts]  # Store the embedded prompts
     # null_prompt_list.append(null_prompt)  # Store the null prompts
     # print(f"Image {i} generated.")  # Print when an image is generated
@@ -309,11 +310,9 @@ def main():
     image_encoder = CLIPImageEncoder(device=DEVICE)
     image_encoder.load_clip_model(**pt.clip_model)
     image_encoder.initialize_preprocessor()
-    
-    loaded_model = torch.load(SCORER_CHECKPOINT_PATH)
+
     predictor = ChadPredictor(768, device=DEVICE)
-    predictor.load_state_dict(loaded_model)
-    predictor.eval()
+    predictor.load(SCORER_CHECKPOINT_PATH)
 
     json_output = []
     manifest = []
@@ -327,7 +326,7 @@ def main():
     for i, (image, embedding, prompt_index) in enumerate(images_generator):  # Retrieve the prompt with the image and embedding
         # images_tensors.append(image)
         torch.cuda.empty_cache()
-        get_memory_status()
+        get_memory_status(DEVICE)
 
         img_hash = calculate_sha256(image.squeeze())
         pil_image = to_pil(image.squeeze())
@@ -335,7 +334,7 @@ def main():
         prep_img = image_encoder.preprocess_input(pil_image)
         image_features = image_encoder(prep_img)
         image_features /= image_features.norm(dim=-1, keepdim=True)
-        score = predictor(image_features.to(DEVICE).float())
+        score = predictor.model(image_features.to(DEVICE).float())
         
         img_file_name = f"image_{i:06d}.png"
         full_img_path = join(IMAGES_DIR, img_file_name)

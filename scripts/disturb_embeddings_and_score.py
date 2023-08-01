@@ -4,14 +4,14 @@ import argparse
 import torch
 import hashlib
 import json
-import clip
 import shutil
-import math
+
+from stable_diffusion.utils_backend import get_device, get_memory_status
+from stable_diffusion.utils_image import to_pil
 
 base_dir = "./"
 sys.path.insert(0, base_dir)
 
-from typing import List
 from os.path import join
 
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
@@ -19,13 +19,6 @@ from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
 from chad_score import ChadPredictorModel
 from stable_diffusion import StableDiffusion
 from stable_diffusion.constants import IODirectoryTree
-from stable_diffusion.utils.utils import (
-    get_device,
-    get_memory_status,
-    to_pil,
-    save_image_grid,
-    show_image_grid,
-)
 
 EMBEDDED_PROMPTS_DIR = os.path.abspath("./input/embedded_prompts/")
 OUTPUT_DIR = "./output/data/"

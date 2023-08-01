@@ -1,21 +1,24 @@
 import os, sys
-sys.path.append(os.path.abspath(''))
-
 import torch
 
+sys.path.append(os.path.abspath(''))
+
+from stable_diffusion.utils_backend import get_device
+from stable_diffusion.utils_image import load_img
 from stable_diffusion.sampler.ddim import DDIMSampler
 from stable_diffusion.sampler.ddpm import DDPMSampler
-from stable_diffusion.utils.model import initialize_latent_diffusion
+from stable_diffusion.utils_model import initialize_latent_diffusion
 from stable_diffusion.latent_diffusion import LatentDiffusion
 from stable_diffusion.sampler import DiffusionSampler
 from stable_diffusion.constants import LATENT_DIFFUSION_PATH
-from labml.monit import section
-from stable_diffusion.utils.utils import get_device, load_img, get_device, get_autocast
+from utility.labml.monit import section
 from typing import Union, Optional
 from pathlib import Path
 
+
 class ModelLoadError(Exception):
     pass
+
 
 class StableDiffusionBaseScript:
     model: LatentDiffusion
@@ -25,7 +28,7 @@ class StableDiffusionBaseScript:
                  ddim_steps: int = 50,
                  ddim_eta: float = 0.0,
                  force_cpu: bool = False,
-                 sampler_name: str='ddim',
+                 sampler_name: str = 'ddim',
                  n_steps: int = 50,
                  cuda_device: str = 'cuda:0',
                  ):
@@ -42,7 +45,7 @@ class StableDiffusionBaseScript:
         self.sampler_name = sampler_name
         self.n_steps = n_steps
         self.cuda_device = cuda_device
-        self.device_id = get_device(force_cpu, cuda_device)
+        self.device_id = get_device(cuda_device)
         self.device = torch.device(self.device_id)
 
         # Load [latent diffusion model](../latent_diffusion.html)
@@ -107,15 +110,15 @@ class StableDiffusionBaseScript:
         x = self.sampler.q_sample(orig, t_index, noise=orig_noise)
         # Reconstruct from the noisy image
         x = self.sampler.paint(x, cond, t_index,
-                                orig=orig_2,
-                                mask=mask,
-                                orig_noise=orig_noise,
-                                uncond_scale=uncond_scale,
-                                uncond_cond=un_cond)
+                               orig=orig_2,
+                               mask=mask,
+                               orig_noise=orig_noise,
+                               uncond_scale=uncond_scale,
+                               uncond_cond=un_cond)
 
         return x
 
-    def load_model(self, model_path = LATENT_DIFFUSION_PATH):
+    def load_model(self, model_path=LATENT_DIFFUSION_PATH):
         with section(f'Latent Diffusion model loading, from {model_path}'):
             self.model = torch.load(model_path, map_location=self.device)
             self.model.eval()
@@ -124,21 +127,22 @@ class StableDiffusionBaseScript:
         del self.model
         torch.cuda.empty_cache()
 
-    def save_model(self, model_path = LATENT_DIFFUSION_PATH):
+    def save_model(self, model_path=LATENT_DIFFUSION_PATH):
         with section(f'Latent Diffusion model saving, to {model_path}'):
             torch.save(self.model, model_path)
-    
+
     def initialize_from_model(self, model: LatentDiffusion):
 
         self.model = model
-        self.initialize_sampler()  
+        self.initialize_sampler()
 
-    def initialize_from_saved(self, model_path = LATENT_DIFFUSION_PATH):
+    def initialize_from_saved(self, model_path=LATENT_DIFFUSION_PATH):
 
         self.load_model(model_path)
-        self.initialize_sampler()  
+        self.initialize_sampler()
 
-    def initialize_script(self, autoencoder = None, clip_text_embedder = None, unet_model = None, force_submodels_init = False, path = None):
+    def initialize_script(self, autoencoder=None, clip_text_embedder=None, unet_model=None, force_submodels_init=False,
+                          path=None):
         """You can initialize the autoencoder, CLIP and UNet models externally and pass them to the script.
         Use the methods: 
             stable_diffusion.utils.model.initialize_autoencoder,
@@ -152,24 +156,27 @@ class StableDiffusionBaseScript:
             clip_text_embedder (CLIPTextEmbedder, optional): the externally initialized autoencoder. Defaults to None.
             unet_model (UNetModel, optional): the externally initialized autoencoder. Defaults to None.
         """
-        self.initialize_latent_diffusion(autoencoder, clip_text_embedder, unet_model, force_submodels_init=force_submodels_init, path=path)
+        self.initialize_latent_diffusion(autoencoder, clip_text_embedder, unet_model,
+                                         force_submodels_init=force_submodels_init, path=path)
         self.initialize_sampler()
 
-    def initialize_latent_diffusion(self, autoencoder, clip_text_embedder, unet_model, force_submodels_init = False, path=None):
+    def initialize_latent_diffusion(self, autoencoder, clip_text_embedder, unet_model, force_submodels_init=False,
+                                    path=None):
         try:
             self.model = initialize_latent_diffusion(
                 path=path,
                 device=self.device_id,
                 autoencoder=autoencoder,
                 clip_text_embedder=clip_text_embedder,
-                unet_model = unet_model,
+                unet_model=unet_model,
                 force_submodels_init=force_submodels_init,
             )
             self.initialize_sampler()
             # Move the model to device
             # self.model.to(self.device)
         except EOFError:
-                raise ModelLoadError("Stable Diffusion model couldn't be loaded. Check that the .ckpt file exists in the specified location (path), and that it is not corrupted.")
+            raise ModelLoadError(
+                "Stable Diffusion model couldn't be loaded. Check that the .ckpt file exists in the specified location (path), and that it is not corrupted.")
 
     def initialize_sampler(self):
         if self.sampler_name == 'ddim':
@@ -178,4 +185,3 @@ class StableDiffusionBaseScript:
                                        ddim_eta=self.ddim_eta)
         elif self.sampler_name == 'ddpm':
             self.sampler = DDPMSampler(self.model)
-

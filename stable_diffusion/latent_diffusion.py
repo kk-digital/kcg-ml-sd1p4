@@ -39,12 +39,9 @@ from .constants import (
     TOKENIZER_PATH,
     TEXT_MODEL_PATH,
 )
+from .utils_backend import get_device
+from utility.labml.monit import section
 
-# from .utils.model import initialize_autoencoder, initialize_clip_embedder, initialize_unet
-
-from .utils.utils import get_device
-
-from labml.monit import section
 
 class UNetWrapper(nn.Module):
     """
@@ -117,10 +114,10 @@ class LatentDiffusion(nn.Module):
 
         # $\beta$ schedule
         beta = (
-            torch.linspace(
-                linear_start**0.5, linear_end**0.5, n_steps, dtype=torch.float64
-            )
-            ** 2
+                torch.linspace(
+                    linear_start ** 0.5, linear_end ** 0.5, n_steps, dtype=torch.float64
+                )
+                ** 2
         )
         self.beta = nn.Parameter(beta.to(torch.float32), requires_grad=False)
         # $\alpha_t = 1 - \beta_t$
@@ -270,7 +267,7 @@ class LatentDiffusion(nn.Module):
         We sample from that and multiply by the scaling factor.
         """
         return (
-            self.latent_scaling_factor * self.first_stage_model.encode(image).sample()
+                self.latent_scaling_factor * self.first_stage_model.encode(image).sample()
         )
 
     def autoencoder_decode(self, z: torch.Tensor):

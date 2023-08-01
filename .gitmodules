@@ -1,3 +1,3 @@
-[submodule "lora-tuning/sd-scripts"]
-	path = lora_tuning/sd-scripts
-	url = https://github.com/kohya-ss/sd-scripts
+[submodule "utility/lora-tuning/sd-scripts"]
+    path = utility/lora-tuning/sd-scripts
+    url = https://github.com/kohya-ss/sd-scripts

@@ -12,13 +12,14 @@ import time
 import os
 import torch
 from datetime import datetime
+
 from stable_diffusion_base_script import StableDiffusionBaseScript
-from stable_diffusion.stable_diffusion import StableDiffusion
-from stable_diffusion.utils.utils import save_images, set_seed, get_autocast
-# from labml.monit import section
-from labml import monit
+from stable_diffusion.utils_backend import set_seed, get_autocast
+from stable_diffusion.utils_image import save_images
+from utility.labml import monit
 from stable_diffusion.model.unet.unet_attention import CrossAttention
 from cli_builder import CLI
+
 
 def get_prompts(prompt, prompts_file):
     prompts = []
@@ -38,23 +39,23 @@ def get_prompts(prompt, prompts_file):
 
     return prompts
 
+
 class Txt2Img(StableDiffusionBaseScript):
     """
     ### Text to image class
     """
 
-
     @torch.no_grad()
     def generate_images(self, *,
-                 seed: int = 0,
-                 batch_size: int = 1,
-                 prompt: str,
-                 h: int = 512, w: int = 512,
-                 uncond_scale: float = 7.5,
-                 low_vram: bool = False,
-                 noise_fn = torch.randn,
-                 temperature: float = 1.0,
-                 ):
+                        seed: int = 0,
+                        batch_size: int = 1,
+                        prompt: str,
+                        h: int = 512, w: int = 512,
+                        uncond_scale: float = 7.5,
+                        low_vram: bool = False,
+                        noise_fn=torch.randn,
+                        temperature: float = 1.0,
+                        ):
         """
         :param seed: the seed to use when generating the images
         :param dest_path: is the path to store the generated images
@@ -72,7 +73,7 @@ class Txt2Img(StableDiffusionBaseScript):
         f = 8
 
         if seed == 0:
-            seed = time.time_ns() % 2**32
+            seed = time.time_ns() % 2 ** 32
 
         set_seed(seed)
         # Adjust batch size based on VRAM availability
@@ -109,16 +110,16 @@ class Txt2Img(StableDiffusionBaseScript):
 
     @torch.no_grad()
     def generate_images_from_embeddings(self, *,
-                 seed: int = 0,
-                 batch_size: int = 1,
-                 embedded_prompt: torch.Tensor,
-                 null_prompt: torch.Tensor,
-                 h: int = 512, w: int = 512,
-                 uncond_scale: float = 7.5,
-                 low_vram: bool = False,
-                 noise_fn = torch.randn,
-                 temperature: float = 1.0,                 
-                 ):
+                                        seed: int = 0,
+                                        batch_size: int = 1,
+                                        embedded_prompt: torch.Tensor,
+                                        null_prompt: torch.Tensor,
+                                        h: int = 512, w: int = 512,
+                                        uncond_scale: float = 7.5,
+                                        low_vram: bool = False,
+                                        noise_fn=torch.randn,
+                                        temperature: float = 1.0,
+                                        ):
         """
         :param seed: the seed to use when generating the images
         :param dest_path: is the path to store the generated images
@@ -136,7 +137,7 @@ class Txt2Img(StableDiffusionBaseScript):
         f = 8
 
         if seed == 0:
-            seed = time.time_ns() % 2**32
+            seed = time.time_ns() % 2 ** 32
 
         set_seed(seed)
         # Adjust batch size based on VRAM availability
@@ -161,9 +162,69 @@ class Txt2Img(StableDiffusionBaseScript):
                                     uncond_scale=uncond_scale,
                                     uncond_cond=null_prompt,
                                     noise_fn=noise_fn,
-                                    temperature=temperature)                                    
+                                    temperature=temperature)
 
-            return self.decode_image(x)        
+            return self.decode_image(x)
+
+
+def text_to_image(prompt, output, sampler, checkpoint_path, flash, steps, cfg_scale, low_vram, force_cpu, cuda_device, num_images, seed):
+
+    # prompts = get_prompts(opt.prompt, opt.prompts_file)
+    prompts = [prompt]
+
+    # Split the numbers_string into a list of substrings using the comma as the delimiter
+    seed_string_array = seed.split(',')
+
+    # Convert the elements in the list to integers (optional, if needed)
+    seed_array = [int(num) for num in seed_string_array]
+
+    if len(seed_array) == 0:
+        seed_array = [0]
+
+    # timestamp = datetime.now().strftime('%d-%m-%Y-%H-%M-%S')
+    # filename = os.path.join(opt.output, f'{timestamp}.jpg')
+
+    # Set flash attention
+    CrossAttention.use_flash_attention = flash
+
+    # Starts the text2img
+    txt2img = Txt2Img(
+        sampler_name=sampler,
+        n_steps=steps,
+        force_cpu=force_cpu,
+        cuda_device=cuda_device
+    )
+    txt2img.initialize_latent_diffusion(autoencoder=None, clip_text_embedder=None, unet_model=None,
+                                        path=checkpoint_path, force_submodels_init=True)
+
+    with monit.section('Generate', total_steps=len(prompts)) as section:
+        for prompt in prompts:
+            print(f'Generating images for prompt: "{prompt}"')
+
+            for i in range(num_images):
+                print("Generating image " + str(i) + " out of " + str(num_images));
+                start_time = time.time()
+                timestamp = datetime.now().strftime('%d-%m-%Y-%H-%M-%S')
+                filename = os.path.join(output, f'{timestamp}-{i}.jpg')
+
+                images = txt2img.generate_images(
+                    batch_size=1,
+                    prompt=prompt,
+                    uncond_scale=cfg_scale,
+                    low_vram=low_vram,
+                    seed=seed_array[i % len(seed_array)]
+                )
+
+                print(images.shape)
+                save_images(images, filename)
+
+                # Capture the ending time
+                end_time = time.time()
+
+                # Calculate the execution time
+                execution_time = end_time - start_time
+
+                print("Execution Time:", execution_time, "seconds")
 
 
 def main():
@@ -184,62 +245,8 @@ def main():
         .seed() \
         .parse()
 
-    #prompts = get_prompts(opt.prompt, opt.prompts_file)
-    prompts = [opt.prompt]
-
-    # Split the numbers_string into a list of substrings using the comma as the delimiter
-    seed_string_array = opt.seed.split(',')
-
-    # Convert the elements in the list to integers (optional, if needed)
-    seed_array = [int(num) for num in seed_string_array]
-
-    if len(seed_array) == 0:
-        seed_array = [0]
-
-    # timestamp = datetime.now().strftime('%d-%m-%Y-%H-%M-%S')
-    # filename = os.path.join(opt.output, f'{timestamp}.jpg')
-
-    # Set flash attention
-    CrossAttention.use_flash_attention = opt.flash
-
-    # Starts the text2img
-    txt2img = Txt2Img(
-                      sampler_name=opt.sampler,
-                      n_steps=opt.steps,
-                      force_cpu=opt.force_cpu,
-                      cuda_device=opt.cuda_device
-                    )
-    txt2img.initialize_latent_diffusion(autoencoder=None, clip_text_embedder=None, unet_model = None, path=opt.checkpoint_path, force_submodels_init=True)
-
-    with monit.section('Generate', total_steps=len(prompts)) as section:
-        for prompt in prompts:
-            print(f'Generating images for prompt: "{prompt}"')
-
-            for i in range(opt.num_images):
-                print("Generating image " + str(i) + " out of " + str(opt.num_images));
-                start_time = time.time()
-                timestamp = datetime.now().strftime('%d-%m-%Y-%H-%M-%S')
-                filename = os.path.join(opt.output, f'{timestamp}-{i}.jpg')
-
-                images = txt2img.generate_images(
-                    batch_size=opt.batch_size,
-                    prompt=opt.prompt,
-                    uncond_scale=opt.cfg_scale,
-                    low_vram=opt.low_vram,
-                    seed=seed_array[i % len(seed_array)]
-                )
-
-                print(images.shape)
-                save_images(images, filename)
-
-                # Capture the ending time
-                end_time = time.time()
-
-                # Calculate the execution time
-                execution_time = end_time - start_time
-
-                print("Execution Time:", execution_time, "seconds")
-
+    text_to_image(opt.prompt, opt.output, opt.sampler, opt.checkpoint_path, opt.flash, opt.steps,
+                  opt.cfg_scale, opt.low_vram, opt.force_cpu, opt.cuda_device, opt.num_images, opt.seed)
 
 if __name__ == "__main__":
     main()
