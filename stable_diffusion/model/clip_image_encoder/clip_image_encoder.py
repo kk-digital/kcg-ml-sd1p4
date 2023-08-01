@@ -10,19 +10,28 @@ import numpy as np
 import PIL
 from PIL import Image
 from torchvision.transforms import Compose, Resize, CenterCrop, ToTensor, Normalize, Lambda
-from torch import nn
-from stable_diffusion.constants import IMAGE_PROCESSOR_PATH, CLIP_MODEL_PATH, IMAGE_ENCODER_PATH
+from typing import Any, Union, List
+
+from typing import List
+from torch import nn, save
+from os.path import join
 
 
+from stable_diffusion.constants import IMAGE_PROCESSOR_PATH, VISION_MODEL_PATH, IMAGE_ENCODER_PATH
+from stable_diffusion.utils_backend import get_device
+from torchinfo import summary
+
+from transformers import CLIPImageProcessor, CLIPVisionModelWithProjection
+import safetensors
 class CLIPImageEncoder(nn.Module):
 
-    def __init__(self, device=None, image_processor=None, clip_model=None):  # , input_mode = PIL.Image.Image):
+    def __init__(self, device = None, image_processor = None, vision_model = None):#, input_mode = PIL.Image.Image):
 
         super().__init__()
 
         self.device = get_device(device)
 
-        self.clip_model = clip_model
+        self.vision_model = vision_model
         # self._image_processor = image_processor
         self.image_processor = image_processor
         # self.input_mode = input_mode
@@ -34,57 +43,51 @@ class CLIPImageEncoder(nn.Module):
 
         self.to(self.device)
 
-    def load_from_lib(self, vit_model='ViT-L/14'):
-        self.clip_model, self.image_processor = clip.load(vit_model, device=self.device)
+    def save_submodels(self, image_processor_path = IMAGE_PROCESSOR_PATH, vision_model_path = VISION_MODEL_PATH):
+        # Save the model to the specified folder
+        self.image_processor.save_pretrained(image_processor_path)
+        print("image_processor saved to: ", image_processor_path)
+        self.vision_model.save_pretrained(vision_model_path, safe_serialization = True)
+        print("vision_model saved to: ", vision_model_path)
 
-    def load_submodels(self, image_processor_path=IMAGE_PROCESSOR_PATH, clip_model_path=CLIP_MODEL_PATH):
-
-        self.image_processor = torch.load(image_processor_path, map_location=self.device)
-        self.clip_model = torch.load(clip_model_path, map_location=self.device)
-        self.clip_model.eval()
+    def load_submodels(self, image_processor_path = IMAGE_PROCESSOR_PATH, vision_model_path = VISION_MODEL_PATH):
+            
+        try:        
+            self.vision_model = CLIPVisionModelWithProjection.from_pretrained(vision_model_path, local_files_only=True, use_safetensors = True).eval().to(self.device)
+            print(f"CLIPVisionModelWithProjection successfully loaded from : {vision_model_path}\n")
+            self.image_processor = CLIPImageProcessor.from_pretrained(image_processor_path, local_files_only=True)
+            print(f"CLIPImageProcessor successfully loaded from : {image_processor_path}\n")
+            return self
+        except Exception as e:
+            print('Error loading submodels: ', e)
 
     def unload_submodels(self):
         # Unload the model from GPU memory
-        del self.image_processor
-        del self.clip_model
-        torch.cuda.empty_cache()
-        self.image_processor = None
-        self.clip_model = None
-
-    def load_image_processor(self, image_processor_path=IMAGE_PROCESSOR_PATH):
-        self.image_processor = torch.load(image_processor_path, map_location=self.device)
-        return self.image_processor
-
-    def load_clip_model(self, clip_model_path=CLIP_MODEL_PATH):
-
-        self.clip_model = torch.load(clip_model_path, map_location=self.device)
-        self.clip_model.eval()
-        return self.clip_model
-
-    def unload_image_processor(self):
-        del self.image_processor
-        torch.cuda.empty_cache()
-        self.image_processor = None
-
-    def unload_clip_model(self):
-        del self.clip_model
-        torch.cuda.empty_cache()
-        self.clip_model = None
-
-    def save(self, image_encoder_path=IMAGE_ENCODER_PATH):
-        torch.save(self, image_encoder_path)
-
-    def save_submodels(self, image_processor_path=IMAGE_PROCESSOR_PATH, clip_model_path=CLIP_MODEL_PATH):
-        # check if the dir of image_processor_path and clip_model_path exist, if not create them
-        if not os.path.exists(os.path.dirname(image_processor_path)):
-            os.makedirs(os.path.dirname(image_processor_path))
-        if not os.path.exists(os.path.dirname(clip_model_path)):
-            os.makedirs(os.path.dirname(clip_model_path))
-
-        # Save the model to the specified folder
-        torch.save(self.image_processor, image_processor_path)
-        torch.save(self.clip_model, clip_model_path)
-
+        if self.vision_model is not None:
+            self.vision_model.to('cpu')
+            del self.vision_model
+            torch.cuda.empty_cache()
+            self.vision_model = None        
+        if self.image_processor is not None:
+            del self.image_processor
+            torch.cuda.empty_cache()
+            self.image_processor = None
+    
+    def save(self, image_encoder_path = IMAGE_ENCODER_PATH):
+        try:
+            safetensors.torch.save_model(self, image_encoder_path)
+            print(f"CLIPImageEncoder saved to: {image_encoder_path}")
+        except Exception as e:
+            print(f"CLIPImageEncoder not saved. Error: {e}")
+            
+    def load(self, image_encoder_path: str = IMAGE_ENCODER_PATH):
+        try:
+            safetensors.torch.load_model(self, image_encoder_path, strict=True)
+            print(f"CLIPTextEmbedder loaded from: {image_encoder_path}")
+            return self
+        except Exception as e:
+            print(f"CLIPTextEmbedder not loaded. Error: {e}")
+    
     def convert_image_to_tensor(self, image: PIL.Image.Image):
         return torch.from_numpy(np.array(image)) \
             .permute(2, 0, 1) \
@@ -94,16 +97,18 @@ class CLIPImageEncoder(nn.Module):
     def preprocess_input(self, image):
         # Preprocess image
         if self.get_input_type(image) == PIL.Image.Image:
-            image = self.convert_image_to_tensor(image)
-        return self.image_processor(image).to(self.device)
-
-    def forward(self, image, do_preprocess=False):
+            image = (self.convert_image_to_tensor(image) + 1) / 2
+        return self.image_processor(image, return_tensors="pt").to(self.device)
+    
+    def forward(self, image, do_preprocess = False):
         # Preprocess image
-        if do_preprocess:
-            image = self.preprocess_input(image)
         # Compute CLIP features
         with torch.no_grad():
-            features = self.clip_model.encode_image(image)
+            if do_preprocess:
+                processed_image = self.preprocess_input(image)
+                features = self.vision_model(**processed_image).image_embeds
+            else:
+                features = self.vision_model(pixel_values = image).image_embeds
         return features
 
     @staticmethod
@@ -135,24 +140,3 @@ class CLIPImageEncoder(nn.Module):
                 (0.26862954, 0.26130258, 0.27577711)
             ) if do_normalize else Lambda(lambda x: x),
         ])
-
-        # self._image_processor_tensor = Compose([
-        #                         Resize(size),
-        #                         CenterCrop(size),
-        #                         Normalize(
-        #                             (0.48145466, 0.4578275, 0.40821073), 
-        #                             (0.26862954, 0.26130258, 0.27577711)
-        #                             ),
-        #                         ])     
-        # self._image_processor_image = Compose([
-        #                         Resize(size),
-        #                         CenterCrop(size),
-        #                         self.convert_image_to_rgb,
-        #                         ToTensor(),
-        #                         Lambda(lambda x: x * (2/255) - 1.0),
-        #                         Normalize(
-        #                             (0.48145466, 0.4578275, 0.40821073), 
-        #                             (0.26862954, 0.26130258, 0.27577711)
-        #                             ),
-        #                         Lambda(lambda x: x.unsqueeze(0)),
-        #                         ])

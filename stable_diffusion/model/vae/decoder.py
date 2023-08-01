@@ -16,22 +16,31 @@ so that we can load the checkpoints directly.
 """
 from typing import List
 
-from safetensors.torch import save_file
+import torch
+import torch.nn.functional as F
+import safetensors
+from torch import nn
 from .auxiliary_classes import *
 import os
 import sys
 
 sys.path.insert(0, os.getcwd())
 from stable_diffusion.constants import DECODER_PATH
-
+from stable_diffusion.utils_backend import get_device
 
 class Decoder(nn.Module):
     """
     ## Decoder module
     """
 
-    def __init__(self, *, channels: int, channel_multipliers: List[int], n_resnet_blocks: int,
-                 out_channels: int, z_channels: int):
+    def __init__(self, *,
+                 device = None, 
+                 channels: int = 128, 
+                 channel_multipliers: List[int] = [1, 2, 4, 4], 
+                 n_resnet_blocks: int = 2,
+                 out_channels: int = 3, 
+                 z_channels: int = 4
+                 ):
         """
         :param channels: is the number of channels in the final convolution layer
         :param channel_multipliers: are the multiplicative factors for the number of channels in the
@@ -41,7 +50,7 @@ class Decoder(nn.Module):
         :param z_channels: is the number of channels in the embedding space
         """
         super().__init__()
-
+        self.device = get_device(device)
         # Number of blocks of different resolutions.
         # The resolution is halved at the end each top level block
         num_resolutions = len(channel_multipliers)
@@ -85,12 +94,24 @@ class Decoder(nn.Module):
         # Map to image space with a $3 \times 3$ convolution
         self.norm_out = normalization(channels)
         self.conv_out = nn.Conv2d(channels, out_channels, 3, stride=1, padding=1)
-
-    def save(self, decoder_path: str = DECODER_PATH, use_safetensors=True):
-        if use_safetensors:
-            save_file(self.state_dict(), decoder_path)
-        else:
-            torch.save(self, decoder_path)
+        
+        self.to(self.device)
+        
+    def save(self, decoder_path: str = DECODER_PATH):
+        try:
+            safetensors.torch.save_model(self, decoder_path)
+            print(f"Saved decoder to {decoder_path}")
+        except Exception as e:
+            print(f"Failed to save encoder to {decoder_path}. Error: {e}")
+    
+    def load(self, decoder_path: str = DECODER_PATH):
+        try:
+            safetensors.torch.load_model(self, decoder_path)
+            print(f"Loaded decoder from {decoder_path}")
+            return self
+        except Exception as e:
+            print(f"Failed to load decoder from {decoder_path}. Error: {e}")
+        
 
     def forward(self, z: torch.Tensor):
         """
