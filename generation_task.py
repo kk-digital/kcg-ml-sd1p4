@@ -26,7 +26,7 @@ class GenerationTask:
             'output_path': self.output_path,
         }
 
-    def from_dict(self, data):
+    def from_dict(data):
         return GenerationTask(
         generation_task_type=data['generation_task_type'],
         prompt=data['prompt'],
@@ -40,7 +40,7 @@ class GenerationTask:
         with open(filename, 'w') as file:
             json.dump(self.to_dict(), file, cls=NumpyArrayEncoder)
 
-    def load_from_json(self, filename):
+    def load_from_json(filename):
         with open(filename, 'r') as file:
             data = json.load(file, cls=NumpyArrayDecoder)
             return GenerationTask.from_dict(data)

@@ -268,6 +268,10 @@ options:
                         Cuda device to use for generation process
   --num_images    NUM_IMAGES
                         Number of images to output
+  --image_width IMAGE_WIDTH
+                        Generated image width, default is 512
+  --image_height IMAGE_HEIGHT
+                        Generated image width, default is 512
 ```
 
 ``` shell

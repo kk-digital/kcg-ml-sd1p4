@@ -189,6 +189,8 @@ def main():
         .num_images() \
         .seed() \
         .output_metadata() \
+        .image_width() \
+        .image_height() \
         .parse()
 
     # Hard coded prompts
@@ -201,6 +203,9 @@ def main():
 
 
     prompts = [arg_prompt]
+
+    image_width = opt.image_width
+    image_height = opt.image_height
 
     # Split the numbers_string into a list of substrings using the comma as the delimiter
     seed_string_array = opt.seed.split(',')
@@ -258,6 +263,8 @@ def main():
                     uncond_scale=opt.cfg_scale,
                     low_vram=opt.low_vram,
                     seed=this_seed,
+                    w = image_width,
+                    h = image_height
                 )
 
                 image_list, image_hash_list = save_images(images, filename)
@@ -329,7 +336,7 @@ def main():
     # create zip for generated images
     with ZipFile(zip_filename, 'w') as file:
         print('Created zip file ' + zip_filename)
-        zip_task_index = 0
+        zip_task_index = 1
         for generation_task_result_item in generation_task_result_list:
             print('Zipping task ' + str(zip_task_index) + ' out of ' + str(len(generation_task_result_list)))
 

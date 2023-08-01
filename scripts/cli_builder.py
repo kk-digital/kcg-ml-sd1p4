@@ -125,6 +125,26 @@ class CLI:
 
         return self
 
+    def image_width(self):
+        self.parser.add_argument(
+            '--image_width',
+            type=int,
+            default=512,
+            help='Generate image width (default: %(default)s)'
+        )
+
+        return self
+
+    def image_height(self):
+        self.parser.add_argument(
+            '--image_height',
+            type=int,
+            default=512,
+            help='Generate image height (default: %(default)s)'
+        )
+
+        return self
+
     def num_images(self):
         self.parser.add_argument(
             '--num_images',
