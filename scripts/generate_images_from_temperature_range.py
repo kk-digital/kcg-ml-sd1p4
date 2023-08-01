@@ -46,8 +46,8 @@ parser.add_argument(
     default=4,
     help="0: 'Normal' | 1: 'Cauchy' | 2: 'Gumbel' | 3: 'Laplace' | 4: 'Logistic' | Defaults to 4.",
 )
-parser.add_argument("-s", "--seed", type=int, default=2982)
-parser.add_argument("-bs", "--batch_size", type=int, default=1)
+parser.add_argument("--seed", type=int, default=2982)
+parser.add_argument("--batch_size", type=int, default=1)
 parser.add_argument("--params_steps", type=int, default=3)
 parser.add_argument("--params_range", nargs="+", type=float, default=[0.49, 0.54])
 parser.add_argument("--temperature_steps", type=int, default=3)
