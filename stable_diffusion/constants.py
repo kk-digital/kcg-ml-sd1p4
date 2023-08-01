@@ -184,11 +184,7 @@ class IODirectoryTree:
             os.path.join(self.root_outputs_dir, self.model_name)
         )
         self.models_dirs.append(self.model_outputs_dir)
-        
-        self.checkpoint_path = (
-            os.path.join(self.root_models_dir, self.model_checkpoint)
-        )
-        
+                
         self.submodels_dirs = []
             
         self.tokenizer_path = (
@@ -219,11 +215,18 @@ class IODirectoryTree:
         self.vision_model_path = (
             os.path.join(self.image_encoder_dir, "vision_model")
         )
+        self.submodels_dirs.append(self.vision_model_path)
         self.image_processor_path = (
             os.path.join(
                 self.image_encoder_dir, "image_processor"
             )
         )
+        self.submodels_dirs.append(self.image_processor_path)
+        
+        self.checkpoint_path = (
+            os.path.join(self.root_models_dir, self.model_checkpoint)
+        )
+
         self.unet_path = (
             os.path.join(self.sd_model_dir, "unet.safetensors")
         )
@@ -254,12 +257,12 @@ class IODirectoryTree:
                 ---- decoder model: {self.decoder_path}
                 ---- latent_diffusion model: {self.latent_diffusion_path}
                 --- clip models' root dir: {self.clip_models_dir}
-                ---- clip image encoder checkpoint path: {self.image_encoder_path}
-                ---- clip text embedder checkpoint path: {self.text_embedder_path}
                 ---- clip text embedder submodels dir: {self.text_embedder_dir}
+                ----- clip text embedder checkpoint path: {self.text_embedder_path}
                 ----- tokenizer: {self.tokenizer_path}
                 ----- text model: {self.text_model_path}
                 ---- clip image encoder submodels dir: {self.image_encoder_dir}
+                ----- clip image encoder checkpoint path: {self.image_encoder_path}
                 ----- vision_model: {self.vision_model_path}
                 ----- image_processor: {self.image_processor_path}
                 -- models' outputs root'dir: {self.root_outputs_dir}
@@ -304,7 +307,7 @@ class IODirectoryTree:
     @property
     def text_model(self):
         """returns a dict {text_model_path: self.text_model_path}"""
-        return {"text_model_path": self.text_model_path}
+        return {"transformer_path": self.text_model_path}
 
     @property
     def image_processor(self):
@@ -327,7 +330,7 @@ class IODirectoryTree:
     @property
     def latent_diffusion_submodels(self):
         return {
-            "text_embedder_path": self.text_embedder_path,
+            "embedder_path": self.text_embedder_path,
             "unet_path": self.unet_path,
             "autoencoder_path": self.autoencoder_path,
         }
@@ -335,7 +338,7 @@ class IODirectoryTree:
     @property
     def latent_diffusion_submodels_tree(self):
         return {
-            "text_embedder_path": self.text_embedder_path,
+            "embedder_path": self.text_embedder_path,
             "tokenizer_path": self.tokenizer_path,
             "transformer_path": self.text_model_path,
             "unet_path": self.unet_path,
