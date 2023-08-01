@@ -21,6 +21,7 @@ BASE_IO_DIRECTORY_PREFIX = ""
 ROOT_MODELS_PREFIX = "input/model/"
 ROOT_OUTPUTS_PREFIX = "output/model/"
 MODEL = "v1-5-pruned-emaonly"
+# MODEL = base.get("model_name")
 CLIP_MODEL = "vit-large-patch14"
 
 CHECKPOINT = f"{MODEL}.safetensors"

@@ -117,22 +117,4 @@ if __name__ == "__main__":
             model.unload_submodels()  # unloads latent diffusion submodels
         with section("save latent diffusion model"):
             model.save()  # saves latent diffusion model with loaded state dict and unloaded submodels
-    elif GRANULARITY == 1:
-        if IMAGE_ENCODER:
-            with section(
-                "initialize CLIP image encoder and load submodels from lib"
-            ):
-                img_encoder = CLIPImageEncoder()
-                img_encoder.load_from_lib()
-            with section("save image encoder"):
-                img_encoder.save()
-                img_encoder.unload_submodels()
-        with section("save latent diffusion submodels"):
-            model.save_submodels()  # saves latent diffusion submodels (autoencoder, clip_embedder and unet) with loaded state dict loaded submodels
-        with section("unload latent diffusion submodels"):
-            model.unload_submodels()  # unloads latent diffusion submodels
-        with section("save latent diffusion model"):
-            model.save()  # saves latent diffusion model with loaded state dict and unloaded submodels
-    elif GRANULARITY == 2:
-        with section("save latent diffusion model"):
-            model.save()  # saves latent diffusion model with loaded state dict and loaded submodels
+
