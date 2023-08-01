@@ -288,9 +288,9 @@ def main():
     for i in range(NUM_ITERATIONS):
         prompt = generate_prompt()
     #     print(f"Prompt {i}: {prompt}")  # Print the generated prompt
-    #     prompts.append(prompt)  # Store each prompt for later use
+        prompts.append(prompt)  # Store each prompt for later use
     #     get_memory_status()        
-    #     embedded_prompt, null_prompt = embed_and_save_prompts(clip_text_embedder, prompt, i)
+        embedded_prompt, null_prompt = embed_and_save_prompts(clip_text_embedder, prompt, i)
     #     embedded_prompts_list.append(embedded_prompt.cpu())  # Store the embedded prompts
     #     get_memory_status() 
     #     torch.save(embedded_prompt, f'{EMBEDDED_PROMPTS_DIR}/embedded_prompt_{i}.pt')    
