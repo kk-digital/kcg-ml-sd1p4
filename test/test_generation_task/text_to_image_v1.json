@@ -1,10 +1,11 @@
 {
   "generation_task_type": "text_to_image",
   "prompt": "police, character, centered",
-  "model_name": self.model_name,
-  "cfg_strength": self.cfg_strength,
-  "iterations": self.iterations,
-  "denoiser": self.denoiser,
-  "seed": self.seed,
-  "output_path": self.output_path
+  "model_name": "",
+  "cfg_strength": 7,
+  "iterations": 50,
+  "denoiser": "",
+  "seed": "1, 2, 3",
+  "output_path": "/output/",
+  "num_images": 3
 }

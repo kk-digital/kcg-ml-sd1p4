@@ -1,10 +1,11 @@
 
 
 import json
+import numpy as np
 
 class GenerationTask:
 
-    def __init__(self, generation_task_type, prompt, model_name, cfg_strength, iterations, denoiser, seed, output_path):
+    def __init__(self, generation_task_type, prompt, model_name, cfg_strength, iterations, denoiser, seed, output_path, num_images):
         self.generation_task_type = generation_task_type
         self.prompt = prompt
         self.model_name = model_name
@@ -13,6 +14,7 @@ class GenerationTask:
         self.denoiser = denoiser
         self.seed = seed
         self.output_path = output_path
+        self.num_images = num_images
 
     def to_dict(self):
         return {
@@ -24,17 +26,20 @@ class GenerationTask:
             'denoiser': self.denoiser,
             'seed': self.seed,
             'output_path': self.output_path,
+            'num_images' : self.num_images
         }
 
     def from_dict(data):
         return GenerationTask(
         generation_task_type=data['generation_task_type'],
         prompt=data['prompt'],
+        cfg_strength = data['cfg_strength'],
         model_name=data['model_name'],
         iterations=data['iterations'],
         denoiser=data['denoiser'],
         seed=data['seed'],
-        output_path=data['output_path'])
+        output_path=data['output_path'],
+        num_images=data['num_images'])
 
     def save_to_json(self, filename):
         with open(filename, 'w') as file:

@@ -167,6 +167,66 @@ class Txt2Img(StableDiffusionBaseScript):
             return self.decode_image(x)
 
 
+def text_to_image(prompt, output, sampler, checkpoint_path, flash, steps, cfg_scale, low_vram, force_cpu, cuda_device, num_images, seed):
+
+    # prompts = get_prompts(opt.prompt, opt.prompts_file)
+    prompts = [prompt]
+
+    # Split the numbers_string into a list of substrings using the comma as the delimiter
+    seed_string_array = seed.split(',')
+
+    # Convert the elements in the list to integers (optional, if needed)
+    seed_array = [int(num) for num in seed_string_array]
+
+    if len(seed_array) == 0:
+        seed_array = [0]
+
+    # timestamp = datetime.now().strftime('%d-%m-%Y-%H-%M-%S')
+    # filename = os.path.join(opt.output, f'{timestamp}.jpg')
+
+    # Set flash attention
+    CrossAttention.use_flash_attention = flash
+
+    # Starts the text2img
+    txt2img = Txt2Img(
+        sampler_name=sampler,
+        n_steps=steps,
+        force_cpu=force_cpu,
+        cuda_device=cuda_device
+    )
+    txt2img.initialize_latent_diffusion(autoencoder=None, clip_text_embedder=None, unet_model=None,
+                                        path=checkpoint_path, force_submodels_init=True)
+
+    with monit.section('Generate', total_steps=len(prompts)) as section:
+        for prompt in prompts:
+            print(f'Generating images for prompt: "{prompt}"')
+
+            for i in range(num_images):
+                print("Generating image " + str(i) + " out of " + str(num_images));
+                start_time = time.time()
+                timestamp = datetime.now().strftime('%d-%m-%Y-%H-%M-%S')
+                filename = os.path.join(output, f'{timestamp}-{i}.jpg')
+
+                images = txt2img.generate_images(
+                    batch_size=1,
+                    prompt=prompt,
+                    uncond_scale=cfg_scale,
+                    low_vram=low_vram,
+                    seed=seed_array[i % len(seed_array)]
+                )
+
+                print(images.shape)
+                save_images(images, filename)
+
+                # Capture the ending time
+                end_time = time.time()
+
+                # Calculate the execution time
+                execution_time = end_time - start_time
+
+                print("Execution Time:", execution_time, "seconds")
+
+
 def main():
     opt = CLI('Generate images using stable diffusion with a prompt') \
         .prompt() \
@@ -185,63 +245,8 @@ def main():
         .seed() \
         .parse()
 
-    # prompts = get_prompts(opt.prompt, opt.prompts_file)
-    prompts = [opt.prompt]
-
-    # Split the numbers_string into a list of substrings using the comma as the delimiter
-    seed_string_array = opt.seed.split(',')
-
-    # Convert the elements in the list to integers (optional, if needed)
-    seed_array = [int(num) for num in seed_string_array]
-
-    if len(seed_array) == 0:
-        seed_array = [0]
-
-    # timestamp = datetime.now().strftime('%d-%m-%Y-%H-%M-%S')
-    # filename = os.path.join(opt.output, f'{timestamp}.jpg')
-
-    # Set flash attention
-    CrossAttention.use_flash_attention = opt.flash
-
-    # Starts the text2img
-    txt2img = Txt2Img(
-        sampler_name=opt.sampler,
-        n_steps=opt.steps,
-        force_cpu=opt.force_cpu,
-        cuda_device=opt.cuda_device
-    )
-    txt2img.initialize_latent_diffusion(autoencoder=None, clip_text_embedder=None, unet_model=None,
-                                        path=opt.checkpoint_path, force_submodels_init=True)
-
-    with monit.section('Generate', total_steps=len(prompts)) as section:
-        for prompt in prompts:
-            print(f'Generating images for prompt: "{prompt}"')
-
-            for i in range(opt.num_images):
-                print("Generating image " + str(i) + " out of " + str(opt.num_images));
-                start_time = time.time()
-                timestamp = datetime.now().strftime('%d-%m-%Y-%H-%M-%S')
-                filename = os.path.join(opt.output, f'{timestamp}-{i}.jpg')
-
-                images = txt2img.generate_images(
-                    batch_size=opt.batch_size,
-                    prompt=opt.prompt,
-                    uncond_scale=opt.cfg_scale,
-                    low_vram=opt.low_vram,
-                    seed=seed_array[i % len(seed_array)]
-                )
-
-                print(images.shape)
-                save_images(images, filename)
-
-                # Capture the ending time
-                end_time = time.time()
-
-                # Calculate the execution time
-                execution_time = end_time - start_time
-
-                print("Execution Time:", execution_time, "seconds")
-
+    text_to_image(opt.prompt, opt.output, opt.sampler, opt.checkpoint_path, opt.flash, opt.steps,
+                  opt.cfg_scale, opt.low_vram, opt.force_cpu, opt.cuda_device, opt.num_images, opt.seed)
 
 if __name__ == "__main__":
     main()
