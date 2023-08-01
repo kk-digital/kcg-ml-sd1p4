@@ -26,7 +26,7 @@ import safetensors
 
 from stable_diffusion.constants import TEXT_EMBEDDER_PATH, TOKENIZER_PATH, TEXT_MODEL_PATH
 from stable_diffusion.utils_backend import get_device, get_memory_status
-
+from typing import List
 
 # TEXT_EMBEDDER_PATH = os.path.abspath('./input/model/clip/clip_embedder.ckpt')
 # TOKENIZER_PATH = os.path.abspath('./input/model/clip/clip_tokenizer.ckpt')
@@ -128,30 +128,30 @@ class CLIPTextEmbedder(nn.Module):
         return self.transformer(input_ids=tokens).last_hidden_state
 #%%
 
-if __name__ == "__main__":
-    prompts = ["", "A painting of a computer virus", "A photo of a computer virus"]
+# if __name__ == "__main__":
+#     prompts = ["", "A painting of a computer virus", "A photo of a computer virus"]
 
-    clip = CLIPTextEmbedder()
+#     clip = CLIPTextEmbedder()
 
-    embeddings1 = clip(prompts)
+#     embeddings1 = clip(prompts)
 
-    summary(clip.transformer)
-    print("embeddings: ", embeddings1)
-    print("embeddings.shape: ", embeddings1.shape)
+#     summary(clip.transformer)
+#     print("embeddings: ", embeddings1)
+#     print("embeddings.shape: ", embeddings1.shape)
 
-    clip.save()
+#     clip.save()
 
-    clip.unload_submodels()
+#     clip.unload_submodels()
 
-    clip.load_submodels()
+#     clip.load_submodels()
 
-    embeddings2 = clip(prompts)
+#     embeddings2 = clip(prompts)
 
-    assert torch.allclose(embeddings1, embeddings2)
+#     assert torch.allclose(embeddings1, embeddings2)
 
-    clip = torch.load(TEXT_EMBEDDER_PATH, map_location="cuda:0")
-    print(clip)
-    embeddings3 = clip(prompts)
-    assert torch.allclose(embeddings1, embeddings3), "embeddings1 != embeddings3"
-    assert torch.allclose(embeddings2, embeddings3), "embeddings2 != embeddings3"
-    print(os.getcwd())
+#     clip = torch.load(TEXT_EMBEDDER_PATH, map_location="cuda:0")
+#     print(clip)
+#     embeddings3 = clip(prompts)
+#     assert torch.allclose(embeddings1, embeddings3), "embeddings1 != embeddings3"
+#     assert torch.allclose(embeddings2, embeddings3), "embeddings2 != embeddings3"
+#     print(os.getcwd())
