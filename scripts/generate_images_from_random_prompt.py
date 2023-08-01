@@ -13,10 +13,14 @@ import os
 import sys
 import torch
 from datetime import datetime
+import numpy as np
+from zipfile import ZipFile
 
 base_directory = "./"
 sys.path.insert(0, base_directory)
 
+from prompt_generator import PromptGenerator
+from generation_task_result import GenerationTaskResult
 from stable_diffusion.utils_backend import get_autocast, set_seed
 from stable_diffusion.utils_image import save_images
 from stable_diffusion_base_script import StableDiffusionBaseScript
@@ -25,25 +29,22 @@ from stable_diffusion.model.unet.unet_attention import CrossAttention
 from cli_builder import CLI
 import random
 import json
+import clip
+from PIL import Image
+import io
+from chad_score.chad_score import get_chad_score
 
-def get_prompts(prompt, prompts_file):
-    prompts = []
-    if prompts_file is not None:
-        with open(prompts_file, 'r') as f:
-            prompts_from_file = f.readlines()
+def get_image_features(image, device):
+    model, preprocess = clip.load('ViT-L/14', device)
 
-        prompts.extend(
-            filter(lambda x: len(x) > 0, map(lambda x: x.strip(), prompts_from_file))
-        )
+    image_input = preprocess(image).unsqueeze(0).to(device)
 
-    if prompt is not None:
-        prompts.append(prompt)
+    # Encode the image
+    with torch.no_grad():
+        image_features = model.encode_image(image_input)
 
-    if len(prompts) == 0:
-        prompts = ["a painting of a virus monster playing guitar"]
-
-    return prompts
-
+    image_features = image_features.to(torch.float32)
+    return image_features
 
 class Txt2Img(StableDiffusionBaseScript):
     """
@@ -187,6 +188,9 @@ def main():
         .cuda_device() \
         .num_images() \
         .seed() \
+        .output_metadata() \
+        .image_width() \
+        .image_height() \
         .parse()
 
     # Hard coded prompts
@@ -199,6 +203,9 @@ def main():
 
 
     prompts = [arg_prompt]
+
+    image_width = opt.image_width
+    image_height = opt.image_height
 
     # Split the numbers_string into a list of substrings using the comma as the delimiter
     seed_string_array = opt.seed.split(',')
@@ -220,55 +227,90 @@ def main():
         sampler_name=opt.sampler,
         n_steps=opt.steps,
         force_cpu=opt.force_cpu,
-        cuda_device=opt.cuda_device
+        cuda_device=opt.cuda_device,
     )
     txt2img.initialize_latent_diffusion(autoencoder=None, clip_text_embedder=None, unet_model=None,
                                         path=opt.checkpoint_path, force_submodels_init=True)
+
+    current_task_index = 0
+    generation_task_result_list = []
+    min_chad_score = 999999.0
+    max_chad_score = -999999.0
 
     with monit.section('Generate', total_steps=len(prompts)) as section:
         for prompt in prompts:
 
             prompt_list = prompt.split(',');
+            prompt_generator = PromptGenerator(prompt_list)
 
             for i in range(opt.num_images):
-                this_prompt = ''
-                this_prompt_list = []
-                num_prompts_per_image = 12
-                while num_prompts_per_image > 0:
-                    random_index = random.randint(0, len(prompt_list) - 1)
-                    chosen_string = prompt_list[random_index]
-                    if not chosen_string in this_prompt_list:
-                        this_prompt_list.append(chosen_string)
-                        num_prompts_per_image = num_prompts_per_image - 1
 
-                for prompt_item in this_prompt_list:
-                    this_prompt = this_prompt + prompt_item + ', '
+                num_prompts_per_image = 12
+                this_prompt = prompt_generator.random_prompt(num_prompts_per_image)
 
                 print("Generating image " + str(i) + " out of " + str(opt.num_images));
+                print("Prompt : ", this_prompt)
                 start_time = time.time()
                 timestamp = datetime.now().strftime('%d-%m-%Y-%H-%M-%S')
-                filename = os.path.join(opt.output, f'{timestamp}-{i}.jpg')
+                image_name = f'{timestamp}-{i}.jpg'
+                filename = opt.output + '/' + image_name
+
+                this_seed = seed_array[i % len(seed_array)]
 
                 images = txt2img.generate_images(
                     batch_size=opt.batch_size,
                     prompt=this_prompt,
                     uncond_scale=opt.cfg_scale,
                     low_vram=opt.low_vram,
-                    seed=seed_array[i % len(seed_array)]
+                    seed=this_seed,
+                    w = image_width,
+                    h = image_height
                 )
 
-                print(images.shape)
-                save_images(images, filename)
+                image_list, image_hash_list = save_images(images, filename)
+                image_hash = image_hash_list[0]
+                image = image_list[0]
+
+                un_cond, cond = txt2img.get_text_conditioning(opt.cfg_scale, prompts, opt.batch_size)
+                # Convert the tensor to a flat vector
+                # cond = torch.flatten(cond)
+
+                # convert tensor to numpy array
+                with torch.no_grad():
+                    embedded_vector = cond.cpu().numpy()
+
+                # get image features
+                image_features = get_image_features(image, device=opt.cuda_device)
+
+                # hard coded for now
+                chad_score_model_path = "input/model/chad_score/chad-score-v1.pth"
+                chad_score_model_name = os.path.basename(chad_score_model_path)
+
+                # compute chad score
+                chad_score = get_chad_score(image_features, chad_score_model_path, device=opt.cuda_device)
+
+                # update the min, max for chad_score
+                min_chad_score = min(min_chad_score, chad_score.item())
+                max_chad_score = max(max_chad_score, chad_score.item())
+
+                # get numpy list from image_features
+                with torch.no_grad():
+                    image_features_numpy = image_features.cpu().numpy()
+
+                generation_task_result = GenerationTaskResult(embedded_vector, [], image_name, image_hash, [], image_features_numpy,
+                                                              chad_score_model_name, chad_score.item(), this_seed, opt.cfg_scale)
 
 
-                jsonData = {
-                    "prompt": this_prompt
-                }
+
 
                 # Save the data to a JSON file
-                json_filename = os.path.join(opt.output, f'{timestamp}-{i}.json')
-                with open(json_filename, 'w') as file:
-                    json.dump(jsonData, file)
+                json_filename = opt.output + '/' + f'{timestamp}-{i}.json'
+
+                generation_task_result_list.append({
+                    'image_filename': filename,
+                    'json_filename' : json_filename,
+                    'generation_task_result' : generation_task_result
+                })
 
                 # Capture the ending time
                 end_time = time.time()
@@ -278,6 +320,33 @@ def main():
 
                 print("Execution Time:", execution_time, "seconds")
 
+    # chad score value should be between [0, 1]
+    for generation_task_result_item in generation_task_result_list:
+        generation_task_result = generation_task_result_item['generation_task_result']
+        json_filename = generation_task_result_item['json_filename']
+
+        # chad score value should be between [0, 1]
+        normalized_chad_score = (generation_task_result.chad_score - min_chad_score) / (max_chad_score - min_chad_score)
+        generation_task_result.chad_score = normalized_chad_score
+
+        # save to json file
+        generation_task_result.save_to_json(json_filename)
+
+    total_digits = 4
+
+    zip_filename = opt.output + '/' + 'set_' + f'{current_task_index:0{total_digits}d}' + '.zip';
+    # create zip for generated images
+    with ZipFile(zip_filename, 'w') as file:
+        print('Created zip file ' + zip_filename)
+        zip_task_index = 1
+        for generation_task_result_item in generation_task_result_list:
+            print('Zipping task ' + str(zip_task_index) + ' out of ' + str(len(generation_task_result_list)))
+
+            json_filename = generation_task_result_item['json_filename']
+            image_filename = generation_task_result_item['image_filename']
+            file.write(json_filename, arcname=os.path.basename(json_filename))
+            file.write(image_filename, arcname=os.path.basename(image_filename))
+            zip_task_index += 1
 
 if __name__ == "__main__":
     main()

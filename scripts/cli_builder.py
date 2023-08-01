@@ -82,8 +82,8 @@ class CLI:
         self.parser.add_argument(
             '--checkpoint_path',
             type=str,
-            default='./input/model/sd-v1-4.ckpt',
-            help='Path to the checkpoint file (default: \'./input/model/sd-v1-4.ckpt\')'
+            default='./input/model/v1-5-pruned-emaonly.safetensors',
+            help='Path to the checkpoint file)'
         )
 
         if check_exists:
@@ -121,6 +121,26 @@ class CLI:
             type=int,
             default=1,
             help='How many images to generate at once (default: %(default)s)'
+        )
+
+        return self
+
+    def image_width(self):
+        self.parser.add_argument(
+            '--image_width',
+            type=int,
+            default=512,
+            help='Generate image width (default: %(default)s)'
+        )
+
+        return self
+
+    def image_height(self):
+        self.parser.add_argument(
+            '--image_height',
+            type=int,
+            default=512,
+            help='Generate image height (default: %(default)s)'
         )
 
         return self
@@ -271,6 +291,15 @@ class CLI:
             "--low_vram",
             action='store_true',
             help="limit VRAM usage"
+        )
+
+        return self
+
+    def output_metadata(self):
+        self.parser.add_argument(
+            "--output_metadata",
+            action='store_true',
+            help="outputs the metadata"
         )
 
         return self

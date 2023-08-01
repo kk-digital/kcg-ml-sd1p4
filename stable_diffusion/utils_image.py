@@ -41,11 +41,18 @@ def save_images(images: torch.Tensor, dest_path: str, img_format: str = 'jpeg'):
     images = images.permute(0, 2, 3, 1)
     images = images.float().numpy()
 
+    image_hash_list = []
+    image_list = []
     # Save images
     for i, img in enumerate(images):
         img = Image.fromarray((255. * img).astype(np.uint8))
         img.save(dest_path, format=img_format)
+        image_data = img.tobytes()
+        image_hash = (hashlib.sha256(image_data)).hexdigest()
+        image_hash_list.append(image_hash)
+        image_list.append(img)
 
+    return (image_list, image_hash_list)
 
 def save_image_grid(
         tensor: Union[torch.Tensor, List[torch.Tensor]],
