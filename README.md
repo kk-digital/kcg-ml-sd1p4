@@ -227,15 +227,15 @@ python3 ./scripts/data_bounding_box_and_score_and_embedding_dataset.py
 - `random_walk`: Random walk on the embedding space, with the prompt embedding as origin. Defaults to False.
 
 
-#### Image Grid Creator
+#### Image Grid Generator
 
-The Image Grid Creator is a script that generates a grid of images from a directory or a zip file containing images. 
+The Image Grid generator is a script that generates a grid of images from a directory or a zip file containing images. 
 
 ##### Usage
 
 Run the script with the following command:
 
-    python script_name.py --input_path <input_path> --n <number of images width> --m <number of images height> --img_size <size of grid image>
+    python grid_generator.py --input_path <input_path> --n <number of images width> --m <number of images height> --img_size <size of grid image>
 
 
 ### Generate Images Random Prompt
