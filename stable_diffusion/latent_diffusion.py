@@ -168,8 +168,9 @@ class LatentDiffusion(nn.Module):
             print(f"Autoencoder loaded from: {autoencoder_path}")
             return self.first_stage_model
         else:
-            self.first_stage_model = initialize_autoencoder(device=self.device)
-            self.first_stage_model.load_state_dict(load_file(autoencoder_path))
+            self.first_stage_model = initialize_autoencoder(device=self.device).load_submodels(
+                    use_safetensors=use_safetensors)
+            self.first_stage_model.load_state_dict(load_file(autoencoder_path,device=self.device.type))
             self.first_stage_model.eval()
             print(f"Autoencoder loaded from: {autoencoder_path}")
             return self.first_stage_model
