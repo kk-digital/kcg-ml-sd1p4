@@ -14,6 +14,7 @@ import sys
 import torch
 from datetime import datetime
 import numpy as np
+from zipfile import ZipFile
 
 base_directory = "./"
 sys.path.insert(0, base_directory)
@@ -226,6 +227,7 @@ def main():
     txt2img.initialize_latent_diffusion(autoencoder=None, clip_text_embedder=None, unet_model=None,
                                         path=opt.checkpoint_path, force_submodels_init=True)
 
+    current_task_index = 0
     generation_task_result_list = []
     min_chad_score = 999999.0
     max_chad_score = -999999.0
@@ -246,7 +248,7 @@ def main():
                 start_time = time.time()
                 timestamp = datetime.now().strftime('%d-%m-%Y-%H-%M-%S')
                 image_name = f'{timestamp}-{i}.jpg'
-                filename = os.path.join(opt.output, image_name)
+                filename = opt.output + '/' + image_name
 
                 this_seed = seed_array[i % len(seed_array)]
 
@@ -258,8 +260,6 @@ def main():
                     seed=this_seed,
                 )
 
-
-                print(images.shape)
                 image_list, image_hash_list = save_images(images, filename)
                 image_hash = image_hash_list[0]
                 image = image_list[0]
@@ -297,9 +297,10 @@ def main():
 
 
                 # Save the data to a JSON file
-                json_filename = os.path.join(opt.output, f'{timestamp}-{i}.json')
+                json_filename = opt.output + '/' + f'{timestamp}-{i}.json'
 
                 generation_task_result_list.append({
+                    'image_filename': filename,
                     'json_filename' : json_filename,
                     'generation_task_result' : generation_task_result
                 })
@@ -312,7 +313,7 @@ def main():
 
                 print("Execution Time:", execution_time, "seconds")
 
-
+    # chad score value should be between [0, 1]
     for generation_task_result_item in generation_task_result_list:
         generation_task_result = generation_task_result_item['generation_task_result']
         json_filename = generation_task_result_item['json_filename']
@@ -323,6 +324,20 @@ def main():
 
         # save to json file
         generation_task_result.save_to_json(json_filename)
+
+    zip_filename = opt.output + '/' + 'set_' + str(current_task_index) + '.zip';
+    # create zip for generated images
+    with ZipFile(zip_filename, 'w') as file:
+        print('Created zip file ' + zip_filename)
+        zip_task_index = 0
+        for generation_task_result_item in generation_task_result_list:
+            print('Zipping task ' + str(zip_task_index) + ' out of ' + str(len(generation_task_result_list)))
+
+            json_filename = generation_task_result_item['json_filename']
+            image_filename = generation_task_result_item['image_filename']
+            file.write(json_filename, arcname=os.path.basename(json_filename))
+            file.write(image_filename, arcname=os.path.basename(image_filename))
+            zip_task_index += 1
 
 if __name__ == "__main__":
     main()
