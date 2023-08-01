@@ -127,7 +127,7 @@ class Autoencoder(nn.Module):
             return self.encoder
         else:
             self.encoder = initialize_encoder(device=self.device)
-            self.encoder.load_state_dict(load_file(encoder_path, device=self.device))
+            self.encoder.load_state_dict(load_file(encoder_path, device=self.device.type))
             self.encoder.eval()
             print(f"Encoder loaded from: {encoder_path}")
             return self.encoder
@@ -140,8 +140,7 @@ class Autoencoder(nn.Module):
             return self.decoder
         else:
             self.decoder = initialize_decoder(device=self.device)
-            device = "cpu" if self.device.type == "mps" else self.device  # mps doesn't have support for safe tensors
-            self.decoder.load_state_dict(load_file(decoder_path, device=device))
+            self.decoder.load_state_dict(load_file(decoder_path, device=self.device.type))
             self.decoder.eval()
             print(f"Decoder loaded from: {decoder_path}")
             return self.decoder
