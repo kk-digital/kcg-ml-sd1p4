@@ -35,10 +35,7 @@ from stable_diffusion.constants import CHECKPOINT_PATH
 from stable_diffusion.constants import ROOT_MODELS_DIR, ROOT_MODELS_PREFIX
 from stable_diffusion.constants import CLIP_MODEL_DIR
 
-from stable_diffusion.utils.model import (
-    initialize_autoencoder,
-    initialize_clip_embedder,
-    initialize_unet,
+from stable_diffusion.utils_model import (
     initialize_latent_diffusion,
 )
 # from labml.monit import section

@@ -359,7 +359,7 @@ if __name__ == "__main__":
         # prep_img = image_encoder.preprocess_input(pil_image)
         image_features = image_encoder(pil_image, do_preprocess=True)
         image_features /= image_features.norm(dim=-1, keepdim=True)
-        score = predictor.model(image_features.to(DEVICE).float()).cpu()
+        score = predictor(image_features.to(DEVICE).float()).cpu()
         img_file_name = f"image_{img_counter:06d}.png"
         img_path = join(IMAGES_DIR, img_file_name)
         pil_image.save(img_path)
