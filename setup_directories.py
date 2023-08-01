@@ -37,19 +37,19 @@ config["BASE"] = {
                     "CHECKPOINT": "${MODEL_NAME}.safetensors"
                     }
 
-print("config.ini [BASE]: ", json.dumps({k: v for k, v in config["BASE"].items()}, indent=4))
+print_section(config, 'BASE')
 
-ROOT_MODELS_DIR = (os.path.join(BASE_IO_DIRECTORY, ROOT_MODELS_PREFIX))
-ROOT_OUTPUTS_DIR = (os.path.join(BASE_IO_DIRECTORY, ROOT_OUTPUTS_PREFIX))
-SD_DEFAULT_MODEL_OUTPUTS_DIR = (os.path.join(ROOT_OUTPUTS_PREFIX, MODEL_NAME))
-SD_DEFAULT_MODEL_DIR = os.path.join(ROOT_MODELS_DIR, MODEL_NAME)
-CLIP_MODELS_DIR = os.path.join(ROOT_MODELS_DIR, "clip/")
-TEXT_EMBEDDER_DIR = (
-    os.path.join(CLIP_MODELS_DIR, "text_embedder/")
-)
-IMAGE_ENCODER_DIR = (
-    os.path.join(CLIP_MODELS_DIR, "image_encoder/")
-)
+# ROOT_MODELS_DIR = (os.path.join(BASE_IO_DIRECTORY, ROOT_MODELS_PREFIX))
+# ROOT_OUTPUTS_DIR = (os.path.join(BASE_IO_DIRECTORY, ROOT_OUTPUTS_PREFIX))
+# SD_DEFAULT_MODEL_OUTPUTS_DIR = (os.path.join(ROOT_OUTPUTS_PREFIX, MODEL_NAME))
+# SD_DEFAULT_MODEL_DIR = os.path.join(ROOT_MODELS_DIR, MODEL_NAME)
+# CLIP_MODELS_DIR = os.path.join(ROOT_MODELS_DIR, "clip/")
+# TEXT_EMBEDDER_DIR = (
+#     os.path.join(CLIP_MODELS_DIR, "text_embedder/")
+# )
+# IMAGE_ENCODER_DIR = (
+#     os.path.join(CLIP_MODELS_DIR, "image_encoder/")
+# )
 
 config["ROOT_DIRS"] = {
         'ROOT_MODELS_DIR':  '${BASE:base_io_directory}${BASE:root_models_prefix}',
@@ -83,42 +83,24 @@ config["SUBMODELS_DIRS"] = {
 # )
 print_section(config, "SUBMODELS_DIRS")
 
-config["STABLE_DIFFUSION_PATHS"] = dict(
-    
-    CHECKPOINT_PATH = os.path.join(ROOT_MODELS_DIR, CHECKPOINT),
-        
-    UNET_PATH = (
-        os.path.join(SD_DEFAULT_MODEL_DIR, "unet.safetensors")
-    ),
-    AUTOENCODER_PATH = (
-        os.path.join(SD_DEFAULT_MODEL_DIR, "autoencoder.safetensors")
-    ),
-    LATENT_DIFFUSION_PATH = (
-        os.path.join(SD_DEFAULT_MODEL_DIR, "latent_diffusion.safetensors")
-    )
-)
+config["STABLE_DIFFUSION_PATHS"] = {
+    'CHECKPOINT_PATH': '${ROOT_DIRS:ROOT_MODELS_DIR}${BASE:CHECKPOINT}',
+    'UNET_PATH': '${MODELS_DIRS:SD_DEFAULT_MODEL_DIR}unet.safetensors',
+    'AUTOENCODER_PATH': "${MODELS_DIRS:SD_DEFAULT_MODEL_DIR}autoencoder.safetensors",
+    'LATENT_DIFFUSION_PATH': "${MODELS_DIRS:SD_DEFAULT_MODEL_DIR}latent_diffusion.safetensors"
+}
 print_section(config, "STABLE_DIFFUSION_PATHS")
 
 config["CLIP_PATHS"] = dict(
-    IMAGE_PROCESSOR_PATH = (
-        os.path.join(IMAGE_ENCODER_DIR, "image_processor")
-    ),
-    VISION_MODEL_PATH = (
-        os.path.join(IMAGE_ENCODER_DIR, "vision_model")
-    ),
-    IMAGE_ENCODER_PATH = (
-        os.path.join(IMAGE_ENCODER_DIR, "image_encoder.safetensors")
-    ),
-    TOKENIZER_PATH = (
-        os.path.join(TEXT_EMBEDDER_DIR, "tokenizer")
-    ),
-    TEXT_MODEL_PATH = (
-        os.path.join(TEXT_EMBEDDER_DIR, 'text_model')
-    ),
-    TEXT_EMBEDDER_PATH = (
-        os.path.join(TEXT_EMBEDDER_DIR, "text_embedder.safetensors")
-    ),
-    )
+    
+    IMAGE_PROCESSOR_PATH = "${MODELS_DIRS:IMAGE_ENCODER_DIR}image_processor",
+    VISION_MODEL_PATH = "${MODELS_DIRS:IMAGE_ENCODER_DIR}vision_model",
+    IMAGE_ENCODER_PATH = "${MODELS_DIRS:IMAGE_ENCODER_DIR}image_encoder.safetensors",
+    
+    TOKENIZER_PATH = "${MODELS_DIRS:TEXT_EMBEDDER_DIR}tokenizer",
+    TEXT_MODEL_PATH = '${MODELS_DIRS:TEXT_EMBEDDER_DIR}text_model',
+    TEXT_EMBEDDER_PATH = "${MODELS_DIRS:TEXT_EMBEDDER_DIR}text_embedder.safetensors"
+)
 
 print_section(config, "CLIP_PATHS")
 
@@ -134,3 +116,4 @@ def create_directory_tree_folders(config):
         
 if __name__ == "__main__":
     create_directory_tree_folders(config)
+    
