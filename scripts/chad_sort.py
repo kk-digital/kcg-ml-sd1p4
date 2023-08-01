@@ -4,6 +4,7 @@ import argparse
 import torch
 import zipfile
 import shutil
+import time
 
 base_directory = os.getcwd()
 sys.path.insert(0, base_directory)
@@ -19,6 +20,7 @@ def parse_arguments():
     parser.add_argument('--dataset-path', type=str, help='Path to the dataset to sort')
     parser.add_argument('--output-path', type=str, default='./output/chad_sort/', help='Path to the output folder')
     parser.add_argument('--num-classes', type=int, default=10, help='Defines the number of classes to sort into, Specifies the total count of categories or groups or folders')
+    parser.add_argument('--device', type=str, default='cuda:0', help='Path to the dataset to sort')
 
     return parser.parse_args()
 
@@ -74,6 +76,7 @@ def main():
     dataset_path = args.dataset_path
     num_classes = args.num_classes
     output_path = args.output_path
+    device = args.device
 
     # Make sure we the user provides the required arguments
     ensure_required_args(args)
@@ -85,6 +88,9 @@ def main():
     # Clean the output folder
     remove_all_files_and_folders(output_path)
 
+    # Tracking time
+    start_time = time.time()
+
     # Load the image dataset
     image_dataset = ImageDataset()
     image_dataset.load_dataset(dataset_path=dataset_path, is_tagged=False)
@@ -94,15 +100,16 @@ def main():
     max_chad_score = -999999.0
 
     for item in image_dataset.dataset:
-        feature_vector_tensor = torch.tensor(item.feature_vector)
-        chad_score = get_chad_score(feature_vector_tensor).item()
+        feature_vector_tensor = torch.tensor(item.feature_vector, device=device)
+        chad_score = get_chad_score(feature_vector_tensor, device=device).item()
         chad_image = ChadImage(os.path.basename(item.file_path), chad_score)
         chad_images.append(chad_image)
 
         min_chad_score = min(min_chad_score, chad_score)
         max_chad_score = max(max_chad_score, chad_score)
 
-
+    current_image = 1
+    num_images = len(chad_images)
 
     for chad_image in chad_images:
         zip_file_path = dataset_path
@@ -118,11 +125,22 @@ def main():
                     source = zip_ref.open(item)
                     dir = output_path + str(class_index)
                     create_folder_if_not_exist(dir)
-                    image_path = os.path.join(dir, image_filename)
+                    image_path = dir + '/' + image_filename
                     target = open(image_path, "wb")
                     with source, target:
                         shutil.copyfileobj(source, target)
                         print("Saved image " + image_path)
+                        print("Total images processed : " + str(current_image) + " out of " + str(num_images))
+                        current_image += 1
+
+    # Capture the ending time
+    end_time = time.time()
+
+    # Calculate the execution time
+    execution_time = end_time - start_time
+
+    print("Execution Time:", str(execution_time), "seconds")
+    print("Images per second:", str(num_images / execution_time), " image/seconds")
 
 if __name__ == '__main__':
     main()

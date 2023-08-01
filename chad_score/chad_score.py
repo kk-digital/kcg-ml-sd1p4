@@ -46,9 +46,5 @@ def get_chad_model(model_path, device=None):
 
 def get_chad_score(image_features, model_path="input/model/chad_score/chad-score-v1.pth", device=None):
     chadModel = get_chad_model(model_path, get_device(device))
-    print(image_features.device)
-    print(chadModel.device)
-    print(image_features.dtype)
-    print(chadModel.dtype)
     chad_score = chadModel(image_features)
     return chad_score
