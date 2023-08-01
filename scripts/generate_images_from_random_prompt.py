@@ -26,25 +26,24 @@ from stable_diffusion.model.unet.unet_attention import CrossAttention
 from cli_builder import CLI
 import random
 import json
+import clip
+from PIL import Image
+import io
+from chad_score.chad_score import get_chad_score
 
-def get_prompts(prompt, prompts_file):
-    prompts = []
-    if prompts_file is not None:
-        with open(prompts_file, 'r') as f:
-            prompts_from_file = f.readlines()
+def get_image_features(image_data, device):
+    model, preprocess = clip.load('ViT-L/14', device)
 
-        prompts.extend(
-            filter(lambda x: len(x) > 0, map(lambda x: x.strip(), prompts_from_file))
-        )
+    # Open the image using Pillow and io.BytesIO
+    image = Image.open(io.BytesIO(image_data))
 
-    if prompt is not None:
-        prompts.append(prompt)
+    image_input = preprocess(image).unsqueeze(0).to(device)
 
-    if len(prompts) == 0:
-        prompts = ["a painting of a virus monster playing guitar"]
+    # Encode the image
+    with torch.no_grad():
+        image_features = model.encode_image(image_input)
 
-    return prompts
-
+    return image_features
 
 class Txt2Img(StableDiffusionBaseScript):
     """
@@ -249,28 +248,50 @@ def main():
                 print("Generating image " + str(i) + " out of " + str(opt.num_images));
                 start_time = time.time()
                 timestamp = datetime.now().strftime('%d-%m-%Y-%H-%M-%S')
-                filename = os.path.join(opt.output, f'{timestamp}-{i}.jpg')
+                image_name = f'{timestamp}-{i}.jpg'
+                filename = os.path.join(opt.output, image_name)
+
+                this_seed = seed_array[i % len(seed_array)]
 
                 images = txt2img.generate_images(
                     batch_size=opt.batch_size,
                     prompt=this_prompt,
                     uncond_scale=opt.cfg_scale,
                     low_vram=opt.low_vram,
-                    seed=seed_array[i % len(seed_array)]
+                    seed=this_seed
                 )
 
+
                 print(images.shape)
-                save_images(images, filename)
+                image_data_list, image_hash_list = save_images(images, filename)
+                image_hash = image_hash_list[0]
+                image_data = image_data_list[0]
 
+                un_cond, cond = txt2img.get_text_conditioning(opt.cfg_scale, prompts, opt.batch_size)
+                # Convert the tensor to a flat vector
+                # cond = torch.flatten(cond)
 
-                jsonData = {
-                    "prompt": this_prompt
-                }
+                # convert tensor to numpy array
+                with torch.no_grad():
+                    flat_embedded_vector = cond.cpu().numpy()
+
+                # get image features
+                image_features = get_image_features(image_data, device=opt.cuda_device)
+
+                # hard coded for now
+                chad_score_model_path = "input/model/chad_score/chad-score-v1.pth"
+                chad_score_model_name = os.path.basename(chad_score_model_path)
+
+                # compute chad score
+                chad_score = get_chad_score(image_features, chad_score_model_path)
+
+                generation_task_result = GenerationTaskResult(flat_embedded_vector, [], image_name, image_hash, [], image_features,
+                                                              chad_score_model_name, chad_score, this_seed, opt.cfg_scale)
+
 
                 # Save the data to a JSON file
                 json_filename = os.path.join(opt.output, f'{timestamp}-{i}.json')
-                with open(json_filename, 'w') as file:
-                    json.dump(jsonData, file)
+                generation_task_result.save_to_json(json_filename);
 
                 # Capture the ending time
                 end_time = time.time()
