@@ -18,6 +18,7 @@ import numpy as np
 base_directory = "./"
 sys.path.insert(0, base_directory)
 
+from prompt_generator import PromptGenerator
 from generation_task_result import GenerationTaskResult
 from stable_diffusion.utils_backend import get_autocast, set_seed
 from stable_diffusion.utils_image import save_images
@@ -229,22 +230,15 @@ def main():
         for prompt in prompts:
 
             prompt_list = prompt.split(',');
+            prompt_generator = PromptGenerator(prompt_list)
 
             for i in range(opt.num_images):
-                this_prompt = ''
-                this_prompt_list = []
-                num_prompts_per_image = 12
-                while num_prompts_per_image > 0:
-                    random_index = random.randint(0, len(prompt_list) - 1)
-                    chosen_string = prompt_list[random_index]
-                    if not chosen_string in this_prompt_list:
-                        this_prompt_list.append(chosen_string)
-                        num_prompts_per_image = num_prompts_per_image - 1
 
-                for prompt_item in this_prompt_list:
-                    this_prompt = this_prompt + prompt_item + ', '
+                num_prompts_per_image = 12
+                this_prompt = prompt_generator.random_prompt(num_prompts_per_image)
 
                 print("Generating image " + str(i) + " out of " + str(opt.num_images));
+                print("Prompt : ", this_prompt)
                 start_time = time.time()
                 timestamp = datetime.now().strftime('%d-%m-%Y-%H-%M-%S')
                 image_name = f'{timestamp}-{i}.jpg'
