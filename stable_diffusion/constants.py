@@ -4,6 +4,7 @@ import configparser
 import argparse
 
 BASE_DIRECTORY = os.getcwd()
+# BASE_DIRECTORY = '../'
 
 sys.path.insert(0, BASE_DIRECTORY)
 
@@ -23,7 +24,7 @@ ROOT_OUTPUTS_PREFIX = base.get("root_outputs_prefix")
 MODEL = base.get("model_name")
 CLIP_MODEL = base.get("clip_model_name")
 
-CHECKPOINT = f"{MODEL}.safetensors"
+CHECKPOINT = base.get("checkpoint")
 CHECKPOINT_PATH = stable_diffusion_paths.get("checkpoint_path")
 
 # ROOT_MODELS_DIR = (os.path.join(BASE_IO_DIRECTORY, ROOT_MODELS_PREFIX))
@@ -45,6 +46,7 @@ SD_DEFAULT_MODEL_DIR = models_dirs.get("sd_default_model_dir")
 CLIP_MODELS_DIR = models_dirs.get("clip_models_dir")
 TEXT_EMBEDDER_DIR = models_dirs.get("text_embedder_dir")
 IMAGE_ENCODER_DIR = models_dirs.get("image_encoder_dir")
+CLIP_MODEL_DIR = models_dirs.get("clip_model_dir")
 
 TEXT_EMBEDDER_PATH = (
     os.path.join(TEXT_EMBEDDER_DIR, "text_embedder.safetensors")
@@ -120,12 +122,13 @@ def create_directory_tree_folders(config: configparser.ConfigParser):
     }
     return paths_dict
 
+
 class IODirectoryTree:
     """returns dicts to be used as kwargs for loading submodels.
     the keys are the same as the kwargs used for the load methods."""
 
     def __init__(self, 
-                base_io_directory_prefix: str = BASE_IO_DIRECTORY_PREFIX, 
+                base_io_directory_prefix: str = "", 
                 base_directory: str = "./", 
                 model_name = "v1-5-pruned-emaonly", 
                 clip_model_name = "clip-vit-large-patch14", 
@@ -334,7 +337,7 @@ class IODirectoryTree:
         return {
             "text_embedder_path": self.text_embedder_path,
             "tokenizer_path": self.tokenizer_path,
-            "transformer_path": self.transformer_path,
+            "transformer_path": self.text_model_path,
             "unet_path": self.unet_path,
             "autoencoder_path": self.autoencoder_path,
             "encoder_path": self.encoder_path,
@@ -345,7 +348,7 @@ class IODirectoryTree:
     def embedder_submodels(self):
         return {
             "tokenizer_path": self.tokenizer_path,
-            "transformer_path": self.transformer_path,
+            "transformer_path": self.text_model_path,
         }
 
     @property
@@ -370,29 +373,29 @@ class IODirectoryTree:
             os.makedirs(v, exist_ok=True)
 
         paths_dict = {
-            "root_models_path": ROOT_MODELS_DIR,
-            "checkpoint_path": CHECKPOINT_PATH,
-            "embedder_path": TEXT_EMBEDDER_PATH,
+            "root_models_path": self.root_models_dir,
+            "checkpoint_path": self.checkpoint_path,
+            "embedder_path": self.text_embedder_path,
             "embedder_submodels_paths": {
-                "tokenizer_path": TOKENIZER_PATH,
-                "transformer_path": TEXT_MODEL_PATH,
+                "tokenizer_path": self.tokenizer_path,
+                "transformer_path": self.text_model_path,
             },
-            "image_encoder_path": IMAGE_ENCODER_PATH,
+            "image_encoder_path": self.image_encoder_path,
             "image_encoder_submodels_paths": {
-                "image_processor_path": IMAGE_PROCESSOR_PATH,
-                "clip_model_path": VISION_MODEL_PATH,
+                "image_processor_path": self.image_processor_path,
+                "clip_model_path": self.vision_model_path,
             },
-            "unet_path": UNET_PATH,
-            "autoencoder_path": AUTOENCODER_PATH,
+            "unet_path": self.unet_path,
+            "autoencoder_path": self.autoencoder_path,
             "autoencoder_submodels_paths": {
-                "encoder_path": ENCODER_PATH,
-                "decoder_path": DECODER_PATH,
+                "encoder_path": self.encoder_path,
+                "decoder_path": self.decoder_path,
             },
-            "latent_diffusion_path": LATENT_DIFFUSION_PATH,
+            "latent_diffusion_path": self.latent_diffusion_path,
             "latent_diffusion_submodels_paths": {
-                "embedder_path": TEXT_EMBEDDER_PATH,
-                "unet_path": UNET_PATH,
-                "autoencoder_path": AUTOENCODER_PATH,
+                "embedder_path": self.text_embedder_path,
+                "unet_path": self.unet_path,
+                "autoencoder_path": self.autoencoder_path,
             },
         }
         return paths_dict

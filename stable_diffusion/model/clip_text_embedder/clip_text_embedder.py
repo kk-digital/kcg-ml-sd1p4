@@ -59,6 +59,7 @@ class CLIPTextEmbedder(nn.Module):
         
         config = CLIPTextConfig.from_pretrained(transformer_path, local_files_only=True)
         self.transformer = CLIPTextModel(config).eval().to(self.device)
+        self.tokenizer = CLIPTokenizer.from_pretrained(tokenizer_path, local_files_only=True)
         
         return self
         
