@@ -8,6 +8,7 @@ import zipfile
 import os
 import json
 import io
+import numpy as np
 import sys
 import random
 from PIL import Image
@@ -17,7 +18,7 @@ import struct
 sys.path.insert(0, os.getcwd())
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion.utils_backend import get_device
-
+from generation_task_result import GenerationTaskResult
 
 def hash_string_to_float32(input_string):
     """
@@ -83,6 +84,19 @@ def split_data(input_list, validation_ratio=0.2):
 
     return validation_list, train_list
 
+# Custom JSON decoder for NumPy arrays
+class NumpyArrayDecoder(json.JSONDecoder):
+    def __init__(self, *args, **kwargs):
+        json.JSONDecoder.__init__(self, object_hook=self.json_to_ndarray, *args, **kwargs)
+
+    def json_to_ndarray(self, dct):
+        if '__ndarray__' in dct:
+            data = np.array(dct['data'], dtype=dct['dtype'])
+            if 'shape' in dct:
+                data = data.reshape(dct['shape'])
+            return data
+        return dct
+
 def main():
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -107,16 +121,16 @@ def main():
                     jpg_filename = file_info.filename
                     json_filename = json_filename
 
-                    #image_features = get_image_features(jpg_content, get_device(device))
 
                     # Decode the bytes to a string
                     json_data_string = json_content.decode('utf-8')
-                    # Parse the JSON data into a Python dictionary
-                    data_dict = json.loads(json_data_string)
-                    # Access properties from the data_dict
-                    prompt = data_dict["prompt"]
 
-                    embedded_prompts = clip_text_embedder(prompt)
+                    # Parse the JSON data into a Python dictionary
+                    data_dict = json.loads(json_data_string, cls=NumpyArrayDecoder)
+
+                    image_meta_data = GenerationTaskResult.from_dict(data=data_dict)
+
+                    embedded_prompts = torch.tensor(image_meta_data.clip_embedding, dtype=torch.float32);
                     # Convert the tensor to a flat vector
                     flat_embedded_prompts = torch.flatten(embedded_prompts)
 
@@ -135,8 +149,8 @@ def main():
 
     num_inputs = len(inputs)
 
-    validation_inputs, train_inputs = split_data(inputs, validation_ratio=0.2)
-    validation_outputs, train_outputs = split_data(expected_outputs, validation_ratio=0.2)
+    validation_inputs, train_inputs = split_data(inputs, validation_ratio=0.4)
+    validation_outputs, train_outputs = split_data(expected_outputs, validation_ratio=0.4)
 
     train_inputs = torch.tensor(train_inputs, dtype=torch.float32)
     train_outputs = torch.tensor(train_outputs, dtype=torch.float32)

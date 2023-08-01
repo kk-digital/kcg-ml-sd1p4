@@ -13,6 +13,7 @@ import os
 import sys
 import torch
 from datetime import datetime
+import numpy as np
 
 base_directory = "./"
 sys.path.insert(0, base_directory)
@@ -257,8 +258,6 @@ def main():
                     uncond_scale=opt.cfg_scale,
                     low_vram=opt.low_vram,
                     seed=this_seed,
-                    w=64,
-                    h=64
                 )
 
 
@@ -306,6 +305,7 @@ def main():
                 execution_time = end_time - start_time
 
                 print("Execution Time:", execution_time, "seconds")
+
 
 
 if __name__ == "__main__":

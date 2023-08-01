@@ -38,9 +38,29 @@ class GenerationTask:
 
     def save_to_json(self, filename):
         with open(filename, 'w') as file:
-            json.dump(self.to_dict(), file)
+            json.dump(self.to_dict(), file, cls=NumpyArrayEncoder)
 
     def load_from_json(self, filename):
         with open(filename, 'r') as file:
-            data = json.load(file)
+            data = json.load(file, cls=NumpyArrayDecoder)
             return GenerationTask.from_dict(data)
+
+
+class NumpyArrayDecoder(json.JSONDecoder):
+    def __init__(self, *args, **kwargs):
+        json.JSONDecoder.__init__(self, object_hook=self.json_to_ndarray, *args, **kwargs)
+
+    def json_to_ndarray(self, dct):
+        if '__ndarray__' in dct:
+            data = np.array(dct['data'], dtype=dct['dtype'])
+            if 'shape' in dct:
+                data = data.reshape(dct['shape'])
+            return data
+        return dct
+
+# Custom encoder to handle NumPy arrays
+class NumpyArrayEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return json.JSONEncoder.default(self, obj)

@@ -17,20 +17,20 @@ class GenerationTaskResult:
 
     def to_dict(self):
         return {
-            'clip_embedding': self.clip_embedding,
-            'latent': self.latent,
-            'image_name': self.image_name,
-            'image_hash': self.image_hash,
-            'image_latent': self.image_latent,
-            'image_clip_vector': self.image_clip_vector,
-            'chad_score_model': self.chad_score_model,
-            'chad_score': self.chad_score,
-            'seed': self.seed,
-            'cfg_strength': self.cfg_strength
+            "clip_embedding": self.clip_embedding,
+            "latent": self.latent,
+            "image_name": self.image_name,
+            "image_hash": self.image_hash,
+            "image_latent": self.image_latent,
+            "image_clip_vector": self.image_clip_vector,
+            "chad_score_model": self.chad_score_model,
+            "chad_score": self.chad_score,
+            "seed": self.seed,
+            "cfg_strength": self.cfg_strength
         }
 
 
-    def from_dict(self, data):
+    def from_dict(data):
         return GenerationTaskResult(
         clip_embedding=data['clip_embedding'],
         latent=data['latent'],
@@ -46,14 +46,26 @@ class GenerationTaskResult:
 
     def save_to_json(self, filename):
         with open(filename, 'w') as file:
-            json.dump(self.to_dict(), file, cls=NumpyArrayEncoder)
+            json.dump(self.to_dict(), file, ensure_ascii=False, cls=NumpyArrayEncoder)
 
     def load_from_json(self, filename):
         with open(filename, 'r') as file:
-            data = json.load(file)
+            data = json.load(file, cls=NumpyArrayDecoder)
             return GenerationTaskResult.from_dict(data)
 
 
+
+class NumpyArrayDecoder(json.JSONDecoder):
+    def __init__(self, *args, **kwargs):
+        json.JSONDecoder.__init__(self, object_hook=self.json_to_ndarray, *args, **kwargs)
+
+    def json_to_ndarray(self, dct):
+        if '__ndarray__' in dct:
+            data = np.array(dct['data'], dtype=dct['dtype'])
+            if 'shape' in dct:
+                data = data.reshape(dct['shape'])
+            return data
+        return dct
 
 # Custom encoder to handle NumPy arrays
 class NumpyArrayEncoder(json.JSONEncoder):
