@@ -11,10 +11,43 @@ import io
 import sys
 import random
 from PIL import Image
+import hashlib
+import struct
 
 sys.path.insert(0, os.getcwd())
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion.utils_backend import get_device
+
+
+def hash_string_to_float32(input_string):
+    """
+    Hash a string and represent the hash as a 32-bit floating-point number (Float32).
+
+    Parameters:
+        input_string (str): The input string to be hashed.
+
+    Returns:
+        np.float32: The 32-bit floating-point number representing the hash.
+    """
+    try:
+        # Convert the string to bytes (required for hashlib)
+        input_bytes = input_string.encode('utf-8')
+
+        # Get the hash object for the desired algorithm (SHA-256 used here)
+        hash_object = hashlib.sha256()
+
+        # Update the hash object with the input bytes
+        hash_object.update(input_bytes)
+
+        # Get the binary representation of the hash value
+        hash_bytes = hash_object.digest()
+
+        # Convert the first 4 bytes (32 bits) of the hash into a float32
+        float32_hash = struct.unpack('<f', hash_bytes[:4])[0]
+
+        return float32_hash
+    except ValueError:
+        raise ValueError("Error hashing the input string.")
 
 def get_image_features(image_data, device):
     model, preprocess = clip.load('ViT-L/14', device)
@@ -44,9 +77,6 @@ def split_data(input_list, validation_ratio=0.2):
     num_validation_samples = int(len(input_list) * validation_ratio)
     num_train_samples = len(input_list) - num_validation_samples
 
-    # Shuffle the input_list to ensure random sampling
-    random.shuffle(input_list)
-
     # Split the input_list into validation and train lists
     validation_list = input_list[:num_validation_samples]
     train_list = input_list[num_validation_samples:]
@@ -60,6 +90,10 @@ def main():
     # Example usage:
     zip_file_path = 'input/random-shit.zip'
 
+    # embed prompt
+    clip_text_embedder = CLIPTextEmbedder(device=get_device(device))
+    clip_text_embedder.load_submodels_auto()
+
     inputs = []
     expected_outputs = []
     with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
@@ -68,12 +102,12 @@ def main():
             if file_extension.lower() == '.jpg':
                 json_filename = filename + '.json'
                 if json_filename in zip_ref.namelist():
-                    jpg_content = zip_ref.read(file_info.filename)
+                    #jpg_content = zip_ref.read(file_info.filename)
                     json_content = zip_ref.read(json_filename)
                     jpg_filename = file_info.filename
                     json_filename = json_filename
 
-                    image_features = get_image_features(jpg_content, get_device(device))
+                    #image_features = get_image_features(jpg_content, get_device(device))
 
                     # Decode the bytes to a string
                     json_data_string = json_content.decode('utf-8')
@@ -82,23 +116,12 @@ def main():
                     # Access properties from the data_dict
                     prompt = data_dict["prompt"]
 
-
-                    # embed prompt
-                    clip_text_embedder = CLIPTextEmbedder(device=get_device(device))
-                    clip_text_embedder.load_submodels_auto()
-
                     embedded_prompts = clip_text_embedder(prompt)
-
-                    print('embedded_prompts')
-                    print(embedded_prompts.shape)
                     # Convert the tensor to a flat vector
                     flat_embedded_prompts = torch.flatten(embedded_prompts)
 
                     with torch.no_grad():
-                        flat_vector = flat_embedded_prompts.cpu().numpy()
-
-                    print('flat_vector')
-                    print(flat_vector)
+                       flat_vector = flat_embedded_prompts.cpu().numpy()
 
                     chad_score = 1.0
 
@@ -106,14 +129,14 @@ def main():
                     expected_outputs.append(chad_score)
 
 
-    linear_regression_model = LinearRegressionModel(77*768)
+    linear_regression_model = LinearRegressionModel(77 * 768)
     loss_fn = nn.MSELoss()
     optimizer = optim.SGD(linear_regression_model.parameters(), lr=0.001)
 
     num_inputs = len(inputs)
 
-    validation_inputs, train_inputs = split_data(inputs, validation_ratio=0.4)
-    validation_outputs, train_outputs = split_data(expected_outputs, validation_ratio=0.4)
+    validation_inputs, train_inputs = split_data(inputs, validation_ratio=0.2)
+    validation_outputs, train_outputs = split_data(expected_outputs, validation_ratio=0.2)
 
     train_inputs = torch.tensor(train_inputs, dtype=torch.float32)
     train_outputs = torch.tensor(train_outputs, dtype=torch.float32)
@@ -123,12 +146,7 @@ def main():
     train_outputs = train_outputs.unsqueeze(1)
     validation_outputs = validation_outputs.unsqueeze(1)
 
-    print('train_inputs : shape : ', train_inputs.shape);
-    print('train_outputs : shape : ', train_outputs.shape);
-    print('validation_inputs : shape : ', validation_inputs.shape);
-    print('validation_outputs : shape : ', validation_outputs.shape);
-
-    num_epochs = 1
+    num_epochs = 10
     for epoch in range(num_epochs):
         # Forward pass
         outputs = linear_regression_model(train_inputs)
@@ -165,9 +183,8 @@ def main():
 
     validation_accuracy = corrects / validation_inputs.size(0)
 
-    print('loss : ', loss)
+    print('loss : ', loss.item())
     print('validation_accuracy : ', validation_accuracy)
-    print('rate : ', (corrects / num_inputs))
     print('total number of images : ', num_inputs)
     print('total train image count ', train_inputs.size(0))
     print('total validation image count ', validation_inputs.size(0))

@@ -17,6 +17,7 @@ from datetime import datetime
 base_directory = "./"
 sys.path.insert(0, base_directory)
 
+from generation_task_result import GenerationTaskResult
 from stable_diffusion.utils_backend import get_autocast, set_seed
 from stable_diffusion.utils_image import save_images
 from stable_diffusion_base_script import StableDiffusionBaseScript
@@ -187,6 +188,7 @@ def main():
         .cuda_device() \
         .num_images() \
         .seed() \
+        .output_metadata() \
         .parse()
 
     # Hard coded prompts

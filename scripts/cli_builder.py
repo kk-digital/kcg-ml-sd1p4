@@ -275,6 +275,15 @@ class CLI:
 
         return self
 
+    def output_metadata(self):
+        self.parser.add_argument(
+            "--output_metadata",
+            action='store_true',
+            help="outputs the metadata"
+        )
+
+        return self
+
     def parse(self):
         args = self.parser.parse_args()
 
