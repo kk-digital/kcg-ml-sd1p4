@@ -187,8 +187,9 @@ class LatentDiffusion(nn.Module):
 
     def load_unet(self, unet_path=UNET_PATH):
         try:
-            unet = UNetModel(device=self.device)
+            unet = UNetModel(device=self.device.type)
             unet.load(unet_path=unet_path)
+
             self.model = UNetWrapper(unet)
             return self.model
         except Exception as e:
@@ -226,6 +227,7 @@ class LatentDiffusion(nn.Module):
         embedder_path=TEXT_EMBEDDER_PATH,
         unet_path=UNET_PATH,
     ):
+
         self.load_autoencoder(autoencoder_path=autoencoder_path)
         self.load_unet(unet_path=unet_path)
         self.load_clip_embedder(embedder_path=embedder_path)
