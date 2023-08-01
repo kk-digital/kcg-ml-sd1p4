@@ -27,21 +27,18 @@ NOISE_SEEDS = [2982, 4801, 1995, 3598, 987, 3688, 8872, 762]
 parser = argparse.ArgumentParser(description="")
 
 parser.add_argument(
-    "-p",
     "--prompt",
     type=str,
     default="A woman with flowers in her hair in a courtyard, in the style of Frank Frazetta",
     help="The prompt to generate images from. Defaults to 'A woman with flowers in her hair in a courtyard, in the style of Frank Frazetta'",
 )
 parser.add_argument(
-    "-od",
     "--output_dir",
     type=str,
     default=OUTPUT_DIR,
     help="The output directory. defaults to OUTPUT_DIR constant, which should be './output/noise-tests/from_distributions'",
 )
 parser.add_argument(
-    "-cp",
     "--checkpoint_path",
     type=str,
     default=CHECKPOINT_PATH,
