@@ -212,7 +212,7 @@ Outputs in: `./output/disturbing_embeddings`
 Try running:
 
 ```bash
-python3 ./scripts/data_bounding_box_and_score_and_embedding_dataset.py
+python3 ./scripts/data_bounding_box_and_score_and_embedding_dataset.py --num_iterations 10
 ```
 
 - `--save_embeddings`: If True, the disturbed embeddings will be saved to disk. Defaults to `False`.
@@ -224,7 +224,6 @@ python3 ./scripts/data_bounding_box_and_score_and_embedding_dataset.py
 - `noise_multiplier`: The multiplier for the amount of noise used to disturb the prompt embedding. Defaults to `0.008`.
 - `cuda_device`: The CUDA device to use. Defaults to `'get_device()'`.
 - `clear_output_dir`: If True, the output directory will be cleared before generating images. Defaults to `False`.
-- `random_walk`: Random walk on the embedding space, with the prompt embedding as origin. Defaults to False.
 
 
 #### Image Grid Generator
