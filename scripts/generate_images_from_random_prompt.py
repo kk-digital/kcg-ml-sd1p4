@@ -226,6 +226,10 @@ def main():
     txt2img.initialize_latent_diffusion(autoencoder=None, clip_text_embedder=None, unet_model=None,
                                         path=opt.checkpoint_path, force_submodels_init=True)
 
+    generation_task_result_list = []
+    min_chad_score = 999999.0
+    max_chad_score = -999999.0
+
     with monit.section('Generate', total_steps=len(prompts)) as section:
         for prompt in prompts:
 
@@ -278,6 +282,10 @@ def main():
                 # compute chad score
                 chad_score = get_chad_score(image_features, chad_score_model_path, device=opt.cuda_device)
 
+                # update the min, max for chad_score
+                min_chad_score = min(min_chad_score, chad_score.item())
+                max_chad_score = max(max_chad_score, chad_score.item())
+
                 # get numpy list from image_features
                 with torch.no_grad():
                     image_features_numpy = image_features.cpu().numpy()
@@ -290,7 +298,11 @@ def main():
 
                 # Save the data to a JSON file
                 json_filename = os.path.join(opt.output, f'{timestamp}-{i}.json')
-                generation_task_result.save_to_json(json_filename);
+
+                generation_task_result_list.append({
+                    'json_filename' : json_filename,
+                    'generation_task_result' : generation_task_result
+                })
 
                 # Capture the ending time
                 end_time = time.time()
@@ -301,6 +313,16 @@ def main():
                 print("Execution Time:", execution_time, "seconds")
 
 
+    for generation_task_result_item in generation_task_result_list:
+        generation_task_result = generation_task_result_item['generation_task_result']
+        json_filename = generation_task_result_item['json_filename']
+
+        # chad score value should be between [0, 1]
+        normalized_chad_score = (generation_task_result.chad_score - min_chad_score) / (max_chad_score - min_chad_score)
+        generation_task_result.chad_score = normalized_chad_score
+
+        # save to json file
+        generation_task_result.save_to_json(json_filename)
 
 if __name__ == "__main__":
     main()
