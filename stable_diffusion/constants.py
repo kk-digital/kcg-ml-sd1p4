@@ -131,7 +131,7 @@ class IODirectoryTree:
                 base_io_directory_prefix: str = "", 
                 base_directory: str = "./", 
                 model_name = "v1-5-pruned-emaonly", 
-                clip_model_name = "clip-vit-large-patch14", 
+                clip_model_name = "vit-large-patch14", 
                 root_models_prefix: str = "input/model/", 
                 root_outputs_prefix: str = "output/model/", 
                 checkpoint_format = ".safetensors"):
