@@ -81,11 +81,7 @@ class Autoencoder(nn.Module):
         ### Save the model to a checkpoint
         """
         self.encoder.save(encoder_path, use_safetensors=use_safetensors)
-        print(f"Encoder saved to: {encoder_path}")
         self.decoder.save(decoder_path, use_safetensors=use_safetensors)
-        print(f"Decoder saved to: {decoder_path}")
-        # torch.save(self.encoder, encoder_path)
-        # torch.save(self.decoder, decoder_path)
 
     def save(self, autoencoder_path=AUTOENCODER_PATH, use_safetensors=True):
         """
@@ -112,14 +108,13 @@ class Autoencoder(nn.Module):
             print(f"Decoder loaded from: {decoder_path}")
             return self
         else:
-            device = "cpu" if self.device.type == "mps" else self.device  # mps doesn't have support for safe tensors
-            self.encoder = initialize_encoder(device=device)
-            self.encoder.load_state_dict(load_file(encoder_path, device=device))
+            self.encoder = initialize_encoder(device=self.device)
+            self.encoder.load_state_dict(load_file(encoder_path, device=self.device.type))
             self.encoder.eval()
             print(f"Encoder loaded from: {encoder_path}")
-            self.decoder = initialize_decoder(device=device)
-            print(f"Decoder loaded from: {decoder_path}")
-            self.decoder.load_state_dict(load_file(decoder_path, device=device))
+
+            self.decoder = initialize_decoder(device=self.device)
+            self.decoder.load_state_dict(load_file(decoder_path, device=self.device.type))
             self.decoder.eval()
             print(f"Decoder loaded from: {decoder_path}")
             return self

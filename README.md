@@ -212,7 +212,7 @@ Outputs in: `./output/disturbing_embeddings`
 Try running:
 
 ```bash
-python3 ./scripts/data_bounding_box_and_score_and_embedding_dataset.py
+python3 ./scripts/data_bounding_box_and_score_and_embedding_dataset.py --num_iterations 10
 ```
 
 - `--save_embeddings`: If True, the disturbed embeddings will be saved to disk. Defaults to `False`.
@@ -224,18 +224,17 @@ python3 ./scripts/data_bounding_box_and_score_and_embedding_dataset.py
 - `noise_multiplier`: The multiplier for the amount of noise used to disturb the prompt embedding. Defaults to `0.008`.
 - `cuda_device`: The CUDA device to use. Defaults to `'get_device()'`.
 - `clear_output_dir`: If True, the output directory will be cleared before generating images. Defaults to `False`.
-- `random_walk`: Random walk on the embedding space, with the prompt embedding as origin. Defaults to False.
 
 
-#### Image Grid Creator
+#### Image Grid Generator
 
-The Image Grid Creator is a script that generates a grid of images from a directory or a zip file containing images. 
+The Image Grid generator is a script that generates a grid of images from a directory or a zip file containing images. 
 
 ##### Usage
 
 Run the script with the following command:
 
-    python script_name.py --input_path <input_path> --n <number of images width> --m <number of images height> --img_size <size of grid image>
+    python ./utility/scripts/grid_generator.py --input_path ./test/test_images/clip_segmentation --output_path ./tmp --rows 3 --columns 2  --img_size 256
 
 
 ### Generate Images Random Prompt
@@ -330,8 +329,6 @@ python3 ./scripts/chad_sort.py --dataset-path "test/test_zip_files/test-dataset-
 ``` shell
 python ./scripts/chad_sort.py --dataset-path "test/test_zip_files/test-dataset-correct-format.zip" --output-path "./output/chad_sort/"
 ```
-
-
 
 ### Running GenerationTask
 

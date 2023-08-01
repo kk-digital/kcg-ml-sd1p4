@@ -168,8 +168,9 @@ class LatentDiffusion(nn.Module):
             print(f"Autoencoder loaded from: {autoencoder_path}")
             return self.first_stage_model
         else:
-            self.first_stage_model = initialize_autoencoder(device=self.device)
-            self.first_stage_model.load_state_dict(load_file(autoencoder_path))
+            self.first_stage_model = initialize_autoencoder(device=self.device).load_submodels(
+                    use_safetensors=use_safetensors)
+            self.first_stage_model.load_state_dict(load_file(autoencoder_path,device=self.device.type))
             self.first_stage_model.eval()
             print(f"Autoencoder loaded from: {autoencoder_path}")
             return self.first_stage_model
@@ -269,18 +270,19 @@ class LatentDiffusion(nn.Module):
                 )
                 return self
             else:
-                device = "cpu" if self.device.type == "mps" else self.device
                 self.first_stage_model = initialize_autoencoder(device=self.device).load_submodels(
                     use_safetensors=use_safetensors)
-                self.first_stage_model.load_state_dict(load_file(autoencoder_path, device=device))
+                self.first_stage_model.load_state_dict(load_file(autoencoder_path, device=self.device.type))
                 self.first_stage_model.eval()
-                self.cond_stage_model = torch.load(embedder_path, map_location=self.device)
-                self.cond_stage_model.eval()
+
+                self.cond_stage_model = CLIPTextEmbedder(device=self.device)
                 self.cond_stage_model.load_submodels(
-                    tokenizer_path=tokenizer_path, transformer_path=transformer_path
+                    tokenizer_path=tokenizer_path, text_model_path=transformer_path
                 )
+                self.cond_stage_model.load_state_dict(load_file(embedder_path, device=self.device.type))
+                self.cond_stage_model.eval()
                 unet = initialize_unet(device=self.device).eval()
-                unet.load_state_dict(load_file(unet_path, device=device))
+                unet.load_state_dict(load_file(unet_path, device=self.device.type))
                 self.model = UNetWrapper(unet)
                 return self
 
@@ -380,6 +382,7 @@ def initialize_autoencoder(device=None, encoder=None, decoder=None, emb_channels
                                   encoder=encoder,
                                   decoder=decoder,
                                   z_channels=z_channels).to(device)
+
     return autoencoder
 
 
