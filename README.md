@@ -330,3 +330,29 @@ python3 ./scripts/chad_sort.py --dataset-path "test/test_zip_files/test-dataset-
 ``` shell
 python ./scripts/chad_sort.py --dataset-path "test/test_zip_files/test-dataset-correct-format.zip" --output-path "./output/chad_sort/"
 ```
+
+
+
+### Running GenerationTask
+
+Runs a generation task from .json file
+
+These are the available CLI arguments:
+
+```
+options:
+  --task_path TASK_PATH
+                        Path to the task .json file
+```
+
+#### Example Usage:
+
+#### using python3
+``` shell
+python3 ./scripts/run_generation_task.py --task_path './test/test_generation_task/text_to_image_v1.json'
+```
+
+#### using python
+``` shell
+python ./scripts/run_generation_task.py --task_path './test/test_generation_task/text_to_image_v1.json'
+```
