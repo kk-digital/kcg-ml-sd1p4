@@ -99,6 +99,14 @@ class Encoder(nn.Module):
             print(f"Encoder saved to {encoder_path}")
         except Exception as e:
             print(f"Failed to save encoder to {encoder_path}. Error: {e}")
+    
+    def load(self, encoder_path: str = ENCODER_PATH):
+        try:
+            safetensors.torch.load_model(self, encoder_path)
+            print(f"Encoder loaded from {encoder_path}")
+            return self
+        except Exception as e:
+            print(f"Failed to load encoder from {encoder_path}. Error: {e}")
         
     def forward(self, img: torch.Tensor):
         """

@@ -152,6 +152,13 @@ class UNetModel(nn.Module):
             print(f"UNet saved to: {unet_path}")
         except Exception as e:
             print(f"Error saving UNet to {unet_path}: {e}")
+    def load(self, unet_path = UNET_PATH):
+        try:
+            safetensors.torch.load_model(self, unet_path)
+            print(f"UNet loaded from: {unet_path}")
+            return self
+        except Exception as e:
+            print(f"Error loading UNet from {unet_path}: {e}")
 
     def time_step_embedding(self, time_steps: torch.Tensor, max_period: int = 10000):
         """

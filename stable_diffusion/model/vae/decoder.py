@@ -102,8 +102,16 @@ class Decoder(nn.Module):
             safetensors.torch.save_model(self, decoder_path)
             print(f"Saved decoder to {decoder_path}")
         except Exception as e:
-            print(f"Failed to save encoder to {encoder_path}. Error: {e}")
-            
+            print(f"Failed to save encoder to {decoder_path}. Error: {e}")
+    
+    def load(self, decoder_path: str = DECODER_PATH):
+        try:
+            safetensors.torch.load_model(self, decoder_path)
+            print(f"Loaded decoder from {decoder_path}")
+            return self
+        except Exception as e:
+            print(f"Failed to load decoder from {decoder_path}. Error: {e}")
+        
 
     def forward(self, z: torch.Tensor):
         """

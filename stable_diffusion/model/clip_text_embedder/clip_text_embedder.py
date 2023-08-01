@@ -102,7 +102,14 @@ class CLIPTextEmbedder(nn.Module):
         except Exception as e:
             print(f"CLIPTextEmbedder not saved. Error: {e}")
             
-
+    def load(self, text_embedder_path: str = TEXT_EMBEDDER_PATH):
+        try:
+            safetensors.torch.load_model(self, text_embedder_path, strict=True)
+            print(f"CLIPTextEmbedder loaded from: {text_embedder_path}")
+            return self
+        except Exception as e:
+            print(f"CLIPTextEmbedder not loaded. Error: {e}")
+        
     def forward(self, prompts: List[str]):
         """
         :param prompts: are the list of prompts to embed
