@@ -19,7 +19,7 @@ import torch
 import torchvision
 
 from PIL import Image
-from safetensors.torch import load_file
+import safetensors
 
 from stable_diffusion.constants import AUTOENCODER_PATH, ENCODER_PATH, DECODER_PATH
 from stable_diffusion.constants import TEXT_EMBEDDER_PATH, TOKENIZER_PATH, TEXT_MODEL_PATH
@@ -129,9 +129,9 @@ def load_decoder(path: Union[str, Path] = DECODER_PATH, device = None) -> Decode
     return decoder
 
 
-def initialize_tokenizer(device = None, version="openai/clip-vit-large-patch14") -> CLIPTokenizer:
+def initialize_tokenizer(device = None, tokenizer_path=TOKENIZER_PATH) -> CLIPTokenizer:
     get_device(device)
-    tokenizer = CLIPTokenizer.from_pretrained(version)
+    tokenizer = CLIPTokenizer.from_pretrained(tokenizer_path, use_safetensors=False)
     return tokenizer
 
 def load_tokenizer(path: Union[str, Path] = TOKENIZER_PATH, device = None) -> CLIPTokenizer:
@@ -144,7 +144,7 @@ def load_tokenizer(path: Union[str, Path] = TOKENIZER_PATH, device = None) -> CL
 
 def initialize_transformer(device = None, version = "openai/clip-vit-large-patch14") -> CLIPTextModel:
     get_device(device)
-    transformer = CLIPTextModel.from_pretrained(version).eval().to(device)        
+    transformer = CLIPTextModel.from_pretrained(version, use_safetensors=False).eval().to(device)        
     return transformer
 
 def load_transformer(path: Union[str, Path] = TEXT_MODEL_PATH, device = None) -> CLIPTextModel:
@@ -165,18 +165,13 @@ def initialize_clip_embedder(device = None, tokenizer = None, transformer = None
         clip_text_embedder = CLIPTextEmbedder(
                 device=device,
             )
-
-        # if tokenizer is None:
-        #     clip_text_embedder.load_tokenizer_from_lib()
-        # else:
-        #     clip_text_embedder.tokenizer = tokenizer
-
-        # if transformer is None:
-        #     clip_text_embedder.load_transformer_from_lib()
-        # else:
-        #     clip_text_embedder.transformer = transformer
         
-        clip_text_embedder.load_submodels()
+        if transformer is None:
+            clip_text_embedder.init_submodels(tokenizer_path = TOKENIZER_PATH, transformer_path = TEXT_MODEL_PATH)
+        else:
+            clip_text_embedder.transformer = transformer
+        
+        # clip_text_embedder.load_submodels()
 
         clip_text_embedder.to(device)
 
@@ -224,7 +219,7 @@ def load_unet(path: Union[str, Path] = UNET_PATH, device = None) -> UNetModel:
 
     return unet_model
 
-def initialize_latent_diffusion(path: Union[str, Path] = None, device = None, autoencoder = None, clip_text_embedder = None, unet_model = None, force_submodels_init = False, use_ckpt = False) -> LatentDiffusion:
+def initialize_latent_diffusion(path: Union[str, Path] = None, device = None, autoencoder = None, clip_text_embedder = None, unet_model = None, force_submodels_init = False) -> LatentDiffusion:
     """
     ### Load [`LatentDiffusion` model](latent_diffusion.html)
     """
@@ -240,35 +235,24 @@ def initialize_latent_diffusion(path: Union[str, Path] = None, device = None, au
 
     # Initialize the Latent Diffusion model
     with section('Latent Diffusion model initialization'):
-        model = LatentDiffusion(linear_start=0.00085,
-                                linear_end=0.0120,
-                                n_steps=1000,
-                                latent_scaling_factor=0.18215,
+        model = LatentDiffusion(device = device,
                                 autoencoder=autoencoder,
                                 clip_embedder=clip_text_embedder,
                                 unet_model=unet_model)
     if path is not None:
     # Load the checkpoint
-        if not use_ckpt:
-            with section(f"stable diffusion checkpoint loading, from {path}"):
-                tensors_dict = load_file(path, device="cpu")
 
-            # Set model state
-            with section('model state loading'):
-                missing_keys, extra_keys = model.load_state_dict(tensors_dict, strict=False)
-        else:
-            with section(f"stable diffusion checkpoint loading, from {path}"):
-                checkpoint = torch.load(path, map_location="cpu")
+        with section(f"stable diffusion checkpoint loading, from {path}"):
+            tensors_dict = safetensors.torch.load_file(path, device="cpu")
+        # Set model state
+        
+        with section('model state loading'):
+            missing_keys, extra_keys = model.load_state_dict(tensors_dict, strict=False)
+            print(extra_keys)
+            print(len(extra_keys))
+            print(missing_keys)
+            print(len(missing_keys))
 
-            # Set model state
-            with section('model state loading'):
-                missing_keys, extra_keys = model.load_state_dict(checkpoint["state_dict"], strict=False)
-
-        # Debugging output
-        # inspect(global_step=checkpoint.get('global_step', -1), missing_keys=missing_keys, extra_keys=extra_keys,
-        #         _expand=True)
-
-        #
     model.to(device)
     
     return model.eval()
