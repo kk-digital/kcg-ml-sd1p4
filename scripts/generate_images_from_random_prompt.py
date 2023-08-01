@@ -273,7 +273,7 @@ def main():
                     flat_embedded_vector = cond.cpu().numpy()
 
                 # get image features
-                image_features = get_image_features(image_data, device=opt.cuda_device)
+                image_features = get_image_features(image, device=opt.cuda_device)
 
                 # hard coded for now
                 chad_score_model_path = "input/model/chad_score/chad-score-v1.pth"
