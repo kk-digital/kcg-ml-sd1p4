@@ -31,11 +31,8 @@ from PIL import Image
 import io
 from chad_score.chad_score import get_chad_score
 
-def get_image_features(image_data, device):
+def get_image_features(image, device):
     model, preprocess = clip.load('ViT-L/14', device)
-
-    # Open the image using Pillow and io.BytesIO
-    image = Image.open(io.BytesIO(image_data))
 
     image_input = preprocess(image).unsqueeze(0).to(device)
 
@@ -263,9 +260,9 @@ def main():
 
 
                 print(images.shape)
-                image_data_list, image_hash_list = save_images(images, filename)
+                image_list, image_hash_list = save_images(images, filename)
                 image_hash = image_hash_list[0]
-                image_data = image_data_list[0]
+                image = image_list[0]
 
                 un_cond, cond = txt2img.get_text_conditioning(opt.cfg_scale, prompts, opt.batch_size)
                 # Convert the tensor to a flat vector
