@@ -5,9 +5,11 @@
 ## Summary
 
 - [kcg-ml-sd1p4](#kcg-ml-sd1p4)
+  - [Summary](#summary)
   - [Installing requirements](#installing-requirements)
-  - [Downloading models](#downloading-models)
-  - [Saving submodels](#saving-submodels)
+  - [Downloading models and setting up directories](#downloading-models-and-setting-up-directories)
+    - [Text To Image](#text-to-image)
+      - [Example Usage:](#example-usage)
   - [Running `stable_diffusion` scripts](#running-stable_diffusion-scripts)
       - [Embed prompts](#embed-prompts)
       - [Images from embeddings](#images-from-embeddings)
@@ -15,15 +17,49 @@
       - [Images from temperature range](#images-from-temperature-range)
       - [Images and encodings](#images-and-encodings)
       - [Perturbations on prompts embeddings](#perturbations-on-prompts-embeddings)
-  - [Notebooks](#notebooks)
+      - [Random Pormpts Generation and Disturbing Embeddings Image Generation](#random-pormpts-generation-and-disturbing-embeddings-image-generation)
+      - [Image Grid Generator](#image-grid-generator)
+        - [Usage](#usage)
+    - [Generate Images Random Prompt](#generate-images-random-prompt)
+    - [Chad Score](#chad-score)
+      - [Example Usage:](#example-usage-1)
+      - [using python3](#using-python3)
+      - [using python](#using-python)
+    - [Chad Sort](#chad-sort)
+      - [Example Usage:](#example-usage-2)
+      - [using python3](#using-python3-1)
+      - [using python](#using-python-1)
+    - [Running GenerationTask](#running-generationtask)
+      - [Example Usage:](#example-usage-3)
+      - [using python3](#using-python3-2)
+      - [using python](#using-python-2)
 
 ## Installing requirements
 ```bash
 pip3 install -r requirements.txt
 ```
 
-## Downloading models
+## Downloading models and setting up directories
 
+We need two checkpoints: 
+
+`v1-5-pruned-emaonly.safetensors` from `https://huggingface.co/runwayml/
+stable-diffusion-v1-5/`; 
+
+the safetensors version of `openai/clip-vit-large-patch14`, found in [refs/pr/19](https://huggingface.co/openai/clip-vit-large-patch14/tree/refs%2Fpr%2F19).
+
+The `setup_directories_and_models.py` script will set up the folder structure, download both these models (depending on the args given), and process them.
+
+```bash
+python3 ./setup_directories_and_models.py --download_base_clip_model True --download_base_sd_model True
+```
+
+Then you already should be able to run:
+
+```bash
+python3 ./scripts/txt2img.py --num_images 2 --prompt 'A purple rainbow, filled with grass'
+```
+<!-- 
 Download the currently supported checkpoint, `v1-5-pruned-emaonly.safetensors`, to `./input/model/`.
 
 ```bash
@@ -46,7 +82,7 @@ python scripts/process_base_model.py input/model/v1-5-pruned-emaonly.safetensors
 
 - `-g, --granularity`: Determines the height in the model tree on which to save the submodels. Defaults to `0`, saving all submodels of the `LatentDiffusion` class and all submodels thereof. If `1` is given, it saves only up to the first level, i.e., autoencoder, UNet and CLIP text embedder. *Note*: that the other scripts and notebooks expect this to be ran with `0`.
 - `--root_models_path`: Base directory for the models' folder structure. Defaults to the constant `ROOT_MODELS_DIR`, which is expected to be `./input/model/`.
-- `--checkpoint_path`: Relative path of the checkpoint file (*.safetensors). Defaults to the constant `CHECKPOINT_PATH`, which is expected to be `'./input/model/v1-5-pruned-emaonly.safetensors' = os.path.join(ROOT_MODELS_DIR, 'v1-5-pruned-emaonly.safetensors')`.
+- `--checkpoint_path`: Relative path of the checkpoint file (*.safetensors). Defaults to the constant `CHECKPOINT_PATH`, which is expected to be `'./input/model/v1-5-pruned-emaonly.safetensors' = os.path.join(ROOT_MODELS_DIR, 'v1-5-pruned-emaonly.safetensors')`. -->
 
 ### Text To Image
 
