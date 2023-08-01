@@ -1,53 +1,52 @@
 import os
 import sys
 import configparser
-import argparse
 
 BASE_DIRECTORY = os.getcwd()
 # BASE_DIRECTORY = '../'
 
 sys.path.insert(0, BASE_DIRECTORY)
 
-config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
-config.read("./config.ini")
+# config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
+# config.read("./config.ini")
 
-base = config["BASE"]
-root_dirs = config["ROOT_DIRS"]
-models_dirs = config["MODELS_DIRS"]
-submodels_dirs = config["SUBMODELS_DIRS"]
-stable_diffusion_paths = config['STABLE_DIFFUSION_PATHS']
+# base = config["BASE"]
+# root_dirs = config["ROOT_DIRS"]
+# models_dirs = config["MODELS_DIRS"]
+# submodels_dirs = config["SUBMODELS_DIRS"]
+# stable_diffusion_paths = config['STABLE_DIFFUSION_PATHS']
 
-BASE_IO_DIRECTORY = base.get("base_io_directory")
-BASE_IO_DIRECTORY_PREFIX = base.get("base_io_directory_prefix")
-ROOT_MODELS_PREFIX = base.get("root_models_prefix")
-ROOT_OUTPUTS_PREFIX = base.get("root_outputs_prefix")
-MODEL = base.get("model_name")
-CLIP_MODEL = base.get("clip_model_name")
+BASE_IO_DIRECTORY = "./"
+BASE_IO_DIRECTORY_PREFIX = ""
+ROOT_MODELS_PREFIX = "input/model/"
+ROOT_OUTPUTS_PREFIX = "output/model/"
+MODEL = "v1-5-pruned-emaonly"
+CLIP_MODEL = "vit-large-patch14"
 
-CHECKPOINT = base.get("checkpoint")
-CHECKPOINT_PATH = stable_diffusion_paths.get("checkpoint_path")
+CHECKPOINT = f"{MODEL}.safetensors"
+# CHECKPOINT_PATH = stable_diffusion_paths.get("checkpoint_path")
 
-# ROOT_MODELS_DIR = (os.path.join(BASE_IO_DIRECTORY, ROOT_MODELS_PREFIX))
-ROOT_MODELS_DIR = root_dirs.get("root_models_dir")
-ROOT_OUTPUTS_DIR = root_dirs.get("root_outputs_dir")
-# ROOT_OUTPUTS_DIR = (os.path.join(BASE_IO_DIRECTORY, ROOT_OUTPUTS_PREFIX))
-# SD_DEFAULT_MODEL_DIR = os.path.join(ROOT_MODELS_DIR, MODEL)
-# CLIP_MODELS_DIR = os.path.join(ROOT_MODELS_DIR, "clip")
-# TEXT_EMBEDDER_DIR = (
-#     os.path.join(CLIP_MODELS_DIR, "text_embedder")
-# )
-# IMAGE_ENCODER_DIR = (
-#     os.path.join(CLIP_MODELS_DIR, "image_encoder")
-# )
-# CHECKPOINT_PATH = (
-#     os.path.join(ROOT_MODELS_DIR, CHECKPOINT)
-# )
-SD_DEFAULT_MODEL_DIR = models_dirs.get("sd_default_model_dir")
-CLIP_MODELS_DIR = models_dirs.get("clip_models_dir")
-TEXT_EMBEDDER_DIR = models_dirs.get("text_embedder_dir")
-IMAGE_ENCODER_DIR = models_dirs.get("image_encoder_dir")
-CLIP_MODEL_DIR = models_dirs.get("clip_model_dir")
-
+ROOT_MODELS_DIR = (os.path.join(BASE_IO_DIRECTORY, ROOT_MODELS_PREFIX))
+# ROOT_MODELS_DIR = root_dirs.get("root_models_dir")
+# ROOT_OUTPUTS_DIR = root_dirs.get("root_outputs_dir")
+ROOT_OUTPUTS_DIR = (os.path.join(BASE_IO_DIRECTORY, ROOT_OUTPUTS_PREFIX))
+SD_DEFAULT_MODEL_DIR = os.path.join(ROOT_MODELS_DIR, MODEL)
+CLIP_MODELS_DIR = os.path.join(ROOT_MODELS_DIR, "clip")
+TEXT_EMBEDDER_DIR = (
+    os.path.join(CLIP_MODELS_DIR, "text_embedder")
+)
+IMAGE_ENCODER_DIR = (
+    os.path.join(CLIP_MODELS_DIR, "image_encoder")
+)
+CHECKPOINT_PATH = (
+    os.path.join(ROOT_MODELS_DIR, CHECKPOINT)
+)
+# SD_DEFAULT_MODEL_DIR = models_dirs.get("sd_default_model_dir")
+# CLIP_MODELS_DIR = models_dirs.get("clip_models_dir")
+# TEXT_EMBEDDER_DIR = models_dirs.get("text_embedder_dir")
+# IMAGE_ENCODER_DIR = models_dirs.get("image_encoder_dir")
+# CLIP_MODEL_DIR = models_dirs.get("clip_model_dir")
+CLIP_MODEL_DIR = os.path.join(CLIP_MODELS_DIR, CLIP_MODEL)
 TEXT_EMBEDDER_PATH = (
     os.path.join(TEXT_EMBEDDER_DIR, "text_embedder.safetensors")
 )
