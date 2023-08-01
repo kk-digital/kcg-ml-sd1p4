@@ -189,6 +189,7 @@ class LatentDiffusion(nn.Module):
         try:
             unet = UNetModel(device=self.device)
             unet.load(unet_path=unet_path)
+
             self.model = UNetWrapper(unet)
             return self.model
         except Exception as e:
