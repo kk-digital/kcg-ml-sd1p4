@@ -3,7 +3,10 @@ import sys
 import configparser
 import argparse
 import json
-
+import requests
+from utility.labml.monit import section
+from stable_diffusion.utils_model import initialize_latent_diffusion
+from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
 
 config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
 parser = argparse.ArgumentParser(description="Setup a config file with the default IO directory structure.")
@@ -14,6 +17,8 @@ parser.add_argument("--root_models_prefix", type=str, default="input/model/")
 parser.add_argument("--root_outputs_prefix", type=str, default="output/model/")
 parser.add_argument("--model_name", type=str, default="v1-5-pruned-emaonly")
 parser.add_argument("--clip_model_name", type=str, default="vit-large-patch14")
+parser.add_argument("--download_base_clip_model", type=bool, default=False)
+parser.add_argument("--download_base_sd_model", type=bool, default=False)
 args = parser.parse_args()
 
 BASE_DIRECTORY = args.base_directory
@@ -22,8 +27,12 @@ ROOT_MODELS_PREFIX = args.root_models_prefix
 ROOT_OUTPUTS_PREFIX = args.root_outputs_prefix
 MODEL_NAME = args.model_name
 CLIP_MODEL_NAME = args.clip_model_name
+DOWNLOAD_BASE_CLIP_MODEL = args.download_base_clip_model
+DOWNLOAD_BASE_SD_MODEL = args.download_base_sd_model
 CHECKPOINT = f"{MODEL_NAME}.safetensors"
 BASE_IO_DIRECTORY = os.path.join(BASE_DIRECTORY, BASE_IO_DIRECTORY_PREFIX)
+
+
 print_section = lambda config, section: print(f"config.ini [{section}]: ", json.dumps({k: v for k, v in config[section].items()}, indent=4))
 
 config["BASE"] = {
@@ -113,7 +122,66 @@ def create_directory_tree_folders(config):
         if section.endswith("_DIRS"):
             for k, v in config[section].items():
                 os.makedirs(v, exist_ok=True)
-        
+
+
+
 if __name__ == "__main__":
+
     create_directory_tree_folders(config)
+    if DOWNLOAD_BASE_CLIP_MODEL:
+
+        clip_url = r'https://huggingface.co/openai/clip-vit-large-patch14/resolve/refs%2Fpr%2F19/model.safetensors'
+
+        with section("Initializing CLIP model's download."):
+            r = requests.get(clip_url, allow_redirects=True)
+            try:
+                open(os.path.join(config["MODELS_DIRS"].get('clip_model_dir'), 'model.safetensors'), 'wb').write(r.content)
+                print("CLIP model downloaded successfully.")
+            except Exception as e:
+                print("Error downloading CLIP model. Error: ", e)
     
+    if DOWNLOAD_BASE_SD_MODEL:
+    
+        sd_url = r'https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors'
+
+        with section("Initializing Stable Diffusion model's checkpoint download."):
+            r = requests.get(sd_url, allow_redirects=True)
+            try:
+                open(os.path.join(config["ROOT_DIRS"].get('root_models_dir'), 'v1-5-pruned-emaonly.safetensors'), 'wb').write(r.content)
+                print("Stable Diffusion checkpoint downloaded successfully.")
+            except Exception as e:
+                print("Error downloading the Stable Diffusion checkpoint. Error: ", e)
+
+
+if __name__ == "__main__":
+
+    model = initialize_latent_diffusion(
+            path=config["STABLE_DIFFUSION_PATHS"].get('CHECKPOINT_PATH'), 
+            force_submodels_init=True
+        )
+    # summary(model)
+
+    with section(
+        "initialize CLIP image encoder and load submodels from lib"
+    ):
+        img_encoder = CLIPImageEncoder()
+        img_encoder.load_submodels(image_processor_path=config["MODELS_DIRS"].get('CLIP_MODEL_DIR'), vision_model_path=config["MODELS_DIRS"].get('CLIP_MODEL_DIR'))
+    with section("save image encoder submodels"):
+        img_encoder.save_submodels()
+        img_encoder.unload_submodels()
+        img_encoder.save()
+    with section("save vae submodels"):
+        model.first_stage_model.save_submodels()  # saves autoencoder submodels (encoder, decoder) with loaded state dict
+    with section("unload vae submodels"):
+        model.first_stage_model.unload_submodels()  # unloads autoencoder submodels
+    with section("save embedder submodels"):
+        model.cond_stage_model.save_submodels()  # saves text embedder submodels (tokenizer, transformer) with loaded state dict
+    with section("unload embedder submodels"):
+        model.cond_stage_model.unload_submodels()  # unloads text embedder submodels
+    with section("save latent diffusion submodels"):
+        model.save_submodels()  # saves latent diffusion submodels (autoencoder, clip_embedder, unet) with loaded state dict and unloaded submodels (when it applies)
+    with section("unload latent diffusion submodels"):
+        model.unload_submodels()  # unloads latent diffusion submodels
+    with section("save latent diffusion model"):
+        model.save()  # saves latent diffusion model with loaded state dict and unloaded submodels
+

@@ -53,8 +53,10 @@ config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolat
 config.read("./config.ini")
 
 base = config["BASE"]
+root_dirs = config["ROOT_DIRS"]
 sd_paths = config['STABLE_DIFFUSION_PATHS']
 CHECKPOINT_PATH = sd_paths.get('checkpoint_path')
+ROOT_MODELS_DIR = root_dirs.get('root_models_dir')
 
 parser = argparse.ArgumentParser(description="")
 parser.add_argument("--root_models_dir", type=str, default=ROOT_MODELS_DIR)
