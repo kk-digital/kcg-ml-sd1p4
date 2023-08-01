@@ -235,7 +235,7 @@ The Image Grid generator is a script that generates a grid of images from a dire
 
 Run the script with the following command:
 
-    python grid_generator.py --input_path <input_path> --n <number of images width> --m <number of images height> --img_size <size of grid image>
+    python ./utility/scripts/grid_generator.py --input_path <input_path> --n <number of images in column> --m <number of images in row> --img_size <size of grid image>
 
 
 ### Generate Images Random Prompt
