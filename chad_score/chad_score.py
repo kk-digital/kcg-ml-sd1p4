@@ -6,7 +6,7 @@ import pytorch_lightning as pl
 import torch.nn as nn
 from stable_diffusion.utils_backend import get_device
 class ChadScorePredictor(pl.LightningModule):
-    def __init__(self, input_size, xcol='emb', ycol='avg_rating'):
+    def __init__(self, input_size, device = None, xcol='emb', ycol='avg_rating'):
         super().__init__()
 
         self.input_size = input_size
@@ -28,6 +28,7 @@ class ChadScorePredictor(pl.LightningModule):
 
             nn.Linear(16, 1)
         )
+        self.to(get_device(device))
 
     def forward(self, x):
         return self.layers(x)
@@ -37,13 +38,17 @@ class ChadScorePredictor(pl.LightningModule):
         return optimizer
 
 def get_chad_model(model_path, device=None):
-    model = ChadScorePredictor(768)  # CLIP embedding dim is 768 for CLIP ViT L 14
-    state = torch.load(model_path, get_device(device))  # load the model you trained previously or the model available in this repo
+    model = ChadScorePredictor(768, device)  # CLIP embedding dim is 768 for CLIP ViT L 14
+    state = torch.load(model_path, device)  # load the model you trained previously or the model available in this repo
     model.load_state_dict(state)
     model.eval()
     return model
 
-def get_chad_score(image_features, model_path="input/model/chad_score/chad-score-v1.pth"):
-    chadModel = get_chad_model(model_path)
+def get_chad_score(image_features, model_path="input/model/chad_score/chad-score-v1.pth", device=None):
+    chadModel = get_chad_model(model_path, get_device(device))
+    print(image_features.device)
+    print(chadModel.device)
+    print(image_features.dtype)
+    print(chadModel.dtype)
     chad_score = chadModel(image_features)
     return chad_score

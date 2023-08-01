@@ -40,6 +40,7 @@ def get_image_features(image, device):
     with torch.no_grad():
         image_features = model.encode_image(image_input)
 
+    image_features = image_features.to(torch.float32)
     return image_features
 
 class Txt2Img(StableDiffusionBaseScript):
@@ -218,7 +219,7 @@ def main():
         sampler_name=opt.sampler,
         n_steps=opt.steps,
         force_cpu=opt.force_cpu,
-        cuda_device=opt.cuda_device
+        cuda_device=opt.cuda_device,
     )
     txt2img.initialize_latent_diffusion(autoencoder=None, clip_text_embedder=None, unet_model=None,
                                         path=opt.checkpoint_path, force_submodels_init=True)
@@ -255,7 +256,9 @@ def main():
                     prompt=this_prompt,
                     uncond_scale=opt.cfg_scale,
                     low_vram=opt.low_vram,
-                    seed=this_seed
+                    seed=this_seed,
+                    w=64,
+                    h=64
                 )
 
 
@@ -270,7 +273,7 @@ def main():
 
                 # convert tensor to numpy array
                 with torch.no_grad():
-                    flat_embedded_vector = cond.cpu().numpy()
+                    embedded_vector = cond.cpu().numpy()
 
                 # get image features
                 image_features = get_image_features(image, device=opt.cuda_device)
@@ -280,10 +283,16 @@ def main():
                 chad_score_model_name = os.path.basename(chad_score_model_path)
 
                 # compute chad score
-                chad_score = get_chad_score(image_features, chad_score_model_path)
+                chad_score = get_chad_score(image_features, chad_score_model_path, device=opt.cuda_device)
 
-                generation_task_result = GenerationTaskResult(flat_embedded_vector, [], image_name, image_hash, [], image_features,
-                                                              chad_score_model_name, chad_score, this_seed, opt.cfg_scale)
+                # get numpy list from image_features
+                with torch.no_grad():
+                    image_features_numpy = image_features.cpu().numpy()
+
+                generation_task_result = GenerationTaskResult(embedded_vector, [], image_name, image_hash, [], image_features_numpy,
+                                                              chad_score_model_name, chad_score.item(), this_seed, opt.cfg_scale)
+
+
 
 
                 # Save the data to a JSON file

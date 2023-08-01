@@ -1,5 +1,6 @@
 
 import json
+import numpy as np
 
 class GenerationTaskResult:
     def __init__(self, clip_embedding, latent, image_name, image_hash, image_latent, image_clip_vector, chad_score_model, chad_score, seed, cfg_strength):
@@ -45,9 +46,18 @@ class GenerationTaskResult:
 
     def save_to_json(self, filename):
         with open(filename, 'w') as file:
-            json.dump(self.to_dict(), file)
+            json.dump(self.to_dict(), file, cls=NumpyArrayEncoder)
 
     def load_from_json(self, filename):
         with open(filename, 'r') as file:
             data = json.load(file)
             return GenerationTaskResult.from_dict(data)
+
+
+
+# Custom encoder to handle NumPy arrays
+class NumpyArrayEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return json.JSONEncoder.default(self, obj)
