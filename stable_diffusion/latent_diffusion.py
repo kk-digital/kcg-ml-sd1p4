@@ -159,19 +159,24 @@ class LatentDiffusion(nn.Module):
             print(f"Latent diffusion model saved at: {latent_diffusion_path}")
         except Exception as e:
             print(f"Failed to save latent diffusion model at: {latent_diffusion_path}. Error: {e}")
+            
+    def load(self, latent_diffusion_path = LATENT_DIFFUSION_PATH):
+        try:
+            safetensors.torch.load_model(self, latent_diffusion_path, strict=False)
+            print(f"Latent diffusion model loaded from: {latent_diffusion_path}")
+            return self
+        except Exception as e:
+            print(f"Failed to load latent diffusion model from: {latent_diffusion_path}. Error: {e}")
+            return None
 
     def load_autoencoder(self, autoencoder_path=AUTOENCODER_PATH):
-        
-        self.first_stage_model = torch.load(autoencoder_path, map_location=self.device)
-        self.first_stage_model.eval()
-        print(f"Autoencoder loaded from: {autoencoder_path}")
-        return self.first_stage_model
-        # else:
-        #     self.first_stage_model = initialize_autoencoder(device = self.device)
-        #     self.first_stage_model.load_state_dict(load_file(autoencoder_path))
-        #     self.first_stage_model.eval()
-        #     print(f"Autoencoder loaded from: {autoencoder_path}")
-        #     return self.first_stage_model
+        try:
+            self.first_stage_model = Autoencoder(device=self.device)
+            self.first_stage_model.load(autoencoder_path=autoencoder_path)
+            return self.first_stage_model
+        except Exception as e:
+            print(f"Failed to load autoencoder from: {autoencoder_path}. Error: {e}")
+            return None
 
     def unload_autoencoder(self):
         if self.first_stage_model is not None:
@@ -184,17 +189,14 @@ class LatentDiffusion(nn.Module):
             print("Autoencoder not loaded")
 
     def load_unet(self, unet_path=UNET_PATH):
-        if not use_safetensors:
-            unet = torch.load(unet_path, map_location=self.device)
-            unet.eval()
-            self.model = UNetWrapper(unet)
-            return self.model
-        else:
+        try:
             unet = UNetModel(device=self.device)
-            unet.load_state_dict(safetensors.torch.load_model(unet, unet_path))
-            unet.eval()
+            unet.load(unet_path=unet_path)
             self.model = UNetWrapper(unet)
             return self.model
+        except Exception as e:
+            print(f"Failed to load UNet from: {unet_path}. Error: {e}")
+            return None
 
     def unload_unet(self):
         if self.model is not None:
@@ -207,8 +209,8 @@ class LatentDiffusion(nn.Module):
             print("UNet not loaded")        
 
     def load_clip_embedder(self, embedder_path=TEXT_EMBEDDER_PATH):
-        self.cond_stage_model = torch.load(embedder_path, map_location=self.device)
-        self.cond_stage_model.eval()
+        self.cond_stage_model = CLIPTextEmbedder(device=self.device)
+        self.cond_stage_model.load(embedder_path=embedder_path)
         return self.cond_stage_model
 
     def unload_clip_embedder(self):
@@ -226,32 +228,11 @@ class LatentDiffusion(nn.Module):
         autoencoder_path=AUTOENCODER_PATH,
         embedder_path=TEXT_EMBEDDER_PATH,
         unet_path=UNET_PATH,
-        use_safetensors = True
     ):
-        """
-        ### Load the model from a checkpoint
-        """
-        if not use_safetensors:
-            self.first_stage_model = torch.load(autoencoder_path, map_location=self.device)
-            self.first_stage_model.eval()
-            self.cond_stage_model = torch.load(embedder_path, map_location=self.device)
-            self.cond_stage_model.eval()
-            self.model = UNetWrapper(
-                torch.load(unet_path, map_location=self.device).eval()
-            )
-            return self
-        else:
-            self.first_stage_model = initialize_autoencoder(device = self.device, force_submodels_init=True)
-            self.first_stage_model.load_state_dict(load_file(autoencoder_path))
-            self.first_stage_model.eval()
-            self.cond_stage_model = initialize_clip_embedder(device = self.device, force_submodels_init=True)
-            self.cond_stage_model.load_state_dict(load_file(embedder_path))
-            self.cond_stage_model.eval()
-            unet = initialize_unet(device = self.device).eval()
-            unet.load_state_dict(load_file(unet_path))
-            self.model = UNetWrapper(unet)
-            return self
-
+        self.load_autoencoder(autoencoder_path=autoencoder_path)
+        self.load_unet(unet_path=unet_path)
+        self.load_clip_embedder(embedder_path=embedder_path)
+        return self
 
     def load_submodel_tree(
         self,
@@ -262,49 +243,18 @@ class LatentDiffusion(nn.Module):
         tokenizer_path=TOKENIZER_PATH,
         transformer_path=TEXT_MODEL_PATH,
         unet_path=UNET_PATH,
-        use_safetensors = True,
     ):
         with section("load submodel tree"):
-            if not use_safetensors:
-                self.first_stage_model = torch.load(
-                    autoencoder_path, map_location=self.device
-                )
-                self.first_stage_model.eval()
-                self.first_stage_model.load_submodels(
-                    encoder_path=encoder_path, decoder_path=decoder_path
-                )
-                self.cond_stage_model = torch.load(embedder_path, map_location=self.device)
-                self.cond_stage_model.eval()
-                self.cond_stage_model.load_submodels(
-                    tokenizer_path=tokenizer_path, transformer_path=transformer_path
-                )
-                self.model = UNetWrapper(
-                    torch.load(unet_path, map_location=self.device).eval()
-                )
-                return self
-            else:
-                self.first_stage_model = initialize_autoencoder(device = self.device).load_submodels(use_safetensors=use_safetensors)
-                self.first_stage_model.load_state_dict(load_file(autoencoder_path))
-                self.first_stage_model.eval()
-                self.cond_stage_model = torch.load(embedder_path, map_location=self.device)
-                self.cond_stage_model.eval()
-                self.cond_stage_model.load_submodels(
-                    tokenizer_path=tokenizer_path, transformer_path=transformer_path
-                )
-                unet = initialize_unet(device = self.device).eval()
-                unet.load_state_dict(load_file(unet_path))
-                self.model = UNetWrapper(unet)                
-                return self
-    
+            self.load_submodels(autoencoder_path=autoencoder_path, embedder_path=embedder_path, unet_path=unet_path)
+            self.first_stage_model.load_submodels(encoder_path=encoder_path, decoder_path=decoder_path)
+            self.cond_stage_model.load_submodels(tokenizer_path=tokenizer_path, transformer_path=transformer_path)
+        return self
 
     def unload_submodels(self):
-        del self.first_stage_model
-        del self.cond_stage_model
-        del self.model
-        torch.cuda.empty_cache()
-        self.first_stage_model = None
-        self.cond_stage_model = None
-        self.model = None
+        
+        self.unload_autoencoder()
+        self.unload_unet()
+        self.unload_clip_embedder()
 
     def get_text_conditioning(self, prompts: List[str]):
         """
