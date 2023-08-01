@@ -332,7 +332,9 @@ def main():
         # save to json file
         generation_task_result.save_to_json(json_filename)
 
-    zip_filename = opt.output + '/' + 'set_' + str(current_task_index) + '.zip';
+    total_digits = 4
+
+    zip_filename = opt.output + '/' + 'set_' + f'{current_task_index:0{total_digits}d}' + '.zip';
     # create zip for generated images
     with ZipFile(zip_filename, 'w') as file:
         print('Created zip file ' + zip_filename)
