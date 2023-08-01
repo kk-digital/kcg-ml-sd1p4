@@ -137,7 +137,7 @@ def main():
                     with torch.no_grad():
                        flat_vector = flat_embedded_prompts.cpu().numpy()
 
-                    chad_score = 1.0
+                    chad_score = image_meta_data.chad_score
 
                     inputs.append(flat_vector)
                     expected_outputs.append(chad_score)

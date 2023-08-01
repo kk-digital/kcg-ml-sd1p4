@@ -140,6 +140,7 @@ dmypy.json
 # /input/model/clip
 # /input/model/unet
 # Ignore all downloaded models, we don't have enough storage for that!
+/input/
 *.ckpt
 *.safetensors
 *.pt
