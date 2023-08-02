@@ -159,11 +159,11 @@ def generate_prompt():
     # Your mandatory phrases
     mandatory_phrases = ['no background', 'white background', 'centered']
 
-    # Add the mandatory phrases to the prompt multiple times (e.g., 3 times)
-    mandatory_prompts = mandatory_phrases * 3
+    # Add the mandatory phrases to the prompt multiple times (e.g., 2 times)
+    mandatory_prompts = mandatory_phrases * 2
 
     # Select remaining items randomly from the prompt_list
-    remaining_items = 9  # 15 - 3 mandatory phrases * 3 occurrences each = 9
+    remaining_items = 9  # 15 - 3 mandatory phrases * 2 occurrences each = 9
     random_prompts = random.sample(set(prompt_list) - set(mandatory_phrases), remaining_items)
 
     # Join all selected prompts and mandatory prompts into a single string, separated by commas
