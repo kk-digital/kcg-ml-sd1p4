@@ -12,6 +12,7 @@ import time
 import os
 import sys
 import datetime
+import zipfile
 from zipfile import ZipFile
 import random
 import torch
@@ -87,25 +88,8 @@ class Txt2Img(StableDiffusionBaseScript):
             return self.decode_image(x)
 
 
-def main():
-    opt = CLI('Generate images using stable diffusion with a prompt') \
-        .prompts_file(check_exists=True, required=False) \
-        .batch_size() \
-        .output() \
-        .sampler() \
-        .checkpoint_path() \
-        .flash() \
-        .steps() \
-        .cfg_scale() \
-        .low_vram() \
-        .force_cpu() \
-        .cuda_device() \
-        .num_images() \
-        .seed() \
-        .output_metadata() \
-        .image_width() \
-        .image_height() \
-        .parse()
+def generate_images_from_random_prompt(num_images, image_width, image_height, cfg_strength, batch_size,
+                                       checkpoint_path, output, seed, flash, device, sampler, steps, force_cpu):
 
     # Hard coded prompts
     arg_prompt = r"chibi, waifu, scifi, side scrolling, character, side scrolling, white background, centered," \
@@ -117,25 +101,23 @@ def main():
 
     prompt = arg_prompt
 
-    image_width = opt.image_width
-    image_height = opt.image_height
-    model_name = os.path.basename(opt.checkpoint_path)
+    model_name = os.path.basename(checkpoint_path)
     # Split the numbers_string into a list of substrings using the comma as the delimiter
     seed_string_array = []
-    if opt.seed != '':
-        seed_string_array = opt.seed.split(',')
+    if seed != '':
+        seed_string_array = seed.split(',')
 
     # Convert the elements in the list to integers
     seed_array = [int(num) for num in seed_string_array]
 
     if len(seed_array) == 0:
-        seed_array = [random.randint(0, 2**31-1) for _ in range(opt.num_images)]
+        seed_array = [random.randint(0, 2**31-1) for _ in range(num_images)]
 
     # Set flash attention
-    CrossAttention.use_flash_attention = opt.flash
+    CrossAttention.use_flash_attention = flash
 
     # Load default clip model
-    clip_image_features = ClipImageFeatures(device=opt.cuda_device)
+    clip_image_features = ClipImageFeatures(device=device)
     clip_image_features.load_model()
 
 
@@ -148,13 +130,13 @@ def main():
 
     # Starts the text2img
     txt2img = Txt2Img(
-        sampler_name=opt.sampler,
-        n_steps=opt.steps,
-        force_cpu=opt.force_cpu,
-        cuda_device=opt.cuda_device,
+        sampler_name=sampler,
+        n_steps=steps,
+        force_cpu=force_cpu,
+        cuda_device=device,
     )
     txt2img.initialize_latent_diffusion(autoencoder=None, clip_text_embedder=None, unet_model=None,
-                                        path=opt.checkpoint_path, force_submodels_init=True)
+                                        path=checkpoint_path, force_submodels_init=True)
 
     current_task_index = 0
     generation_task_result_list = []
@@ -164,29 +146,29 @@ def main():
     prompt_list = prompt.split(',');
     prompt_generator = PromptGenerator(prompt_list)
 
-    for i in range(opt.num_images):
+    for i in range(num_images):
 
         num_prompts_per_image = 12
         this_prompt = prompt_generator.random_prompt(num_prompts_per_image)
         this_seed = seed_array[i % len(seed_array)]
 
-        print("Generating image " + str(i) + " out of " + str(opt.num_images));
+        print("Generating image " + str(i) + " out of " + str(num_images));
         print("Prompt : ", this_prompt)
         print("Seed : ", this_seed)
         start_time = time.time()
-        timestamp = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+        timestamp = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
 
         total_digits = 4
 
         base_file_name =  f'{i:0{total_digits}d}-{timestamp}'
         image_name = base_file_name + '.jpg'
 
-        filename = opt.output + '/' + image_name
+        filename = output + '/' + image_name
 
         # Capture the starting time
         tmp_start_time = time.time()
 
-        un_cond, cond = txt2img.get_text_conditioning(opt.cfg_scale, this_prompt, opt.batch_size)
+        un_cond, cond = txt2img.get_text_conditioning(cfg_strength, this_prompt, batch_size)
 
         # Capture the ending time
         tmp_end_time = time.time()
@@ -199,11 +181,10 @@ def main():
         tmp_start_time = time.time()
 
         images = txt2img.generate_images_from_embeddings(
-            batch_size=opt.batch_size,
+            batch_size=batch_size,
             embedded_prompt=cond,
             null_prompt=un_cond,
-            uncond_scale=opt.cfg_scale,
-            low_vram=opt.low_vram,
+            uncond_scale=cfg_strength,
             seed=this_seed,
             w = image_width,
             h = image_height
@@ -264,26 +245,26 @@ def main():
         latent_filename = base_file_name + '.latent.npz'
 
         generation_task_result = GenerationTaskResult(this_prompt, model_name, image_name, embedding_vector_filename, clip_features_filename,latent_filename,
-                                                     image_hash, chad_score_model_name, chad_score, this_seed, opt.cfg_scale)
+                                                     image_hash, chad_score_model_name, chad_score, this_seed, cfg_strength)
         # get numpy list from image_features
         with torch.no_grad():
             image_features_numpy = image_features.cpu().numpy()
 
 
         # save embedding vector to its own file
-        embedding_vector_filepath = opt.output + '/' + embedding_vector_filename
+        embedding_vector_filepath = output + '/' + embedding_vector_filename
         np.savez_compressed(embedding_vector_filepath, data=embedded_vector)
 
         # save image features to its own file
-        clip_features_filepath = opt.output + '/' + clip_features_filename
+        clip_features_filepath = output + '/' + clip_features_filename
         np.savez_compressed(clip_features_filepath, data=image_features_numpy)
 
         # save image latent to its own file
-        latent_filepath = opt.output + '/' + latent_filename
+        latent_filepath = output + '/' + latent_filename
         np.savez_compressed(latent_filepath, data=latent)
 
         # Save the data to a JSON file
-        json_filename = opt.output + '/' + base_file_name + '.json'
+        json_filename = output + '/' + base_file_name + '.json'
 
 
         generation_task_result_list.append({
@@ -309,17 +290,17 @@ def main():
         json_filename = generation_task_result_item['json_filename']
 
         # chad score value should be between [0, 1]
-        normalized_chad_score = (generation_task_result.chad_score - min_chad_score) / (max_chad_score - min_chad_score)
-        generation_task_result.chad_score = normalized_chad_score
+        #normalized_chad_score = (generation_task_result.chad_score - min_chad_score) / (max_chad_score - min_chad_score)
+        #generation_task_result.chad_score = normalized_chad_score
 
         # save to json file
         generation_task_result.save_to_json(json_filename)
 
     total_digits = 4
 
-    zip_filename = opt.output + '/' + 'set_' + f'{current_task_index:0{total_digits}d}' + '.zip';
+    zip_filename = output + '/' + 'set_' + f'{current_task_index:0{total_digits}d}' + '.zip';
     # create zip for generated images
-    with ZipFile(zip_filename, 'w') as file:
+    with ZipFile(zip_filename, 'w', compression=zipfile.ZIP_DEFLATED) as file:
         print('Created zip file ' + zip_filename)
         zip_task_index = 1
         for generation_task_result_item in generation_task_result_list:
@@ -342,6 +323,30 @@ def main():
             file.write(clip_features_filepath, arcname=clip_features_filename)
             file.write(latent_filepath, arcname=latent_filename)
             zip_task_index += 1
+
+def main():
+    opt = CLI('Generate images using stable diffusion with a prompt') \
+        .prompts_file(check_exists=True, required=False) \
+        .batch_size() \
+        .output() \
+        .sampler() \
+        .checkpoint_path() \
+        .flash() \
+        .steps() \
+        .cfg_scale() \
+        .low_vram() \
+        .force_cpu() \
+        .cuda_device() \
+        .num_images() \
+        .seed() \
+        .output_metadata() \
+        .image_width() \
+        .image_height() \
+        .parse()
+
+    generate_images_from_random_prompt(opt.num_images, opt.image_width, opt.image_height, opt.cfg_scale,
+                                       opt.batch_size, opt.checkpoint_path, opt.output, opt.seed, opt.flash, opt.cuda_device,
+                                       opt.sampler, opt.steps, opt.force_cpu)
 
 if __name__ == "__main__":
     main()

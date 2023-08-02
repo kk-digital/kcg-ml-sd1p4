@@ -1,0 +1,16 @@
+{
+  "generation_task_type": "generate_images_from_random_prompt",
+  "cfg_strength": 12,
+  "output_path": "/output/",
+  "num_images": 3,
+  "image_width": 512,
+  "image_height": 512,
+  "batch_size": 1,
+  "checkpoint_path": "./input/model/v1-5-pruned-emaonly.safetensors",
+  "seed" : "",
+  "flash" : true,
+  "device" : "cuda",
+  "sampler" : "ddim",
+  "steps" : 50,
+  "force_cpu" : false
+}
