@@ -12,6 +12,7 @@ import torch
 from pathlib import Path
 from typing import Union
 import safetensors
+from transformers import CLIPTokenizer, CLIPTextModel
 
 from stable_diffusion.constants import AUTOENCODER_PATH, ENCODER_PATH, DECODER_PATH
 from stable_diffusion.constants import TEXT_EMBEDDER_PATH, TOKENIZER_PATH, TEXT_MODEL_PATH
@@ -23,7 +24,6 @@ from stable_diffusion.latent_diffusion import LatentDiffusion
 from stable_diffusion.model.vae import Autoencoder, Encoder, Decoder
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion.model.unet import UNetModel
-from transformers import CLIPTokenizer, CLIPTextModel
 
 
 def initialize_encoder(device=None,
@@ -61,7 +61,7 @@ def initialize_decoder(device=None,
 
 def initialize_autoencoder(device = None, encoder = None, decoder = None, emb_channels = 4, z_channels = 4, force_submodels_init = False) -> Autoencoder:
     # Initialize the autoencoder
-    
+
     with section(f'autoencoder initialization'):
         device = get_device(device)
         if force_submodels_init:
@@ -69,7 +69,7 @@ def initialize_autoencoder(device = None, encoder = None, decoder = None, emb_ch
                 encoder = initialize_encoder(device=device, z_channels=z_channels)
             if decoder is None:
                 decoder = initialize_decoder(device=device, z_channels=z_channels)
-        
+
         autoencoder = Autoencoder(emb_channels=emb_channels,
                                     encoder=encoder,
                                     decoder=decoder,

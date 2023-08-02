@@ -32,6 +32,7 @@ from stable_diffusion_base_script import StableDiffusionBaseScript
 from stable_diffusion.model.unet.unet_attention import CrossAttention
 from cli_builder import CLI
 
+
 class Txt2Img(StableDiffusionBaseScript):
     """
     ### Text to image class

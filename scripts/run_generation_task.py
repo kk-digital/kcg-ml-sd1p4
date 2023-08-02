@@ -8,6 +8,7 @@ from generation_task import GenerationTask
 from text_to_image import text_to_image
 from generate_images_from_random_prompt import generate_images_from_random_prompt
 
+
 def parse_arguments():
     """Command-line arguments for 'classify' command."""
     parser = argparse.ArgumentParser(description="Executes a task file.")

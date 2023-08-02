@@ -1,9 +1,9 @@
 import os, sys
 import torch
 import time
+from typing import Optional
 
 sys.path.append(os.path.abspath(""))
-
 from stable_diffusion.utils_backend import get_device, get_autocast, set_seed
 from stable_diffusion.utils_image import load_img
 from stable_diffusion.sampler.ddim import DDIMSampler
@@ -13,7 +13,6 @@ from stable_diffusion.latent_diffusion import LatentDiffusion
 from stable_diffusion.sampler import DiffusionSampler
 from stable_diffusion.constants import LATENT_DIFFUSION_PATH
 from utility.labml.monit import section
-from typing import Optional
 
 
 class ModelLoadError(Exception):
@@ -212,7 +211,7 @@ class StableDiffusion:
         with section(f"Latent Diffusion model loading, from {latent_diffusion_path}"):
             self.model = self.quick_initialize().load(latent_diffusion_path = latent_diffusion_path)
             return self.model
-    
+
     def save_model(self, latent_diffusion_path=LATENT_DIFFUSION_PATH):
         with section(f"Latent Diffusion model saving, to {latent_diffusion_path}"):
             self.model.save(latent_diffusion_path = latent_diffusion_path)

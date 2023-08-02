@@ -1,4 +1,3 @@
-
 # chad score of a single image using https://github.com/grexzen/SD-Chad/blob/main/simple_inference.py
 import torch
 import sys

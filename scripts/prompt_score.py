@@ -21,6 +21,7 @@ from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion.utils_backend import get_device
 from generation_task_result import GenerationTaskResult
 
+
 def hash_string_to_float32(input_string):
     """
     Hash a string and represent the hash as a 32-bit floating-point number (Float32).

@@ -1,10 +1,10 @@
 import argparse
 import os, sys
-
-sys.path.append(os.path.join(".", "stable_diffusion/utils"))
-from stable_diffusion_reference.cli import check_folder_existence, check_file_existence
 from typing import Union, Callable
 
+sys.path.append(os.path.join(".", "stable_diffusion/utils"))
+
+from stable_diffusion_reference.cli import check_folder_existence, check_file_existence
 
 
 class CLI:
@@ -164,7 +164,7 @@ class CLI:
         )
 
         return self
-    
+
     def num_iterations(self):
         self.parser.add_argument(
             '--num_iterations',

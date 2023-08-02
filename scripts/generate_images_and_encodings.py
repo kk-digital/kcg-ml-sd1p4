@@ -10,6 +10,7 @@ from PIL import Image
 base_directory = "./"
 sys.path.insert(0, base_directory)
 
+
 from stable_diffusion.stable_diffusion import StableDiffusion
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
 from cli_builder import CLI
