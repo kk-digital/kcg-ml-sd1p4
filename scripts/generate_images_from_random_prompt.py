@@ -225,9 +225,11 @@ def main():
 
         num_prompts_per_image = 12
         this_prompt = prompt_generator.random_prompt(num_prompts_per_image)
+        this_seed = seed_array[i % len(seed_array)]
 
         print("Generating image " + str(i) + " out of " + str(opt.num_images));
         print("Prompt : ", this_prompt)
+        print("Seed : ", this_seed)
         start_time = time.time()
         timestamp = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
 
@@ -238,7 +240,6 @@ def main():
 
         filename = opt.output + '/' + image_name
 
-        this_seed = seed_array[i % len(seed_array)]
 
         # Capture the starting time
         tmp_start_time = time.time()
@@ -274,10 +275,6 @@ def main():
 
         # image latent
         latent = []
-
-        # hard coded for now
-        chad_score_model_path = "input/model/chad_score/chad-score-v1.pth"
-        chad_score_model_name = os.path.basename(chad_score_model_path)
 
         # Capture the starting time
         tmp_start_time = time.time()
