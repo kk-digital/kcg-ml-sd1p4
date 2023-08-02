@@ -21,6 +21,7 @@ import numpy as np
 base_directory = "./"
 sys.path.insert(0, base_directory)
 
+from chad_score.chad_score import ChadScorePredictor
 from utils.clip.clip_features_image import ClipImageFeatures
 from prompt_generator import PromptGenerator
 from generation_task_result import GenerationTaskResult
@@ -30,76 +31,11 @@ from stable_diffusion_base_script import StableDiffusionBaseScript
 from utility.labml import monit
 from stable_diffusion.model.unet.unet_attention import CrossAttention
 from cli_builder import CLI
-from chad_score.chad_score import get_chad_score
 
 class Txt2Img(StableDiffusionBaseScript):
     """
     ### Text to image class
     """
-
-    @torch.no_grad()
-    def generate_images(self, *,
-                        seed: int = 0,
-                        batch_size: int = 1,
-                        prompt: str,
-                        h: int = 512, w: int = 512,
-                        uncond_scale: float = 7.5,
-                        low_vram: bool = False,
-                        noise_fn=torch.randn,
-                        temperature: float = 1.0,
-                        ):
-        """
-        :param seed: the seed to use when generating the images
-        :param dest_path: is the path to store the generated images
-        :param batch_size: is the number of images to generate in a batch
-        :param prompt: is the prompt to generate images with
-        :param h: is the height of the image
-        :param w: is the width of the image
-        :param uncond_scale: is the unconditional guidance scale $s$. This is used for
-            $\epsilon_\theta(x_t, c) = s\epsilon_\text{cond}(x_t, c) + (s - 1)\epsilon_\text{cond}(x_t, c_u)$
-        :param low_vram: whether to limit VRAM usage
-        """
-        # Number of channels in the image
-        c = 4
-        # Image to latent space resolution reduction
-        f = 8
-
-        if seed == 0:
-            seed = time.time_ns() % 2 ** 32
-
-        set_seed(seed)
-        # Adjust batch size based on VRAM availability
-        if low_vram:
-            batch_size = 1
-
-        # Make a batch of prompts
-        prompts = batch_size * [prompt]
-
-        # AMP auto casting
-        autocast = get_autocast()
-        with autocast:
-            un_cond, cond = self.get_text_conditioning(uncond_scale, prompts, batch_size)
-
-            start_time = time.time()
-            # [Sample in the latent space](../sampler/index.html).
-            # `x` will be of shape `[batch_size, c, h / f, w / f]`
-            x = self.sampler.sample(cond=cond,
-                                    shape=[batch_size, c, h // f, w // f],
-                                    uncond_scale=uncond_scale,
-                                    uncond_cond=un_cond,
-                                    noise_fn=noise_fn,
-                                    temperature=temperature)
-
-            # Capture the ending time
-            end_time = time.time()
-
-            # Calculate the execution time
-            execution_time = end_time - start_time
-
-            print("Sampling Time:", execution_time, "seconds")
-
-            return self.decode_image(x)
-
     @torch.no_grad()
     def generate_images_from_embeddings(self, *,
                                         seed: int = 0,
@@ -200,8 +136,16 @@ def main():
     CrossAttention.use_flash_attention = opt.flash
 
     # Load default clip model
-    clip_image_features = ClipImageFeatures(opt.cuda_device)
+    clip_image_features = ClipImageFeatures(device=opt.cuda_device)
     clip_image_features.load_model()
+
+
+    # Load default chad model
+    # hard coded for now
+    chad_score_model_path = "input/model/chad_score/chad-score-v1.pth"
+    chad_score_model_name = os.path.basename(chad_score_model_path)
+    chad_score_predictor = ChadScorePredictor()
+    chad_score_predictor.load_model(chad_score_model_path)
 
     # Starts the text2img
     txt2img = Txt2Img(
@@ -240,7 +184,6 @@ def main():
 
         filename = opt.output + '/' + image_name
 
-
         # Capture the starting time
         tmp_start_time = time.time()
 
@@ -253,6 +196,9 @@ def main():
 
         print("Embedding vector Time:", tmp_execution_time, "seconds")
 
+        # Capture the starting time
+        tmp_start_time = time.time()
+
         images = txt2img.generate_images_from_embeddings(
             batch_size=opt.batch_size,
             embedded_prompt=cond,
@@ -263,6 +209,14 @@ def main():
             w = image_width,
             h = image_height
         )
+
+
+        # Capture the ending time
+        tmp_end_time = time.time()
+        # Calculate the execution time
+        tmp_execution_time = tmp_end_time - tmp_start_time
+
+        print("Image generation Time:", tmp_execution_time, "seconds")
 
         image_list, image_hash_list = save_images(images, filename)
         image_hash = image_hash_list[0]
@@ -289,15 +243,11 @@ def main():
 
         print("Image features Time:", tmp_execution_time, "seconds")
 
-        # hard coded for now
-        chad_score_model_path = "input/model/chad_score/chad-score-v1.pth"
-        chad_score_model_name = os.path.basename(chad_score_model_path)
-
         # Capture the starting time
         tmp_start_time = time.time()
 
         # compute chad score
-        chad_score = get_chad_score(image_features, chad_score_model_path, device=opt.cuda_device)
+        chad_score = chad_score_predictor.get_chad_score(image_features)
 
         # Capture the ending time
         tmp_end_time = time.time()
@@ -307,15 +257,15 @@ def main():
         print("Chad Score Time:", tmp_execution_time, "seconds")
 
         # update the min, max for chad_score
-        min_chad_score = min(min_chad_score, chad_score.item())
-        max_chad_score = max(max_chad_score, chad_score.item())
+        min_chad_score = min(min_chad_score, chad_score)
+        max_chad_score = max(max_chad_score, chad_score)
 
         embedding_vector_filename = base_file_name + '.embedding.npz'
         clip_features_filename =  base_file_name + '.clip.npz'
         latent_filename = base_file_name + '.latent.npz'
 
         generation_task_result = GenerationTaskResult(this_prompt, model_name, image_name, embedding_vector_filename, clip_features_filename,latent_filename,
-                                                     image_hash, chad_score_model_name, chad_score.item(), this_seed, opt.cfg_scale)
+                                                     image_hash, chad_score_model_name, chad_score, this_seed, opt.cfg_scale)
         # get numpy list from image_features
         with torch.no_grad():
             image_features_numpy = image_features.cpu().numpy()
