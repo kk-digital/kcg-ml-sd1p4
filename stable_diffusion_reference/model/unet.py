@@ -17,7 +17,6 @@ so that we can load the checkpoints directly.
 
 import math
 from typing import List
-
 import numpy as np
 import torch
 import torch.nn as nn
@@ -25,6 +24,7 @@ import torch.nn.functional as F
 
 from stable_diffusion_reference.model.unet_attention import SpatialTransformer
 from torchinfo import summary
+
 
 class UNetModel(nn.Module):
     """

@@ -13,33 +13,18 @@ summary: >
 else saves latent diffusion model with state dict loaded from checkpoint
 """
 
-import random
-import os
 import sys
 import argparse
 import configparser
-from pathlib import Path
-from typing import Union
-
-import PIL
-import numpy as np
-import torch
-from PIL import Image
 
 base_directory = "./"
 sys.path.insert(0, base_directory)
 
-# from labml.logger import inspect
 from labml.monit import section
-from stable_diffusion.constants import CHECKPOINT_PATH
-from stable_diffusion.constants import ROOT_MODELS_DIR, ROOT_MODELS_PREFIX
 from stable_diffusion.constants import CLIP_MODEL_DIR
-
 from stable_diffusion.utils_model import (
     initialize_latent_diffusion,
 )
-# from labml.monit import section
-
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
 
 

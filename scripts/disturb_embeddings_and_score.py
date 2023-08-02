@@ -5,15 +5,13 @@ import torch
 import hashlib
 import json
 import shutil
-
-from stable_diffusion.utils_backend import get_device, get_memory_status
-from stable_diffusion.utils_image import to_pil
+from os.path import join
 
 base_dir = "./"
 sys.path.insert(0, base_dir)
 
-from os.path import join
-
+from stable_diffusion.utils_backend import get_device, get_memory_status
+from stable_diffusion.utils_image import to_pil
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
 from chad_score import ChadPredictorModel

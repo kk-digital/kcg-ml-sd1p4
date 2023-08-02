@@ -1,8 +1,8 @@
 import typing
 from typing import Optional, List, Union, Tuple
-import sys, os
-sys.path.append("./")
+import sys
 
+sys.path.append("./")
 from utility.labml.internal.util.colors import StyleCode
 from utility.labml.internal.monitor.iterator import Iterator
 from utility.labml.internal.monitor.loop import Loop

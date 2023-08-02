@@ -10,6 +10,7 @@ from os.path import join
 
 base_dir = "./"
 sys.path.insert(0, base_dir)
+
 from stable_diffusion.utils_backend import get_device, get_memory_status
 from stable_diffusion.utils_image import to_pil
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder

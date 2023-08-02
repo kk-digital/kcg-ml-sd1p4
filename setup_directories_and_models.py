@@ -1,9 +1,9 @@
 import os
-import sys
 import configparser
 import argparse
 import json
 import requests
+
 from utility.labml.monit import section
 from stable_diffusion.utils_model import initialize_latent_diffusion
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder

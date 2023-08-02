@@ -1,8 +1,8 @@
 import zipfile
-import shutil
 import os
-from .constants import *
 import json
+
+from .constants import *
 
 
 class ImageDatasetStorageFormat:

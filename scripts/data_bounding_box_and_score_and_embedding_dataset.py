@@ -1,9 +1,5 @@
 import os
 import sys
-
-base_dir = "./"
-sys.path.insert(0, base_dir)
-
 import argparse
 import torch
 import hashlib
@@ -13,21 +9,20 @@ import cv2
 import numpy as np
 import random
 import warnings
+from os.path import join
+from typing import List
+
+base_dir = "./"
+sys.path.insert(0, base_dir)
 
 from stable_diffusion.utils_backend import get_device, get_memory_status
 from stable_diffusion.utils_image import to_pil
-
 warnings.filterwarnings("ignore", category=UserWarning)
-
-from typing import List
-from os.path import join
-
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
 from chad_score import ChadPredictor
 from stable_diffusion import StableDiffusion
 from stable_diffusion.constants import IODirectoryTree
-
 
 EMBEDDED_PROMPTS_DIR = os.path.abspath("./input/embedded_prompts/")
 OUTPUT_DIR = "./output/disturbing_embeddings/"

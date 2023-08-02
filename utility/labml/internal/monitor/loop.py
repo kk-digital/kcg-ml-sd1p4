@@ -2,8 +2,8 @@ import math
 import time
 from typing import Optional, Dict, TYPE_CHECKING, List, Collection
 import sys
-sys.path.append("./")
 
+sys.path.append("./")
 from utility.labml.internal.monitor.sections import LoopingSection
 from utility.labml.logger import Text
 from utility.labml.internal.tracker import tracker_singleton as tracker

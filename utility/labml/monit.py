@@ -1,10 +1,9 @@
-import os,sys
+import sys
 import functools
 from typing import Iterable, Sized, Collection, Callable, Tuple, Any, Dict
 from typing import Union, Optional, overload
 
 sys.path.append("./")
-
 from utility.labml.internal.monitor import TimeSummary
 from utility.labml.internal.monitor import monitor_singleton as _internal
 

@@ -1,5 +1,4 @@
 from typing import Dict
-
 import numpy as np
 
 from .numeric import Queue, Histogram, Scalar

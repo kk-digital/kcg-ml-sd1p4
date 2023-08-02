@@ -1,5 +1,6 @@
 from typing import List
 import sys
+
 sys.path.append("./")
 from utility.labml.internal.logger.destinations import Destination
 from utility.labml.internal.util import is_ipynb, is_ipynb_pycharm

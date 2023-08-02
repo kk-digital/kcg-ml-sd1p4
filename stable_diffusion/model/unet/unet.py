@@ -17,21 +17,21 @@ so that we can load the checkpoints directly.
 
 import math
 from typing import List
-import os
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchinfo import summary
 import safetensors
-from .unet_attention import SpatialTransformer
-
 import os
 import sys
+
 sys.path.insert(0, os.getcwd())
+from .unet_attention import SpatialTransformer
 from stable_diffusion.constants import UNET_PATH
 from stable_diffusion.utils_backend import get_device
 # UNET_PATH = os.path.abspath('./input/model/unet/unet.ckpt')
+
 
 class UNetModel(nn.Module):
     """

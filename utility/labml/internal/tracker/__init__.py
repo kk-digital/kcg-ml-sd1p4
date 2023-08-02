@@ -1,8 +1,8 @@
 from pathlib import PurePath
 from typing import Dict, List, Optional, Callable, Union, Tuple
-import os, sys
-sys.path.append("./")
+import sys
 
+sys.path.append("./")
 from utility.labml.internal import util
 from utility.labml.internal.lab import lab_singleton, LabYamlNotfoundError
 from utility.labml.internal.util import strings
