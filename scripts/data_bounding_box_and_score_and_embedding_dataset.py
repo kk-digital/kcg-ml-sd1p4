@@ -230,17 +230,15 @@ def generate_images_from_disturbed_embeddings(
         ).to(device)
         embedding_e = embedded_prompt + ((i * noise_multiplier) * noise_i + (j * noise_multiplier) * noise_j) / (2 * num_iterations)
 
-        image_e, latent_vector = sd.generate_images_from_embeddings(
+        image_e = sd.generate_images_from_embeddings(
             seed=seed, 
             embedded_prompt=embedding_e, 
             null_prompt=null_prompt, 
             batch_size=batch_size
         )
         embedding_e = embedding_e.cpu()
-        latent_vector = latent_vector.cpu()  # Ensure latent vector is on CPU
-        torch.save(latent_vector, join(LATENT_DIR, f"latent_vector_{i}.pt"))  # Save the latent vector
         torch.cuda.empty_cache()
-        yield (image_e, embedding_e, latent_vector, i)  # Yield the latent vector as well
+        yield (image_e, embedding_e, i)
 
 
 def get_bounding_box_details(img):
@@ -333,30 +331,23 @@ def main():
     manifest_path = join(OUTPUT_DIR, "manifest.json")
     scores_path = join(OUTPUT_DIR, "scores.json")
 
-    for i, (image, embedding,latent_vector, prompt_index) in enumerate(images_generator):  # Retrieve the prompt with the image and embedding
+    for i, (image, embedding, prompt_index) in enumerate(images_generator):  # Retrieve the prompt with the image and embedding
         # images_tensors.append(image)
         torch.cuda.empty_cache()
         get_memory_status(DEVICE)
-    
+
         img_hash = calculate_sha256(image.squeeze())
         pil_image = to_pil(image.squeeze())
-    
+
         prep_img = image_encoder.preprocess_input(pil_image)
         image_features = image_encoder(prep_img)
         image_features /= image_features.norm(dim=-1, keepdim=True)
         score = predictor.model(image_features.to(DEVICE).float())
-    
+        
         img_file_name = f"image_{i:06d}.png"
         full_img_path = join(IMAGES_DIR, img_file_name)
         img_path = "./images/" + os.path.relpath(full_img_path, IMAGES_DIR)
         pil_image.save(full_img_path)
-    
-        # Assuming that 'latent_vector' is computed somewhere in your code and needs to be saved
-        latent_file_name = f"latent_{i:06d}.pt"
-        latent_full_path = join(OUTPUT_DIR, latent_file_name)
-        latent_path = "./latent/" + os.path.relpath(latent_full_path, OUTPUT_DIR)
-        torch.save(latent_vector, latent_path)
-
 
         if SAVE_EMBEDDINGS:
             embedding_file_name = f"embedding_{i:06d}.pt"
