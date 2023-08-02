@@ -70,7 +70,10 @@ def get_image_features(image_data, device):
 class LinearRegressionModel(nn.Module):
     def __init__(self, input_size):
         super(LinearRegressionModel, self).__init__()
-        self.linear = nn.Linear(input_size, 1)  # One input feature and one output neuron
+        self.linear = nn.Sequential(
+            nn.Linear(input_size, 1),
+            nn.Identity()
+        )
 
     def forward(self, x):
         return self.linear(x)
@@ -116,9 +119,6 @@ def main():
     # Example usage:
     zip_file_path = args.input_path
 
-    # embed prompt
-    clip_text_embedder = CLIPTextEmbedder(device=get_device(device))
-    clip_text_embedder.load_submodels_auto()
 
     inputs = []
     expected_outputs = []
@@ -128,10 +128,7 @@ def main():
             if file_extension.lower() == '.jpg':
                 json_filename = filename + '.json'
                 if json_filename in zip_ref.namelist():
-                    #jpg_content = zip_ref.read(file_info.filename)
                     json_content = zip_ref.read(json_filename)
-                    jpg_filename = file_info.filename
-                    json_filename = json_filename
 
 
                     # Decode the bytes to a string
@@ -144,7 +141,6 @@ def main():
                     embedding_name = image_meta_data.embedding_name
                     embedding_content = zip_ref.read(embedding_name)
                     embedding_vector = np.load( io.BytesIO(embedding_content))['data']
-
 
 
                     embedding_vector = torch.tensor(embedding_vector, dtype=torch.float32);
@@ -161,37 +157,41 @@ def main():
 
 
     linear_regression_model = LinearRegressionModel(77 * 768)
-    loss_fn = nn.MSELoss()
+    mse_loss = nn.MSELoss()
     optimizer = optim.SGD(linear_regression_model.parameters(), lr=0.001)
 
     num_inputs = len(inputs)
 
-    validation_inputs, train_inputs = split_data(inputs, validation_ratio=0.4)
-    validation_outputs, train_outputs = split_data(expected_outputs, validation_ratio=0.4)
+    validation_inputs, train_inputs = split_data(inputs, validation_ratio=0.2)
+    validation_outputs, target_outputs = split_data(expected_outputs, validation_ratio=0.2)
 
     train_inputs = torch.tensor(train_inputs, dtype=torch.float32)
-    train_outputs = torch.tensor(train_outputs, dtype=torch.float32)
+    target_outputs = torch.tensor(target_outputs, dtype=torch.float32)
     validation_inputs = torch.tensor(validation_inputs, dtype=torch.float32)
     validation_outputs = torch.tensor(validation_outputs, dtype=torch.float32)
 
-    train_outputs = train_outputs.unsqueeze(1)
+    target_outputs = target_outputs.unsqueeze(1)
     validation_outputs = validation_outputs.unsqueeze(1)
 
-    num_epochs = 10
+    num_epochs = 1000
     for epoch in range(num_epochs):
-        # Forward pass
-        outputs = linear_regression_model(train_inputs)
+        optimizer.zero_grad()
 
+        # Forward pass
+        model_outputs = linear_regression_model(train_inputs)
+        model_outputs = torch.sigmoid(model_outputs)
+
+        target_outputs_sigmoid = target_outputs
+        #target_outputs_sigmoid = torch.sigmoid(target_outputs)
         # Compute the loss
-        loss = loss_fn(outputs, train_outputs)
+        loss = mse_loss(model_outputs, target_outputs_sigmoid)
 
         # Backward and optimize
-        optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
         # Print progress
-        if (epoch + 1) % 10 == 0:
+        if (epoch + 1) % 100 == 0:
             print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}')
 
     # Step 6: Evaluate the Model
@@ -199,7 +199,7 @@ def main():
         test_X = validation_inputs
         predicted = linear_regression_model(test_X)
 
-        epsilon = 0.4
+        epsilon = 0.2
         corrects = 0
 
         predicted = predicted.tolist()
