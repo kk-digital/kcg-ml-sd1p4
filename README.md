@@ -243,12 +243,12 @@ Outputs in: `./output/disturbing_embeddings`
 - `--cuda_device`: The CUDA device to use. Defaults to `"get_device()"`.
 
 
-#### Random Pormpts Generation and Disturbing Embeddings Image Generation
+#### Random Prompts Generation and Disturbing Embeddings Image Generation
 
 Try running:
 
 ```bash
-python3 ./scripts/data_bounding_box_and_score_and_embedding_dataset.py --num_iterations 10
+python3 ./scripts/data_bounding_box_and_score_and_embedding_dataset.py --num_iterations 10 --save_embeddings True
 ```
 
 - `--save_embeddings`: If True, the disturbed embeddings will be saved to disk. Defaults to `False`.
