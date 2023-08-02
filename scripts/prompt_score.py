@@ -177,6 +177,8 @@ def main():
     validation_outputs = torch.sigmoid(validation_outputs)
 
     num_epochs = 1000
+    epsilon = 0.2
+    training_corrects = 0
     for epoch in range(num_epochs):
         optimizer.zero_grad()
 
@@ -193,6 +195,11 @@ def main():
         loss.backward()
         optimizer.step()
 
+        if epoch == num_epochs - 1:
+            for index, prediction in enumerate(model_outputs):
+                if (abs(model_outputs[index][0] - target_outputs_sigmoid[index][0]) < epsilon):
+                    training_corrects += 1
+
         # Print progress
         if (epoch + 1) % 100 == 0:
             print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}')
@@ -203,9 +210,8 @@ def main():
         predicted_raw = linear_regression_model(test_X)
         predicted_scaled = torch.sigmoid(predicted_raw)
 
-        epsilon = 0.2
-        corrects_raw = 0
-        corrects_scaled = 0
+        validation_corrects_raw = 0
+        validation_corrects_scaled = 0
 
         predicted_raw = predicted_raw.tolist()
         predicted_scaled = predicted_scaled.tolist()
@@ -217,15 +223,17 @@ def main():
         print('expected output first 10 elements : ', validation_outputs[:10])
         for index, prediction in enumerate(predicted_raw):
             if (abs(predicted_raw[index][0] - validation_outputs[index][0]) < epsilon):
-                corrects_raw += 1
+                validation_corrects_raw += 1
         for index, prediction in enumerate(predicted_scaled):
             if (abs(predicted_scaled[index][0] - validation_outputs[index][0]) < epsilon):
-                corrects_scaled += 1
+                validation_corrects_scaled += 1
 
-    validation_accuracy_raw = corrects_raw / validation_inputs.size(0)
-    validation_accuracy_scaled = corrects_scaled / validation_inputs.size(0)
+    validation_accuracy_raw = validation_corrects_raw / validation_inputs.size(0)
+    validation_accuracy_scaled = validation_corrects_scaled / validation_inputs.size(0)
+    training_accuracy = training_corrects / train_inputs.size(0)
 
     print('loss : ', loss.item())
+    print('training_accuracy (raw) : ', (training_accuracy * 100), '%')
     print('validation_accuracy (raw) : ', (validation_accuracy_raw * 100), '%')
     print('validation_accuracy (scaled) : ', (validation_accuracy_scaled * 100), '%')
     print('total number of images : ', num_inputs)
