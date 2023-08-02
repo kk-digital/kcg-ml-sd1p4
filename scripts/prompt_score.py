@@ -173,6 +173,9 @@ def main():
     target_outputs = target_outputs.unsqueeze(1)
     validation_outputs = validation_outputs.unsqueeze(1)
 
+    target_outputs = torch.sigmoid(target_outputs)
+    validation_outputs = torch.sigmoid(validation_outputs)
+
     num_epochs = 1000
     for epoch in range(num_epochs):
         optimizer.zero_grad()
@@ -198,6 +201,7 @@ def main():
     with torch.no_grad():
         test_X = validation_inputs
         predicted = linear_regression_model(test_X)
+        predicted = torch.sigmoid(predicted)
 
         epsilon = 0.2
         corrects = 0
