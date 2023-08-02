@@ -20,7 +20,7 @@ import configparser
 base_directory = "./"
 sys.path.insert(0, base_directory)
 
-from labml.monit import section
+from utility.labml.monit import section
 from stable_diffusion.constants import CLIP_MODEL_DIR
 from stable_diffusion.utils_model import (
     initialize_latent_diffusion,
