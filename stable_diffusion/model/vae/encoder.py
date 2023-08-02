@@ -17,13 +17,11 @@ so that we can load the checkpoints directly.
 
 from typing import List
 import safetensors
-import torch
-import torch.nn.functional as F
-from torch import nn
-from .auxiliary_classes import *
 import os
 import sys
+
 sys.path.insert(0, os.getcwd())
+from .auxiliary_classes import *
 from stable_diffusion.utils_backend import get_device
 from stable_diffusion.constants import ENCODER_PATH
 

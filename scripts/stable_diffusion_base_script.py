@@ -1,8 +1,9 @@
 import os, sys
 import torch
+from typing import Union, Optional
+from pathlib import Path
 
 sys.path.append(os.path.abspath(''))
-
 from stable_diffusion.utils_backend import get_device
 from stable_diffusion.utils_image import load_img
 from stable_diffusion.sampler.ddim import DDIMSampler
@@ -12,9 +13,6 @@ from stable_diffusion.latent_diffusion import LatentDiffusion
 from stable_diffusion.sampler import DiffusionSampler
 from stable_diffusion.constants import LATENT_DIFFUSION_PATH
 from utility.labml.monit import section
-from typing import Union, Optional
-from pathlib import Path
-
 
 class ModelLoadError(Exception):
     pass

@@ -1,5 +1,3 @@
-import zipfile
-import os
 import torch.nn as nn
 import torch.optim as optim
 import torch
@@ -10,7 +8,6 @@ import json
 import io
 import numpy as np
 import sys
-import random
 from PIL import Image
 import hashlib
 import struct

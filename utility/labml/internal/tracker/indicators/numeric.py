@@ -2,9 +2,9 @@ from abc import ABC
 from collections import deque
 from typing import Dict, Optional
 import sys
-sys.path.append('./')
 import numpy as np
 
+sys.path.append('./')
 from utility.labml.internal.util.values import to_numpy
 from . import Indicator
 

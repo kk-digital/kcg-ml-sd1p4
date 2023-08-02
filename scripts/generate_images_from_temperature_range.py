@@ -4,24 +4,18 @@ import torch
 import shutil
 import argparse
 
-from tqdm import tqdm
 base_dir = "./"
 sys.path.insert(0, base_dir)
-from stable_diffusion.utils_backend import get_device
-
 sys.path.insert(0, os.getcwd())
+
+from stable_diffusion.utils_backend import get_device
 from auxiliary_functions import get_torch_distribution_from_name
-
-
 from stable_diffusion.utils_image import save_image_grid, save_images
-from text_to_image import Txt2Img
 from stable_diffusion.constants import CHECKPOINT_PATH
 from labml.monit import section
 from stable_diffusion.utils.utils import save_image_grid, save_images
-from stable_diffusion.utils.model import initialize_latent_diffusion
 from stable_diffusion import StableDiffusion
 from utility.labml.monit import section
-from stable_diffusion.utils_model import initialize_latent_diffusion
 
 # CHECKPOINT_PATH = os.path.abspath('./input/model/v1-5-pruned-emaonly.ckpt')
 OUTPUT_DIR = os.path.abspath("./output/noise-tests/temperature_range")

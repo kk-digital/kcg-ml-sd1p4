@@ -1,9 +1,9 @@
 import math
 import time
 from typing import TYPE_CHECKING, List
-import os,sys
-sys.path.append("./")
+import sys
 
+sys.path.append("./")
 from utility.labml.logger import Text
 from utility.labml.internal.tracker import tracker_singleton as tracker
 

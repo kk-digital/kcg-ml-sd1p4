@@ -1,11 +1,10 @@
 import os
 import hashlib
-
 import text_to_image
 
+from cli_builder import CLI
 from stable_diffusion_reference.utils_model import save_images
 
-from cli_builder import CLI
 
 def main():
     args = CLI('Generate images from a list of prompts') \

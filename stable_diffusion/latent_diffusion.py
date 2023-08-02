@@ -22,7 +22,6 @@ We use same notations for $\alpha_t$, $\beta_t$ schedules, etc.
 """
 
 from typing import List
-
 import torch
 import torch.nn as nn
 import safetensors

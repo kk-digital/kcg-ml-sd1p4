@@ -1,11 +1,10 @@
 import argparse
 import os
-import shutil
 import subprocess
-import sys
 import zipfile
 import re
 import toml
+
 from accelerate.utils import write_basic_config
 
 def check_dataset(dataset_dir):

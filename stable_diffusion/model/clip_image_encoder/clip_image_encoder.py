@@ -1,28 +1,20 @@
 import os
 import sys
-sys.path.insert(0, os.getcwd())
-
-import clip
-from stable_diffusion.utils_backend import get_device
 import hashlib
 import torch
 import numpy as np
 import PIL
 from PIL import Image
-from torchvision.transforms import Compose, Resize, CenterCrop, ToTensor, Normalize, Lambda
-from typing import Any, Union, List
+from torchvision.transforms import Compose, Resize, CenterCrop, Normalize, Lambda
+from torch import nn
+import safetensors
 
-from typing import List
-from torch import nn, save
-from os.path import join
-
-
+sys.path.insert(0, os.getcwd())
 from stable_diffusion.constants import IMAGE_PROCESSOR_PATH, VISION_MODEL_PATH, IMAGE_ENCODER_PATH
 from stable_diffusion.utils_backend import get_device
-from torchinfo import summary
-
 from transformers import CLIPImageProcessor, CLIPVisionModelWithProjection
-import safetensors
+
+
 class CLIPImageEncoder(nn.Module):
 
     def __init__(self, device = None, image_processor = None, vision_model = None):#, input_mode = PIL.Image.Image):

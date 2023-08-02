@@ -15,27 +15,17 @@ We have kept to the model definition and naming unchanged from
 so that we can load the checkpoints directly.
 """
 
-from typing import List
 
-import torch
 import safetensors
-import os
-import torch.nn.functional as F
-from torch import nn
-import time
-
-
-from .auxiliary_classes import *
-from .encoder import Encoder
-from .decoder import Decoder
 import os
 import sys
 
 sys.path.insert(0, os.getcwd())
-
+from .auxiliary_classes import *
+from .encoder import Encoder
+from .decoder import Decoder
 from stable_diffusion.utils_backend import get_device
 from stable_diffusion.constants import ENCODER_PATH, DECODER_PATH, AUTOENCODER_PATH
-
 
 
 class Autoencoder(nn.Module):

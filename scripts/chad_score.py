@@ -1,13 +1,10 @@
-
 import torch
-
 import sys
 import os
 import argparse
+
 sys.path.insert(0, os.getcwd())
-
 from utils.clip.clip_feature_zip_loader import ClipFeatureZipLoader
-
 from chad_score.chad_score import get_chad_score
 
 def parse_arguments():

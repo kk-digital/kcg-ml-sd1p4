@@ -14,7 +14,6 @@ from stable_diffusion.sampler import DiffusionSampler
 from stable_diffusion.constants import LATENT_DIFFUSION_PATH
 from utility.labml.monit import section
 from typing import Optional
-import safetensors
 
 
 class ModelLoadError(Exception):

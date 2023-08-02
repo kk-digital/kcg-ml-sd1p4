@@ -1,11 +1,10 @@
 
 # chad score of a single image using https://github.com/grexzen/SD-Chad/blob/main/simple_inference.py
 import torch
-
 import sys
 import os
-sys.path.insert(0, os.getcwd())
 
+sys.path.insert(0, os.getcwd())
 from chad_score.chad_score import get_chad_score
 from utils.clip.clip_feature_zip_loader import ClipFeatureZipLoader
 

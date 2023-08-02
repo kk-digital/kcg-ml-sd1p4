@@ -15,18 +15,16 @@ It uses HuggingFace Transformers CLIP model.
 """
 import os
 import sys
-sys.path.insert(0, os.getcwd())
-
 import torch
-import safetensors as st
 from torch import nn
 from transformers import CLIPTokenizer, CLIPTextModel, CLIPTextConfig
-
 import safetensors
+from typing import List
 
+sys.path.insert(0, os.getcwd())
 from stable_diffusion.constants import TEXT_EMBEDDER_PATH, TOKENIZER_PATH, TEXT_MODEL_PATH
 from stable_diffusion.utils_backend import get_device, get_memory_status
-from typing import List
+
 
 # TEXT_EMBEDDER_PATH = os.path.abspath('./input/model/clip/clip_embedder.ckpt')
 # TOKENIZER_PATH = os.path.abspath('./input/model/clip/clip_tokenizer.ckpt')

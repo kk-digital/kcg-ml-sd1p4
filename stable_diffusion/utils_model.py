@@ -11,8 +11,8 @@ summary: >
 import torch
 from pathlib import Path
 from typing import Union
-
 import safetensors
+
 from stable_diffusion.constants import AUTOENCODER_PATH, ENCODER_PATH, DECODER_PATH
 from stable_diffusion.constants import TEXT_EMBEDDER_PATH, TOKENIZER_PATH, TEXT_MODEL_PATH
 from stable_diffusion.constants import UNET_PATH

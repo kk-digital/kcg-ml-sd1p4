@@ -8,8 +8,8 @@ from dataclasses import dataclass
 from queue import Queue
 from typing import Dict, Optional, Set, List
 import sys
+
 sys.path.append("./")
-import utility.labml
 from utility.labml import logger
 from utility.labml.logger import Text
 from utility.labml.utils.notice import labml_notice

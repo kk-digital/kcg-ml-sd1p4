@@ -12,9 +12,7 @@ It uses HuggingFace Transformers CLIP model.
 """
 
 from typing import List
-
-from torch import nn, save
-from os.path import join
+from torch import nn
 from transformers import CLIPTokenizer, CLIPTextModel
 from torchinfo import summary
 

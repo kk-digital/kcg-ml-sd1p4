@@ -1,11 +1,10 @@
 import math
 from typing import Dict
 import sys
-sys.path.append("./")
 import numpy as np
 
+sys.path.append("./")
 from utility.labml import logger
-from utility.labml.internal.util.values import to_numpy
 from utility.labml.logger import Text
 from .. import Writer, Indicator
 from ..indicators import artifacts

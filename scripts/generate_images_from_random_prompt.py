@@ -13,8 +13,8 @@ import os
 import sys
 import torch
 from datetime import datetime
-import numpy as np
 from zipfile import ZipFile
+import clip
 
 base_directory = "./"
 sys.path.insert(0, base_directory)
@@ -27,11 +27,6 @@ from stable_diffusion_base_script import StableDiffusionBaseScript
 from utility.labml import monit
 from stable_diffusion.model.unet.unet_attention import CrossAttention
 from cli_builder import CLI
-import random
-import json
-import clip
-from PIL import Image
-import io
 from chad_score.chad_score import get_chad_score
 
 def get_image_features(image, device):
