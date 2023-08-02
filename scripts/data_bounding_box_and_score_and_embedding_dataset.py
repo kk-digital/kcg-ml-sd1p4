@@ -5,6 +5,7 @@ import torch
 import hashlib
 import json
 import shutil
+import time
 import cv2
 import numpy as np
 import random
@@ -153,11 +154,11 @@ def generate_prompt():
     # Your mandatory phrases
     mandatory_phrases = ['no background', 'white background', 'centered']
 
-    # Add the mandatory phrases to the prompt multiple times (e.g., 3 times)
-    mandatory_prompts = mandatory_phrases * 3
+    # Add the mandatory phrases to the prompt multiple times (e.g., 2 times)
+    mandatory_prompts = mandatory_phrases * 2
 
     # Select remaining items randomly from the prompt_list
-    remaining_items = 9  # 15 - 3 mandatory phrases * 3 occurrences each = 9
+    remaining_items = 9  # 15 - 3 mandatory phrases * 2 occurrences each = 9
     random_prompts = random.sample(set(prompt_list) - set(mandatory_phrases), remaining_items)
 
     # Join all selected prompts and mandatory prompts into a single string, separated by commas
@@ -279,7 +280,9 @@ def get_image_features(
     return image_features
 
 def main():
-    
+
+    start_time = time.time()  # Save the start time
+  
     pt = IODirectoryTree(base_directory=base_dir)
     sd = init_stable_diffusion(DEVICE, pt, n_steps=20, sampler_name="ddim", ddim_eta=0.0)
     clip_text_embedder = CLIPTextEmbedder(device=DEVICE)
@@ -386,6 +389,10 @@ def main():
     json.dump(json_output, open(json_output_path, "w"), indent=4)
     json.dump(scores, open(scores_path, "w"), indent=4)
     json.dump(manifest, open(manifest_path, "w"), indent=4)
+
+    end_time = time.time()  # Save the end time
+
+    print(f"Execution time: {end_time - start_time} seconds")
 
 if __name__ == "__main__":
     main()
