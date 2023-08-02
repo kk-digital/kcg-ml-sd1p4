@@ -260,7 +260,7 @@ def main():
                     seed=this_seed,
                     w = image_width,
                     h = image_height
-                )
+                ).to('cpu')
 
                 image_list, image_hash_list = save_images(images, filename)
                 image_hash = image_hash_list[0]

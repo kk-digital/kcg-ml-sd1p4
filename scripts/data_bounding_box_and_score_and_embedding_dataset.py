@@ -231,8 +231,7 @@ def generate_images_from_disturbed_embeddings(
             embedded_prompt=embedding_e, 
             null_prompt=null_prompt, 
             batch_size=batch_size
-        )
-        embedding_e = embedding_e.cpu()
+        ).to("cpu")
         torch.cuda.empty_cache()
         yield (image_e, embedding_e, i)
 

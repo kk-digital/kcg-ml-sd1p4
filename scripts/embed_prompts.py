@@ -40,14 +40,14 @@ if __name__ == "__main__":
     clip_text_embedder = CLIPTextEmbedder(device=get_device())
     clip_text_embedder.load_submodels()
 
-    null_cond = clip_text_embedder(null_prompt)
+    null_cond = clip_text_embedder(null_prompt).to("cpu")
     torch.save(null_cond, join(EMBEDDED_PROMPTS_DIR, "null_cond.pt"))
     print(
         "Null prompt embedding saved at: ",
         f"{join(EMBEDDED_PROMPTS_DIR, 'null_cond.pt')}",
     )
 
-    embedded_prompts = clip_text_embedder(prompts)
+    embedded_prompts = clip_text_embedder(prompts).to("cpu")
     # print("embedded_prompts shape: ", embedded_prompts.shape)
     torch.save(embedded_prompts, join(EMBEDDED_PROMPTS_DIR, "embedded_prompts.pt"))
     print(

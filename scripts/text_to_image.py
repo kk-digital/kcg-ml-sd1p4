@@ -213,7 +213,7 @@ def text_to_image(prompt, output, sampler, checkpoint_path, flash, steps, cfg_sc
                     uncond_scale=cfg_scale,
                     low_vram=low_vram,
                     seed=seed_array[i % len(seed_array)]
-                )
+                ).to('cpu')
 
                 print(images.shape)
                 save_images(images, filename)

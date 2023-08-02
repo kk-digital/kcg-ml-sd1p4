@@ -193,7 +193,7 @@ def generate_images_from_temp_range(
                 seed=noise_seed,
                 noise_fn=noise_fn,
                 temperature=temperature.item(),
-            )
+            ).to('cpu')
 
             image_name = f"n{noise_seed:04d}_d{DIST_NAME}_t{temperature:.3f}_eta{DDIM_ETA:.3f}.jpg"
             dest_path = os.path.join(

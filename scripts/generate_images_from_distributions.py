@@ -199,7 +199,7 @@ def generate_images_from_dist_dict(
                         seed=noise_seed,
                         noise_fn=noise_fn,
                         temperature=temperature,
-                    )
+                    ).to('cpu')
                     grid_rows.append(images)
                     save_images(images, dest_path=dest_path)
                     img_counter += 1

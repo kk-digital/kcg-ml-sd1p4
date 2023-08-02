@@ -346,7 +346,7 @@ if __name__ == "__main__":
             embedded_prompt=embedding,
             null_prompt=null_prompt,
             batch_size=BATCH_SIZE
-        )
+        ).to('cpu')
         # embedded_prompt.cpu()
         # del embedded_prompt        
         get_memory_status()
