@@ -29,6 +29,7 @@ from stable_diffusion.model.unet.unet_attention import CrossAttention
 from cli_builder import CLI
 from chad_score.chad_score import get_chad_score
 
+
 def get_image_features(image, device):
     model, preprocess = clip.load('ViT-L/14', device)
 

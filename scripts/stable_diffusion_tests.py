@@ -17,6 +17,7 @@ from stable_diffusion.utils_model import initialize_autoencoder, initialize_enco
 from stable_diffusion.utils_model import initialize_clip_embedder, initialize_tokenizer, initialize_transformer
 from stable_diffusion.utils_model import initialize_unet, initialize_latent_diffusion
 
+
 # CHECKPOINT_PATH = os.path.abspath('./input/model/v1-5-pruned-emaonly.ckpt')
 
 CHECKPOINT_PATH = os.path.abspath('./input/model/v1-5-pruned-emaonly.ckpt')
@@ -367,7 +368,7 @@ def generate_images_from_dist(
             print("grid shape: ", grid.shape)
             save_image_grid(grid, dest_path, nrow=num_artists, normalize=True, scale_each=True)
             return grid
-            # save_image_grid(grid_rows, dest_path, nrow=num_artists, normalize=True, scale_each=True)    
+            # save_image_grid(grid_rows, dest_path, nrow=num_artists, normalize=True, scale_each=True)
 
 
 def generate_images_from_dist_dict(

@@ -16,7 +16,6 @@ We have implemented the following [sampling algorithms](sampler/index.html):
 """
 
 from typing import Optional, List
-
 import torch
 
 from stable_diffusion.latent_diffusion import LatentDiffusion

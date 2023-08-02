@@ -1,11 +1,13 @@
 import argparse
 from PIL import Image
-Image.MAX_IMAGE_PIXELS = None
 import os
 import math
 import zipfile
 import shutil
 import tempfile
+
+Image.MAX_IMAGE_PIXELS = None
+
 
 def create_image_grid(input_path, output_path, rows, columns, img_size):
     # If output directory does not exist, create it

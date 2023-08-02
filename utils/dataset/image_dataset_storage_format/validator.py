@@ -4,6 +4,7 @@ Validator checks zip format and raise exception for what is wrong and missing.
 
 from .image_dataset_storage_format import *
 
+
 class ImageDatasetStorageFormatValidator(ImageDatasetStorageFormat):
 
     def validate_dataset(self, path_to_zip_file: str, is_tagged=False):
@@ -100,8 +101,3 @@ class ImageDatasetStorageFormatValidator(ImageDatasetStorageFormat):
                             for key in keys_to_check:
                                 if (item.get(key) is None):
                                     raise Exception("{0}: {1}", KEY_DOESNT_EXIST_IN_JSON, key)
-
-
-
-
-

@@ -13,6 +13,7 @@ sys.path.insert(0, os.path.join(base_directory, 'utils', 'dataset'))
 from utils.dataset.image_dataset import ImageDataset
 from chad_score.chad_score import get_chad_score
 
+
 def parse_arguments():
     """Command-line arguments for 'classify' command."""
     parser = argparse.ArgumentParser(description="Chad sort, takes in an image database and sorts it by chad score into many folders.")

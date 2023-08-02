@@ -13,6 +13,7 @@ from utils.clip.clip_feature_zip_loader import ClipFeatureZipLoader
 # no max for image pixel size
 Image.MAX_IMAGE_PIXELS = None
 
+
 class ImageDatasetStorageFormatProcessor(ImageDatasetStorageFormat):
     def format_and_compute_manifest(self, path_to_zip_file: str, is_tagged=False, output_path="./output"):
         self.load_zip_to_memory(path_to_zip_file)
@@ -121,7 +122,3 @@ class ImageDatasetStorageFormatProcessor(ImageDatasetStorageFormat):
             for data in data_list:
                 zip_ref.writestr(os.path.join(zip_name, data["file-path"]), data["data"])
         print("Dataset Processing Complete: {0}".format(output_path))
-
-
-
-

@@ -18,6 +18,7 @@ from chad_score import ChadPredictorModel
 from stable_diffusion import StableDiffusion
 from stable_diffusion.constants import IODirectoryTree
 
+
 EMBEDDED_PROMPTS_DIR = os.path.abspath("./input/embedded_prompts/")
 OUTPUT_DIR = "./output/data/"
 FEATURES_DIR = join(OUTPUT_DIR, "features/")
@@ -115,7 +116,7 @@ os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
 pt = IODirectoryTree(base_directory=base_dir)
 
 
-try: 
+try:
     shutil.rmtree(OUTPUT_DIR)
 except Exception as e:
     print(e, "\n", "Creating the paths...")
@@ -159,12 +160,12 @@ def embed_and_save_prompts(prompt: str, null_prompt = NULL_PROMPT):
 
     embedded_prompts = clip_text_embedder(prompt)
     torch.save(embedded_prompts, join(EMBEDDED_PROMPTS_DIR, "embedded_prompts.pt"))
-    
+
     print(
         "Prompts embeddings saved at: ",
         f"{join(EMBEDDED_PROMPTS_DIR, 'embedded_prompts.pt')}",
     )
-    
+
     get_memory_status()
     clip_text_embedder.to("cpu")
     del clip_text_embedder
@@ -200,34 +201,34 @@ def generate_images_from_disturbed_embeddings(
             embedding_e = embedded_prompt + ((i * noise_multiplier) * noise_i + (j * noise_multiplier) * noise_j) / (2 * num_iterations)
 
             image_e = sd.generate_images_from_embeddings(
-                seed=seed, 
-                embedded_prompt=embedding_e, 
-                null_prompt=null_prompt, 
+                seed=seed,
+                embedded_prompt=embedding_e,
+                null_prompt=null_prompt,
                 batch_size=batch_size
             )
-            
+
             yield (image_e, embedding_e)
     else:
-    
+
         noise_t = torch.zeros_like(embedded_prompt).to(device)
-    
+
         for i in range(0, num_iterations):
             noise_i = (
                 dist.sample(sample_shape=torch.Size([768])).permute(1, 0, 2).permute(0, 2, 1)
             ).to(device)
             # noise_t = noise_t + noise_i
-            # embedding_e = embedded_prompt + (noise_multiplier * noise_t) 
+            # embedding_e = embedded_prompt + (noise_multiplier * noise_t)
 
             noise_t += (noise_multiplier * noise_i)
             embedding_e = embedded_prompt + noise_t
 
             image_e = sd.generate_images_from_embeddings(
-                seed=seed, 
-                embedded_prompt=embedding_e, 
-                null_prompt=null_prompt, 
+                seed=seed,
+                embedded_prompt=embedding_e,
+                null_prompt=null_prompt,
                 batch_size=batch_size
             )
-            
+
             yield (image_e, embedding_e)
 
 def calculate_sha256(tensor):
@@ -254,14 +255,14 @@ def main():
     pt = IODirectoryTree(base_directory=base_dir)
 
     embedded_prompts, null_prompt = embed_and_save_prompts(PROMPT)
-    sd = init_stable_diffusion(DEVICE, pt)    
+    sd = init_stable_diffusion(DEVICE, pt)
 
 
     images = generate_images_from_disturbed_embeddings(sd, embedded_prompts, null_prompt, batch_size = BATCH_SIZE)
-    
+
     image_encoder = CLIPImageEncoder(device=DEVICE)
     image_encoder.load_submodels(image_processor_path = pt.image_processor_path, vision_model_path = pt.vision_model_path)
-    
+
     loaded_model = torch.load(SCORER_CHECKPOINT_PATH)
     predictor = ChadPredictorModel(768, device=DEVICE)
     predictor.load_state_dict(loaded_model)
@@ -296,7 +297,7 @@ def main():
             torch.save(embedding, embedding_path)
             print(f"Embedding saved at: {embedding_path}")
 
-        manifest_i = {                     
+        manifest_i = {
                         "file-name": img_file_name,
                         "file-hash": img_hash,
                         "file-path": img_path,
@@ -318,10 +319,10 @@ def main():
 
             json.dump(json_output, open(json_output_path, "w"), indent=4)
             print(f"features.json saved at: {json_output_path}")
-            
+
             json.dump(scores, open(scores_path, "w"), indent=4)
             print(f"scores.json saved at: {scores_path}")
-            
+
             json.dump(manifest, open(manifest_path, "w"), indent=4)
             print(f"manifest.json saved at: {manifest_path}")
 
@@ -336,8 +337,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
-

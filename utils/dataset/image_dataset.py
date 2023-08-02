@@ -5,6 +5,7 @@ import random
 
 from utils.dataset.image_dataset_storage_format.validator import ImageDatasetStorageFormatValidator
 
+
 class ImageFeatures:
     def __init__(self, file_name: str, file_path: str, file_archive: str, file_hash: str, feature_type: str, feature_model: str, feature_vector: []):
         self.file_name = file_name

@@ -75,7 +75,7 @@ ROOT_MODELS_DIR = args.root_models_dir
 if __name__ == "__main__":
 
     model = initialize_latent_diffusion(
-            path=CHECKPOINT_PATH, 
+            path=CHECKPOINT_PATH,
             force_submodels_init=True
         )
     summary(model)
@@ -103,4 +103,3 @@ if __name__ == "__main__":
         model.unload_submodels()  # unloads latent diffusion submodels
     with section("save latent diffusion model"):
         model.save()  # saves latent diffusion model with loaded state dict and unloaded submodels
-

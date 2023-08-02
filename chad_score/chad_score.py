@@ -1,10 +1,12 @@
-
 # using https://github.com/grexzen/SD-Chad/blob/main/simple_inference.py
 
 import torch
 import pytorch_lightning as pl
 import torch.nn as nn
+
 from stable_diffusion.utils_backend import get_device
+
+
 class ChadScorePredictor(pl.LightningModule):
     def __init__(self, input_size, device = None, xcol='emb', ycol='avg_rating'):
         super().__init__()

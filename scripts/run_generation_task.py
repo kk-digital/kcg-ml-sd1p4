@@ -7,6 +7,7 @@ sys.path.insert(0, base_directory)
 from generation_task import GenerationTask
 from text_to_image import text_to_image
 
+
 def parse_arguments():
     """Command-line arguments for 'classify' command."""
     parser = argparse.ArgumentParser(description="Executes a task file.")
