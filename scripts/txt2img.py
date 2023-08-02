@@ -11,16 +11,17 @@ summary: >
 import time
 import os
 import sys
+from datetime import datetime
 
 base_dir = "./"
 sys.path.insert(0, base_dir)
 
-from datetime import datetime
 from stable_diffusion.stable_diffusion import StableDiffusion
 from stable_diffusion.utils_image import save_images
 from utility.labml import monit
 from stable_diffusion.model.unet.unet_attention import CrossAttention
 from cli_builder import CLI
+
 
 def get_prompts(prompt, prompts_file):
     prompts = []

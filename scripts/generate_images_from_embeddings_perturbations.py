@@ -19,6 +19,7 @@ from chad_score import ChadPredictorModel
 from stable_diffusion import StableDiffusion
 from stable_diffusion.constants import IODirectoryTree
 
+
 EMBEDDED_PROMPTS_DIR = os.path.abspath("./input/embedded_prompts/")
 OUTPUT_DIR = "./output/data/"
 FEATURES_DIR = join(OUTPUT_DIR, "features/")
@@ -295,7 +296,7 @@ if __name__ == "__main__":
     image_encoder = CLIPImageEncoder(device=DEVICE)
     image_encoder.load_submodels(image_processor_path = pt.image_processor_path, vision_model_path = pt.vision_model_path)
     # image_encoder.initialize_preprocessor()
-    
+
     loaded_model = torch.load(SCORER_CHECKPOINT_PATH)
     predictor = ChadPredictorModel(768, device=DEVICE)
     predictor.load_state_dict(loaded_model)
@@ -348,7 +349,7 @@ if __name__ == "__main__":
             batch_size=BATCH_SIZE
         )
         # embedded_prompt.cpu()
-        # del embedded_prompt        
+        # del embedded_prompt
         get_memory_status()
         # embedding
         get_memory_status()
