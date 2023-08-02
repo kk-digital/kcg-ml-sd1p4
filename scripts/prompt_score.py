@@ -1,3 +1,5 @@
+import zipfile
+import os
 import torch.nn as nn
 import torch.optim as optim
 import torch
@@ -8,6 +10,7 @@ import json
 import io
 import numpy as np
 import sys
+import random
 from PIL import Image
 import hashlib
 import struct
@@ -126,10 +129,15 @@ def main():
                     data_dict = json.loads(json_data_string, cls=NumpyArrayDecoder)
 
                     image_meta_data = GenerationTaskResult.from_dict(data=data_dict)
+                    embedding_name = image_meta_data.embedding_name
+                    embedding_content = zip_ref.read(embedding_name)
+                    embedding_vector = np.load( io.BytesIO(embedding_content))['data']
 
-                    embedded_prompts = torch.tensor(image_meta_data.clip_embedding, dtype=torch.float32);
+
+
+                    embedding_vector = torch.tensor(embedding_vector, dtype=torch.float32);
                     # Convert the tensor to a flat vector
-                    flat_embedded_prompts = torch.flatten(embedded_prompts)
+                    flat_embedded_prompts = torch.flatten(embedding_vector)
 
                     with torch.no_grad():
                        flat_vector = flat_embedded_prompts.cpu().numpy()
