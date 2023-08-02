@@ -119,7 +119,6 @@ def main():
     # Example usage:
     zip_file_path = args.input_path
 
-
     inputs = []
     expected_outputs = []
     with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
@@ -179,6 +178,8 @@ def main():
     num_epochs = 1000
     epsilon = 0.2
     training_corrects = 0
+    min_training_output = 0
+    max_training_output = 0
     for epoch in range(num_epochs):
         optimizer.zero_grad()
 
@@ -199,6 +200,8 @@ def main():
             for index, prediction in enumerate(model_outputs):
                 if (abs(model_outputs[index][0] - target_outputs_sigmoid[index][0]) < epsilon):
                     training_corrects += 1
+            min_training_output = min(model_outputs)
+            max_training_output = max(model_outputs)
 
         # Print progress
         if (epoch + 1) % 100 == 0:
@@ -236,6 +239,12 @@ def main():
     print('training_accuracy : ', (training_accuracy * 100), '%')
     print('validation_accuracy (raw) : ', (validation_accuracy_raw * 100), '%')
     print('validation_accuracy (scaled) : ', (validation_accuracy_scaled * 100), '%')
+    print('min training output (raw) : ', min_training_output.item())
+    print('max training output (raw) : ', max_training_output.item())
+    print('min predictions (raw) : ', min(predicted_raw)[0])
+    print('max predictions (raw) : ', max(predicted_raw)[0])
+    print('min predictions (scaled) : ', min(predicted_scaled)[0])
+    print('max predictions (scaled) : ', max(predicted_scaled)[0])
     print('total number of images : ', num_inputs)
     print('total train image count ', train_inputs.size(0))
     print('total validation image count ', validation_inputs.size(0))
