@@ -14,7 +14,6 @@ This implements DDIM sampling from the paper
 """
 
 from typing import Optional, List
-
 import numpy as np
 import torch
 

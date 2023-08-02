@@ -6,6 +6,7 @@ import re
 import io
 from PIL import UnidentifiedImageError
 from PIL import Image
+
 from .image_dataset_storage_format import *
 from utils.clip.clip_feature_zip_loader import ClipFeatureZipLoader
 

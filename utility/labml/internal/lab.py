@@ -1,10 +1,9 @@
 from copy import deepcopy
-from pathlib import PurePath, Path
-from typing import List, Optional, Dict
+from pathlib import Path
+from typing import Optional, Dict
 import sys
-sys.path.append("./")
 
-from utility import labml
+sys.path.append("./")
 from utility.labml.internal import util
 from utility.labml.internal.util import is_colab, is_kaggle
 from utility.labml.logger import Text

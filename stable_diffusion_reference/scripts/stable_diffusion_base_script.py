@@ -1,15 +1,14 @@
 import os, sys
 import torch
+from typing import Union, Optional
+from pathlib import Path
 
 sys.path.append(os.path.abspath(''))
-
 from stable_diffusion_reference.sampler.ddim import DDIMSampler
 from stable_diffusion_reference.sampler.ddpm import DDPMSampler
 from stable_diffusion_reference.utils_model import load_model, get_device, load_img
 from stable_diffusion_reference.latent_diffusion import LatentDiffusion
 from stable_diffusion_reference.sampler import DiffusionSampler
-from typing import Union, Optional
-from pathlib import Path
 
 
 class ModelLoadError(Exception):

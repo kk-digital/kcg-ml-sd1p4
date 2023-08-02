@@ -4,7 +4,6 @@ Image.MAX_IMAGE_PIXELS = None
 import os
 import math
 import zipfile
-import io
 import shutil
 import tempfile
 

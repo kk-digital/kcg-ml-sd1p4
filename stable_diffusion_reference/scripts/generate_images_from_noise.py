@@ -1,5 +1,4 @@
 import os
-
 from text_to_image import Txt2Img
 import torch
 import time

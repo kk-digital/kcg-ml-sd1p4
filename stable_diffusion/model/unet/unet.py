@@ -17,21 +17,21 @@ so that we can load the checkpoints directly.
 
 import math
 from typing import List
-import os
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchinfo import summary
-from safetensors.torch import save_file
-from .unet_attention import SpatialTransformer
-
+import safetensors
 import os
 import sys
-sys.path.insert(0, os.getcwd())
-from stable_diffusion.constants import UNET_PATH
 
+sys.path.insert(0, os.getcwd())
+from .unet_attention import SpatialTransformer
+from stable_diffusion.constants import UNET_PATH
+from stable_diffusion.utils_backend import get_device
 # UNET_PATH = os.path.abspath('./input/model/unet/unet.ckpt')
+
 
 class UNetModel(nn.Module):
     """
@@ -40,13 +40,14 @@ class UNetModel(nn.Module):
 
     def __init__(
             self, *,
-            in_channels: int,
-            out_channels: int,
-            channels: int,
-            n_res_blocks: int,
-            attention_levels: List[int],
-            channel_multipliers: List[int],
-            n_heads: int,
+            device = None,
+            in_channels: int = 4,
+            out_channels: int = 4,
+            channels: int = 320,
+            n_res_blocks: int = 2,
+            attention_levels: List[int] = [0, 1, 2],
+            channel_multipliers: List[int] = [1, 2, 4, 4],
+            n_heads: int = 8,
             tf_layers: int = 1,
             d_cond: int = 768):
         """
@@ -59,6 +60,8 @@ class UNetModel(nn.Module):
         :param n_heads: the number of attention heads in the transformers
         """
         super().__init__()
+        
+        self.device = get_device(device)
         self.channels = channels
 
         # Number of levels
@@ -141,13 +144,21 @@ class UNetModel(nn.Module):
             nn.Conv2d(channels, out_channels, 3, padding=1),
         )
         
-    def save(self, unet_path = UNET_PATH, use_safetensors = True):
-        if not use_safetensors:
-            torch.save(self, unet_path)
-            print(f"Autoencoder saved to: {unet_path}")
-        else:
-            save_file(self.state_dict(), unet_path)
-            print(f"Autoencoder saved to: {unet_path}")
+        self.to(self.device)
+        
+    def save(self, unet_path = UNET_PATH):
+        try:
+            safetensors.torch.save_model(self, unet_path)
+            print(f"UNet saved to: {unet_path}")
+        except Exception as e:
+            print(f"Error saving UNet to {unet_path}: {e}")
+    def load(self, unet_path = UNET_PATH):
+        try:
+            safetensors.torch.load_model(self, unet_path)
+            print(f"UNet loaded from: {unet_path}")
+            return self
+        except Exception as e:
+            print(f"Error loading UNet from {unet_path}: {e}")
 
     def time_step_embedding(self, time_steps: torch.Tensor, max_period: int = 10000):
         """

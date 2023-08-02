@@ -14,7 +14,6 @@ We use same notations for $\alpha_t$, $\beta_t$ schedules, etc.
 """
 
 from typing import Optional, List
-
 import numpy as np
 import torch
 

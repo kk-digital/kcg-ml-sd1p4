@@ -2,8 +2,8 @@ import collections
 import math
 from typing import TYPE_CHECKING, List, Tuple
 import sys
-sys.path.append("./")
 
+sys.path.append("./")
 from utility.labml.internal.util.colors import StyleCode
 from utility.labml.logger import Text
 

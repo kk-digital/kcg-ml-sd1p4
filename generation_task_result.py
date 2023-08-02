@@ -1,6 +1,6 @@
-
 import json
 import numpy as np
+
 
 class GenerationTaskResult:
     def __init__(self, clip_embedding, latent, image_name, image_hash, image_latent, image_clip_vector, chad_score_model, chad_score, seed, cfg_strength):

@@ -15,35 +15,17 @@ We have kept to the model definition and naming unchanged from
 so that we can load the checkpoints directly.
 """
 
-import time
-from safetensors.torch import save_file, load_file
 
-from stable_diffusion.utils_backend import get_device
-from .auxiliary_classes import *
-from .encoder import Encoder
-from .decoder import Decoder
+import safetensors
 import os
 import sys
 
 sys.path.insert(0, os.getcwd())
-
+from .auxiliary_classes import *
+from .encoder import Encoder
+from .decoder import Decoder
+from stable_diffusion.utils_backend import get_device
 from stable_diffusion.constants import ENCODER_PATH, DECODER_PATH, AUTOENCODER_PATH
-
-
-class SectionManager:
-    def __init__(self, name: str):
-        self.t0 = None
-        self.t1 = None
-        self.section_name = name
-
-    def __enter__(self):
-        print(f"Starting section: {self.section_name}...")
-        self.t0 = time.time()
-        return self
-
-    def __exit__(self, exception_type, exception_value, traceback):
-        self.t1 = time.time()
-        print(f"Finished section: {self.section_name} in {(self.t1 - self.t0):.2f} seconds\n")
 
 
 class Autoencoder(nn.Module):
@@ -53,7 +35,7 @@ class Autoencoder(nn.Module):
     This consists of the encoder and decoder modules.
     """
 
-    def __init__(self, emb_channels: int, z_channels: int, encoder=None, decoder=None, device=None):
+    def __init__(self, emb_channels: int = 4, z_channels: int = 4, encoder = None, decoder = None, device = None):
         """
         :param encoder: is the encoder
         :param decoder: is the decoder
@@ -76,86 +58,84 @@ class Autoencoder(nn.Module):
         self.post_quant_conv = nn.Conv2d(emb_channels, z_channels, 1)
         self.to(self.device)
 
-    def save_submodels(self, encoder_path=ENCODER_PATH, decoder_path=DECODER_PATH, use_safetensors=True):
+    def save_submodels(self, encoder_path = ENCODER_PATH, decoder_path = DECODER_PATH):
+        
+        self.encoder.save(encoder_path)
+        self.decoder.save(decoder_path)
+        
+
+    def save(self, autoencoder_path = AUTOENCODER_PATH):
         """
         ### Save the model to a checkpoint
         """
-        self.encoder.save(encoder_path, use_safetensors=use_safetensors)
-        self.decoder.save(decoder_path, use_safetensors=use_safetensors)
 
-    def save(self, autoencoder_path=AUTOENCODER_PATH, use_safetensors=True):
-        """
-        ### Save the model to a checkpoint
-        """
-        if not use_safetensors:
-            torch.save(self, autoencoder_path)
+        try:
+            safetensors.torch.save_model(self, autoencoder_path)
             print(f"Autoencoder saved to: {autoencoder_path}")
-        else:
-            save_file(self.state_dict(), autoencoder_path)
-            print(f"Autoencoder saved to: {autoencoder_path}")
+        except Exception as e:
+            print(f"Autoencoder not saved. Error: {e}")
+            
+    def load(self, autoencoder_path = AUTOENCODER_PATH):
+        try:
+            safetensors.torch.load_model(self, autoencoder_path, strict=True)
+            print(f"Autoencoder loaded from: {autoencoder_path}")
+            self.eval()
+            return self
+        except Exception as e:
+            print(f"Autoencoder not loaded. Error: {e}")
+            return None
 
-    def load_submodels(self, encoder_path=ENCODER_PATH, decoder_path=DECODER_PATH, use_safetensors=True):
-
+    def load_submodels(self, encoder_path = ENCODER_PATH, decoder_path = DECODER_PATH):
+        
         """
         ### Load the model from a checkpoint
         """
-        if not use_safetensors:
-            self.encoder = torch.load(encoder_path, map_location=self.device)
-            self.encoder.eval()
-            print(f"Encoder loaded from: {encoder_path}")
-            self.decoder = torch.load(decoder_path, map_location=self.device)
-            self.decoder.eval()
-            print(f"Decoder loaded from: {decoder_path}")
-            return self
-        else:
-            self.encoder = initialize_encoder(device=self.device)
-            self.encoder.load_state_dict(load_file(encoder_path, device=self.device.type))
-            self.encoder.eval()
-            print(f"Encoder loaded from: {encoder_path}")
-
-            self.decoder = initialize_decoder(device=self.device)
-            self.decoder.load_state_dict(load_file(decoder_path, device=self.device.type))
-            self.decoder.eval()
-            print(f"Decoder loaded from: {decoder_path}")
-            return self
-
-    def load_encoder(self, encoder_path=ENCODER_PATH, use_safetensors=True):
-        if not use_safetensors:
-            self.encoder = torch.load(encoder_path, map_location=self.device)
-            self.encoder.eval()
-            print(f"Encoder loaded from: {encoder_path}")
-            return self.encoder
-        else:
-            self.encoder = initialize_encoder(device=self.device)
-            self.encoder.load_state_dict(load_file(encoder_path, device=self.device.type))
-            self.encoder.eval()
-            print(f"Encoder loaded from: {encoder_path}")
-            return self.encoder
-
-    def load_decoder(self, decoder_path=DECODER_PATH, use_safetensors=True):
-        if not use_safetensors:
-            self.decoder = torch.load(decoder_path, map_location=self.device)
-            self.decoder.eval()
-            print(f"Decoder loaded from: {decoder_path}")
-            return self.decoder
-        else:
-            self.decoder = initialize_decoder(device=self.device)
-            self.decoder.load_state_dict(load_file(decoder_path, device=self.device.type))
-            self.decoder.eval()
-            print(f"Decoder loaded from: {decoder_path}")
-            return self.decoder
+        
+        self.encoder = Encoder(device=self.device)
+        self.encoder.load(encoder_path = encoder_path)
+        print(f"Encoder loaded from: {encoder_path}")
+        self.encoder.eval()
+        self.decoder = Decoder(device=self.device)
+        self.decoder.load(decoder_path = decoder_path)
+        print(f"Decoder loaded from: {decoder_path}")
+        self.decoder.eval()
+        return self
+        
+    def load_encoder(self, encoder_path = ENCODER_PATH):
+        
+        self.encoder = Encoder(device=self.device)
+        self.encoder.load(encoder_path = encoder_path)
+        print(f"Encoder loaded from: {encoder_path}")
+        self.encoder.eval()
+        return self.encoder
+    
+    def load_decoder(self, decoder_path = DECODER_PATH):
+        
+        self.decoder = Decoder(device=self.device)
+        self.decoder.load(decoder_path = decoder_path)
+        print(f"Decoder loaded from: {decoder_path}")
+        self.decoder.eval()
+        return self.decoder
 
     def unload_encoder(self):
-        self.encoder.to('cpu')
-        del self.encoder
-        torch.cuda.empty_cache()
-        self.encoder = None
+        if self.encoder is not None:
+            self.encoder.to('cpu')
+            del self.encoder
+            torch.cuda.empty_cache()
+            print('Encoder unloaded')
+            self.encoder = None
+        else:
+            print('Encoder is already unloaded')
 
     def unload_decoder(self):
-        self.decoder.to('cpu')
-        del self.decoder
-        torch.cuda.empty_cache()
-        self.encoder = None
+        if self.decoder is not None:
+            self.decoder.to('cpu')
+            del self.decoder
+            torch.cuda.empty_cache()
+            print('Decoder unloaded')
+            self.decoder = None
+        else:
+            print('Decoder is already unloaded')
 
     def unload_submodels(self):
         if self.encoder is not None:
@@ -190,40 +170,6 @@ class Autoencoder(nn.Module):
         z = self.post_quant_conv(z)
         # Decode the image of shape `[batch_size, channels, height, width]`
         return self.decoder(z)
-
-
-def initialize_encoder(device=None,
-                       z_channels=4,
-                       in_channels=3,
-                       channels=128,
-                       channel_multipliers=[1, 2, 4, 4],
-                       n_resnet_blocks=2) -> Encoder:
-    with SectionManager('encoder initialization'):
-        device = get_device(device)
-        # Initialize the encoder
-        encoder = Encoder(z_channels=z_channels,
-                          in_channels=in_channels,
-                          channels=channels,
-                          channel_multipliers=channel_multipliers,
-                          n_resnet_blocks=n_resnet_blocks).to(device)
-    return encoder
-
-
-def initialize_decoder(device=None,
-                       out_channels=3,
-                       z_channels=4,
-                       channels=128,
-                       channel_multipliers=[1, 2, 4, 4],
-                       n_resnet_blocks=2) -> Decoder:
-    with SectionManager('decoder initialization'):
-        device = get_device(device)
-        decoder = Decoder(out_channels=out_channels,
-                          z_channels=z_channels,
-                          channels=channels,
-                          channel_multipliers=channel_multipliers,
-                          n_resnet_blocks=n_resnet_blocks).to(device)
-    return decoder
-
 
 if __name__ == "__main__":
     prompts = ["", "A painting of a computer virus", "A photo of a computer virus"]

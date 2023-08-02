@@ -10,11 +10,12 @@ from os.path import join
 
 base_dir = "./"
 sys.path.insert(0, base_dir)
+
 from stable_diffusion.utils_backend import get_device, get_memory_status
 from stable_diffusion.utils_image import to_pil
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
-from chad_score import ChadPredictor
+from chad_score import ChadPredictorModel
 from stable_diffusion import StableDiffusion
 from stable_diffusion.constants import IODirectoryTree
 
@@ -292,11 +293,11 @@ if __name__ == "__main__":
     sd = init_stable_diffusion(DEVICE, pt, n_steps=DDIM_STEPS)
 
     image_encoder = CLIPImageEncoder(device=DEVICE)
-    image_encoder.load_clip_model(**pt.clip_model)
-    image_encoder.initialize_preprocessor()
-
+    image_encoder.load_submodels(image_processor_path = pt.image_processor_path, vision_model_path = pt.vision_model_path)
+    # image_encoder.initialize_preprocessor()
+    
     loaded_model = torch.load(SCORER_CHECKPOINT_PATH)
-    predictor = ChadPredictor(768, device=DEVICE)
+    predictor = ChadPredictorModel(768, device=DEVICE)
     predictor.load_state_dict(loaded_model)
     predictor.eval()
 
@@ -355,11 +356,11 @@ if __name__ == "__main__":
         # compute hash
         img_hash = calculate_sha256(image.squeeze())
         pil_image = to_pil(image.squeeze())
-        # compute aesthetic score
-        prep_img = image_encoder.preprocess_input(pil_image)
-        image_features = image_encoder(prep_img)
+        #compute aesthetic score
+        # prep_img = image_encoder.preprocess_input(pil_image)
+        image_features = image_encoder(pil_image, do_preprocess=True)
         image_features /= image_features.norm(dim=-1, keepdim=True)
-        score = predictor.model(image_features.to(DEVICE).float()).cpu()
+        score = predictor(image_features.to(DEVICE).float()).cpu()
         img_file_name = f"image_{img_counter:06d}.png"
         img_path = join(IMAGES_DIR, img_file_name)
         pil_image.save(img_path)

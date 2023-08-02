@@ -2,6 +2,7 @@ import os
 import torch
 import time
 from tqdm import tqdm
+
 from scripts.text_to_image import Txt2Img
 from stable_diffusion.utils_backend import get_device
 from stable_diffusion.utils_image import save_images

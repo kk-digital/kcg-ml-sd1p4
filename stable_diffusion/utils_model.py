@@ -11,15 +11,15 @@ summary: >
 import torch
 from pathlib import Path
 from typing import Union
+import safetensors
 
-from safetensors.torch import load_file
 from stable_diffusion.constants import AUTOENCODER_PATH, ENCODER_PATH, DECODER_PATH
 from stable_diffusion.constants import TEXT_EMBEDDER_PATH, TOKENIZER_PATH, TEXT_MODEL_PATH
 from stable_diffusion.constants import UNET_PATH
 from stable_diffusion.constants import LATENT_DIFFUSION_PATH
 from stable_diffusion.utils_backend import get_device
 from utility.labml.monit import section
-from stable_diffusion.latent_diffusion import LatentDiffusion, initialize_autoencoder
+from stable_diffusion.latent_diffusion import LatentDiffusion
 from stable_diffusion.model.vae import Autoencoder, Encoder, Decoder
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion.model.unet import UNetModel
@@ -59,6 +59,22 @@ def initialize_decoder(device=None,
     return decoder
     # Initialize the autoencoder
 
+def initialize_autoencoder(device = None, encoder = None, decoder = None, emb_channels = 4, z_channels = 4, force_submodels_init = False) -> Autoencoder:
+    # Initialize the autoencoder
+    
+    with section(f'autoencoder initialization'):
+        device = get_device(device)
+        if force_submodels_init:
+            if encoder is None:
+                encoder = initialize_encoder(device=device, z_channels=z_channels)
+            if decoder is None:
+                decoder = initialize_decoder(device=device, z_channels=z_channels)
+        
+        autoencoder = Autoencoder(emb_channels=emb_channels,
+                                    encoder=encoder,
+                                    decoder=decoder,
+                                    z_channels=z_channels).to(device)
+    return autoencoder
 
 def load_autoencoder(path: Union[str, Path] = AUTOENCODER_PATH, device=None) -> Autoencoder:
     """
@@ -189,7 +205,7 @@ def load_unet(path: Union[str, Path] = UNET_PATH, device=None) -> UNetModel:
 
 
 def initialize_latent_diffusion(path: Union[str, Path] = None, device=None, autoencoder=None, clip_text_embedder=None,
-                                unet_model=None, force_submodels_init=False, use_ckpt=False) -> LatentDiffusion:
+                                unet_model=None, force_submodels_init=False) -> LatentDiffusion:
     """
     ### Load [`LatentDiffusion` model](latent_diffusion.html)
     """
@@ -199,7 +215,7 @@ def initialize_latent_diffusion(path: Union[str, Path] = None, device=None, auto
         if autoencoder is None:
             autoencoder = initialize_autoencoder(device=device, force_submodels_init=force_submodels_init)
         if clip_text_embedder is None:
-            clip_text_embedder = initialize_clip_embedder(device=device, init_transformer=True)
+            clip_text_embedder = CLIPTextEmbedder(device=device).init_submodels()
         if unet_model is None:
             unet_model = initialize_unet(device=device)
 
@@ -214,20 +230,15 @@ def initialize_latent_diffusion(path: Union[str, Path] = None, device=None, auto
                                 unet_model=unet_model)
     if path is not None:
         # Load the checkpoint
-        if not use_ckpt:
-            with section(f"stable diffusion checkpoint loading, from {path}"):
-                tensors_dict = load_file(path, device="cpu")
 
-            # Set model state
-            with section('model state loading'):
-                missing_keys, extra_keys = model.load_state_dict(tensors_dict, strict=False)
-        else:
-            with section(f"stable diffusion checkpoint loading, from {path}"):
-                checkpoint = torch.load(path, map_location="cpu")
+        with section(f"stable diffusion checkpoint loading, from {path}"):
+            tensors_dict = safetensors.torch.load_file(path, device="cpu")
 
-            # Set model state
-            with section('model state loading'):
-                missing_keys, extra_keys = model.load_state_dict(checkpoint["state_dict"], strict=False)
+        # Set model state
+        with section('model state loading'):
+            missing_keys, extra_keys = model.load_state_dict(tensors_dict, strict=False)
+            print(f"missing keys {len(missing_keys)}: {missing_keys}")
+            print(f"extra keys {len(extra_keys)}: {extra_keys}")
 
         # Debugging output
         # inspect(global_step=checkpoint.get('global_step', -1), missing_keys=missing_keys, extra_keys=extra_keys,

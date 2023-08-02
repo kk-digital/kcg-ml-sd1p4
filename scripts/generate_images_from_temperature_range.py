@@ -4,15 +4,18 @@ import torch
 import shutil
 import argparse
 
-from stable_diffusion.utils_backend import get_device
-
+base_dir = "./"
+sys.path.insert(0, base_dir)
 sys.path.insert(0, os.getcwd())
+
+from stable_diffusion.utils_backend import get_device
 from auxiliary_functions import get_torch_distribution_from_name
 from stable_diffusion.utils_image import save_image_grid, save_images
-from text_to_image import Txt2Img
 from stable_diffusion.constants import CHECKPOINT_PATH
+from labml.monit import section
+from stable_diffusion.utils.utils import save_image_grid, save_images
+from stable_diffusion import StableDiffusion
 from utility.labml.monit import section
-from stable_diffusion.utils_model import initialize_latent_diffusion
 
 # CHECKPOINT_PATH = os.path.abspath('./input/model/v1-5-pruned-emaonly.ckpt')
 OUTPUT_DIR = os.path.abspath("./output/noise-tests/temperature_range")
@@ -20,21 +23,18 @@ OUTPUT_DIR = os.path.abspath("./output/noise-tests/temperature_range")
 parser = argparse.ArgumentParser(description="")
 
 parser.add_argument(
-    "-p",
     "--prompt",
     type=str,
     default="A woman with flowers in her hair in a courtyard, in the style of Frank Frazetta",
     help="The prompt to generate images from. Defaults to 'A woman with flowers in her hair in a courtyard, in the style of Frank Frazetta'",
 )
 parser.add_argument(
-    "-od",
     "--output_dir",
     type=str,
     default=OUTPUT_DIR,
     help="The output directory. defaults to OUTPUT_DIR constant, which should be './output/noise-tests/temperature_range'",
 )
 parser.add_argument(
-    "-cp",
     "--checkpoint_path",
     type=str,
     default=CHECKPOINT_PATH,
@@ -48,8 +48,8 @@ parser.add_argument(
     default=4,
     help="0: 'Normal' | 1: 'Cauchy' | 2: 'Gumbel' | 3: 'Laplace' | 4: 'Logistic' | Defaults to 4.",
 )
-parser.add_argument("-s", "--seed", type=int, default=2982)
-parser.add_argument("-bs", "--batch_size", type=int, default=1)
+parser.add_argument("--seed", type=int, default=2982)
+parser.add_argument("--batch_size", type=int, default=1)
 parser.add_argument("--params_steps", type=int, default=3)
 parser.add_argument("--params_range", nargs="+", type=float, default=[0.49, 0.54])
 parser.add_argument("--temperature_steps", type=int, default=3)
@@ -107,40 +107,35 @@ def create_folder_structure(
             print(e)
 
 
-def init_txt2img(
-        checkpoint_path: str = CHECKPOINT_PATH,
-        sampler_name: str = "ddim",
-        n_steps: int = 20,
-        ddim_eta: float = 0.0,
-        autoencoder=None,
-        unet_model=None,
-        clip_text_embedder=None,
+def init_stable_diffusion(
+    checkpoint_path: str = CHECKPOINT_PATH,
+    sampler_name: str = "ddim",
+    ddim_steps: int = 20,
+    ddim_eta: float = 0.0,
 ):
-    txt2img = Txt2Img(
-        checkpoint_path=checkpoint_path,
+    sd = StableDiffusion(
+        device = DEVICE,
         sampler_name=sampler_name,
-        n_steps=n_steps,
+        ddim_steps = ddim_steps,
         ddim_eta=ddim_eta,
     )
     # compute loading time
 
     if not FULLY_INIT:
         with section("to initialize latent diffusion and load submodels tree"):
-            latent_diffusion_model = initialize_latent_diffusion()
-            latent_diffusion_model.load_submodel_tree()
-            txt2img.initialize_from_model(latent_diffusion_model)
-        return txt2img
+            sd.quick_initialize().load_submodel_tree()
+            # latent_diffusion_model = initialize_latent_diffusion()
+            # latent_diffusion_model.load_submodel_tree()
+            # sd.initialize_from_model(latent_diffusion_model)
+        return sd
     else:
         with section("to run `StableDiffusionBaseScript`'s initialization function"):
-            txt2img.initialize_script(
-                path=CHECKPOINT_PATH,
-                autoencoder=autoencoder,
-                unet_model=unet_model,
-                clip_text_embedder=clip_text_embedder,
+            sd.initialize_latent_diffusion(
+                path=checkpoint_path,
                 force_submodels_init=True,
             )
 
-        return txt2img
+        return sd
 
 
 def show_summary(total_time, partial_time, total_images, output_dir):
@@ -157,14 +152,14 @@ def show_summary(total_time, partial_time, total_images, output_dir):
 
 
 def generate_images_from_temp_range(
-        distributions: dict,
-        txt2img: Txt2Img,
-        output_dir: str = OUTPUT_DIR,
-        clear_output_dir: bool = CLEAR_OUTPUT_DIR,
-        prompt: str = PROMPT,
-        noise_seed: int = NOISE_SEED,
-        batch_size: int = BATCH_SIZE,
-        temperature_range=TEMP_RANGE,
+    distributions: dict,
+    txt2img: StableDiffusion,
+    output_dir: str = OUTPUT_DIR,
+    clear_output_dir: bool = CLEAR_OUTPUT_DIR,
+    prompt: str = PROMPT,
+    noise_seed: int = NOISE_SEED,
+    batch_size: int = BATCH_SIZE,
+    temperature_range=TEMP_RANGE,
 ):
     # Clear the output directory
 
@@ -221,7 +216,7 @@ def generate_images_from_temp_range(
 
 
 def main():
-    txt2img = init_txt2img(ddim_eta=DDIM_ETA)
+    txt2img = init_stable_diffusion(ddim_eta=DDIM_ETA)
     generate_images_from_temp_range(
         DISTRIBUTIONS,
         txt2img,
