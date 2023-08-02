@@ -233,7 +233,7 @@ def main():
     training_accuracy = training_corrects / train_inputs.size(0)
 
     print('loss : ', loss.item())
-    print('training_accuracy (raw) : ', (training_accuracy * 100), '%')
+    print('training_accuracy : ', (training_accuracy * 100), '%')
     print('validation_accuracy (raw) : ', (validation_accuracy_raw * 100), '%')
     print('validation_accuracy (scaled) : ', (validation_accuracy_scaled * 100), '%')
     print('total number of images : ', num_inputs)
