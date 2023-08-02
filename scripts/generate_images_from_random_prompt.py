@@ -136,20 +136,13 @@ class Txt2Img(StableDiffusionBaseScript):
         if low_vram:
             batch_size = 1
 
-        # Make a batch of prompts
-        # prompts = batch_size * [embedded_prompt]
-        # cond = torch.cat(prompts, dim=1)
-        cond = embedded_prompt.unsqueeze(0)
-        # print("cond shape: ", cond.shape)
-        # print("uncond shape: ", null_prompt.shape)
-        # prompt_list = ["a painting of a virus monster playing guitar", "a painting of a computer virus "]
         # AMP auto casting
         autocast = get_autocast()
         with autocast:
 
             # [Sample in the latent space](../sampler/index.html).
             # `x` will be of shape `[batch_size, c, h / f, w / f]`
-            x = self.sampler.sample(cond=cond,
+            x = self.sampler.sample(cond=embedded_prompt,
                                     shape=[batch_size, c, h // f, w // f],
                                     uncond_scale=uncond_scale,
                                     uncond_cond=null_prompt,
@@ -187,7 +180,6 @@ def main():
              r" jock, esad ribic, chris bachalo, expressionism, Jackson Pollock, Alex Kanevskyg, Francis Bacon, Trash Polka," \
              r" abstract realism, andrew salgado, alla prima technique, alla prima, expressionist alla prima, expressionist alla prima technique"
 
-
     prompt = arg_prompt
 
     image_width = opt.image_width
@@ -203,9 +195,6 @@ def main():
 
     if len(seed_array) == 0:
         seed_array = [random.randint(0, 2**31-1) for _ in range(opt.num_images)]
-
-    # timestamp = datetime.now().strftime('%d-%m-%Y-%H-%M-%S')
-    # filename = os.path.join(opt.output, f'{timestamp}.jpg')
 
     # Set flash attention
     CrossAttention.use_flash_attention = opt.flash
@@ -229,7 +218,6 @@ def main():
     min_chad_score = 999999.0
     max_chad_score = -999999.0
 
-
     prompt_list = prompt.split(',');
     prompt_generator = PromptGenerator(prompt_list)
 
@@ -241,15 +229,33 @@ def main():
         print("Generating image " + str(i) + " out of " + str(opt.num_images));
         print("Prompt : ", this_prompt)
         start_time = time.time()
-        timestamp = datetime.now().strftime('%d-%m-%Y-%H-%M-%S')
-        image_name = f'{timestamp}-{i}.jpg'
+        timestamp = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+
+        total_digits = 4
+
+        base_file_name =  f'{i:0{total_digits}d}-{timestamp}'
+        image_name = base_file_name + '.jpg'
+
         filename = opt.output + '/' + image_name
 
         this_seed = seed_array[i % len(seed_array)]
 
-        images = txt2img.generate_images(
+        # Capture the starting time
+        tmp_start_time = time.time()
+
+        un_cond, cond = txt2img.get_text_conditioning(opt.cfg_scale, this_prompt, opt.batch_size)
+
+        # Capture the ending time
+        tmp_end_time = time.time()
+        # Calculate the execution time
+        tmp_execution_time = tmp_end_time - tmp_start_time
+
+        print("Embedding vector Time:", tmp_execution_time, "seconds")
+
+        images = txt2img.generate_images_from_embeddings(
             batch_size=opt.batch_size,
-            prompt=this_prompt,
+            embedded_prompt=cond,
+            null_prompt=un_cond,
             uncond_scale=opt.cfg_scale,
             low_vram=opt.low_vram,
             seed=this_seed,
@@ -260,20 +266,6 @@ def main():
         image_list, image_hash_list = save_images(images, filename)
         image_hash = image_hash_list[0]
         image = image_list[0]
-
-        # Capture the starting time
-        tmp_start_time = time.time()
-
-        un_cond, cond = txt2img.get_text_conditioning(opt.cfg_scale, prompt, opt.batch_size)
-        # Convert the tensor to a flat vector
-        # cond = torch.flatten(cond)
-
-        # Capture the ending time
-        tmp_end_time = time.time()
-        # Calculate the execution time
-        tmp_execution_time = tmp_end_time - tmp_start_time
-
-        print("Embedding vector Time:", tmp_execution_time, "seconds")
 
         # convert tensor to numpy array
         with torch.no_grad():
@@ -321,9 +313,9 @@ def main():
         min_chad_score = min(min_chad_score, chad_score.item())
         max_chad_score = max(max_chad_score, chad_score.item())
 
-        embedding_vector_filename = f'{timestamp}-{i}.embedding.npz'
-        clip_features_filename =  f'{timestamp}-{i}.clip.npz'
-        latent_filename = f'{timestamp}-{i}.latent.npz'
+        embedding_vector_filename = base_file_name + '.embedding.npz'
+        clip_features_filename =  base_file_name + '.clip.npz'
+        latent_filename = base_file_name + '.latent.npz'
 
         generation_task_result = GenerationTaskResult(this_prompt, model_name, image_name, embedding_vector_filename, clip_features_filename,latent_filename,
                                                      image_hash, chad_score_model_name, chad_score.item(), this_seed, opt.cfg_scale)
@@ -345,7 +337,7 @@ def main():
         np.savez_compressed(latent_filepath, data=latent)
 
         # Save the data to a JSON file
-        json_filename = opt.output + '/' + f'{timestamp}-{i}.json'
+        json_filename = opt.output + '/' + base_file_name + '.json'
 
 
         generation_task_result_list.append({
