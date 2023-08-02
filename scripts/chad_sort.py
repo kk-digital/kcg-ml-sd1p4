@@ -11,7 +11,7 @@ sys.path.insert(0, base_directory)
 sys.path.insert(0, os.path.join(base_directory, 'utils', 'dataset'))
 
 from utils.dataset.image_dataset import ImageDataset
-from chad_score.chad_score import get_chad_score
+from chad_score.chad_score import ChadScorePredictor
 
 
 def parse_arguments():
@@ -100,9 +100,12 @@ def main():
     min_chad_score = 999999.0
     max_chad_score = -999999.0
 
+    chad_score_predictor = ChadScorePredictor(device=device)
+    chad_score_predictor.load_model()
+
     for item in image_dataset.dataset:
         feature_vector_tensor = torch.tensor(item.feature_vector, device=device)
-        chad_score = get_chad_score(feature_vector_tensor, device=device).item()
+        chad_score = chad_score_predictor.get_chad_score(feature_vector_tensor)
         chad_image = ChadImage(os.path.basename(item.file_path), chad_score)
         chad_images.append(chad_image)
 

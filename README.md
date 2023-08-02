@@ -384,8 +384,6 @@ options:
 ``` shell
 python3 ./scripts/run_generation_task.py --task_path './test/test_generation_task/text_to_image_v1.json'
 ```
-
-#### using python
 ``` shell
-python ./scripts/run_generation_task.py --task_path './test/test_generation_task/text_to_image_v1.json'
+python3 ./scripts/run_generation_task.py --task_path './test/test_generation_task/generate_images_from_random_prompt_v1.json'
 ```

@@ -6,7 +6,7 @@ import argparse
 sys.path.insert(0, os.getcwd())
 
 from utils.clip.clip_feature_zip_loader import ClipFeatureZipLoader
-from chad_score.chad_score import get_chad_score
+from chad_score.chad_score import ChadScorePredictor
 
 
 def parse_arguments():
@@ -32,10 +32,12 @@ def main():
     loader = ClipFeatureZipLoader()
     loader.load_clip(clip_model)
     feature_vectors = (loader.get_images_feature_vectors(img_path, batch_size))[0]['feature-vector'];
-    feature_vectors = torch.tensor(feature_vectors)
+    feature_vectors = torch.tensor(feature_vectors, device='cuda:0')
 
+    chad_score_predictor = ChadScorePredictor(device='cuda:0')
+    chad_score_predictor.load_model()
     print( "Chad score predicted by the model:")
-    print(get_chad_score(feature_vectors, model_path))
+    print(chad_score_predictor.get_chad_score(feature_vectors))
 
 
 if __name__ == '__main__':

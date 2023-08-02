@@ -1,3 +1,5 @@
+import zipfile
+import os
 import torch.nn as nn
 import torch.optim as optim
 import torch
@@ -8,9 +10,11 @@ import json
 import io
 import numpy as np
 import sys
+import random
 from PIL import Image
 import hashlib
 import struct
+import argparse
 
 sys.path.insert(0, os.getcwd())
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
@@ -82,6 +86,7 @@ def split_data(input_list, validation_ratio=0.2):
 
     return validation_list, train_list
 
+
 # Custom JSON decoder for NumPy arrays
 class NumpyArrayDecoder(json.JSONDecoder):
     def __init__(self, *args, **kwargs):
@@ -95,12 +100,21 @@ class NumpyArrayDecoder(json.JSONDecoder):
             return data
         return dct
 
+def parse_arguments():
+    """Command-line arguments for 'classify' command."""
+    parser = argparse.ArgumentParser(description="Training linear model on image promps with chad score.")
+
+    parser.add_argument('--input_path', type=str, help='Path to input zip')
+
+    return parser.parse_args()
+
 def main():
+    args = parse_arguments()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     # Example usage:
-    zip_file_path = 'input/random-shit.zip'
+    zip_file_path = args.input_path
 
     # embed prompt
     clip_text_embedder = CLIPTextEmbedder(device=get_device(device))
@@ -127,10 +141,15 @@ def main():
                     data_dict = json.loads(json_data_string, cls=NumpyArrayDecoder)
 
                     image_meta_data = GenerationTaskResult.from_dict(data=data_dict)
+                    embedding_name = image_meta_data.embedding_name
+                    embedding_content = zip_ref.read(embedding_name)
+                    embedding_vector = np.load( io.BytesIO(embedding_content))['data']
 
-                    embedded_prompts = torch.tensor(image_meta_data.clip_embedding, dtype=torch.float32);
+
+
+                    embedding_vector = torch.tensor(embedding_vector, dtype=torch.float32);
                     # Convert the tensor to a flat vector
-                    flat_embedded_prompts = torch.flatten(embedded_prompts)
+                    flat_embedded_prompts = torch.flatten(embedding_vector)
 
                     with torch.no_grad():
                        flat_vector = flat_embedded_prompts.cpu().numpy()
@@ -187,8 +206,8 @@ def main():
         validation_outputs = validation_outputs.tolist()
 
         print(test_X.shape)
-        print('predicted : ', predicted)
-        print('validation_outputs : ', validation_outputs)
+        print('predicted first 10 elements : ', predicted[:10])
+        print('expected output first 10 elements : ', validation_outputs[:10])
         for index, prediction in enumerate(predicted):
             if (abs(predicted[index][0] - validation_outputs[index][0]) < epsilon):
                 corrects += 1
@@ -196,7 +215,7 @@ def main():
     validation_accuracy = corrects / validation_inputs.size(0)
 
     print('loss : ', loss.item())
-    print('validation_accuracy : ', validation_accuracy)
+    print('validation_accuracy : ', (validation_accuracy * 100), '%')
     print('total number of images : ', num_inputs)
     print('total train image count ', train_inputs.size(0))
     print('total validation image count ', validation_inputs.size(0))

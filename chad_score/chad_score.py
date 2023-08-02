@@ -1,13 +1,10 @@
-# using https://github.com/grexzen/SD-Chad/blob/main/simple_inference.py
 
 import torch
-import pytorch_lightning as pl
 import torch.nn as nn
-
+import pytorch_lightning as pl
 from stable_diffusion.utils_backend import get_device
 
-
-class ChadScorePredictor(pl.LightningModule):
+class ChadScoreModel(pl.LightningModule):
     def __init__(self, input_size, device = None, xcol='emb', ycol='avg_rating'):
         super().__init__()
 
@@ -39,14 +36,18 @@ class ChadScorePredictor(pl.LightningModule):
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
         return optimizer
 
-def get_chad_model(model_path, device=None):
-    model = ChadScorePredictor(768, device)  # CLIP embedding dim is 768 for CLIP ViT L 14
-    state = torch.load(model_path, device)  # load the model you trained previously or the model available in this repo
-    model.load_state_dict(state)
-    model.eval()
-    return model
+class ChadScorePredictor:
+    def __init__(self, input_size=768, device=None):
+        self.device = get_device(device)
+        self.model = ChadScoreModel(input_size, self.device)
 
-def get_chad_score(image_features, model_path="input/model/chad_score/chad-score-v1.pth", device=None):
-    chadModel = get_chad_model(model_path, get_device(device))
-    chad_score = chadModel(image_features)
-    return chad_score
+    def load_model(self, model_path="input/model/chad_score/chad-score-v1.pth"):
+        state = torch.load(model_path, map_location=self.device)
+        self.model.load_state_dict(state)
+        self.model.eval()
+
+    def unload_model(self):
+        del self.model
+
+    def get_chad_score(self, image_features):
+        return self.model(image_features).item()

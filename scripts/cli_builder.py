@@ -159,7 +159,7 @@ class CLI:
         self.parser.add_argument(
             '--seed',
             type=str,
-            default='0',
+            default='',
             help='Seed for the image generation (default: %(default)s)'
         )
 
