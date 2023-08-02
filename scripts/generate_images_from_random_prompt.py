@@ -11,7 +11,7 @@ summary: >
 import time
 import os
 import sys
-from datetime import datetime
+import datetime
 from zipfile import ZipFile
 import random
 import torch
@@ -28,7 +28,6 @@ from generation_task_result import GenerationTaskResult
 from stable_diffusion.utils_backend import get_autocast, set_seed
 from stable_diffusion.utils_image import save_images
 from stable_diffusion_base_script import StableDiffusionBaseScript
-from utility.labml import monit
 from stable_diffusion.model.unet.unet_attention import CrossAttention
 from cli_builder import CLI
 
