@@ -200,26 +200,34 @@ def main():
     # Step 6: Evaluate the Model
     with torch.no_grad():
         test_X = validation_inputs
-        predicted = linear_regression_model(test_X)
-        predicted = torch.sigmoid(predicted)
+        predicted_raw = linear_regression_model(test_X)
+        predicted_scaled = torch.sigmoid(predicted_raw)
 
         epsilon = 0.2
-        corrects = 0
+        corrects_raw = 0
+        corrects_scaled = 0
 
-        predicted = predicted.tolist()
+        predicted_raw = predicted_raw.tolist()
+        predicted_scaled = predicted_scaled.tolist()
         validation_outputs = validation_outputs.tolist()
 
         print(test_X.shape)
-        print('predicted first 10 elements : ', predicted[:10])
+        print('predicted (raw) first 10 elements : ', predicted_raw[:10])
+        print('predicted (scaled) first 10 elements : ', predicted_scaled[:10])
         print('expected output first 10 elements : ', validation_outputs[:10])
-        for index, prediction in enumerate(predicted):
-            if (abs(predicted[index][0] - validation_outputs[index][0]) < epsilon):
-                corrects += 1
+        for index, prediction in enumerate(predicted_raw):
+            if (abs(predicted_raw[index][0] - validation_outputs[index][0]) < epsilon):
+                corrects_raw += 1
+        for index, prediction in enumerate(predicted_scaled):
+            if (abs(predicted_scaled[index][0] - validation_outputs[index][0]) < epsilon):
+                corrects_scaled += 1
 
-    validation_accuracy = corrects / validation_inputs.size(0)
+    validation_accuracy_raw = corrects_raw / validation_inputs.size(0)
+    validation_accuracy_scaled = corrects_scaled / validation_inputs.size(0)
 
     print('loss : ', loss.item())
-    print('validation_accuracy : ', (validation_accuracy * 100), '%')
+    print('validation_accuracy (raw) : ', (validation_accuracy_raw * 100), '%')
+    print('validation_accuracy (scaled) : ', (validation_accuracy_scaled * 100), '%')
     print('total number of images : ', num_inputs)
     print('total train image count ', train_inputs.size(0))
     print('total validation image count ', validation_inputs.size(0))
