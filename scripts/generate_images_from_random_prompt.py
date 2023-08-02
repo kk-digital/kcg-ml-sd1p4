@@ -21,6 +21,7 @@ import numpy as np
 base_directory = "./"
 sys.path.insert(0, base_directory)
 
+from utils.clip.clip_features_image import ClipImageFeatures
 from prompt_generator import PromptGenerator
 from generation_task_result import GenerationTaskResult
 from stable_diffusion.utils_backend import get_autocast, set_seed
@@ -30,18 +31,6 @@ from utility.labml import monit
 from stable_diffusion.model.unet.unet_attention import CrossAttention
 from cli_builder import CLI
 from chad_score.chad_score import get_chad_score
-
-def get_image_features(image, device):
-    model, preprocess = clip.load('ViT-L/14', device)
-
-    image_input = preprocess(image).unsqueeze(0).to(device)
-
-    # Encode the image
-    with torch.no_grad():
-        image_features = model.encode_image(image_input)
-
-    image_features = image_features.to(torch.float32)
-    return image_features
 
 class Txt2Img(StableDiffusionBaseScript):
     """
@@ -221,6 +210,10 @@ def main():
     # Set flash attention
     CrossAttention.use_flash_attention = opt.flash
 
+    # Load default clip model
+    clip_image_features = ClipImageFeatures(opt.cuda_device)
+    clip_image_features.load_model()
+
     # Starts the text2img
     txt2img = Txt2Img(
         sampler_name=opt.sampler,
@@ -268,9 +261,19 @@ def main():
         image_hash = image_hash_list[0]
         image = image_list[0]
 
+        # Capture the starting time
+        tmp_start_time = time.time()
+
         un_cond, cond = txt2img.get_text_conditioning(opt.cfg_scale, prompt, opt.batch_size)
         # Convert the tensor to a flat vector
         # cond = torch.flatten(cond)
+
+        # Capture the ending time
+        tmp_end_time = time.time()
+        # Calculate the execution time
+        tmp_execution_time = tmp_end_time - tmp_start_time
+
+        print("Embedding vector Time:", tmp_execution_time, "seconds")
 
         # convert tensor to numpy array
         with torch.no_grad():
@@ -284,15 +287,35 @@ def main():
         chad_score_model_path = "input/model/chad_score/chad-score-v1.pth"
         chad_score_model_name = os.path.basename(chad_score_model_path)
 
+        # Capture the starting time
+        tmp_start_time = time.time()
+
         # get image features
-        image_features = get_image_features(image, device=opt.cuda_device)
+        image_features = clip_image_features.get_image_features(image)
+
+        # Capture the ending time
+        tmp_end_time = time.time()
+        # Calculate the execution time
+        tmp_execution_time = tmp_end_time - tmp_start_time
+
+        print("Image features Time:", tmp_execution_time, "seconds")
 
         # hard coded for now
         chad_score_model_path = "input/model/chad_score/chad-score-v1.pth"
         chad_score_model_name = os.path.basename(chad_score_model_path)
 
+        # Capture the starting time
+        tmp_start_time = time.time()
+
         # compute chad score
         chad_score = get_chad_score(image_features, chad_score_model_path, device=opt.cuda_device)
+
+        # Capture the ending time
+        tmp_end_time = time.time()
+        # Calculate the execution time
+        tmp_execution_time = tmp_end_time - tmp_start_time
+
+        print("Chad Score Time:", tmp_execution_time, "seconds")
 
         # update the min, max for chad_score
         min_chad_score = min(min_chad_score, chad_score.item())
