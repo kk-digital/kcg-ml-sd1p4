@@ -1,7 +1,10 @@
 import argparse
 import hashlib
 import json
-import os
+import shutil
+import time
+import cv2
+import numpy as np
 import random
 import shutil
 import sys
@@ -150,11 +153,19 @@ def init_stable_diffusion(device, path_tree: IODirectoryTree, sampler_name="ddim
 
 
 def generate_prompt():
-    # Select 12 items randomly from the prompt_list
-    selected_prompts = random.sample(prompt_list, 15)
+    # Your mandatory phrases
+    mandatory_phrases = ['no background', 'white background', 'centered']
 
-    # Join all selected prompts into a single string, separated by commas
-    prompt = ', '.join(selected_prompts)
+    # Add the mandatory phrases to the prompt multiple times (e.g., 2 times)
+    mandatory_prompts = mandatory_phrases * 2
+
+    # Select remaining items randomly from the prompt_list
+    remaining_items = 9  # 15 - 3 mandatory phrases * 2 occurrences each = 9
+    random_prompts = random.sample(set(prompt_list) - set(mandatory_phrases), remaining_items)
+
+    # Join all selected prompts and mandatory prompts into a single string, separated by commas
+    prompt = ', '.join(mandatory_prompts + random_prompts)
+    
     print(f"Generated prompt: {prompt}")
     return prompt
 
@@ -271,7 +282,8 @@ def get_image_features(
     return image_features
 
 
-def main():
+    start_time = time.time()  # Save the start time
+  
     pt = IODirectoryTree(base_directory=base_dir)
     sd = init_stable_diffusion(DEVICE, pt, n_steps=20, sampler_name="ddim", ddim_eta=0.0)
     clip_text_embedder = CLIPTextEmbedder(device=DEVICE)
@@ -286,9 +298,9 @@ def main():
         prompts.append(prompt)  # Store each prompt for later use
         #     get_memory_status()
         embedded_prompt, null_prompt = embed_and_save_prompts(clip_text_embedder, prompt, i)
-        #     embedded_prompts_list.append(embedded_prompt.cpu())  # Store the embedded prompts
-        #     get_memory_status()
-        torch.save(embedded_prompt, f'{EMBEDDED_PROMPTS_DIR}/embedded_prompt_{i}.pt')
+    #     embedded_prompts_list.append(embedded_prompt.cpu())  # Store the embedded prompts
+    #     get_memory_status() 
+    #     torch.save(embedded_prompt, f'{EMBEDDED_PROMPTS_DIR}/embedded_prompt_{i}.pt')    
         torch.cuda.empty_cache()
     # embedded_prompts_list = [embedded_prompt for embedded_prompt in embedded_prompts]  # Store the embedded prompts
     # null_prompt_list.append(null_prompt)  # Store the null prompts
@@ -381,6 +393,9 @@ def main():
     json.dump(scores, open(scores_path, "w"), indent=4)
     json.dump(manifest, open(manifest_path, "w"), indent=4)
 
+    end_time = time.time()  # Save the end time
+
+    print(f"Execution time: {end_time - start_time} seconds")
 
 if __name__ == "__main__":
     main()
