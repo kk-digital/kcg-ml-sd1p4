@@ -239,29 +239,42 @@ def main():
 
         predicted_raw = predicted_raw.tolist()
         predicted_scaled = predicted_scaled.tolist()
-        validation_outputs = validation_outputs.tolist()
+        validation_outputs_raw = validation_outputs_raw.tolist()
+        validation_outputs_scaled = validation_outputs_scaled.tolist()
 
         print(test_X.shape)
         print('predicted (raw) first 10 elements : ', predicted_raw[:10])
+        print('expected output (raw) first 10 elements : ', validation_outputs_raw[:10])
+
         print('predicted (scaled) first 10 elements : ', predicted_scaled[:10])
-        print('expected output first 10 elements : ', validation_outputs[:10])
+        print('expected output (scaled) first 10 elements : ', validation_outputs_scaled[:10])
+
         for index, prediction in enumerate(predicted_raw):
-            if (abs(predicted_raw[index][0] - validation_outputs[index][0]) < epsilon):
+            residual = abs(predicted_raw[index][0] - validation_outputs_raw[index][0])
+            if (residual < epsilon):
                 validation_corrects_raw += 1
         for index, prediction in enumerate(predicted_scaled):
-            if (abs(predicted_scaled[index][0] - validation_outputs[index][0]) < epsilon):
+            residual = abs(predicted_scaled[index][0] - validation_outputs_scaled[index][0])
+            validation_residuals.append(residual)
+            if (residual < epsilon):
                 validation_corrects_scaled += 1
 
     validation_accuracy_raw = validation_corrects_raw / validation_inputs.size(0)
     validation_accuracy_scaled = validation_corrects_scaled / validation_inputs.size(0)
-    training_accuracy = training_corrects / train_inputs.size(0)
+    training_accuracy_raw = training_corrects_raw / train_inputs.size(0)
+    training_accuracy_scaled = training_corrects_scaled / train_inputs.size(0)
+
+    residuals_histogram = report_residuals_histogram(validation_residuals)
 
     print('loss : ', loss.item())
-    print('training_accuracy : ', (training_accuracy * 100), '%')
+    print('training_accuracy (raw) : ', (training_accuracy_raw * 100), '%')
+    print('training_accuracy (scaled) : ', (training_accuracy_scaled * 100), '%')
     print('validation_accuracy (raw) : ', (validation_accuracy_raw * 100), '%')
     print('validation_accuracy (scaled) : ', (validation_accuracy_scaled * 100), '%')
-    print('min training output (raw) : ', min_training_output.item())
-    print('max training output (raw) : ', max_training_output.item())
+    print('min training output (raw) : ', min_training_output_raw.item())
+    print('max training output (raw) : ', max_training_output_raw.item())
+    print('min training output (scaled) : ', min_training_output_scaled.item())
+    print('max training output (scaled) : ', max_training_output_scaled.item())
     print('min predictions (raw) : ', min(predicted_raw)[0])
     print('max predictions (raw) : ', max(predicted_raw)[0])
     print('min predictions (scaled) : ', min(predicted_scaled)[0])
