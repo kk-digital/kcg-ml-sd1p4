@@ -113,29 +113,25 @@ def calculate_pairwise_accuracy(predictions, targets, num_samples=16):
     total_correct = 0
     total_sampled = 0
 
-    for i, target_i in enumerate(targets):
-        sampled_indices = np.random.choice(len(predictions), num_samples, replace=False)
+    # If validation set is 200 items, then loop 200 times
+    for _ in range(len(targets)):
+        sampled_indices_i = np.random.choice(len(predictions), num_samples, replace=False)
+        sampled_indices_j = np.random.choice(len(predictions), num_samples, replace=False)
 
-        for j in sampled_indices:
+        for i, j in zip(sampled_indices_i, sampled_indices_j):
             # Skipping the same point
             if j == i:
                 continue
             prediction_i = predictions[i]
             prediction_j = predictions[j]
+            target_i = targets[i]
+            target_j = targets[j]
 
-            if target_i < targets[j]:
-                # Swap if the target indicates x < y, but the prediction says y < x
-                if prediction_i > prediction_j:
-                    total_correct += 1
-            else:
-                # Swap if the target indicates x > y, but the prediction says y > x
-                if prediction_i < prediction_j:
-                    total_correct += 1
-
+            if (prediction_i < prediction_j) == (target_i < target_j):
+                total_correct += 1
             total_sampled += 1
 
-    pairwise_accuracy = total_correct / total_sampled
-    return pairwise_accuracy
+    return total_correct / total_sampled
 
 # Custom JSON decoder for NumPy arrays
 class NumpyArrayDecoder(json.JSONDecoder):
