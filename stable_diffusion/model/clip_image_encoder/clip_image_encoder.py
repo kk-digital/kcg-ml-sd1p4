@@ -1,15 +1,18 @@
+import hashlib
 import os
 import sys
-import hashlib
-import torch
-import numpy as np
+
 import PIL
-from PIL import Image
-from torchvision.transforms import Compose, Resize, CenterCrop, Normalize, Lambda
-from torch import nn
+import numpy as np
 import safetensors
+import torch
+from PIL import Image
+from torch import nn
+from torchvision.transforms import Compose, Resize, CenterCrop, Normalize, Lambda
+
 
 sys.path.insert(0, os.getcwd())
+from stable_diffusion.utils_logger import logger
 from stable_diffusion.constants import IMAGE_PROCESSOR_PATH, VISION_MODEL_PATH, IMAGE_ENCODER_PATH
 from stable_diffusion.utils_backend import get_device
 from transformers import CLIPImageProcessor, CLIPVisionModelWithProjection
@@ -17,41 +20,42 @@ from transformers import CLIPImageProcessor, CLIPVisionModelWithProjection
 
 class CLIPImageEncoder(nn.Module):
 
-    def __init__(self, device = None, image_processor = None, vision_model = None):#, input_mode = PIL.Image.Image):
+    def __init__(self, device=None, image_processor=None, vision_model=None):  # , input_mode = PIL.Image.Image):
 
         super().__init__()
 
         self.device = get_device(device)
 
         self.vision_model = vision_model
-        # self._image_processor = image_processor
         self.image_processor = image_processor
-        # self.input_mode = input_mode
 
         if image_processor is None:
-            print(
-                "WARNING: image_processor has not been given. Initialize one with the `.initialize_preprocessor()` method.")
+            logger.warning(
+                "image_processor has not been given. Initialize one with the `.initialize_preprocessor()` method.")
             # self.initialize_preprocessor()
 
         self.to(self.device)
 
-    def save_submodels(self, image_processor_path = IMAGE_PROCESSOR_PATH, vision_model_path = VISION_MODEL_PATH):
+    def save_submodels(self, image_processor_path=IMAGE_PROCESSOR_PATH, vision_model_path=VISION_MODEL_PATH):
         # Save the model to the specified folder
         self.image_processor.save_pretrained(image_processor_path)
         print("image_processor saved to: ", image_processor_path)
-        self.vision_model.save_pretrained(vision_model_path, safe_serialization = True)
+        self.vision_model.save_pretrained(vision_model_path, safe_serialization=True)
         print("vision_model saved to: ", vision_model_path)
 
-    def load_submodels(self, image_processor_path = IMAGE_PROCESSOR_PATH, vision_model_path = VISION_MODEL_PATH):
-
+    def load_submodels(self, image_processor_path=IMAGE_PROCESSOR_PATH, vision_model_path=VISION_MODEL_PATH):
         try:
-            self.vision_model = CLIPVisionModelWithProjection.from_pretrained(vision_model_path, local_files_only=True, use_safetensors = True).eval().to(self.device)
-            print(f"CLIPVisionModelWithProjection successfully loaded from : {vision_model_path}\n")
+            self.vision_model = (CLIPVisionModelWithProjection.from_pretrained(vision_model_path, local_files_only=True,
+                                                                               use_safetensors=True)
+                                 .eval()
+                                 .to(self.device))
+            logger.info(f"CLIPVisionModelWithProjection successfully loaded from : {vision_model_path}\n")
             self.image_processor = CLIPImageProcessor.from_pretrained(image_processor_path, local_files_only=True)
-            print(f"CLIPImageProcessor successfully loaded from : {image_processor_path}\n")
+
+            logger.info(f"CLIPImageProcessor successfully loaded from : {image_processor_path}\n")
             return self
         except Exception as e:
-            print('Error loading submodels: ', e)
+            logger.error('Error loading submodels: ', e)
 
     def unload_submodels(self):
         # Unload the model from GPU memory
@@ -65,7 +69,7 @@ class CLIPImageEncoder(nn.Module):
             torch.cuda.empty_cache()
             self.image_processor = None
 
-    def save(self, image_encoder_path = IMAGE_ENCODER_PATH):
+    def save(self, image_encoder_path=IMAGE_ENCODER_PATH):
         try:
             safetensors.torch.save_model(self, image_encoder_path)
             print(f"CLIPImageEncoder saved to: {image_encoder_path}")
@@ -90,9 +94,9 @@ class CLIPImageEncoder(nn.Module):
         # Preprocess image
         if self.get_input_type(image) == PIL.Image.Image:
             image = (self.convert_image_to_tensor(image) + 1) / 2
-        return self.image_processor(image, return_tensors="pt").to(self.device)
+        return self.image_processor(image).to(self.device)
 
-    def forward(self, image, do_preprocess = False):
+    def forward(self, image, do_preprocess=False):
         # Preprocess image
         # Compute CLIP features
         with torch.no_grad():
@@ -100,7 +104,7 @@ class CLIPImageEncoder(nn.Module):
                 processed_image = self.preprocess_input(image)
                 features = self.vision_model(**processed_image).image_embeds
             else:
-                features = self.vision_model(pixel_values = image).image_embeds
+                features = self.vision_model(pixel_values=image).image_embeds
         return features
 
     @staticmethod

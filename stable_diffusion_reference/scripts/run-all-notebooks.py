@@ -1,10 +1,12 @@
 import os
 import re
+import shutil
 import subprocess
 import time
-import shutil
-from bs4 import BeautifulSoup
+
 import fire
+from bs4 import BeautifulSoup
+
 
 def process_notebooks(input_dir='.', output_dir='../log'):
     try:
@@ -52,12 +54,13 @@ def process_notebooks(input_dir='.', output_dir='../log'):
                             print("Errors:\n\n")
                             html_content = html_file.read()
                             soup = BeautifulSoup(html_content, 'html.parser')
-                            error_matches = soup.find_all("div", attrs={"data-mime-type": "application/vnd.jupyter.stderr"})
+                            error_matches = soup.find_all("div",
+                                                          attrs={"data-mime-type": "application/vnd.jupyter.stderr"})
                             if error_matches:
                                 for i, error in enumerate(error_matches):
                                     error_text = error.find("pre").text.strip()
-                                    f.write(f"Error on cell {i+1}:\n")
-                                    print(f"Error on cell {i+1}:\n")
+                                    f.write(f"Error on cell {i + 1}:\n")
+                                    print(f"Error on cell {i + 1}:\n")
                                     f.write(f"{error_text}\n\n")
                                     print(f"{error_text}\n\n")
                             else:
@@ -82,6 +85,7 @@ def process_notebooks(input_dir='.', output_dir='../log'):
 
     except Exception as e:
         raise e
+
 
 if __name__ == '__main__':
     try:

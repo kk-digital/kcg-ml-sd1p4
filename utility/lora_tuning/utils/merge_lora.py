@@ -1,11 +1,11 @@
-import math
 import argparse
+import math
 import os
-import torch
 
-from safetensors.torch import load_file, save_file
 import library.model_util as model_util
 import lora
+import torch
+from safetensors.torch import load_file, save_file
 
 
 def load_state_dict(file_name, dtype):
@@ -44,7 +44,7 @@ def merge_to_sd_model(text_encoder, unet, models, ratios, merge_dtype):
         else:
             prefix = lora.LoRANetwork.LORA_PREFIX_UNET
             target_replace_modules = (
-                lora.LoRANetwork.UNET_TARGET_REPLACE_MODULE + lora.LoRANetwork.UNET_TARGET_REPLACE_MODULE_CONV2D_3X3
+                    lora.LoRANetwork.UNET_TARGET_REPLACE_MODULE + lora.LoRANetwork.UNET_TARGET_REPLACE_MODULE_CONV2D_3X3
             )
 
         for name, module in root_module.named_modules():
@@ -89,10 +89,11 @@ def merge_to_sd_model(text_encoder, unet, models, ratios, merge_dtype):
                 elif down_weight.size()[2:4] == (1, 1):
                     # conv2d 1x1
                     weight = (
-                        weight
-                        + ratio
-                        * (up_weight.squeeze(3).squeeze(2) @ down_weight.squeeze(3).squeeze(2)).unsqueeze(2).unsqueeze(3)
-                        * scale
+                            weight
+                            + ratio
+                            * (up_weight.squeeze(3).squeeze(2) @ down_weight.squeeze(3).squeeze(2)).unsqueeze(
+                        2).unsqueeze(3)
+                            * scale
                     )
                 else:
                     # conv2d 3x3
@@ -153,7 +154,7 @@ def merge_lora_models(models, ratios, merge_dtype):
 
             if key in merged_sd:
                 assert (
-                    merged_sd[key].size() == lora_sd[key].size()
+                        merged_sd[key].size() == lora_sd[key].size()
                 ), f"weights shape mismatch merging v1 and v2, different dims? / 重みのサイズが合いません。v1とv2、または次元数の異なるモデルはマージできません"
                 merged_sd[key] = merged_sd[key] + lora_sd[key] * scale
             else:
@@ -171,7 +172,8 @@ def merge_lora_models(models, ratios, merge_dtype):
 
 
 def merge(args):
-    assert len(args.models) == len(args.ratios), f"number of models must be equal to number of ratios / モデルの数と重みの数は合わせてください"
+    assert len(args.models) == len(
+        args.ratios), f"number of models must be equal to number of ratios / モデルの数と重みの数は合わせてください"
 
     def str_to_dtype(p):
         if p == "float":
@@ -195,7 +197,8 @@ def merge(args):
         merge_to_sd_model(text_encoder, unet, args.models, args.ratios, merge_dtype)
 
         print(f"saving SD model to: {args.save_to}")
-        model_util.save_stable_diffusion_checkpoint(args.v2, args.save_to, text_encoder, unet, args.sd_model, 0, 0, save_dtype, vae)
+        model_util.save_stable_diffusion_checkpoint(args.v2, args.save_to, text_encoder, unet, args.sd_model, 0, 0,
+                                                    save_dtype, vae)
     else:
         state_dict = merge_lora_models(args.models, args.ratios, merge_dtype)
 
@@ -205,7 +208,8 @@ def merge(args):
 
 def setup_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--v2", action="store_true", help="load Stable Diffusion v2.x model / Stable Diffusion 2.xのモデルを読み込む")
+    parser.add_argument("--v2", action="store_true",
+                        help="load Stable Diffusion v2.x model / Stable Diffusion 2.xのモデルを読み込む")
     parser.add_argument(
         "--save_precision",
         type=str,
@@ -227,10 +231,12 @@ def setup_parser() -> argparse.ArgumentParser:
         help="Stable Diffusion model to load: ckpt or safetensors file, merge LoRA models if omitted / 読み込むモデル、ckptまたはsafetensors。省略時はLoRAモデル同士をマージする",
     )
     parser.add_argument(
-        "--save_to", type=str, default=None, help="destination file name: ckpt or safetensors file / 保存先のファイル名、ckptまたはsafetensors"
+        "--save_to", type=str, default=None,
+        help="destination file name: ckpt or safetensors file / 保存先のファイル名、ckptまたはsafetensors"
     )
     parser.add_argument(
-        "--models", type=str, nargs="*", help="LoRA models to merge: ckpt or safetensors file / マージするLoRAモデル、ckptまたはsafetensors"
+        "--models", type=str, nargs="*",
+        help="LoRA models to merge: ckpt or safetensors file / マージするLoRAモデル、ckptまたはsafetensors"
     )
     parser.add_argument("--ratios", type=float, nargs="*", help="ratios for each model / それぞれのLoRAモデルの比率")
 

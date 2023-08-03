@@ -1,11 +1,13 @@
 # chad score of a single image using https://github.com/grexzen/SD-Chad/blob/main/simple_inference.py
-import torch
-import sys
 import os
+import sys
+
+import torch
 
 sys.path.insert(0, os.getcwd())
 from chad_score.chad_score import ChadScorePredictor
 from utils.clip.clip_feature_zip_loader import ClipFeatureZipLoader
+
 
 def test_chad_scorer():
     # parameters
@@ -28,6 +30,7 @@ def test_chad_scorer():
 
     print("Chad score predicted by the model:")
     print(chad_score_predictor.get_chad_score(feature_vectors))
+
 
 if __name__ == '__main__':
     test_chad_scorer()

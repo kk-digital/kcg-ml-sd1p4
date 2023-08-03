@@ -2,6 +2,7 @@ import pathlib
 import random
 import string
 from typing import Dict, Callable
+
 import yaml
 
 get_ipython: Callable

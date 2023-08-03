@@ -2,13 +2,14 @@
 Processor processes all lacking data of an image dataset. It will move all images to /images, generate manifest.json, and generate features json.
 """
 import hashlib
-import re
 import io
-from PIL import UnidentifiedImageError
-from PIL import Image
+import re
 
-from .image_dataset_storage_format import *
+from PIL import Image
+from PIL import UnidentifiedImageError
+
 from utils.clip.clip_feature_zip_loader import ClipFeatureZipLoader
+from .image_dataset_storage_format import *
 
 # no max for image pixel size
 Image.MAX_IMAGE_PIXELS = None
@@ -20,7 +21,6 @@ class ImageDatasetStorageFormatProcessor(ImageDatasetStorageFormat):
         data_list = self.get_all_images_in_zip(is_tagged)
         data_list = self.compute_manifest(data_list)
         self.save_data_to_zip(data_list, output_path)
-
 
     def compute_features_of_zip(self, path_to_zip_file: str, clip_model="ViT-L/14", batch_size=8):
         # remove all special char, replace with dash and use lower case
@@ -42,7 +42,6 @@ class ImageDatasetStorageFormatProcessor(ImageDatasetStorageFormat):
         with zipfile.ZipFile(path_to_zip_file, mode="a", compression=zipfile.ZIP_DEFLATED) as zip_file:
             dumped_json = json.dumps(feature_vectors, indent=4)
             zip_file.writestr(save_file_path, data=dumped_json)
-
 
     def get_all_images_in_zip(self, is_tagged=False) -> []:
         data_list = []
@@ -95,13 +94,14 @@ class ImageDatasetStorageFormatProcessor(ImageDatasetStorageFormat):
                 file_hash = hashlib.sha256(image_data).hexdigest()  # hash the original image data
                 image_width, image_height = image.size
 
-                manifest = Manifest(file_name, file_hash, file_path, file_archive, image_type, image_width, image_height, image_size)
+                manifest = Manifest(file_name, file_hash, file_path, file_archive, image_type, image_width,
+                                    image_height, image_size)
                 image_manifest_array.append(manifest)
-
 
         # add manifest to data_list
         manifest_path = "manifest.json"
-        data_list.append({"file-path": manifest_path, "data": json.dumps(image_manifest_array, cls=CustomEncoder, indent=4)})
+        data_list.append(
+            {"file-path": manifest_path, "data": json.dumps(image_manifest_array, cls=CustomEncoder, indent=4)})
         return data_list
 
     def save_data_to_zip(self, data_list: [], output_path="./output"):

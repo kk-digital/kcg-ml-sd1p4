@@ -15,10 +15,11 @@ We have kept to the model definition and naming unchanged from
 so that we can load the checkpoints directly.
 """
 
-from typing import List
-import safetensors
 import os
 import sys
+from typing import List
+
+import safetensors
 
 sys.path.insert(0, os.getcwd())
 from .auxiliary_classes import *
@@ -32,11 +33,11 @@ class Encoder(nn.Module):
     """
 
     def __init__(self, *,
-                 device = None, 
-                 channels: int = 128, 
-                 channel_multipliers: List[int] = [1, 2, 4, 4], 
+                 device=None,
+                 channels: int = 128,
+                 channel_multipliers: List[int] = [1, 2, 4, 4],
                  n_resnet_blocks: int = 2,
-                 in_channels: int = 3, 
+                 in_channels: int = 3,
                  z_channels: int = 4
                  ):
         """
@@ -90,14 +91,14 @@ class Encoder(nn.Module):
         self.norm_out = normalization(channels)
         self.conv_out = nn.Conv2d(channels, 2 * z_channels, 3, stride=1, padding=1)
         self.to(self.device)
-        
+
     def save(self, encoder_path: str = ENCODER_PATH):
         try:
             safetensors.torch.save_model(self, encoder_path)
             print(f"Encoder saved to {encoder_path}")
         except Exception as e:
             print(f"Failed to save encoder to {encoder_path}. Error: {e}")
-    
+
     def load(self, encoder_path: str = ENCODER_PATH):
         try:
             safetensors.torch.load_model(self, encoder_path)
@@ -105,7 +106,7 @@ class Encoder(nn.Module):
             return self
         except Exception as e:
             print(f"Failed to load encoder from {encoder_path}. Error: {e}")
-        
+
     def forward(self, img: torch.Tensor):
         """
         :param img: is the image tensor with shape `[batch_size, img_channels, img_height, img_width]`

@@ -1,5 +1,6 @@
 import json
 import socket
+import sys
 import threading
 import time
 import urllib.error
@@ -7,7 +8,6 @@ import urllib.request
 from dataclasses import dataclass
 from queue import Queue
 from typing import Dict, Optional, Set, List
-import sys
 
 sys.path.append("./")
 from utility.labml import logger

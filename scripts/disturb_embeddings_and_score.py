@@ -1,23 +1,24 @@
-import os
-import sys
 import argparse
-import torch
 import hashlib
 import json
+import os
 import shutil
+import sys
 from os.path import join
+
+import torch
+
 
 base_dir = "./"
 sys.path.insert(0, base_dir)
 
+from chad_score.chad_score import ChadScoreModel
 from stable_diffusion.utils_backend import get_device, get_memory_status
 from stable_diffusion.utils_image import to_pil
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
-from chad_score import ChadPredictorModel
 from stable_diffusion import StableDiffusion
 from stable_diffusion.constants import IODirectoryTree
-
 
 EMBEDDED_PROMPTS_DIR = os.path.abspath("./input/embedded_prompts/")
 OUTPUT_DIR = "./output/data/"
@@ -26,12 +27,7 @@ IMAGES_DIR = join(OUTPUT_DIR, "images/")
 # SCORER_CHECKPOINT_PATH = os.path.abspath("./input/model/aesthetic_scorer/sac+logos+ava1-l14-linearMSE.pth")
 SCORER_CHECKPOINT_PATH = os.path.abspath("./input/model/aesthetic_scorer/chadscorer.pth")
 
-
-
 # DEVICE = input("Set device: 'cuda:i' or 'cpu'")
-
-
-
 
 
 parser = argparse.ArgumentParser("Embed prompts using CLIP")
@@ -115,7 +111,6 @@ os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
 
 pt = IODirectoryTree(base_directory=base_dir)
 
-
 try:
     shutil.rmtree(OUTPUT_DIR)
 except Exception as e:
@@ -130,7 +125,6 @@ else:
 
 
 def init_stable_diffusion(device, path_tree: IODirectoryTree, sampler_name="ddim", n_steps=20, ddim_eta=0.0):
-
     device = get_device(device)
 
     stable_diffusion = StableDiffusion(
@@ -143,8 +137,8 @@ def init_stable_diffusion(device, path_tree: IODirectoryTree, sampler_name="ddim
 
     return stable_diffusion
 
-def embed_and_save_prompts(prompt: str, null_prompt = NULL_PROMPT):
 
+def embed_and_save_prompts(prompt: str, null_prompt=NULL_PROMPT):
     null_prompt = null_prompt
     prompt = prompt
 
@@ -173,15 +167,16 @@ def embed_and_save_prompts(prompt: str, null_prompt = NULL_PROMPT):
     get_memory_status()
     return embedded_prompts, null_cond
 
+
 def generate_images_from_disturbed_embeddings(
-    sd: StableDiffusion,
-    embedded_prompt: torch.Tensor,
-    null_prompt: torch.Tensor,
-    device=DEVICE,
-    seed=SEED,
-    num_iterations=NUM_ITERATIONS,
-    noise_multiplier=NOISE_MULTIPLIER,
-    batch_size=BATCH_SIZE
+        sd: StableDiffusion,
+        embedded_prompt: torch.Tensor,
+        null_prompt: torch.Tensor,
+        device=DEVICE,
+        seed=SEED,
+        num_iterations=NUM_ITERATIONS,
+        noise_multiplier=NOISE_MULTIPLIER,
+        batch_size=BATCH_SIZE
 ):
     dist = torch.distributions.normal.Normal(
         loc=embedded_prompt.mean(dim=2), scale=embedded_prompt.std(dim=2)
@@ -189,7 +184,6 @@ def generate_images_from_disturbed_embeddings(
 
     if not RANDOM_WALK:
         for i in range(0, num_iterations):
-
             j = num_iterations - i
 
             noise_i = (
@@ -198,7 +192,8 @@ def generate_images_from_disturbed_embeddings(
             noise_j = (
                 dist.sample(sample_shape=torch.Size([768])).permute(1, 0, 2).permute(0, 2, 1)
             ).to(device)
-            embedding_e = embedded_prompt + ((i * noise_multiplier) * noise_i + (j * noise_multiplier) * noise_j) / (2 * num_iterations)
+            embedding_e = embedded_prompt + ((i * noise_multiplier) * noise_i + (j * noise_multiplier) * noise_j) / (
+                        2 * num_iterations)
 
             image_e = sd.generate_images_from_embeddings(
                 seed=seed,
@@ -231,6 +226,7 @@ def generate_images_from_disturbed_embeddings(
 
             yield (image_e, embedding_e)
 
+
 def calculate_sha256(tensor):
     if tensor.device == "cpu":
         tensor_bytes = tensor.numpy().tobytes()  # Convert tensor to a byte array
@@ -239,8 +235,9 @@ def calculate_sha256(tensor):
     sha256_hash = hashlib.sha256(tensor_bytes)
     return sha256_hash.hexdigest()
 
+
 def get_image_features(
-    image, model, preprocess, device=DEVICE,
+        image, model, preprocess, device=DEVICE,
 ):
     image = preprocess(image).unsqueeze(0).to(device)
     with torch.no_grad():
@@ -250,21 +247,20 @@ def get_image_features(
     image_features = image_features.cpu().detach().numpy()
     return image_features
 
-def main():
 
+def main():
     pt = IODirectoryTree(base_directory=base_dir)
 
     embedded_prompts, null_prompt = embed_and_save_prompts(PROMPT)
     sd = init_stable_diffusion(DEVICE, pt)
 
-
-    images = generate_images_from_disturbed_embeddings(sd, embedded_prompts, null_prompt, batch_size = BATCH_SIZE)
+    images = generate_images_from_disturbed_embeddings(sd, embedded_prompts, null_prompt, batch_size=BATCH_SIZE)
 
     image_encoder = CLIPImageEncoder(device=DEVICE)
-    image_encoder.load_submodels(image_processor_path = pt.image_processor_path, vision_model_path = pt.vision_model_path)
+    image_encoder.load_submodels(image_processor_path=pt.image_processor_path, vision_model_path=pt.vision_model_path)
 
     loaded_model = torch.load(SCORER_CHECKPOINT_PATH)
-    predictor = ChadPredictorModel(768, device=DEVICE)
+    predictor = ChadScoreModel(768, device=DEVICE)
     predictor.load_state_dict(loaded_model)
     predictor.eval()
 
@@ -279,10 +275,10 @@ def main():
     for i, (image, embedding) in enumerate(images):
         # images_tensors.append(image.cpu().detach())
         get_memory_status()
-        #compute hash
+        # compute hash
         img_hash = calculate_sha256(image.squeeze())
         pil_image = to_pil(image.squeeze())
-        #compute aesthetic score
+        # compute aesthetic score
         image_features = image_encoder(pil_image, do_preprocess=True)
         image_features /= image_features.norm(dim=-1, keepdim=True)
         score = predictor(image_features.to(DEVICE).float()).cpu()
@@ -298,10 +294,10 @@ def main():
             print(f"Embedding saved at: {embedding_path}")
 
         manifest_i = {
-                        "file-name": img_file_name,
-                        "file-hash": img_hash,
-                        "file-path": img_path,
-                    }
+            "file-name": img_file_name,
+            "file-hash": img_hash,
+            "file-path": img_path,
+        }
         manifest.append(manifest_i)
 
         scores_i = manifest_i.copy()
@@ -315,8 +311,7 @@ def main():
         json_output_i["clip-vector"] = image_features.tolist()
         json_output.append(json_output_i)
 
-        if i%64 == 0:
-
+        if i % 64 == 0:
             json.dump(json_output, open(json_output_path, "w"), indent=4)
             print(f"features.json saved at: {json_output_path}")
 
@@ -325,7 +320,6 @@ def main():
 
             json.dump(manifest, open(manifest_path, "w"), indent=4)
             print(f"manifest.json saved at: {manifest_path}")
-
 
     json.dump(json_output, open(json_output_path, "w"), indent=4)
     print(f"features.json saved at: {json_output_path}")

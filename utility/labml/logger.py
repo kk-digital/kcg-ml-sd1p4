@@ -1,5 +1,5 @@
-from typing import Union, List, Tuple, overload, Dict
 import sys
+from typing import Union, List, Tuple, overload, Dict
 
 sys.path.append("./")
 from utility.labml.internal.util.colors import StyleCode

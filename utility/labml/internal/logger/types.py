@@ -1,5 +1,5 @@
-from typing import Optional, Union, Tuple
 import sys
+from typing import Optional, Union, Tuple
 
 sys.path.append("./")
 from utility.labml.internal.util.colors import StyleCode

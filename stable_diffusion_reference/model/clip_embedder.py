@@ -12,9 +12,11 @@ It uses HuggingFace Transformers CLIP model.
 """
 
 from typing import List
+
 from torch import nn
-from transformers import CLIPTokenizer, CLIPTextModel
 from torchinfo import summary
+from transformers import CLIPTokenizer, CLIPTextModel
+
 
 class CLIPTextEmbedder(nn.Module):
     """
@@ -54,7 +56,7 @@ class CLIPTextEmbedder(nn.Module):
         clip_text_embedder = CLIPTextEmbedder(
             device="cpu",
         )
-        summary(clip_text_embedder,num_groups=32, device="cpu")
+        summary(clip_text_embedder, num_groups=32, device="cpu")
 # if __name__ == "__main__":
 #     embedder = CLIPTextEmbedder()
 #     prompts = ["", "A painting of a computer virus", "A photo of a computer virus"]

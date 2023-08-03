@@ -8,10 +8,12 @@ summary: >
 # Generate images using [stable diffusion](../index.html) with a prompt
 """
 
-import time
 import os
 import sys
+import time
+
 import torch
+
 sys.path.insert(0, os.getcwd())
 from utility.labml import monit
 from datetime import datetime
@@ -19,6 +21,7 @@ from stable_diffusion_base_script import StableDiffusionBaseScript
 from stable_diffusion_reference.utils_model import save_images, set_seed, get_autocast
 from stable_diffusion_reference.model.unet_attention import CrossAttention
 from cli_builder import CLI
+
 
 def get_prompts(prompt, prompts_file):
     prompts = []
@@ -38,6 +41,7 @@ def get_prompts(prompt, prompts_file):
 
     return prompts
 
+
 class Txt2Img(StableDiffusionBaseScript):
     """
     ### Text to image class
@@ -45,13 +49,13 @@ class Txt2Img(StableDiffusionBaseScript):
 
     @torch.no_grad()
     def generate_images(self, *,
-                 seed: int = 0,
-                 batch_size: int = 1,
-                 prompt: str,
-                 h: int = 512, w: int = 512,
-                 uncond_scale: float = 7.5,
-                 low_vram: bool = False,
-                 ):
+                        seed: int = 0,
+                        batch_size: int = 1,
+                        prompt: str,
+                        h: int = 512, w: int = 512,
+                        uncond_scale: float = 7.5,
+                        low_vram: bool = False,
+                        ):
         """
         :param seed: the seed to use when generating the images
         :param dest_path: is the path to store the generated images
@@ -69,7 +73,7 @@ class Txt2Img(StableDiffusionBaseScript):
         f = 8
 
         if seed == 0:
-            seed = time.time_ns() % 2**32
+            seed = time.time_ns() % 2 ** 32
 
         set_seed(seed)
         # Adjust batch size based on VRAM availability
@@ -92,16 +96,17 @@ class Txt2Img(StableDiffusionBaseScript):
                                     uncond_cond=un_cond)
 
             return self.decode_image(x)
+
     @torch.no_grad()
     def generate_images_from_embeddings(self, *,
-                 seed: int = 0,
-                 batch_size: int = 1,
-                 embedded_prompt: torch.Tensor,
-                 null_prompt: torch.Tensor,
-                 h: int = 512, w: int = 512,
-                 uncond_scale: float = 7.5,
-                 low_vram: bool = False,
-                 ):
+                                        seed: int = 0,
+                                        batch_size: int = 1,
+                                        embedded_prompt: torch.Tensor,
+                                        null_prompt: torch.Tensor,
+                                        h: int = 512, w: int = 512,
+                                        uncond_scale: float = 7.5,
+                                        low_vram: bool = False,
+                                        ):
         """
         :param seed: the seed to use when generating the images
         :param dest_path: is the path to store the generated images
@@ -119,7 +124,7 @@ class Txt2Img(StableDiffusionBaseScript):
         f = 8
 
         if seed == 0:
-            seed = time.time_ns() % 2**32
+            seed = time.time_ns() % 2 ** 32
 
         set_seed(seed)
         # Adjust batch size based on VRAM availability
@@ -144,6 +149,7 @@ class Txt2Img(StableDiffusionBaseScript):
                                     uncond_cond=null_prompt)
 
             return self.decode_image(x)
+
 
 def main():
     opt = CLI('Generate images using stable diffusion with a prompt') \
@@ -174,7 +180,7 @@ def main():
                       n_steps=opt.steps,
                       force_cpu=opt.force_cpu,
                       cuda_device=opt.cuda_device
-                    )
+                      )
     txt2img.initialize_script()
 
     with monit.section('Generate', total_steps=len(prompts)) as section:

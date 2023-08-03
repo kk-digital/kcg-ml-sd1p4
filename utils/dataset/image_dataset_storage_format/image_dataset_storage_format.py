@@ -1,6 +1,6 @@
-import zipfile
-import os
 import json
+import os
+import zipfile
 
 from .constants import *
 
@@ -36,7 +36,8 @@ class ImageDatasetStorageFormat:
 
 
 class Manifest:
-    def __init__(self, file_name,  file_hash, file_path, file_archive, image_type, image_width, image_height, image_size):
+    def __init__(self, file_name, file_hash, file_path, file_archive, image_type, image_width, image_height,
+                 image_size):
         self.file_name = file_name
         self.file_hash = file_hash
         self.file_path = file_path
@@ -49,6 +50,7 @@ class Manifest:
     def toJSON(self):
         return json.dumps(self, default=lambda o: o.__dict__,
                           sort_keys=True, indent=4)
+
 
 class CustomEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -63,5 +65,5 @@ class CustomEncoder(json.JSONEncoder):
                 "image-height": obj.image_height,
                 "image-size": obj.image_size,
             }
-        #Let the base class handle the problem.
+        # Let the base class handle the problem.
         return json.JSONEncoder.default(self, obj)

@@ -1,7 +1,7 @@
+import sys
 from copy import deepcopy
 from pathlib import Path
 from typing import Optional, Dict
-import sys
 
 sys.path.append("./")
 from utility.labml.internal import util

@@ -14,12 +14,13 @@ We use same notations for $\alpha_t$, $\beta_t$ schedules, etc.
 """
 
 from typing import Optional, List
+
 import numpy as np
 import torch
 
-from utility.labml import monit
 from stable_diffusion.latent_diffusion import LatentDiffusion
 from stable_diffusion.sampler import DiffusionSampler
+from utility.labml import monit
 
 
 class DDPMSampler(DiffusionSampler):
@@ -92,7 +93,7 @@ class DDPMSampler(DiffusionSampler):
                uncond_scale: float = 1.,
                uncond_cond: Optional[torch.Tensor] = None,
                skip_steps: int = 0,
-               noise_fn = torch.randn
+               noise_fn=torch.randn
                ):
         """
         ### Sampling Loop
@@ -130,7 +131,7 @@ class DDPMSampler(DiffusionSampler):
                                             temperature=temperature,
                                             uncond_scale=uncond_scale,
                                             uncond_cond=uncond_cond,
-                                            noise_fn = noise_fn)
+                                            noise_fn=noise_fn)
 
         # Return $x_0$
         return x
@@ -140,7 +141,7 @@ class DDPMSampler(DiffusionSampler):
                  repeat_noise: bool = False,
                  temperature: float = 1.,
                  uncond_scale: float = 1., uncond_cond: Optional[torch.Tensor] = None,
-                 noise_fn = torch.randn):
+                 noise_fn=torch.randn):
         """
         ### Sample $x_{t-1}$ from $p_\theta(x_{t-1} | x_t)$
 

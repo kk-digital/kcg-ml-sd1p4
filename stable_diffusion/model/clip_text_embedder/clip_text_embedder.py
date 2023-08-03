@@ -15,11 +15,12 @@ It uses HuggingFace Transformers CLIP model.
 """
 import os
 import sys
+from typing import List
+
+import safetensors
 import torch
 from torch import nn
 from transformers import CLIPTokenizer, CLIPTextModel, CLIPTextConfig
-import safetensors
-from typing import List
 
 sys.path.insert(0, os.getcwd())
 from stable_diffusion.constants import TEXT_EMBEDDER_PATH, TOKENIZER_PATH, TEXT_MODEL_PATH
@@ -34,7 +35,7 @@ class CLIPTextEmbedder(nn.Module):
     ## CLIP Text Embedder
     """
 
-    def __init__(self, path_tree = None, device=None, max_length: int = 77, tokenizer = None, transformer = None):
+    def __init__(self, path_tree=None, device=None, max_length: int = 77, tokenizer=None, transformer=None):
         """
         :param version: is the model version
         :param device: is the device
@@ -47,30 +48,31 @@ class CLIPTextEmbedder(nn.Module):
 
         self.tokenizer = tokenizer
         self.transformer = transformer
-        
+
         self.max_length = max_length
         self.to(self.device)
 
     def init_submodels(self, tokenizer_path: str = TOKENIZER_PATH, transformer_path: str = TEXT_MODEL_PATH):
-        
+
         config = CLIPTextConfig.from_pretrained(transformer_path, local_files_only=True)
         self.transformer = CLIPTextModel(config).eval().to(self.device)
         self.tokenizer = CLIPTokenizer.from_pretrained(tokenizer_path, local_files_only=True)
-        
+
         return self
-        
+
     def save_submodels(self, tokenizer_path: str = TOKENIZER_PATH, transformer_path: str = TEXT_MODEL_PATH):
         # self.tokenizer.save_pretrained(tokenizer_path, safe_serialization=True)
         # print("tokenizer saved to: ", tokenizer_path)
         self.transformer.save_pretrained(transformer_path, safe_serialization=True)
         # safetensors.torch.save_model(self.transformer, os.path.join(transformer_path, '/model.safetensors'))
         print("transformer saved to: ", transformer_path)
-    
-    def load_submodels(self, tokenizer_path = TOKENIZER_PATH, transformer_path = TEXT_MODEL_PATH):
-        
+
+    def load_submodels(self, tokenizer_path=TOKENIZER_PATH, transformer_path=TEXT_MODEL_PATH):
+
         self.tokenizer = CLIPTokenizer.from_pretrained(tokenizer_path, local_files_only=True)
         print(f"Tokenizer successfully loaded from : {tokenizer_path}\n")
-        self.transformer = CLIPTextModel.from_pretrained(transformer_path, local_files_only=True, use_safetensors = True).eval().to(self.device)  
+        self.transformer = CLIPTextModel.from_pretrained(transformer_path, local_files_only=True,
+                                                         use_safetensors=True).eval().to(self.device)
         # self.init_submodels(tokenizer_path = tokenizer_path, transformer_path = transformer_path)
         # safetensors.torch.load_model(self.transformer, os.path.join(transformer_path, '/model.safetensors'))
         print(f"CLIP text model successfully loaded from : {transformer_path}\n")
@@ -81,6 +83,7 @@ class CLIPTextEmbedder(nn.Module):
         self.tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14")
         self.text_model = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14").eval().to(self.device)
         return self
+
     def unload_submodels(self):
 
         print("Memory status before unloading submodels: \n")
@@ -103,7 +106,7 @@ class CLIPTextEmbedder(nn.Module):
             print(f"CLIPTextEmbedder saved to: {embedder_path}")
         except Exception as e:
             print(f"CLIPTextEmbedder not saved. Error: {e}")
-            
+
     def load(self, embedder_path: str = TEXT_EMBEDDER_PATH):
         try:
             safetensors.torch.load_model(self, embedder_path, strict=True)
@@ -111,7 +114,7 @@ class CLIPTextEmbedder(nn.Module):
             return self
         except Exception as e:
             print(f"CLIPTextEmbedder not loaded. Error: {e}")
-        
+
     def forward(self, prompts: List[str]):
         """
         :param prompts: are the list of prompts to embed
@@ -124,7 +127,7 @@ class CLIPTextEmbedder(nn.Module):
 
         # Get CLIP embeddings
         return self.transformer(input_ids=tokens).last_hidden_state
-#%%
+# %%
 
 # if __name__ == "__main__":
 #     prompts = ["", "A painting of a computer virus", "A photo of a computer virus"]

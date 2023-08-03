@@ -1,18 +1,19 @@
-import os
-import zipfile
 import json
+import os
 import random
+import zipfile
 
 from utils.dataset.image_dataset_storage_format.validator import ImageDatasetStorageFormatValidator
 
 
 class ImageFeatures:
-    def __init__(self, file_name: str, file_path: str, file_archive: str, file_hash: str, feature_type: str, feature_model: str, feature_vector: []):
+    def __init__(self, file_name: str, file_path: str, file_archive: str, file_hash: str, feature_type: str,
+                 feature_model: str, feature_vector: []):
         self.file_name = file_name
-        self.file_path = file_path   # path + file name
-        self.file_archive = file_archive # the filename of zip
+        self.file_path = file_path  # path + file name
+        self.file_archive = file_archive  # the filename of zip
         self.file_hash = file_hash
-        self.feature_type = feature_type # clip or different
+        self.feature_type = feature_type  # clip or different
         self.feature_model = feature_model
         self.feature_vector = feature_vector
 
@@ -27,12 +28,13 @@ class ImageFeatures:
         # then it has no tag
         return ""
 
+
 class ImageDataset:
     def __init__(self):
         self.dataset = []
         self.tag_list = []  # list of tags in the dataset if dataset is tagged
 
-    def load_dataset(self, dataset_path: str, is_tagged = False):
+    def load_dataset(self, dataset_path: str, is_tagged=False):
         manifest = []
         features = []
 
@@ -77,7 +79,8 @@ class ImageDataset:
                     feature_vector = item["feature-vector"]
                     break
 
-            image_features = ImageFeatures(file_name, file_path, file_archive, file_hash, feature_type, feature_model, feature_vector)
+            image_features = ImageFeatures(file_name, file_path, file_archive, file_hash, feature_type, feature_model,
+                                           feature_vector)
             if is_tagged:
                 # add tag to tag_list
                 tag = image_features.get_tag()
@@ -114,7 +117,8 @@ class ImageDataset:
         while len(validation_dataset.dataset) < (dataset_len - num_train_data_to_get):
             rand_index = random.randint(0, dataset_len - 1)
             data = tag_string_data_list[rand_index]
-            if (data.get_tag() == tag_string) and (data not in validation_dataset.dataset) and (data not in training_dataset.dataset):
+            if (data.get_tag() == tag_string) and (data not in validation_dataset.dataset) and (
+                    data not in training_dataset.dataset):
                 validation_dataset.dataset.append(data)
 
         return training_dataset, validation_dataset

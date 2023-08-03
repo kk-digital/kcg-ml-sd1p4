@@ -1,24 +1,20 @@
-import zipfile
+import argparse
+import hashlib
+import io
+import json
 import os
+import struct
+import sys
+import zipfile
+
+import clip
+import numpy as np
+import torch
 import torch.nn as nn
 import torch.optim as optim
-import torch
-import clip
-import zipfile
-import os
-import json
-import io
-import numpy as np
-import sys
-import random
 from PIL import Image
-import hashlib
-import struct
-import argparse
 
 sys.path.insert(0, os.getcwd())
-from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
-from stable_diffusion.utils_backend import get_device
 from generation_task_result import GenerationTaskResult
 
 
@@ -52,6 +48,7 @@ def hash_string_to_float32(input_string):
     except ValueError:
         raise ValueError("Error hashing the input string.")
 
+
 def get_image_features(image_data, device):
     model, preprocess = clip.load('ViT-L/14', device)
 
@@ -78,6 +75,7 @@ class LinearRegressionModel(nn.Module):
     def forward(self, x):
         return self.linear(x)
 
+
 def split_data(input_list, validation_ratio=0.2):
     # Calculate the number of samples for validation and train sets
     num_validation_samples = int(len(input_list) * validation_ratio)
@@ -88,6 +86,7 @@ def split_data(input_list, validation_ratio=0.2):
     train_list = input_list[num_validation_samples:]
 
     return validation_list, train_list
+
 
 def report_residuals_histogram(residuals, type):
     max_residual = max(residuals)
@@ -123,6 +122,7 @@ class NumpyArrayDecoder(json.JSONDecoder):
             return data
         return dct
 
+
 def parse_arguments():
     """Command-line arguments for 'classify' command."""
     parser = argparse.ArgumentParser(description="Training linear model on image promps with chad score.")
@@ -131,9 +131,11 @@ def parse_arguments():
     parser.add_argument('--num_epochs', type=int, default=1000, help='Number of epochs (default: 1000)')
     parser.add_argument('--epsilon_raw', type=float, default=10.0, help='Epsilon for raw data (default: 10.0)')
     parser.add_argument('--epsilon_scaled', type=float, default=0.2, help='Epsilon for scaled data (default: 0.2)')
-    parser.add_argument('--use_76th_embedding', action='store_true', help='If this option is set, only use the last entry in the embeddings tensor')
+    parser.add_argument('--use_76th_embedding', action='store_true',
+                        help='If this option is set, only use the last entry in the embeddings tensor')
 
     return parser.parse_args()
+
 
 def main():
     args = parse_arguments()
@@ -157,7 +159,6 @@ def main():
                 if json_filename in zip_ref.namelist():
                     json_content = zip_ref.read(json_filename)
 
-
                     # Decode the bytes to a string
                     json_data_string = json_content.decode('utf-8')
 
@@ -167,7 +168,7 @@ def main():
                     image_meta_data = GenerationTaskResult.from_dict(data=data_dict)
                     embedding_name = image_meta_data.embedding_name
                     embedding_content = zip_ref.read(embedding_name)
-                    embedding_vector = np.load( io.BytesIO(embedding_content))['data']
+                    embedding_vector = np.load(io.BytesIO(embedding_content))['data']
 
                     if use_76th_embedding:
                         embedding_vector = embedding_vector[:, 76]
@@ -177,7 +178,7 @@ def main():
                     flat_embedded_prompts = torch.flatten(embedding_vector)
 
                     with torch.no_grad():
-                       flat_vector = flat_embedded_prompts.cpu().numpy()
+                        flat_vector = flat_embedded_prompts.cpu().numpy()
 
                     chad_score = image_meta_data.chad_score
 
@@ -220,7 +221,7 @@ def main():
         model_outputs_raw = linear_regression_model(train_inputs)
         model_outputs_scaled = torch.sigmoid(model_outputs_raw)
 
-        #target_outputs_sigmoid = torch.sigmoid(target_outputs)
+        # target_outputs_sigmoid = torch.sigmoid(target_outputs)
         # Compute the loss
         loss = mse_loss(model_outputs_raw, target_outputs_raw)
 
@@ -310,6 +311,7 @@ def main():
     print('total validation image count ', validation_inputs.size(0))
     print(training_residuals_histogram)
     print(validation_residuals_histogram)
+
 
 if __name__ == '__main__':
     main()

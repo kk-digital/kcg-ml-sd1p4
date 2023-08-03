@@ -16,10 +16,12 @@ so that we can load the checkpoints directly.
 """
 
 from typing import List
+
 import torch
 import torch.nn.functional as F
 from torch import nn
 from torchinfo import summary
+
 
 class Autoencoder(nn.Module):
     """
@@ -68,27 +70,28 @@ class Autoencoder(nn.Module):
         z = self.post_quant_conv(z)
         # Decode the image of shape `[batch_size, channels, height, width]`
         return self.decoder(z)
-    
+
     def PrintTorchInfo(self):
         # Autoencoder model
         print("Printing Autoencoder Layers for: ConvNet(nn.Module)")
         encoder = Encoder(z_channels=4,
-                        in_channels=3,
-                        channels=128,
-                        channel_multipliers=[1, 2, 4, 4],
-                        n_resnet_blocks=2)
+                          in_channels=3,
+                          channels=128,
+                          channel_multipliers=[1, 2, 4, 4],
+                          n_resnet_blocks=2)
 
         decoder = Decoder(out_channels=3,
-                        z_channels=4,
-                        channels=128,
-                        channel_multipliers=[1, 2, 4, 4],
-                        n_resnet_blocks=2)
+                          z_channels=4,
+                          channels=128,
+                          channel_multipliers=[1, 2, 4, 4],
+                          n_resnet_blocks=2)
 
         autoencoder = Autoencoder(emb_channels=4,
-                                encoder=encoder,
-                                decoder=decoder,
-                                z_channels=4)
-        summary(autoencoder,num_groups=32, device="cpu")
+                                  encoder=encoder,
+                                  decoder=decoder,
+                                  z_channels=4)
+        summary(autoencoder, num_groups=32, device="cpu")
+
 
 class Encoder(nn.Module):
     """
@@ -351,6 +354,7 @@ class UpSample(nn.Module):
     """
     ## Up-sampling layer
     """
+
     def __init__(self, channels: int):
         """
         :param channels: is the number of channels
@@ -373,6 +377,7 @@ class DownSample(nn.Module):
     """
     ## Down-sampling layer
     """
+
     def __init__(self, channels: int):
         """
         :param channels: is the number of channels
@@ -395,6 +400,7 @@ class ResnetBlock(nn.Module):
     """
     ## ResNet Block
     """
+
     def __init__(self, in_channels: int, out_channels: int):
         """
         :param in_channels: is the number of channels in the input
@@ -432,6 +438,7 @@ class ResnetBlock(nn.Module):
 
         # Map and add residual
         return self.nin_shortcut(x) + h
+
 
 def swish(x: torch.Tensor):
     """

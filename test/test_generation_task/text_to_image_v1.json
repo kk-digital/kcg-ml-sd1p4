@@ -6,6 +6,6 @@
   "iterations": 50,
   "denoiser": "",
   "seed": "1, 2, 3",
-  "output_path": "/output/",
+  "output_path": "./output/",
   "num_images": 3
 }

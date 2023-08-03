@@ -8,16 +8,16 @@ summary: >
 # Generate images using [stable diffusion](../index.html) with a prompt
 """
 
-import time
-import os
-import sys
 import datetime
+import os
+import random
+import sys
+import time
 import zipfile
 from zipfile import ZipFile
-import random
-import torch
-import clip
+
 import numpy as np
+import torch
 
 base_directory = "./"
 sys.path.insert(0, base_directory)
@@ -37,6 +37,7 @@ class Txt2Img(StableDiffusionBaseScript):
     """
     ### Text to image class
     """
+
     @torch.no_grad()
     def generate_images_from_embeddings(self, *,
                                         seed: int = 0,
@@ -91,14 +92,13 @@ class Txt2Img(StableDiffusionBaseScript):
 
 def generate_images_from_random_prompt(num_images, image_width, image_height, cfg_strength, batch_size,
                                        checkpoint_path, output, seed, flash, device, sampler, steps, force_cpu):
-
     # Hard coded prompts
     arg_prompt = r"chibi, waifu, scifi, side scrolling, character, side scrolling, white background, centered," \
-             r" full character, no background, not centered, line drawing, sketch, black and white," \
-             r" colored, offset, video game,exotic, sureal, miltech, fantasy, frank frazetta," \
-             r" terraria, final fantasy, cortex command, surreal, water color expressionist, david mckean, " \
-             r" jock, esad ribic, chris bachalo, expressionism, Jackson Pollock, Alex Kanevskyg, Francis Bacon, Trash Polka," \
-             r" abstract realism, andrew salgado, alla prima technique, alla prima, expressionist alla prima, expressionist alla prima technique"
+                 r" full character, no background, not centered, line drawing, sketch, black and white," \
+                 r" colored, offset, video game,exotic, sureal, miltech, fantasy, frank frazetta," \
+                 r" terraria, final fantasy, cortex command, surreal, water color expressionist, david mckean, " \
+                 r" jock, esad ribic, chris bachalo, expressionism, Jackson Pollock, Alex Kanevskyg, Francis Bacon, Trash Polka," \
+                 r" abstract realism, andrew salgado, alla prima technique, alla prima, expressionist alla prima, expressionist alla prima technique"
 
     prompt = arg_prompt
 
@@ -112,7 +112,7 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
     seed_array = [int(num) for num in seed_string_array]
 
     if len(seed_array) == 0:
-        seed_array = [random.randint(0, 2**31-1) for _ in range(num_images)]
+        seed_array = [random.randint(0, 2 ** 31 - 1) for _ in range(num_images)]
 
     # Set flash attention
     CrossAttention.use_flash_attention = flash
@@ -120,7 +120,6 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
     # Load default clip model
     clip_image_features = ClipImageFeatures(device=device)
     clip_image_features.load_model()
-
 
     # Load default chad model
     # hard coded for now
@@ -148,7 +147,6 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
     prompt_generator = PromptGenerator(prompt_list)
 
     for i in range(num_images):
-
         num_prompts_per_image = 12
         this_prompt = prompt_generator.random_prompt(num_prompts_per_image)
         this_seed = seed_array[i % len(seed_array)]
@@ -161,10 +159,10 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
 
         total_digits = 4
 
-        base_file_name =  f'{i:0{total_digits}d}-{timestamp}'
+        base_file_name = f'{i:0{total_digits}d}-{timestamp}'
         image_name = base_file_name + '.jpg'
 
-        filename = output + '/' + image_name
+        filename = output + image_name
 
         # Capture the starting time
         tmp_start_time = time.time()
@@ -187,10 +185,9 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
             null_prompt=un_cond,
             uncond_scale=cfg_strength,
             seed=this_seed,
-            w = image_width,
-            h = image_height
+            w=image_width,
+            h=image_height
         )
-
 
         # Capture the ending time
         tmp_end_time = time.time()
@@ -206,7 +203,6 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
         # convert tensor to numpy array
         with torch.no_grad():
             embedded_vector = cond.cpu().numpy()
-
 
         # image latent
         latent = []
@@ -242,15 +238,16 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
         max_chad_score = max(max_chad_score, chad_score)
 
         embedding_vector_filename = base_file_name + '.embedding.npz'
-        clip_features_filename =  base_file_name + '.clip.npz'
+        clip_features_filename = base_file_name + '.clip.npz'
         latent_filename = base_file_name + '.latent.npz'
 
-        generation_task_result = GenerationTaskResult(this_prompt, model_name, image_name, embedding_vector_filename, clip_features_filename,latent_filename,
-                                                     image_hash, chad_score_model_name, chad_score, this_seed, cfg_strength)
+        generation_task_result = GenerationTaskResult(this_prompt, model_name, image_name, embedding_vector_filename,
+                                                      clip_features_filename, latent_filename,
+                                                      image_hash, chad_score_model_name, chad_score, this_seed,
+                                                      cfg_strength)
         # get numpy list from image_features
         with torch.no_grad():
             image_features_numpy = image_features.cpu().numpy()
-
 
         # save embedding vector to its own file
         embedding_vector_filepath = output + '/' + embedding_vector_filename
@@ -267,14 +264,13 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
         # Save the data to a JSON file
         json_filename = output + '/' + base_file_name + '.json'
 
-
         generation_task_result_list.append({
             'image_filename': filename,
-            'json_filename' : json_filename,
+            'json_filename': json_filename,
             'embedding_vector_filepath': embedding_vector_filepath,
-            'clip_features_filepath' : clip_features_filepath,
-            'latent_filepath' : latent_filepath,
-            'generation_task_result' : generation_task_result
+            'clip_features_filepath': clip_features_filepath,
+            'latent_filepath': latent_filepath,
+            'generation_task_result': generation_task_result
         })
 
         # Capture the ending time
@@ -291,8 +287,8 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
         json_filename = generation_task_result_item['json_filename']
 
         # chad score value should be between [0, 1]
-        #normalized_chad_score = (generation_task_result.chad_score - min_chad_score) / (max_chad_score - min_chad_score)
-        #generation_task_result.chad_score = normalized_chad_score
+        # normalized_chad_score = (generation_task_result.chad_score - min_chad_score) / (max_chad_score - min_chad_score)
+        # generation_task_result.chad_score = normalized_chad_score
 
         # save to json file
         generation_task_result.save_to_json(json_filename)
@@ -325,6 +321,7 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
             file.write(latent_filepath, arcname=latent_filename)
             zip_task_index += 1
 
+
 def main():
     opt = CLI('Generate images using stable diffusion with a prompt') \
         .prompts_file(check_exists=True, required=False) \
@@ -346,8 +343,10 @@ def main():
         .parse()
 
     generate_images_from_random_prompt(opt.num_images, opt.image_width, opt.image_height, opt.cfg_scale,
-                                       opt.batch_size, opt.checkpoint_path, opt.output, opt.seed, opt.flash, opt.cuda_device,
+                                       opt.batch_size, opt.checkpoint_path, opt.output, opt.seed, opt.flash,
+                                       opt.cuda_device,
                                        opt.sampler, opt.steps, opt.force_cpu)
+
 
 if __name__ == "__main__":
     main()
