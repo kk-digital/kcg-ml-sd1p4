@@ -395,12 +395,19 @@ and outputs a chad score.
 
 ``` shell
 options:
-  --input_path INPUT_PATH   Path to input zip
-  --use_76th_embedding      If this option is set, only use the last entry in the embeddings tensor
+--input_path INPUT_PATH
+                        Path to input zip
+  --num_epochs NUM_EPOCHS
+                        Number of epochs (default: 1000)
+  --epsilon_raw EPSILON_RAW
+                        Epsilon for raw data (default: 10.0)
+  --epsilon_scaled EPSILON_SCALED
+                        Epsilon for scaled data (default: 0.2)
+  --use_76th_embedding  If this option is set, only use the last entry in the embeddings tensor
 ```
 
 #### Example Usage:
 
 ``` shell
-python scripts/prompt_score.py --input_path input/set_0000_v2.zip --use_76th_embedding
+python scripts/prompt_score.py --input_path input/set_0000_v2.zip --use_76th_embedding --num_epochs 200 --epsilon_raw 10 --epsilon_scaled 0.2
 ```
