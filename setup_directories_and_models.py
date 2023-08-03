@@ -4,6 +4,7 @@ import json
 import os
 
 import requests
+from torchinfo import summary
 
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
 from stable_diffusion.utils_logger import logger
@@ -34,7 +35,7 @@ DOWNLOAD_BASE_SD_MODEL = args.download_base_sd_model
 CHECKPOINT = f"{MODEL_NAME}.safetensors"
 BASE_IO_DIRECTORY = os.path.join(BASE_DIRECTORY, BASE_IO_DIRECTORY_PREFIX)
 
-print_section = lambda config, section: print(f"config.ini [{section}]: ",
+print_section = lambda config, section: logger.debug(f"config.ini [{section}]: ",
                                               json.dumps({k: v for k, v in config[section].items()}, indent=4))
 
 config["BASE"] = {
@@ -149,25 +150,29 @@ if __name__ == "__main__":
 
     create_directory_tree_folders(config)
 
-    if DOWNLOAD_BASE_CLIP_MODEL:
-        clip_model_dir = config["MODELS_DIRS"].get('clip_model_dir')
-        create_directory_if_not_exists(clip_model_dir)
-        clip_path = os.path.join(clip_model_dir, 'model.safetensors')
-        clip_url = r'https://huggingface.co/openai/clip-vit-large-patch14/resolve/refs%2Fpr%2F19/model.safetensors'
-        download_file(clip_url, clip_path, "CLIP model")
+    with section(
+            "Downloading CLIP model, SD model. This may take a while."):
 
-    if DOWNLOAD_BASE_SD_MODEL:
-        root_models_dir = config["ROOT_DIRS"].get('root_models_dir')
-        create_directory_if_not_exists(root_models_dir)
-        sd_path = os.path.join(root_models_dir, 'v1-5-pruned-emaonly.safetensors')
-        sd_url = r'https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors'
-        download_file(sd_url, sd_path, "Stable Diffusion checkpoint")
+        if DOWNLOAD_BASE_CLIP_MODEL:
+            clip_model_dir = config["MODELS_DIRS"].get('clip_model_dir')
+            create_directory_if_not_exists(clip_model_dir)
+            clip_path = os.path.join(clip_model_dir, 'model.safetensors')
+            clip_url = r'https://huggingface.co/openai/clip-vit-large-patch14/resolve/refs%2Fpr%2F19/model.safetensors'
+            download_file(clip_url, clip_path, "CLIP model")
 
-    model = initialize_latent_diffusion(
-        path=config["STABLE_DIFFUSION_PATHS"].get('CHECKPOINT_PATH'),
-        force_submodels_init=True
-    )
-    # summary(model)
+        if DOWNLOAD_BASE_SD_MODEL:
+            root_models_dir = config["ROOT_DIRS"].get('root_models_dir')
+            create_directory_if_not_exists(root_models_dir)
+            sd_path = os.path.join(root_models_dir, 'v1-5-pruned-emaonly.safetensors')
+            sd_url = r'https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors'
+            download_file(sd_url, sd_path, "Stable Diffusion checkpoint")
+
+    with section("Initializing CLIP image encoder"):
+        model = initialize_latent_diffusion(
+            path=config["STABLE_DIFFUSION_PATHS"].get('CHECKPOINT_PATH'),
+            force_submodels_init=True
+        )
+        summary(model)
 
     with section(
             "initialize CLIP image encoder and load submodels from lib"

@@ -70,7 +70,7 @@ def generate_images(
     stable_diffusion = init_stable_diffusion(device, sampler_name, n_steps)
     image_encoder = CLIPImageEncoder(device=device)
     # image_encoder.load_submodels()
-    image_encoder.load_clip_model()
+    image_encoder.load_submodels()
     image_encoder.initialize_preprocessor()
     manifest = []
     features = []

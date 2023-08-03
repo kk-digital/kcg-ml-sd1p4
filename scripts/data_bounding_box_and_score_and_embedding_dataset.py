@@ -13,16 +13,17 @@ import cv2
 import numpy as np
 import torch
 
+
 base_dir = "./"
 sys.path.insert(0, base_dir)
 
+from chad_score.chad_score import ChadScoreModel
 from stable_diffusion.utils_backend import get_device, get_memory_status
 from stable_diffusion.utils_image import to_pil
 
 warnings.filterwarnings("ignore", category=UserWarning)
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
-from chad_score import ChadPredictor
 from stable_diffusion import StableDiffusion
 from stable_diffusion.constants import IODirectoryTree
 
@@ -306,7 +307,7 @@ def main():
     image_encoder.load_clip_model(**pt.clip_model)
     image_encoder.initialize_preprocessor()
 
-    predictor = ChadPredictor(768, device=DEVICE)
+    predictor = ChadScoreModel(768, device=DEVICE)
     predictor.load(SCORER_CHECKPOINT_PATH)
 
     json_output = []

@@ -10,9 +10,9 @@ from PIL import Image
 from torch import nn
 from torchvision.transforms import Compose, Resize, CenterCrop, Normalize, Lambda
 
-from stable_diffusion.utils_logger import logger
 
 sys.path.insert(0, os.getcwd())
+from stable_diffusion.utils_logger import logger
 from stable_diffusion.constants import IMAGE_PROCESSOR_PATH, VISION_MODEL_PATH, IMAGE_ENCODER_PATH
 from stable_diffusion.utils_backend import get_device
 from transformers import CLIPImageProcessor, CLIPVisionModelWithProjection
@@ -51,6 +51,7 @@ class CLIPImageEncoder(nn.Module):
                                  .to(self.device))
             logger.info(f"CLIPVisionModelWithProjection successfully loaded from : {vision_model_path}\n")
             self.image_processor = CLIPImageProcessor.from_pretrained(image_processor_path, local_files_only=True)
+
             logger.info(f"CLIPImageProcessor successfully loaded from : {image_processor_path}\n")
             return self
         except Exception as e:
@@ -93,7 +94,7 @@ class CLIPImageEncoder(nn.Module):
         # Preprocess image
         if self.get_input_type(image) == PIL.Image.Image:
             image = (self.convert_image_to_tensor(image) + 1) / 2
-        return self.image_processor(image, return_tensors="pt").to(self.device)
+        return self.image_processor(image).to(self.device)
 
     def forward(self, image, do_preprocess=False):
         # Preprocess image

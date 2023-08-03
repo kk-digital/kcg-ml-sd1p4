@@ -10,11 +10,10 @@ from os.path import join
 import torch
 from torch.mps import empty_cache as mps_empty_cache
 
-from chad_score.chad_score import ChadScoreModel
-
 base_dir = "./"
 sys.path.insert(0, base_dir)
 
+from chad_score.chad_score import ChadScoreModel
 from stable_diffusion.utils_backend import get_device, get_memory_status
 from stable_diffusion.utils_image import to_pil, save_image_grid
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
@@ -79,7 +78,7 @@ parser.add_argument(
 parser.add_argument(
     "--cuda_device",
     type=str,
-    default=get_device(),
+    default=None,
     help="The cuda device to use. Defaults to 'cuda:0'.",
 )
 parser.add_argument(
@@ -102,7 +101,7 @@ PROMPT = args.prompt
 NUM_ITERATIONS = args.num_iterations
 SEED = args.seed
 NOISE_MULTIPLIER = args.noise_multiplier
-DEVICE = args.cuda_device
+DEVICE = get_device(args.cuda_device)
 BATCH_SIZE = args.batch_size
 SAVE_EMBEDDINGS = args.save_embeddings
 CLEAR_OUTPUT_DIR = args.clear_output_dir

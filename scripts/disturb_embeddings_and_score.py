@@ -8,11 +8,11 @@ from os.path import join
 
 import torch
 
-from chad_score.chad_score import ChadScoreModel
 
 base_dir = "./"
 sys.path.insert(0, base_dir)
 
+from chad_score.chad_score import ChadScoreModel
 from stable_diffusion.utils_backend import get_device, get_memory_status
 from stable_diffusion.utils_image import to_pil
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder

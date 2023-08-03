@@ -7,10 +7,12 @@ import zipfile
 
 import torch
 
+
 base_directory = os.getcwd()
 sys.path.insert(0, base_directory)
 sys.path.insert(0, os.path.join(base_directory, 'utils', 'dataset'))
 
+from stable_diffusion.utils_backend import get_device
 from utils.dataset.image_dataset import ImageDataset
 from chad_score.chad_score import ChadScorePredictor
 
@@ -24,7 +26,7 @@ def parse_arguments():
     parser.add_argument('--output-path', type=str, default='./output/chad_sort/', help='Path to the output folder')
     parser.add_argument('--num-classes', type=int, default=10,
                         help='Defines the number of classes to sort into, Specifies the total count of categories or groups or folders')
-    parser.add_argument('--device', type=str, default='cuda:0', help='Path to the dataset to sort')
+    parser.add_argument('--device', type=str, default=None, help='Path to the dataset to sort')
 
     return parser.parse_args()
 
@@ -85,7 +87,7 @@ def main():
     dataset_path = args.dataset_path
     num_classes = args.num_classes
     output_path = args.output_path
-    device = args.device
+    device = get_device(args.device)
 
     # Make sure we the user provides the required arguments
     ensure_required_args(args)
