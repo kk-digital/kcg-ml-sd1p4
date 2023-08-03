@@ -89,6 +89,18 @@ def split_data(input_list, validation_ratio=0.2):
 
     return validation_list, train_list
 
+def report_residuals_histogram(residuals):
+    max_residual = max(residuals)
+    hist_bins = np.linspace(0, max_residual, 11)
+
+    histogram, bin_edges = np.histogram(residuals, bins=hist_bins)
+
+    histogram_string = "Residuals Histogram:\n"
+    for i, count in enumerate(histogram):
+        bin_start, bin_end = bin_edges[i], bin_edges[i + 1]
+        histogram_string += f"{bin_start:.2f} - {bin_end:.2f}: {'*' * count}\n"
+
+    return histogram_string
 
 # Custom JSON decoder for NumPy arrays
 class NumpyArrayDecoder(json.JSONDecoder):
