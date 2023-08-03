@@ -387,3 +387,20 @@ python3 ./scripts/run_generation_task.py --task_path './test/test_generation_tas
 ``` shell
 python3 ./scripts/run_generation_task.py --task_path './test/test_generation_task/generate_images_from_random_prompt_v1.json'
 ```
+
+### Prompt Score
+
+Creates a linear regression model that uses prompt embedding tensors as input,
+and outputs a chad score.
+
+``` shell
+options:
+  --input_path INPUT_PATH   Path to input zip
+  --use_76th_embedding      If this option is set, only use the last entry in the embeddings tensor
+```
+
+#### Example Usage:
+
+``` shell
+python scripts/prompt_score.py --input_path input/set_0000_v2.zip --use_76th_embedding
+```
