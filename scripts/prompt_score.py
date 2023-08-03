@@ -204,6 +204,7 @@ def main():
     max_training_output_raw = 0
     min_training_output_scaled = 0
     max_training_output_scaled = 0
+    training_residuals = []
     validation_residuals = []
 
     for epoch in range(num_epochs):
@@ -222,11 +223,16 @@ def main():
         optimizer.step()
 
         if epoch == num_epochs - 1:
+            model_outputs_raw = model_outputs_raw.tolist()
+            model_outputs_scaled = model_outputs_scaled.tolist()
             for index, prediction in enumerate(model_outputs_scaled):
-                if (abs(model_outputs_scaled[index][0] - target_outputs_scaled[index][0]) < epsilon_scaled):
+                residual = abs(model_outputs_scaled[index][0] - target_outputs_scaled[index][0])
+                training_residuals.append(residual)
+                if (residual < epsilon_scaled):
                     training_corrects_scaled += 1
             for index, prediction in enumerate(model_outputs_raw):
-                if (abs(model_outputs_raw[index][0] - target_outputs_raw[index][0]) < epsilon_raw):
+                residual = abs(model_outputs_raw[index][0] - target_outputs_raw[index][0])
+                if (residual < epsilon_raw):
                     training_corrects_raw += 1
             min_training_output_raw = min(model_outputs_raw)
             max_training_output_raw = max(model_outputs_raw)
@@ -273,17 +279,18 @@ def main():
     training_accuracy_raw = training_corrects_raw / train_inputs.size(0)
     training_accuracy_scaled = training_corrects_scaled / train_inputs.size(0)
 
-    residuals_histogram = report_residuals_histogram(validation_residuals)
+    training_residuals_histogram = report_residuals_histogram(training_residuals, "Training")
+    validation_residuals_histogram = report_residuals_histogram(validation_residuals, "Validation")
 
     print('loss : ', loss.item())
     print('training_accuracy (raw) : ', (training_accuracy_raw * 100), '%')
     print('training_accuracy (scaled) : ', (training_accuracy_scaled * 100), '%')
     print('validation_accuracy (raw) : ', (validation_accuracy_raw * 100), '%')
     print('validation_accuracy (scaled) : ', (validation_accuracy_scaled * 100), '%')
-    print('min training output (raw) : ', min_training_output_raw.item())
-    print('max training output (raw) : ', max_training_output_raw.item())
-    print('min training output (scaled) : ', min_training_output_scaled.item())
-    print('max training output (scaled) : ', max_training_output_scaled.item())
+    print('min training output (raw) : ', min_training_output_raw)
+    print('max training output (raw) : ', max_training_output_raw)
+    print('min training output (scaled) : ', min_training_output_scaled)
+    print('max training output (scaled) : ', max_training_output_scaled)
     print('min predictions (raw) : ', min(predicted_raw)[0])
     print('max predictions (raw) : ', max(predicted_raw)[0])
     print('min predictions (scaled) : ', min(predicted_scaled)[0])
@@ -291,7 +298,8 @@ def main():
     print('total number of images : ', num_inputs)
     print('total train image count ', train_inputs.size(0))
     print('total validation image count ', validation_inputs.size(0))
-    print('\n', residuals_histogram)
+    print(training_residuals_histogram)
+    print(validation_residuals_histogram)
 
 if __name__ == '__main__':
     main()
