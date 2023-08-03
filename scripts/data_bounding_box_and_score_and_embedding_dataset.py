@@ -18,7 +18,7 @@ import torch
 base_dir = "./"
 sys.path.insert(0, base_dir)
 
-from chad_score.chad_score import ChadScoreModel
+from chad_score.chad_score import ChadScorePredictor
 from stable_diffusion.utils_backend import get_device, get_memory_status
 from stable_diffusion.utils_image import to_pil
 
@@ -316,8 +316,8 @@ def main():
     image_encoder.load_submodels()
     image_encoder.initialize_preprocessor()
 
-    predictor = ChadScoreModel(768, device=DEVICE)
-    predictor.load(SCORER_CHECKPOINT_PATH)
+    predictor = ChadScorePredictor(768, device=DEVICE)
+    predictor.load_model(SCORER_CHECKPOINT_PATH)
 
     json_output = []
     manifest = []
