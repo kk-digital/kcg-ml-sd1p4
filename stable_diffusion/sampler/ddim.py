@@ -14,12 +14,13 @@ This implements DDIM sampling from the paper
 """
 
 from typing import Optional, List
+
 import numpy as np
 import torch
 
-from utility.labml import monit
 from stable_diffusion.latent_diffusion import LatentDiffusion
 from stable_diffusion.sampler import DiffusionSampler
+from utility.labml import monit
 
 
 class DDIMSampler(DiffusionSampler):
@@ -104,7 +105,7 @@ class DDIMSampler(DiffusionSampler):
                uncond_scale: float = 1.,
                uncond_cond: Optional[torch.Tensor] = None,
                skip_steps: int = 0,
-               noise_fn = torch.randn
+               noise_fn=torch.randn
                ):
         """
         ### Sampling Loop
@@ -143,7 +144,7 @@ class DDIMSampler(DiffusionSampler):
                                             temperature=temperature,
                                             uncond_scale=uncond_scale,
                                             uncond_cond=uncond_cond,
-                                            noise_fn = noise_fn)
+                                            noise_fn=noise_fn)
 
         # Return $x_0$
         return x
@@ -154,7 +155,7 @@ class DDIMSampler(DiffusionSampler):
                  temperature: float = 1.,
                  uncond_scale: float = 1.,
                  uncond_cond: Optional[torch.Tensor] = None,
-                 noise_fn = torch.randn):
+                 noise_fn=torch.randn):
         """
         ### Sample $x_{\tau_{i-1}}$
 
@@ -179,7 +180,7 @@ class DDIMSampler(DiffusionSampler):
         x_prev, pred_x0 = self.get_x_prev_and_pred_x0(e_t, index, x,
                                                       temperature=temperature,
                                                       repeat_noise=repeat_noise,
-                                                      noise_fn = noise_fn)
+                                                      noise_fn=noise_fn)
 
         #
         return x_prev, pred_x0, e_t
@@ -187,7 +188,7 @@ class DDIMSampler(DiffusionSampler):
     def get_x_prev_and_pred_x0(self, e_t: torch.Tensor, index: int, x: torch.Tensor, *,
                                temperature: float,
                                repeat_noise: bool,
-                               noise_fn = torch.randn):
+                               noise_fn=torch.randn):
         """
         ### Sample $x_{\tau_{i-1}}$ given $\epsilon_\theta(x_{\tau_i})$
         """

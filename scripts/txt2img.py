@@ -8,9 +8,9 @@ summary: >
 # Generate images using [stable diffusion](../index.html) with a prompt
 """
 
-import time
 import os
 import sys
+import time
 from datetime import datetime
 
 base_dir = "./"
@@ -60,7 +60,7 @@ def main():
         .seed() \
         .parse()
 
-    #prompts = get_prompts(opt.prompt, opt.prompts_file)
+    # prompts = get_prompts(opt.prompt, opt.prompts_file)
     prompts = [opt.prompt]
 
     # Split the numbers_string into a list of substrings using the comma as the delimiter
@@ -80,11 +80,12 @@ def main():
 
     # Starts the text2img
     sd = StableDiffusion(
-                      sampler_name=opt.sampler,
-                      n_steps=opt.steps,
-                      force_cpu=opt.force_cpu,
-                      device=opt.cuda_device
-                    )
+        sampler_name=opt.sampler,
+        n_steps=opt.steps,
+        force_cpu=opt.force_cpu,
+        device=opt.cuda_device
+    )
+
     # txt2img.initialize_latent_diffusion(autoencoder=None, clip_text_embedder=None, unet_model = None, path=opt.checkpoint_path, force_submodels_init=True)
     sd.quick_initialize().load_submodel_tree()
     with monit.section('Generate', total_steps=len(prompts)) as section:

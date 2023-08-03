@@ -1,7 +1,9 @@
-import os, sys
-import torch
-from typing import Union, Optional
+import os
+import sys
 from pathlib import Path
+from typing import Union, Optional
+
+import torch
 
 sys.path.append(os.path.abspath(''))
 

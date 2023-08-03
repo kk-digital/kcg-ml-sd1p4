@@ -1,25 +1,25 @@
-import os
-import sys
 import argparse
-import torch
 import hashlib
 import json
-import shutil
 import math
-from torch.mps import empty_cache as mps_empty_cache
+import os
+import shutil
+import sys
 from os.path import join
+
+import torch
+from torch.mps import empty_cache as mps_empty_cache
 
 base_dir = "./"
 sys.path.insert(0, base_dir)
 
+from chad_score.chad_score import ChadScoreModel
 from stable_diffusion.utils_backend import get_device, get_memory_status
 from stable_diffusion.utils_image import to_pil, save_image_grid
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
-from chad_score import ChadPredictor
 from stable_diffusion import StableDiffusion
 from stable_diffusion.constants import IODirectoryTree
-
 
 EMBEDDED_PROMPTS_DIR = os.path.abspath("./input/embedded_prompts/")
 OUTPUT_DIR = "./output/disturbing_embeddings/"
@@ -78,7 +78,7 @@ parser.add_argument(
 parser.add_argument(
     "--cuda_device",
     type=str,
-    default=get_device(),
+    default=None,
     help="The cuda device to use. Defaults to 'cuda:0'.",
 )
 parser.add_argument(
@@ -101,7 +101,7 @@ PROMPT = args.prompt
 NUM_ITERATIONS = args.num_iterations
 SEED = args.seed
 NOISE_MULTIPLIER = args.noise_multiplier
-DEVICE = args.cuda_device
+DEVICE = get_device(args.cuda_device)
 BATCH_SIZE = args.batch_size
 SAVE_EMBEDDINGS = args.save_embeddings
 CLEAR_OUTPUT_DIR = args.clear_output_dir
@@ -279,7 +279,7 @@ def main():
     image_encoder.initialize_preprocessor()
     # clip_model, clip_preprocess = clip.load("ViT-L/14", device=DEVICE)
 
-    predictor = ChadPredictor(768, device=DEVICE)
+    predictor = ChadScoreModel(768, device=DEVICE)
     predictor.load(SCORER_CHECKPOINT_PATH)
 
     json_output = []

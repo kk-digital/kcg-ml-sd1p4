@@ -14,10 +14,11 @@ We have kept to the model definition and naming unchanged from
 [CompVis/stable-diffusion](https://github.com/CompVis/stable-diffusion)
 so that we can load the checkpoints directly.
 """
-from typing import List
-import safetensors
 import os
 import sys
+from typing import List
+
+import safetensors
 
 sys.path.insert(0, os.getcwd())
 from .auxiliary_classes import *
@@ -31,11 +32,11 @@ class Decoder(nn.Module):
     """
 
     def __init__(self, *,
-                 device = None, 
-                 channels: int = 128, 
-                 channel_multipliers: List[int] = [1, 2, 4, 4], 
+                 device=None,
+                 channels: int = 128,
+                 channel_multipliers: List[int] = [1, 2, 4, 4],
                  n_resnet_blocks: int = 2,
-                 out_channels: int = 3, 
+                 out_channels: int = 3,
                  z_channels: int = 4
                  ):
         """
@@ -91,16 +92,16 @@ class Decoder(nn.Module):
         # Map to image space with a $3 \times 3$ convolution
         self.norm_out = normalization(channels)
         self.conv_out = nn.Conv2d(channels, out_channels, 3, stride=1, padding=1)
-        
+
         self.to(self.device)
-        
+
     def save(self, decoder_path: str = DECODER_PATH):
         try:
             safetensors.torch.save_model(self, decoder_path)
             print(f"Saved decoder to {decoder_path}")
         except Exception as e:
             print(f"Failed to save encoder to {decoder_path}. Error: {e}")
-    
+
     def load(self, decoder_path: str = DECODER_PATH):
         try:
             safetensors.torch.load_model(self, decoder_path)
@@ -108,7 +109,6 @@ class Decoder(nn.Module):
             return self
         except Exception as e:
             print(f"Failed to load decoder from {decoder_path}. Error: {e}")
-        
 
     def forward(self, z: torch.Tensor):
         """

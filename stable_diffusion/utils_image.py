@@ -1,12 +1,13 @@
+import hashlib
+from pathlib import Path
+from typing import Union, BinaryIO, List, Optional
+
+import PIL
 import numpy as np
 import torch
 import torchvision
-import PIL
 from PIL import Image
 from torchvision.transforms import ToPILImage
-from pathlib import Path
-from typing import Union, BinaryIO, List, Optional
-import hashlib
 
 
 def calculate_sha256(tensor):
@@ -50,6 +51,7 @@ def save_images(images: torch.Tensor, dest_path: str, img_format: str = 'jpeg'):
         image_list.append(img)
 
     return (image_list, image_hash_list)
+
 
 def save_image_grid(
         tensor: Union[torch.Tensor, List[torch.Tensor]],

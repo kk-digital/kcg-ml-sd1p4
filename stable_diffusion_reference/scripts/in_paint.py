@@ -9,15 +9,18 @@ summary: >
 """
 
 from typing import Optional
+
 import torch
 
-from utility.labml import monit
+from cli_builder import CLI
 from stable_diffusion_base_script import StableDiffusionBaseScript
 from stable_diffusion_reference.utils_model import save_images, set_seed, get_autocast
-from cli_builder import CLI
+from utility.labml import monit
+
 
 def get_model_path():
-    return "./input/model/sd-v1-4.ckpt"  
+    return "./input/model/sd-v1-4.ckpt"
+
 
 class InPaint(StableDiffusionBaseScript):
     """
@@ -26,13 +29,13 @@ class InPaint(StableDiffusionBaseScript):
 
     @torch.no_grad()
     def repaint_image(self, *,
-                 orig_img: str,
-                 strength: float,
-                 batch_size: int = 3,
-                 prompt: str,
-                 uncond_scale: float = 5.0,
-                 mask: Optional[torch.Tensor] = None,
-                 ):
+                      orig_img: str,
+                      strength: float,
+                      batch_size: int = 3,
+                      prompt: str,
+                      uncond_scale: float = 5.0,
+                      mask: Optional[torch.Tensor] = None,
+                      ):
         """
         :param dest_path: is the path to store the generated images
         :param orig_img: is the image to transform
@@ -47,7 +50,7 @@ class InPaint(StableDiffusionBaseScript):
 
         orig = self.encode_image(orig_img, batch_size)
         mask = self.prepare_mask(mask, orig)
-        
+
         # Noise diffuse the original image
         orig_noise = torch.randn(orig.shape, device=self.device)
 
@@ -58,9 +61,9 @@ class InPaint(StableDiffusionBaseScript):
         autocast = get_autocast()
         with autocast:
             un_cond, cond = self.get_text_conditioning(uncond_scale, prompts, batch_size)
-            
+
             x = self.paint(orig, cond, t_index, uncond_scale,
-                      un_cond, mask, orig_noise)
+                           un_cond, mask, orig_noise)
             # Decode the image from the [autoencoder](../model/autoencoder.html)
             return self.decode_image(x)
 
@@ -79,13 +82,11 @@ def main():
         .cuda_device() \
         .parse()
 
-    
     set_seed(42)
-    
+
     if opt.strength < 0. or opt.strength > 1.:
         print("ERROR: can only work with strength in [0.0, 1.0]")
         exit(1)
-
 
     in_paint = InPaint(checkpoint_path=opt.checkpoint_path,
                        ddim_steps=opt.steps,

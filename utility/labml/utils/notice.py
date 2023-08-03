@@ -1,5 +1,5 @@
-from typing import Union, List, Tuple
 import sys
+from typing import Union, List, Tuple
 
 sys.path.append("./")
 from utility.labml import logger
@@ -7,7 +7,8 @@ from utility.labml.internal.util.colors import StyleCode
 from utility.labml.logger import Text
 
 
-def labml_notice(message: Union[str, List[Union[str, Tuple[str, StyleCode]]]], *, is_danger=False, is_warn=True, is_lite=False):
+def labml_notice(message: Union[str, List[Union[str, Tuple[str, StyleCode]]]], *, is_danger=False, is_warn=True,
+                 is_lite=False):
     if not is_lite:
         log = [('\n' + '-' * 50, Text.subtle)]
         if is_danger:

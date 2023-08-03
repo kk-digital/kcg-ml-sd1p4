@@ -1,12 +1,13 @@
-import torch
 import gc
-import clip
-import os
-import zipfile
-from PIL import Image, UnidentifiedImageError
-import sys
 import hashlib
+import os
+import sys
 import time
+import zipfile
+
+import clip
+import torch
+from PIL import Image, UnidentifiedImageError
 from transformers import AutoProcessor, CLIPVisionModel
 
 # no max for image pixel size

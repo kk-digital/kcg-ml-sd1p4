@@ -1,11 +1,13 @@
 import json
+
 import numpy as np
 
 
 class GenerationTask:
 
     def __init__(self, generation_task_type, prompt, model_name, cfg_strength, iterations, denoiser, seed, output_path,
-                 num_images, image_width, image_height, batch_size, checkpoint_path, flash, device, sampler, steps, force_cpu):
+                 num_images, image_width, image_height, batch_size, checkpoint_path, flash, device, sampler, steps,
+                 force_cpu):
         self.generation_task_type = generation_task_type
         self.prompt = prompt
         self.model_name = model_name
@@ -25,7 +27,6 @@ class GenerationTask:
         self.steps = steps
         self.force_cpu = force_cpu
 
-
     def to_dict(self):
         return {
             'generation_task_type': self.generation_task_type,
@@ -36,7 +37,7 @@ class GenerationTask:
             'denoiser': self.denoiser,
             'seed': self.seed,
             'output_path': self.output_path,
-            'num_images' : self.num_images,
+            'num_images': self.num_images,
             'image_width': self.image_width,
             'image_height': self.image_height,
             'batch_size': self.batch_size,
@@ -51,24 +52,24 @@ class GenerationTask:
 
     def from_dict(data):
         return GenerationTask(
-        generation_task_type=data.get('generation_task_type', ''),
-        prompt=data.get('prompt', ''),
-        cfg_strength = data.get('cfg_strength', 7),
-        model_name=data.get('model_name', ''),
-        iterations=data.get('iterations', ''),
-        denoiser=data.get('denoiser', ''),
-        seed=data.get('seed', ''),
-        output_path=data.get('output_path', ''),
-        num_images=data.get('num_images', 1),
-        image_width=data.get('image_width', 512),
-        image_height=data.get('image_height', 512),
-        batch_size=data.get('batch_size', 1),
-        checkpoint_path=data.get('checkpoint_path', ''),
-        flash=data.get('flash', False),
-        device=data.get('device', 'cuda'),
-        sampler=data.get('sampler', 'ddim'),
-        steps=data.get('steps', 50),
-        force_cpu=data.get('force_cpu', False))
+            generation_task_type=data.get('generation_task_type', ''),
+            prompt=data.get('prompt', ''),
+            cfg_strength=data.get('cfg_strength', 7),
+            model_name=data.get('model_name', ''),
+            iterations=data.get('iterations', ''),
+            denoiser=data.get('denoiser', ''),
+            seed=data.get('seed', ''),
+            output_path=data.get('output_path', ''),
+            num_images=data.get('num_images', 1),
+            image_width=data.get('image_width', 512),
+            image_height=data.get('image_height', 512),
+            batch_size=data.get('batch_size', 1),
+            checkpoint_path=data.get('checkpoint_path', ''),
+            flash=data.get('flash', False),
+            device=data.get('device', 'cuda'),
+            sampler=data.get('sampler', 'ddim'),
+            steps=data.get('steps', 50),
+            force_cpu=data.get('force_cpu', False))
 
     def save_to_json(self, filename):
         with open(filename, 'w') as file:
@@ -91,6 +92,7 @@ class NumpyArrayDecoder(json.JSONDecoder):
                 data = data.reshape(dct['shape'])
             return data
         return dct
+
 
 # Custom encoder to handle NumPy arrays
 class NumpyArrayEncoder(json.JSONEncoder):

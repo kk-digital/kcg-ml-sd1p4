@@ -1,5 +1,6 @@
 import argparse
-import os, sys
+import os
+import sys
 
 sys.path.append(os.path.join(".", "stable_diffusion_reference/utils"))
 from stable_diffusion_reference.cli import check_folder_existence, check_file_existence

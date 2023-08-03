@@ -1,9 +1,11 @@
-
 import json
+
 import numpy as np
 
+
 class GenerationTaskResult:
-    def __init__(self, prompt, model, image_name, embedding_name, clip_name, latent_name, image_hash, chad_score_model, chad_score, seed, cfg_strength):
+    def __init__(self, prompt, model, image_name, embedding_name, clip_name, latent_name, image_hash, chad_score_model,
+                 chad_score, seed, cfg_strength):
         self.prompt = prompt
         self.model = model
         self.image_name = image_name
@@ -19,7 +21,7 @@ class GenerationTaskResult:
     def to_dict(self):
         return {
             "prompt": self.prompt,
-            "model" : self.model,
+            "model": self.model,
             "image_name": self.image_name,
             "embedding_name": self.embedding_name,
             "clip_name": self.clip_name,
@@ -31,21 +33,19 @@ class GenerationTaskResult:
             "cfg_strength": self.cfg_strength
         }
 
-
     def from_dict(data):
         return GenerationTaskResult(
-        prompt=data['prompt'],
-        model=data['model'],
-        image_name=data['image_name'],
-        embedding_name=data['embedding_name'],
-        clip_name=data['clip_name'],
-        latent_name=data['latent_name'],
-        image_hash=data['image_hash'],
-        chad_score_model=data['chad_score_model'],
-        chad_score=data['chad_score'],
-        seed=data['seed'],
-        cfg_strength=data['cfg_strength'])
-
+            prompt=data['prompt'],
+            model=data['model'],
+            image_name=data['image_name'],
+            embedding_name=data['embedding_name'],
+            clip_name=data['clip_name'],
+            latent_name=data['latent_name'],
+            image_hash=data['image_hash'],
+            chad_score_model=data['chad_score_model'],
+            chad_score=data['chad_score'],
+            seed=data['seed'],
+            cfg_strength=data['cfg_strength'])
 
     def save_to_json(self, filename):
         with open(filename, 'w') as file:
@@ -55,7 +55,6 @@ class GenerationTaskResult:
         with open(filename, 'r') as file:
             data = json.load(file, cls=NumpyArrayDecoder)
             return GenerationTaskResult.from_dict(data)
-
 
 
 class NumpyArrayDecoder(json.JSONDecoder):
@@ -69,6 +68,7 @@ class NumpyArrayDecoder(json.JSONDecoder):
                 data = data.reshape(dct['shape'])
             return data
         return dct
+
 
 # Custom encoder to handle NumPy arrays
 class NumpyArrayEncoder(json.JSONEncoder):

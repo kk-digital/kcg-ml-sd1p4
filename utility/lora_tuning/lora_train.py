@@ -1,11 +1,12 @@
 import argparse
 import os
+import re
 import subprocess
 import zipfile
-import re
-import toml
 
+import toml
 from accelerate.utils import write_basic_config
+
 
 def check_dataset(dataset_dir):
     if os.path.isdir(dataset_dir):
@@ -27,11 +28,13 @@ def check_dataset(dataset_dir):
 
     raise ValueError("Invalid dataset path.")
 
-def generate_config(config_file, dataset_config_file, model_file, activation_tags, max_train_epochs, save_every_n_epochs, unet_lr, text_encoder_lr, lowram,
-                    network_dim, network_alpha, batch_size, caption_extension, config_dir, log_dir, repo_dir, output_dir, accelerate_config_file, dataset_reg,
+
+def generate_config(config_file, dataset_config_file, model_file, activation_tags, max_train_epochs,
+                    save_every_n_epochs, unet_lr, text_encoder_lr, lowram,
+                    network_dim, network_alpha, batch_size, caption_extension, config_dir, log_dir, repo_dir,
+                    output_dir, accelerate_config_file, dataset_reg,
                     continue_from_lora, resolution,
                     num_repeats, dataset, project_name):
-
     config_dict = {
         "additional_network_arguments": {
             "unet_lr": unet_lr,
@@ -150,14 +153,13 @@ def generate_config(config_file, dataset_config_file, model_file, activation_tag
                             "num_repeats": 1,
                             "image_dir": os.path.abspath(dataset_reg),
                             "class_tokens": reg_name,
-                            "is_reg" : True,
+                            "is_reg": True,
                             "keep_tokens": 1
                         }
                     ]
                 }
             ]
         }
-
 
     with open(dataset_config_file, "w") as f:
         f.write(toml.dumps(dataset_config_dict))
@@ -167,14 +169,13 @@ def generate_config(config_file, dataset_config_file, model_file, activation_tag
 def main(args):
     # Create directories
     for dir in (args.log_dir, args.output_dir, args.repo_dir, args.config_dir):
-      if not os.path.exists(dir):
-        os.makedirs(dir)
+        if not os.path.exists(dir):
+            os.makedirs(dir)
 
     # Check dataset and extract if necessary
     print(f"Dataset directory: {args.dataset}")
     if not args.dataset_reg is None:
         print(f"Regularization dataset directory: {args.dataset_reg}")
-
 
     # Patch kohya for minor stuff
     if args.lowram:
@@ -189,7 +190,8 @@ def main(args):
     train_util_file = os.path.join(args.repo_dir, "library", "train_util.py")
     with open(train_util_file, "r+") as f:
         content = f.read()
-        content = re.sub(r"from PIL import Image", "from PIL import Image, ImageFile\nImageFile.LOAD_TRUNCATED_IMAGES=True", content)
+        content = re.sub(r"from PIL import Image",
+                         "from PIL import Image, ImageFile\nImageFile.LOAD_TRUNCATED_IMAGES=True", content)
         content = re.sub(r"{:06d}", "{:02d}", content)
         f.seek(0)
         f.write(content)
@@ -226,11 +228,14 @@ def main(args):
         "--config_file", args.config_file
     ], check=True)
 
+
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset", default=".test/test_images/chibi-waifu-pixelart.zip", help="Path to the dataset directory or ZIP file.")
+    parser.add_argument("--dataset", default=".test/test_images/chibi-waifu-pixelart.zip",
+                        help="Path to the dataset directory or ZIP file.")
     parser.add_argument("--repo_dir", default=None, help="Directory to clone sd-scripts repository.")
-    parser.add_argument("--activation_tags", type=int, default=1, help="The number of activation tags in each txt file on the dataset.")
+    parser.add_argument("--activation_tags", type=int, default=1,
+                        help="The number of activation tags in each txt file on the dataset.")
     parser.add_argument("--num_repeats", type=int, default=None, help="Number of times to repeat per image.")
     parser.add_argument("--max_train_epochs", type=int, default=10, help="How many epochs to train for.")
     parser.add_argument("--save_every_n_epochs", default=1, help="How frequently should we save the LoRa model.")
@@ -241,14 +246,19 @@ def parse_arguments():
     parser.add_argument("--log_dir", default=None, help="Path to store log files.")
     parser.add_argument("--output_dir", default=None, help="Path to store output (LoRa model) files.")
     parser.add_argument("--unet_lr", type=float, default=0.0005, help="Learning rate for the UNet model.")
-    parser.add_argument("--text_encoder_lr", type=float, default=0.0001, help="Learning rate for the text encoder model.")
+    parser.add_argument("--text_encoder_lr", type=float, default=0.0001,
+                        help="Learning rate for the text encoder model.")
     parser.add_argument("--network_dim", type=int, default=512, help="Dimension of the network.")
     parser.add_argument("--network_alpha", type=int, help="Alpha value for the network.")
     parser.add_argument("--batch_size", type=int, default=3, help="Number of images to use per epoch.")
-    parser.add_argument("--lowram", type=bool, default=False, help="Supply this argument if running on a system with a low amount of RAM (<20GB)")
-    parser.add_argument("--caption_extension", type=str, default=None, help="Do not specify if there are no captions for the image, if there are, specify the extension of the captions (eg. txt) here.")
-    parser.add_argument("--resolution", type=int, default=512, help="Resolution of the images. Must be square aspect ratio (1:1).")
-    parser.add_argument("--project_name", type=str, default="Test", help="Put the project name here. Will dictate the filenames of the LoRa models produced, amongst other things.")
+    parser.add_argument("--lowram", type=bool, default=False,
+                        help="Supply this argument if running on a system with a low amount of RAM (<20GB)")
+    parser.add_argument("--caption_extension", type=str, default=None,
+                        help="Do not specify if there are no captions for the image, if there are, specify the extension of the captions (eg. txt) here.")
+    parser.add_argument("--resolution", type=int, default=512,
+                        help="Resolution of the images. Must be square aspect ratio (1:1).")
+    parser.add_argument("--project_name", type=str, default="Test",
+                        help="Put the project name here. Will dictate the filenames of the LoRa models produced, amongst other things.")
     parser.add_argument("--continue_from_lora", default=None,
                         help="Path to the Lora file from which to continue training.")
     parser.add_argument("--accelerate_config_file", default=None,
@@ -258,6 +268,7 @@ def parse_arguments():
     args = parser.parse_args()
     set_defaults(args)
     return args
+
 
 def set_defaults(args):
     if args.repo_dir is None:
@@ -290,7 +301,9 @@ def set_defaults(args):
     if args.num_repeats is None:
         total_image_files = len([file for file in os.listdir(args.dataset) if file.endswith((".png", ".jpg", ".jpeg"))])
         args.num_repeats = round(300 / total_image_files)
-        print("Num_repeats not specified, calculating an automatic " + str(args.num_repeats) + " repeats for best results.")
+        print("Num_repeats not specified, calculating an automatic " + str(
+            args.num_repeats) + " repeats for best results.")
+
 
 if __name__ == '__main__':
     args = parse_arguments()

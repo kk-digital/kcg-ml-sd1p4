@@ -1,7 +1,8 @@
+import sys
 from abc import ABC
 from collections import deque
 from typing import Dict, Optional
-import sys
+
 import numpy as np
 
 sys.path.append('./')

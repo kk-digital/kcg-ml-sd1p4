@@ -15,10 +15,9 @@ We have kept to the model definition and naming unchanged from
 so that we can load the checkpoints directly.
 """
 
-
-import safetensors
 import os
 import sys
+import safetensors
 
 sys.path.insert(0, os.getcwd())
 from .auxiliary_classes import *
@@ -35,7 +34,7 @@ class Autoencoder(nn.Module):
     This consists of the encoder and decoder modules.
     """
 
-    def __init__(self, emb_channels: int = 4, z_channels: int = 4, encoder = None, decoder = None, device = None):
+    def __init__(self, emb_channels: int = 4, z_channels: int = 4, encoder=None, decoder=None, device=None):
         """
         :param encoder: is the encoder
         :param decoder: is the decoder
@@ -58,13 +57,12 @@ class Autoencoder(nn.Module):
         self.post_quant_conv = nn.Conv2d(emb_channels, z_channels, 1)
         self.to(self.device)
 
-    def save_submodels(self, encoder_path = ENCODER_PATH, decoder_path = DECODER_PATH):
-        
+    def save_submodels(self, encoder_path=ENCODER_PATH, decoder_path=DECODER_PATH):
+
         self.encoder.save(encoder_path)
         self.decoder.save(decoder_path)
-        
 
-    def save(self, autoencoder_path = AUTOENCODER_PATH):
+    def save(self, autoencoder_path=AUTOENCODER_PATH):
         """
         ### Save the model to a checkpoint
         """
@@ -74,8 +72,8 @@ class Autoencoder(nn.Module):
             print(f"Autoencoder saved to: {autoencoder_path}")
         except Exception as e:
             print(f"Autoencoder not saved. Error: {e}")
-            
-    def load(self, autoencoder_path = AUTOENCODER_PATH):
+
+    def load(self, autoencoder_path=AUTOENCODER_PATH):
         try:
             safetensors.torch.load_model(self, autoencoder_path, strict=True)
             print(f"Autoencoder loaded from: {autoencoder_path}")
@@ -85,34 +83,34 @@ class Autoencoder(nn.Module):
             print(f"Autoencoder not loaded. Error: {e}")
             return None
 
-    def load_submodels(self, encoder_path = ENCODER_PATH, decoder_path = DECODER_PATH):
-        
+    def load_submodels(self, encoder_path=ENCODER_PATH, decoder_path=DECODER_PATH):
+
         """
         ### Load the model from a checkpoint
         """
-        
+
         self.encoder = Encoder(device=self.device)
-        self.encoder.load(encoder_path = encoder_path)
+        self.encoder.load(encoder_path=encoder_path)
         print(f"Encoder loaded from: {encoder_path}")
         self.encoder.eval()
         self.decoder = Decoder(device=self.device)
-        self.decoder.load(decoder_path = decoder_path)
+        self.decoder.load(decoder_path=decoder_path)
         print(f"Decoder loaded from: {decoder_path}")
         self.decoder.eval()
         return self
-        
-    def load_encoder(self, encoder_path = ENCODER_PATH):
-        
+
+    def load_encoder(self, encoder_path=ENCODER_PATH):
+
         self.encoder = Encoder(device=self.device)
-        self.encoder.load(encoder_path = encoder_path)
+        self.encoder.load(encoder_path=encoder_path)
         print(f"Encoder loaded from: {encoder_path}")
         self.encoder.eval()
         return self.encoder
-    
-    def load_decoder(self, decoder_path = DECODER_PATH):
-        
+
+    def load_decoder(self, decoder_path=DECODER_PATH):
+
         self.decoder = Decoder(device=self.device)
-        self.decoder.load(decoder_path = decoder_path)
+        self.decoder.load(decoder_path=decoder_path)
         print(f"Decoder loaded from: {decoder_path}")
         self.decoder.eval()
         return self.decoder
@@ -170,6 +168,7 @@ class Autoencoder(nn.Module):
         z = self.post_quant_conv(z)
         # Decode the image of shape `[batch_size, channels, height, width]`
         return self.decoder(z)
+
 
 if __name__ == "__main__":
     prompts = ["", "A painting of a computer virus", "A photo of a computer virus"]

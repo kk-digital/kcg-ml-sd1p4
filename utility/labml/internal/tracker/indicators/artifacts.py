@@ -1,8 +1,9 @@
+import sys
 from abc import ABC
 from collections import OrderedDict
 from typing import Dict, Optional, Any
 from uuid import uuid1
-import sys
+
 import numpy as np
 
 sys.path.append("./")
