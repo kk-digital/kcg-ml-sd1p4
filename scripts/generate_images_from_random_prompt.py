@@ -164,7 +164,7 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
         base_file_name =  f'{i:0{total_digits}d}-{timestamp}'
         image_name = base_file_name + '.jpg'
 
-        filename = output + '/' + image_name
+        filename = output + image_name
 
         # Capture the starting time
         tmp_start_time = time.time()

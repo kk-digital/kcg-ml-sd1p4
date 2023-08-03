@@ -9,7 +9,7 @@
   "checkpoint_path": "./input/model/v1-5-pruned-emaonly.safetensors",
   "seed" : "",
   "flash" : true,
-  "device" : "cuda",
+  "device" : null,
   "sampler" : "ddim",
   "steps" : 50,
   "force_cpu" : false

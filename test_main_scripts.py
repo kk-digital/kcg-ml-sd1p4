@@ -1,12 +1,12 @@
-import unittest
 import subprocess
+import unittest
 
 
 class TestScripts(unittest.TestCase):
     scripts_path = "./scripts/"
 
     def run_script(self, script_name, **kwargs):
-        script = f"python3 {self.scripts_path}{script_name}.py"
+        script = f"python3 {script_name}.py"
         #  check if in the kwargs there is dirct key, for this one just add the value to the command
         if 'direct' in kwargs:
             script += " " + kwargs['direct']
@@ -27,38 +27,72 @@ class TestScripts(unittest.TestCase):
         self.assertEqual(process.returncode, 0, f"{command} failed with return code {process.returncode}")
 
     def test_1_process_base_model(self):
-        self.run_script("process_base_model", direct="'input/model/v1-5-pruned-emaonly.safetensors'")
+        self.run_script("./setup_directories_and_models", direct="'input/model/v1-5-pruned-emaonly.safetensors'")
 
     def test_2_text_to_image(self):
-        self.run_script("text_to_image", prompt="'character, chibi, waifu, side scrolling, white background, centered'",
+        self.run_script(f"{self.scripts_path}text_to_image",
+                        prompt="'character, chibi, waifu, side scrolling, white background, centered'",
                         checkpoint_path="'./input/model/v1-5-pruned-emaonly.safetensors'", batch_size=1, num_images=1)
 
+    #     python3 ./scripts/txt2img.py --num_images 2 --prompt 'A purple rainbow, filled with grass'
+
+    def test_2_1_text_to_image(self):
+        self.run_script(f"{self.scripts_path}txt2img", prompt="'A purple rainbow, filled with grass'", num_images=2)
+
     def test_3_embed_prompts(self):
-        self.run_script("embed_prompts",
+        self.run_script(f"{self.scripts_path}embed_prompts",
                         prompts="'A painting of a computer virus, An old photo of a computer scientist, A computer drawing a computer'")
 
     # Add other test cases similarly...
     def test_4_generate_images_from_embeddings(self):
-        self.run_script("generate_images_from_embeddings", num_seeds=4, temperature=1.2, ddim_eta=0.2)
+        self.run_script(f"{self.scripts_path}generate_images_from_embeddings", num_seeds=4, temperature=1.2,
+                        ddim_eta=0.2)
 
     def test_5_generate_images_from_distributions(self):
-        self.run_script("generate_images_from_distributions", d=4, params_steps=4, params_range='0.49 0.54',
+        self.run_script(f"{self.scripts_path}generate_images_from_distributions", d=4, params_steps=4,
+                        params_range='0.49 0.54',
                         num_seeds=4, temperature=1.2, ddim_eta=1.2)
 
     def test_6_generate_images_from_temperature_range(self):
-        self.run_script("generate_images_from_temperature_range", d=4, params_range='0.49 0.54', params_steps=3,
+        self.run_script(f"{self.scripts_path}generate_images_from_temperature_range", d=4, params_range='0.49 0.54',
+                        params_steps=3,
                         temperature_steps=3, temperature_range='0.8 2.0')
 
     def test_7_generate_images_and_encodings(self):
-        self.run_script("generate_images_and_encodings",
+        self.run_script(f"{self.scripts_path}generate_images_and_encodings",
                         prompt="'An oil painting of a computer generated image of a geometric pattern'",
                         num_iterations=10)
 
     def test_8_embed_prompts_and_generate_images(self):
-        self.run_script("embed_prompts_and_generate_images")
+        self.run_script(f"{self.scripts_path}embed_prompts_and_generate_images")
 
     def test_9_data_bounding_box_and_score_and_embedding_dataset(self):
-        self.run_script("data_bounding_box_and_score_and_embedding_dataset")
+        self.run_script(f"{self.scripts_path}data_bounding_box_and_score_and_embedding_dataset")
+
+    def test_10_grid_generator(self):
+        self.run_script("./utility/scripts/grid_generator", input_path="./test/test_images/clip_segmentation",
+                        output_path="./tmp", rows=3, columns=2, img_size=256)
+
+    def test_11_generate_images_from_random_prompt(self):
+        self.run_script(f"{self.scripts_path}generate_images_from_random_prompt",
+                        checkpoint_path="'./input/model/v1-5-pruned-emaonly.safetensors'", cfg_scale=7, num_images=10,
+                        output="'./output/'")
+
+    def test_13_chad_sort(self):
+        self.run_script(f"{self.scripts_path}chad_score",
+                        direct="--model-path='input/model/chad_score/chad-score-v1.pth' --image-path='./test/test_images/test_img.jpg'")
+
+    def test_14_chad_sort(self):
+        self.run_script(f"{self.scripts_path}chad_sort",
+                        direct="--dataset-path='test/test_zip_files/test-dataset-correct-format.zip' --output-path='./output/chad_sort/'")
+
+    def test_15_run_generation_task(self):
+        self.run_script(f"{self.scripts_path}run_generation_task",
+                        task_path="'./test/test_generation_task/text_to_image_v1.json'")
+
+    def test_16_run_generation_task(self):
+        self.run_script(f"{self.scripts_path}run_generation_task",
+                        task_path="'./test/test_generation_task/generate_images_from_random_prompt_v1.json'")
 
 
 if __name__ == "__main__":
