@@ -6,16 +6,15 @@ import os
 import struct
 import sys
 import zipfile
-
-import clip
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from PIL import Image
+
 
 sys.path.insert(0, os.getcwd())
 from generation_task_result import GenerationTaskResult
+from model.linear_regression import LinearRegressionModel
 
 
 def hash_string_to_float32(input_string):
@@ -48,32 +47,6 @@ def hash_string_to_float32(input_string):
     except ValueError:
         raise ValueError("Error hashing the input string.")
 
-
-def get_image_features(image_data, device):
-    model, preprocess = clip.load('ViT-L/14', device)
-
-    # Open the image using Pillow and io.BytesIO
-    image = Image.open(io.BytesIO(image_data))
-
-    image_input = preprocess(image).unsqueeze(0).to(device)
-
-    # Encode the image
-    with torch.no_grad():
-        image_features = model.encode_image(image_input)
-
-    return image_features
-
-
-class LinearRegressionModel(nn.Module):
-    def __init__(self, input_size):
-        super(LinearRegressionModel, self).__init__()
-        self.linear = nn.Sequential(
-            nn.Linear(input_size, 1),
-            nn.Identity()
-        )
-
-    def forward(self, x):
-        return self.linear(x)
 
 
 def split_data(input_list, validation_ratio=0.2):
@@ -177,7 +150,7 @@ def main():
                     if use_76th_embedding:
                         embedding_vector = embedding_vector[:, 76]
 
-                    embedding_vector = torch.tensor(embedding_vector, dtype=torch.float32);
+                    embedding_vector = torch.tensor(embedding_vector, dtype=torch.float32, device=device);
                     # Convert the tensor to a flat vector
                     flat_embedded_prompts = torch.flatten(embedding_vector)
 
@@ -189,20 +162,20 @@ def main():
                     inputs.append(flat_vector)
                     expected_outputs.append(chad_score)
 
-    linear_regression_model = LinearRegressionModel(len(inputs[0]))
+    linear_regression_model = LinearRegressionModel(len(inputs[0]), device)
     mse_loss = nn.MSELoss()
     learning_rate = 0.00001
-    optimizer = optim.SGD(linear_regression_model.parameters(), lr=learning_rate)
+    optimizer = optim.SGD(linear_regression_model.model.parameters(), lr=learning_rate)
 
     num_inputs = len(inputs)
 
     validation_inputs, train_inputs = split_data(inputs, validation_ratio=0.2)
     validation_outputs, target_outputs = split_data(expected_outputs, validation_ratio=0.2)
 
-    train_inputs = torch.tensor(train_inputs, dtype=torch.float32)
-    target_outputs = torch.tensor(target_outputs, dtype=torch.float32)
-    validation_inputs = torch.tensor(validation_inputs, dtype=torch.float32)
-    validation_outputs = torch.tensor(validation_outputs, dtype=torch.float32)
+    train_inputs = torch.tensor(train_inputs, dtype=torch.float32, device=device)
+    target_outputs = torch.tensor(target_outputs, dtype=torch.float32, device=device)
+    validation_inputs = torch.tensor(validation_inputs, dtype=torch.float32, device=device)
+    validation_outputs = torch.tensor(validation_outputs, dtype=torch.float32, device=device)
 
     target_outputs_raw = target_outputs.unsqueeze(1)
     validation_outputs_raw = validation_outputs.unsqueeze(1)
@@ -226,7 +199,7 @@ def main():
         optimizer.zero_grad()
 
         # Forward pass
-        model_outputs_raw = linear_regression_model(train_inputs)
+        model_outputs_raw = linear_regression_model.model(train_inputs)
         model_outputs_scaled = torch.sigmoid(model_outputs_raw)
 
         # target_outputs_sigmoid = torch.sigmoid(target_outputs)
@@ -238,7 +211,7 @@ def main():
         optimizer.step()
 
         # Validation step
-        model_validation_outputs_raw = linear_regression_model(validation_inputs)
+        model_validation_outputs_raw = linear_regression_model.model(validation_inputs)
         validation_loss = mse_loss(model_validation_outputs_raw, validation_outputs_raw)
 
         # the last validation loss for the first epoch is the current validation loss
@@ -258,7 +231,7 @@ def main():
 
             for index, prediction in enumerate(model_outputs_scaled):
                 residual = abs(model_outputs_scaled[index][0] - target_outputs_scaled[index][0])
-                training_residuals.append(residual)
+                training_residuals.append(residual.cpu())
                 if (residual < epsilon_scaled):
                     training_corrects_scaled += 1
             for index, prediction in enumerate(model_outputs_raw):
@@ -283,7 +256,7 @@ def main():
     # Step 6: Evaluate the Model
     with torch.no_grad():
         test_X = validation_inputs
-        predicted_raw = linear_regression_model(test_X)
+        predicted_raw = linear_regression_model.model(test_X)
         predicted_scaled = torch.sigmoid(predicted_raw)
 
         validation_corrects_raw = 0
@@ -301,6 +274,13 @@ def main():
         # print('predicted (scaled) first 10 elements : ', predicted_scaled[:10])
         # print('expected output (scaled) first 10 elements : ', validation_outputs_scaled[:10])
 
+        # converting all tensors back to cpu memory
+
+        train_inputs = train_inputs.cpu()
+        target_outputs = target_outputs.cpu()
+        validation_inputs = validation_inputs.cpu()
+        validation_outputs = validation_outputs.cpu()
+
         for index, prediction in enumerate(predicted_raw):
             residual = abs(predicted_raw[index][0] - validation_outputs_raw[index][0])
             if (residual < epsilon_raw):
@@ -315,8 +295,6 @@ def main():
     validation_accuracy_scaled = validation_corrects_scaled / validation_inputs.size(0)
     training_accuracy_raw = training_corrects_raw / train_inputs.size(0)
     training_accuracy_scaled = training_corrects_scaled / train_inputs.size(0)
-
-    print(len(training_residuals))
 
     training_residuals_histogram = report_residuals_histogram(training_residuals, "Training")
     validation_residuals_histogram = report_residuals_histogram(validation_residuals, "Validation")
