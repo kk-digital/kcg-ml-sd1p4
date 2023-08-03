@@ -113,23 +113,22 @@ def calculate_pairwise_accuracy(predictions, targets, num_samples=16):
     total_correct = 0
     total_sampled = 0
 
-    # If validation set is 200 items, then loop 200 times
-    for _ in range(len(targets)):
-        sampled_indices_i = np.random.choice(len(predictions), num_samples, replace=False)
-        sampled_indices_j = np.random.choice(len(predictions), num_samples, replace=False)
+    sampled_indices_i = np.random.choice(len(predictions), num_samples, replace=False)
+    sampled_indices_j = np.random.choice(len(predictions), num_samples, replace=False)
+    pairs = zip(sampled_indices_i, sampled_indices_j)
 
-        for i, j in zip(sampled_indices_i, sampled_indices_j):
-            # Skipping the same point
-            if j == i:
-                continue
-            prediction_i = predictions[i]
-            prediction_j = predictions[j]
-            target_i = targets[i]
-            target_j = targets[j]
+    for i, j in pairs:
+        # Skipping the same point
+        if j == i:
+            continue
+        prediction_i = predictions[i]
+        prediction_j = predictions[j]
+        target_i = targets[i]
+        target_j = targets[j]
 
-            if (prediction_i < prediction_j) == (target_i < target_j):
-                total_correct += 1
-            total_sampled += 1
+        if (prediction_i < prediction_j) == (target_i < target_j):
+            total_correct += 1
+        total_sampled += 1
 
     return total_correct / total_sampled
 
