@@ -1,17 +1,14 @@
 import argparse
 import hashlib
 import json
-import shutil
 import time
-import cv2
-import numpy as np
 import random
 import shutil
 import sys
 import warnings
 from os.path import join
 from typing import List
-
+from random import randrange
 import cv2
 import numpy as np
 import torch
@@ -89,8 +86,8 @@ parser.add_argument(
 parser.add_argument(
     "--seed",
     type=str,
-    default=2982,
-    help="The noise seed used to generate the images. Defaults to 2982",
+    default='',
+    help="The noise seed used to generate the images. Defaults to random int 0 to 2^24",
 )
 parser.add_argument(
     "--noise_multiplier",
@@ -115,7 +112,12 @@ args = parser.parse_args()
 
 NULL_PROMPT = ""
 NUM_ITERATIONS = args.num_iterations
-SEED = args.seed
+
+if args.seed == '':
+    SEED = randrange(0, 2 ** 24)
+else:
+    SEED = int(args.seed)
+    
 NOISE_MULTIPLIER = args.noise_multiplier
 DEVICE = args.cuda_device
 BATCH_SIZE = args.batch_size
