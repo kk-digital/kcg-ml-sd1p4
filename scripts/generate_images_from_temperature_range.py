@@ -2,7 +2,7 @@ import argparse
 import os
 import shutil
 import sys
-
+from random import randrange
 import torch
 
 base_dir = "./"
@@ -48,7 +48,7 @@ parser.add_argument(
     default=4,
     help="0: 'Normal' | 1: 'Cauchy' | 2: 'Gumbel' | 3: 'Laplace' | 4: 'Logistic' | Defaults to 4.",
 )
-parser.add_argument("--seed", type=int, default=2982)
+parser.add_argument("--seed", type=str, default='')
 parser.add_argument("--batch_size", type=int, default=1)
 parser.add_argument("--params_steps", type=int, default=3)
 parser.add_argument("--params_range", nargs="+", type=float, default=[0.49, 0.54])
@@ -65,7 +65,12 @@ OUTPUT_DIR = args.output_dir
 CHECKPOINT_PATH = args.checkpoint_path
 FULLY_INIT = args.fully_initialize
 DISTRIBUTION_ID = args.distribution_index
-NOISE_SEED = args.seed
+
+if args.seed == '':
+    NOISE_SEED = randrange(0, 2 ** 24)
+else:
+    NOISE_SEED = int(args.seed)
+
 BATCH_SIZE = args.batch_size
 PARAMS_STEPS = args.params_steps
 PARAMS_RANGE = args.params_range
