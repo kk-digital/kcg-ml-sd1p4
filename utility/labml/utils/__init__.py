@@ -1,5 +1,6 @@
-import os, os.path
-from  pathlib import Path
+import os
+import os.path
+from pathlib import Path
 from typing import Set, List
 
 

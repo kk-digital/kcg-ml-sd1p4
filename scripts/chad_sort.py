@@ -1,10 +1,11 @@
-import os
-import sys
 import argparse
-import torch
-import zipfile
+import os
 import shutil
+import sys
 import time
+import zipfile
+
+import torch
 
 base_directory = os.getcwd()
 sys.path.insert(0, base_directory)
@@ -16,22 +17,25 @@ from chad_score.chad_score import ChadScorePredictor
 
 def parse_arguments():
     """Command-line arguments for 'classify' command."""
-    parser = argparse.ArgumentParser(description="Chad sort, takes in an image database and sorts it by chad score into many folders.")
+    parser = argparse.ArgumentParser(
+        description="Chad sort, takes in an image database and sorts it by chad score into many folders.")
 
     parser.add_argument('--dataset-path', type=str, help='Path to the dataset to sort')
     parser.add_argument('--output-path', type=str, default='./output/chad_sort/', help='Path to the output folder')
-    parser.add_argument('--num-classes', type=int, default=10, help='Defines the number of classes to sort into, Specifies the total count of categories or groups or folders')
+    parser.add_argument('--num-classes', type=int, default=10,
+                        help='Defines the number of classes to sort into, Specifies the total count of categories or groups or folders')
     parser.add_argument('--device', type=str, default='cuda:0', help='Path to the dataset to sort')
 
     return parser.parse_args()
 
-def ensure_required_args(args):
 
+def ensure_required_args(args):
     """Check if required arguments are set."""
 
     if not args.dataset_path:
         print('Error: --dataset_path is required')
         sys.exit(1)
+
 
 def create_folder_if_not_exist(folder_path):
     """
@@ -45,6 +49,7 @@ def create_folder_if_not_exist(folder_path):
     """
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
+
 
 def remove_all_files_and_folders(path):
     """
@@ -66,10 +71,13 @@ def remove_all_files_and_folders(path):
 
     print(f"All files and folders inside '{path}' have been removed.")
 
+
 class ChadImage:
     def __init__(self, file_path, chad_score):
-        self.file_path = file_path # path + file name
+        self.file_path = file_path  # path + file name
         self.chad_score = chad_score
+
+
 def main():
     # Parser the parameters
     args = parse_arguments()
@@ -145,6 +153,7 @@ def main():
 
     print("Execution Time:", str(execution_time), "seconds")
     print("Images per second:", str(num_images / execution_time), " image/seconds")
+
 
 if __name__ == '__main__':
     main()

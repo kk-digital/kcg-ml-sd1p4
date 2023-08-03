@@ -1,10 +1,11 @@
-import os
-import torch
-import shutil
 import argparse
+import os
+import shutil
 import sys
-from tqdm import tqdm
 from os.path import join
+
+import torch
+from tqdm import tqdm
 
 base_directory = "./"
 sys.path.insert(0, base_directory)
@@ -12,7 +13,6 @@ sys.path.insert(0, base_directory)
 from stable_diffusion.stable_diffusion import StableDiffusion
 from stable_diffusion.utils_backend import get_device
 from stable_diffusion.utils_image import save_images, save_image_grid
-
 
 # CHECKPOINT_PATH = os.path.abspath('./input/model/v1-5-pruned-emaonly.ckpt')
 

@@ -1,8 +1,8 @@
 import torch
 
+
 def get_torch_distribution_from_name(name: str) -> type:
     if name == "Logistic":
-
         def logistic_distribution(loc, scale):
             base_distribution = torch.distributions.Uniform(0, 1)
             transforms = [
@@ -30,7 +30,7 @@ def get_all_torch_distributions() -> tuple:
 
 
 def build_noise_samplers(
-    distributions: dict
+        distributions: dict
 ) -> dict:
     noise_samplers = {
         k: lambda shape, device=None: get_torch_distribution_from_name(k)(**v)

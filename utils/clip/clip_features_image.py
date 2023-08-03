@@ -1,13 +1,14 @@
-
 import clip
 import torch
+
 from stable_diffusion.utils_backend import get_device
 
+
 class ClipImageFeatures():
-    def __init__(self, device = None):
+    def __init__(self, device=None):
         self.device = get_device(device)
 
-    def load_model(self, model_name = 'ViT-L/14'):
+    def load_model(self, model_name='ViT-L/14'):
         model, preprocess = clip.load(model_name, self.device)
         self.model = model
         self.preprocess = preprocess
@@ -17,7 +18,6 @@ class ClipImageFeatures():
         del self.processor
 
     def get_image_features(self, image):
-
         image_input = self.preprocess(image).unsqueeze(0).to(self.device)
 
         # Encode the image

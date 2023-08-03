@@ -11,7 +11,7 @@ class ImageDatasetStorageFormatValidator(ImageDatasetStorageFormat):
         self.load_zip_to_memory(path_to_zip_file)
         self.check_images_folder(is_tagged)
         self.check_features_folder()
-        self.check_file_exist_in_root_in_zip( "manifest.json")
+        self.check_file_exist_in_root_in_zip("manifest.json")
         self.check_if_keys_exists_in_json("manifest.json", manifest_json_keys_to_check)
         print("Dataset Validation Complete: {0}".format(path_to_zip_file))
 
@@ -47,7 +47,6 @@ class ImageDatasetStorageFormatValidator(ImageDatasetStorageFormat):
                 # if tagged, the second parent dir must be images
                 if second_parent_dir_name != "images":
                     raise Exception("{0}: {1}".format(IMAGE_NOT_IN_IMAGE_DIR, file_path))
-
 
     def __check_all_files_in_images_dir_are_supported(self):
         file_paths = self.zip_ref.namelist()
@@ -87,7 +86,6 @@ class ImageDatasetStorageFormatValidator(ImageDatasetStorageFormat):
                 features_paths.append(file_path)
 
         return features_paths
-
 
     def check_if_keys_exists_in_json(self, json_file_name: str, keys_to_check: []):
         file_paths = self.zip_ref.namelist()

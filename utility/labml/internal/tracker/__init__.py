@@ -1,6 +1,6 @@
+import sys
 from pathlib import PurePath
 from typing import Dict, List, Optional, Callable, Union, Tuple
-import sys
 
 sys.path.append("./")
 from utility.labml.internal import util

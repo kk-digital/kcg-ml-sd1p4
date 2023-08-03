@@ -1,7 +1,8 @@
 import torch
+
+from stable_diffusion_reference.model.autoencoder import Encoder, Decoder, Autoencoder
 from stable_diffusion_reference.model.clip_embedder import CLIPTextEmbedder
 from stable_diffusion_reference.model.unet import UNetModel
-from stable_diffusion_reference.model.autoencoder import Encoder, Decoder, Autoencoder
 
 
 # Initialize the U-Net

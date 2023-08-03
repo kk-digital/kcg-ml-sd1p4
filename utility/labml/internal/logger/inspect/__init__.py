@@ -1,7 +1,7 @@
 import collections
 import math
-from typing import TYPE_CHECKING, List, Tuple
 import sys
+from typing import TYPE_CHECKING, List, Tuple
 
 sys.path.append("./")
 from utility.labml.internal.util.colors import StyleCode

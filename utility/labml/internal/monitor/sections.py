@@ -1,7 +1,7 @@
 import math
+import sys
 import time
 from typing import TYPE_CHECKING, List
-import sys
 
 sys.path.append("./")
 from utility.labml.logger import Text

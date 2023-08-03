@@ -54,5 +54,5 @@ Here are the image generation scripts:
 """
 
 from .constants import *
-from .stable_diffusion import StableDiffusion
 from .latent_diffusion import LatentDiffusion
+from .stable_diffusion import StableDiffusion

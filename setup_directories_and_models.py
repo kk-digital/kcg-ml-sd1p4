@@ -1,13 +1,14 @@
-import os
-import configparser
 import argparse
+import configparser
 import json
+import os
+
 import requests
 
-from stable_diffusion.utils_logger import logger
-from utility.labml.monit import section
-from stable_diffusion.utils_model import initialize_latent_diffusion
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
+from stable_diffusion.utils_logger import logger
+from stable_diffusion.utils_model import initialize_latent_diffusion
+from utility.labml.monit import section
 
 config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
 parser = argparse.ArgumentParser(description="Setup a config file with the default IO directory structure.")

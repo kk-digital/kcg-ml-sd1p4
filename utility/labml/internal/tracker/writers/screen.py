@@ -1,6 +1,7 @@
 import math
-from typing import Dict
 import sys
+from typing import Dict
+
 import numpy as np
 
 sys.path.append("./")

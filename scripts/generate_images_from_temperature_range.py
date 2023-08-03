@@ -1,8 +1,9 @@
-import os
-import sys
-import torch
-import shutil
 import argparse
+import os
+import shutil
+import sys
+
+import torch
 
 base_dir = "./"
 sys.path.insert(0, base_dir)
@@ -15,7 +16,6 @@ from stable_diffusion.constants import CHECKPOINT_PATH
 from labml.monit import section
 from stable_diffusion import StableDiffusion
 from utility.labml.monit import section
-
 
 # CHECKPOINT_PATH = os.path.abspath('./input/model/v1-5-pruned-emaonly.ckpt')
 OUTPUT_DIR = os.path.abspath("./output/noise-tests/temperature_range")
@@ -108,15 +108,15 @@ def create_folder_structure(
 
 
 def init_stable_diffusion(
-    checkpoint_path: str = CHECKPOINT_PATH,
-    sampler_name: str = "ddim",
-    ddim_steps: int = 20,
-    ddim_eta: float = 0.0,
+        checkpoint_path: str = CHECKPOINT_PATH,
+        sampler_name: str = "ddim",
+        ddim_steps: int = 20,
+        ddim_eta: float = 0.0,
 ):
     sd = StableDiffusion(
-        device = DEVICE,
+        device=DEVICE,
         sampler_name=sampler_name,
-        ddim_steps = ddim_steps,
+        ddim_steps=ddim_steps,
         ddim_eta=ddim_eta,
     )
     # compute loading time
@@ -152,14 +152,14 @@ def show_summary(total_time, partial_time, total_images, output_dir):
 
 
 def generate_images_from_temp_range(
-    distributions: dict,
-    txt2img: StableDiffusion,
-    output_dir: str = OUTPUT_DIR,
-    clear_output_dir: bool = CLEAR_OUTPUT_DIR,
-    prompt: str = PROMPT,
-    noise_seed: int = NOISE_SEED,
-    batch_size: int = BATCH_SIZE,
-    temperature_range=TEMP_RANGE,
+        distributions: dict,
+        txt2img: StableDiffusion,
+        output_dir: str = OUTPUT_DIR,
+        clear_output_dir: bool = CLEAR_OUTPUT_DIR,
+        prompt: str = PROMPT,
+        noise_seed: int = NOISE_SEED,
+        batch_size: int = BATCH_SIZE,
+        temperature_range=TEMP_RANGE,
 ):
     # Clear the output directory
 

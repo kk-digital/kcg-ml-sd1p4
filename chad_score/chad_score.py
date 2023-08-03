@@ -1,6 +1,7 @@
+import pytorch_lightning as pl
 import torch
 import torch.nn as nn
-import pytorch_lightning as pl
+
 from stable_diffusion.utils_backend import get_device
 
 

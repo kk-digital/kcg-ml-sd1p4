@@ -1,8 +1,10 @@
 import os
 import time
 from typing import TypedDict, Optional, Literal, Union, List
+
 import libtorrent as lt
 import requests as rq
+
 from cli_builder import CLI
 
 
@@ -11,6 +13,7 @@ class Model(TypedDict):
     filename: str
     magnet_link: Optional[str]
     direct_link: Optional[str]
+
 
 ModelList = List[Model]
 
@@ -74,6 +77,7 @@ model_list: ModelList = [
 DESTINATION = './input/model/'
 LOGS_DIR = '/tmp/logs'
 
+
 def to_byte_units(size: int):
     if size < 1024:
         return f"{size}B"
@@ -83,6 +87,7 @@ def to_byte_units(size: int):
         return f"{round(size / 1024 / 1024, 2)}MB"
     else:
         return f"{round(size / 1024 / 1024 / 1024, 2)}GB"
+
 
 def download_via_magnet_link(magnet_link: str, destination: str):
     ses = lt.session()
@@ -97,10 +102,11 @@ def download_via_magnet_link(magnet_link: str, destination: str):
 
     print(f"Download complete. File saved to: {destination}/{h.name()}")
 
+
 def download_via_direct_link(direct_link: str, destination: str, filename: str = ''):
     print("Downloading the file {} to {} via direct link...".format(filename, destination))
 
-    r = rq.get(direct_link, allow_redirects=True, stream=True) ## print progress below
+    r = rq.get(direct_link, allow_redirects=True, stream=True)  ## print progress below
 
     total_length = int(r.headers.get('content-length', 0)) if 'content-length' in r.headers else None
 
@@ -113,23 +119,25 @@ def download_via_direct_link(direct_link: str, destination: str, filename: str =
             if chunk and total_length:
                 progress_bytes = to_byte_units(progress)
                 total_length_bytes = to_byte_units(total_length)
-                print(f"\rProgress: ({progress_bytes}/{total_length_bytes}) - {round(progress / total_length * 100, 2)}%", end='\r')
+                print(
+                    f"\rProgress: ({progress_bytes}/{total_length_bytes}) - {round(progress / total_length * 100, 2)}%",
+                    end='\r')
             if chunk and not total_length:
                 print(f"\rProgress: {to_byte_units(progress)}", end='\r')
 
     print(f"Download complete. File saved to: {destination}/{filename}")
 
+
 def download_model(
         model: Model,
         via: Union[Literal['direct'], Literal['magnet']] = 'direct',
         destination: str = '/tmp/input/models/',
-    ):
-
+):
     if via == 'direct' and model['direct_link']:
         download_via_direct_link(model['direct_link'], destination, model['filename'])
     elif via == 'magnet' and model['magnet_link']:
         download_via_magnet_link(model['magnet_link'], destination)
-    
+
 
 def show_models():
     for model in model_list:
@@ -137,17 +145,18 @@ def show_models():
         magnet_link = f"Magnet link: {model['magnet_link']}\n" if model.get('magnet_link') else ''
         print(f"{model['filename']}\n{model['description']}\n{direct_link}{magnet_link}")
 
+
 def main():
     args = CLI('Download models') \
-            .list_models() \
-            .model() \
-            .output(DESTINATION, lambda args: not args.list_models) \
-            .parse()
-            
+        .list_models() \
+        .model() \
+        .output(DESTINATION, lambda args: not args.list_models) \
+        .parse()
+
     if args.list_models:
         show_models()
         return
-    
+
     if args.model:
         model = next((model for model in model_list if model['filename'] == args.model), None)
 
@@ -168,6 +177,7 @@ def main():
 
         else:
             print('Model not found')
+
 
 if __name__ == '__main__':
     main()

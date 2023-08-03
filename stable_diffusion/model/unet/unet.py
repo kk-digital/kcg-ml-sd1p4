@@ -16,20 +16,23 @@ so that we can load the checkpoints directly.
 """
 
 import math
+import os
+import sys
 from typing import List
+
 import numpy as np
+import safetensors
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchinfo import summary
-import safetensors
-import os
-import sys
 
 sys.path.insert(0, os.getcwd())
 from .unet_attention import SpatialTransformer
 from stable_diffusion.constants import UNET_PATH
 from stable_diffusion.utils_backend import get_device
+
+
 # UNET_PATH = os.path.abspath('./input/model/unet/unet.ckpt')
 
 
@@ -40,7 +43,7 @@ class UNetModel(nn.Module):
 
     def __init__(
             self, *,
-            device = None,
+            device=None,
             in_channels: int = 4,
             out_channels: int = 4,
             channels: int = 320,
@@ -60,7 +63,7 @@ class UNetModel(nn.Module):
         :param n_heads: the number of attention heads in the transformers
         """
         super().__init__()
-        
+
         self.device = get_device(device)
         self.channels = channels
 
@@ -143,16 +146,17 @@ class UNetModel(nn.Module):
             nn.SiLU(),
             nn.Conv2d(channels, out_channels, 3, padding=1),
         )
-        
+
         self.to(self.device)
-        
-    def save(self, unet_path = UNET_PATH):
+
+    def save(self, unet_path=UNET_PATH):
         try:
             safetensors.torch.save_model(self, unet_path)
             print(f"UNet saved to: {unet_path}")
         except Exception as e:
             print(f"Error saving UNet to {unet_path}: {e}")
-    def load(self, unet_path = UNET_PATH):
+
+    def load(self, unet_path=UNET_PATH):
         try:
             safetensors.torch.load_model(self, unet_path)
             print(f"UNet loaded from: {unet_path}")
@@ -363,17 +367,16 @@ def _test_time_embeddings():
     plt.show()
 
 
-
 if __name__ == '__main__':
     _test_time_embeddings()
     unet_model = UNetModel(in_channels=4,
-                            out_channels=4,
-                            channels=320,
-                            attention_levels=[0, 1, 2],
-                            n_res_blocks=2,
-                            channel_multipliers=[1, 2, 4, 4],
-                            n_heads=8,
-                            tf_layers=1,
-                            d_cond=768)
+                           out_channels=4,
+                           channels=320,
+                           attention_levels=[0, 1, 2],
+                           n_res_blocks=2,
+                           channel_multipliers=[1, 2, 4, 4],
+                           n_heads=8,
+                           tf_layers=1,
+                           d_cond=768)
     summary(unet_model)
     unet_model.save()

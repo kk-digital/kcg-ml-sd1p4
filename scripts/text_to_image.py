@@ -8,17 +8,18 @@ summary: >
 # Generate images using [stable diffusion](../index.html) with a prompt
 """
 
-import time
 import os
-import torch
+import time
 from datetime import datetime
 
-from stable_diffusion_base_script import StableDiffusionBaseScript
+import torch
+
+from cli_builder import CLI
+from stable_diffusion.model.unet.unet_attention import CrossAttention
 from stable_diffusion.utils_backend import set_seed, get_autocast
 from stable_diffusion.utils_image import save_images
+from stable_diffusion_base_script import StableDiffusionBaseScript
 from utility.labml import monit
-from stable_diffusion.model.unet.unet_attention import CrossAttention
-from cli_builder import CLI
 
 
 def get_prompts(prompt, prompts_file):
@@ -167,8 +168,8 @@ class Txt2Img(StableDiffusionBaseScript):
             return self.decode_image(x)
 
 
-def text_to_image(prompt, output, sampler, checkpoint_path, flash, steps, cfg_scale, low_vram, force_cpu, cuda_device, num_images, seed):
-
+def text_to_image(prompt, output, sampler, checkpoint_path, flash, steps, cfg_scale, low_vram, force_cpu, cuda_device,
+                  num_images, seed):
     # prompts = get_prompts(opt.prompt, opt.prompts_file)
     prompts = [prompt]
 
@@ -247,6 +248,7 @@ def main():
 
     text_to_image(opt.prompt, opt.output, opt.sampler, opt.checkpoint_path, opt.flash, opt.steps,
                   opt.cfg_scale, opt.low_vram, opt.force_cpu, opt.cuda_device, opt.num_images, opt.seed)
+
 
 if __name__ == "__main__":
     main()

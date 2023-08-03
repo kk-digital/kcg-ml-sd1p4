@@ -1,6 +1,7 @@
 import os
-import torch
 import time
+
+import torch
 from tqdm import tqdm
 
 from scripts.text_to_image import Txt2Img

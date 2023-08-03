@@ -1,5 +1,6 @@
 import time
 from typing import NamedTuple
+
 import numpy as np
 
 

@@ -9,11 +9,12 @@ summary: >
 """
 
 import torch
-from utility.labml import monit
 
+from cli_builder import CLI
 from stable_diffusion_base_script import StableDiffusionBaseScript
 from stable_diffusion_reference.utils_model import save_images, set_seed, get_autocast
-from cli_builder import CLI
+from utility.labml import monit
+
 
 class Img2Img(StableDiffusionBaseScript):
     """
@@ -22,12 +23,12 @@ class Img2Img(StableDiffusionBaseScript):
 
     @torch.no_grad()
     def transform_image(self, *,
-                 orig_img: str,
-                 strength: float,
-                 batch_size: int = 3,
-                 prompt: str,
-                 uncond_scale: float = 5.0,
-                 ) -> torch.Tensor:
+                        orig_img: str,
+                        strength: float,
+                        batch_size: int = 3,
+                        prompt: str,
+                        uncond_scale: float = 5.0,
+                        ) -> torch.Tensor:
         """
         :param dest_path: is the path to store the generated images
         :param orig_img: is the image to transform
@@ -39,7 +40,7 @@ class Img2Img(StableDiffusionBaseScript):
         """
         # Make a batch of prompts
         prompts = batch_size * [prompt]
-        
+
         orig = self.encode_image(orig_img, batch_size)
 
         t_index = self.calc_strength_time_step(strength)
@@ -50,11 +51,12 @@ class Img2Img(StableDiffusionBaseScript):
             print(f'Generating images with prompt: "{prompt}"')
 
             un_cond, cond = self.get_text_conditioning(uncond_scale, prompts, batch_size)
-            
+
             x = self.paint(orig, cond, t_index, uncond_scale, un_cond)
-            
+
             # Reconstruct from the noisy image
             return self.decode_image(x)
+
 
 def main():
     """
@@ -72,7 +74,7 @@ def main():
         .force_cpu() \
         .cuda_device() \
         .parse()
-    
+
     print(opt)
 
     set_seed(42)

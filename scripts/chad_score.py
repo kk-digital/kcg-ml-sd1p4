@@ -1,7 +1,8 @@
-import torch
-import sys
-import os
 import argparse
+import os
+import sys
+
+import torch
 
 sys.path.insert(0, os.getcwd())
 
@@ -14,7 +15,8 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description="Chad Score.")
 
     # Arguments for 'classify'
-    parser.add_argument('--model-path', type=str, help='Path to the model used for classifying the items in the dataset')
+    parser.add_argument('--model-path', type=str,
+                        help='Path to the model used for classifying the items in the dataset')
     parser.add_argument('--image-path', type=str, help='Path to image to score')
 
     return parser.parse_args()
@@ -36,7 +38,7 @@ def main():
 
     chad_score_predictor = ChadScorePredictor(device='cuda:0')
     chad_score_predictor.load_model()
-    print( "Chad score predicted by the model:")
+    print("Chad score predicted by the model:")
     print(chad_score_predictor.get_chad_score(feature_vectors))
 
 
