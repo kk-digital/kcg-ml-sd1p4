@@ -22,6 +22,7 @@ parser.add_argument("--model_name", type=str, default="v1-5-pruned-emaonly")
 parser.add_argument("--clip_model_name", type=str, default="vit-large-patch14")
 parser.add_argument("--download_base_clip_model", type=bool, default=False)
 parser.add_argument("--download_base_sd_model", type=bool, default=False)
+parser.add_argument("--download_text_model", type=bool, default=False)
 args = parser.parse_args()
 
 BASE_DIRECTORY = args.base_directory
@@ -32,6 +33,7 @@ MODEL_NAME = args.model_name
 CLIP_MODEL_NAME = args.clip_model_name
 DOWNLOAD_BASE_CLIP_MODEL = args.download_base_clip_model
 DOWNLOAD_BASE_SD_MODEL = args.download_base_sd_model
+DOWNLOAD_TEXT_MODEL = args.download_text_model
 CHECKPOINT = f"{MODEL_NAME}.safetensors"
 BASE_IO_DIRECTORY = os.path.join(BASE_DIRECTORY, BASE_IO_DIRECTORY_PREFIX)
 
@@ -135,6 +137,7 @@ def create_directory_if_not_exists(directory_path):
 def download_file(url, file_path, description):
     if not os.path.isfile(file_path):
         with section(f"Initializing {description} download."):
+            print(f"\nDownloading to {file_path}")
             r = requests.get(url, allow_redirects=True)
             try:
                 with open(file_path, 'wb') as f:
@@ -147,11 +150,10 @@ def download_file(url, file_path, description):
 
 
 if __name__ == "__main__":
-
     create_directory_tree_folders(config)
 
     with section(
-            "Downloading CLIP model, SD model. This may take a while."):
+            "Downloading CLIP model, SD model. This may take a while.\n"):
 
         if DOWNLOAD_BASE_CLIP_MODEL:
             clip_model_dir = config["MODELS_DIRS"].get('clip_model_dir')
@@ -166,6 +168,13 @@ if __name__ == "__main__":
             sd_path = os.path.join(root_models_dir, 'v1-5-pruned-emaonly.safetensors')
             sd_url = r'https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors'
             download_file(sd_url, sd_path, "Stable Diffusion checkpoint")
+
+        if DOWNLOAD_TEXT_MODEL:
+            root_models_dir = config["SUBMODELS_DIRS"].get('TEXT_MODEL_DIR')
+            create_directory_if_not_exists(root_models_dir)
+            model_path = os.path.join(root_models_dir, 'pytorch_model.bin')
+            model_url = r'https://huggingface.co/openai/clip-vit-large-patch14/resolve/main/pytorch_model.bin'
+            download_file(model_url, model_path, "Pytorch Model Bin")
 
     with section("Initializing CLIP image encoder"):
         model = initialize_latent_diffusion(
