@@ -10,12 +10,11 @@ summary: >
 
 import datetime
 import os
-import random
 import sys
 import time
 import zipfile
 from zipfile import ZipFile
-
+from random import randrange
 import numpy as np
 import torch
 
@@ -108,11 +107,13 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
     if seed != '':
         seed_string_array = seed.split(',')
 
+    # default seed value is random int from 0 to 2^24
+    if seed == '':
+        rand_seed = randrange(0, 2 ** 24)
+        seed_string_array = str(rand_seed)
+
     # Convert the elements in the list to integers
     seed_array = [int(num) for num in seed_string_array]
-
-    if len(seed_array) == 0:
-        seed_array = [random.randint(0, 2 ** 31 - 1) for _ in range(num_images)]
 
     # Set flash attention
     CrossAttention.use_flash_attention = flash
