@@ -313,7 +313,7 @@ def main():
     #     torch.cuda.empty_cache()
 
     image_encoder = CLIPImageEncoder(device=DEVICE)
-    image_encoder.load_clip_model(**pt.clip_model)
+    image_encoder.load_submodels()
     image_encoder.initialize_preprocessor()
 
     predictor = ChadScoreModel(768, device=DEVICE)
