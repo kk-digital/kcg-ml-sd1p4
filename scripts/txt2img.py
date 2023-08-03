@@ -12,6 +12,7 @@ import os
 import sys
 import time
 from datetime import datetime
+from random import randrange
 
 base_dir = "./"
 sys.path.insert(0, base_dir)
@@ -65,6 +66,11 @@ def main():
 
     # Split the numbers_string into a list of substrings using the comma as the delimiter
     seed_string_array = opt.seed.split(',')
+
+    # default seed value is random int from 0 to 2^24
+    if opt.seed == '':
+        rand_seed = randrange(2**24)
+        seed_string_array = str(rand_seed)
 
     # Convert the elements in the list to integers (optional, if needed)
     seed_array = [int(num) for num in seed_string_array]
