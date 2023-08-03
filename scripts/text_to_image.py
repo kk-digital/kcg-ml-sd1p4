@@ -11,7 +11,7 @@ summary: >
 import os
 import time
 from datetime import datetime
-
+from random import randrange
 import torch
 
 from cli_builder import CLI
@@ -175,6 +175,11 @@ def text_to_image(prompt, output, sampler, checkpoint_path, flash, steps, cfg_sc
 
     # Split the numbers_string into a list of substrings using the comma as the delimiter
     seed_string_array = seed.split(',')
+
+    # default seed value is random int from 0 to 2^24
+    if seed == '':
+        rand_seed = randrange(2 ** 24)
+        seed_string_array = str(rand_seed)
 
     # Convert the elements in the list to integers (optional, if needed)
     seed_array = [int(num) for num in seed_string_array]
