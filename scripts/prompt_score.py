@@ -128,6 +128,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description="Training linear model on image promps with chad score.")
 
     parser.add_argument('--input_path', type=str, default='./input/set_0000.zip', help='Path to input zip')
+    parser.add_argument('--output_path', type=str, default='./output/', help='Path output folder')
     parser.add_argument('--num_epochs', type=int, default=1000, help='Number of epochs (default: 1000)')
     parser.add_argument('--epsilon_raw', type=float, default=10.0, help='Epsilon for raw data (default: 10.0)')
     parser.add_argument('--epsilon_scaled', type=float, default=0.2, help='Epsilon for scaled data (default: 0.2)')
@@ -150,6 +151,7 @@ def main():
     epsilon_raw = args.epsilon_raw
     epsilon_scaled = args.epsilon_scaled
     show_validation_loss = args.show_validation_loss
+    output_path = args.output_path
 
     inputs = []
     expected_outputs = []
@@ -189,7 +191,8 @@ def main():
 
     linear_regression_model = LinearRegressionModel(len(inputs[0]))
     mse_loss = nn.MSELoss()
-    optimizer = optim.SGD(linear_regression_model.parameters(), lr=0.00001)
+    learning_rate = 0.00001
+    optimizer = optim.SGD(linear_regression_model.parameters(), lr=learning_rate)
 
     num_inputs = len(inputs)
 
@@ -318,29 +321,79 @@ def main():
     training_residuals_histogram = report_residuals_histogram(training_residuals, "Training")
     validation_residuals_histogram = report_residuals_histogram(validation_residuals, "Validation")
 
-    print('loss : {:.4f}'.format(loss.item()))
-    print('training_accuracy (raw) : {:.4f} %'.format(training_accuracy_raw * 100))
-    print('training_accuracy (scaled) : {:.4f} %'.format(training_accuracy_scaled * 100))
-    print('validation_accuracy (raw) : {:.4f} %'.format(validation_accuracy_raw * 100))
-    print('validation_accuracy (scaled) : {:.4f} %'.format(validation_accuracy_scaled * 100))
-    print('min training output (raw) : {:.4f}'.format(min_training_output_raw[0]))
-    print('max training output (raw) : {:.4f}'.format(max_training_output_raw[0]))
-    print('min training output (scaled) : {:.4f}'.format(min_training_output_scaled[0]))
-    print('max training output (scaled) : {:.4f}'.format(max_training_output_scaled[0]))
-    print('min predictions (raw) : {:.4f}'.format(min(predicted_raw)[0]))
-    print('max predictions (raw) : {:.4f}'.format(max(predicted_raw)[0]))
-    print('min predictions (scaled) : {:.4f}'.format(min(predicted_scaled)[0]))
-    print('max predictions (scaled) : {:.4f}'.format(max(predicted_scaled)[0]))
-    print('min training residual : {:.4f}'.format(min(training_residuals)))
-    print('max training residual : {:.4f}'.format(max(training_residuals)))
-    print('min validation residual : {:.4f}'.format(min(validation_residuals)))
-    print('max validation residual : {:.4f}'.format(max(validation_residuals)))
-    print('total number of images : ', num_inputs)
-    print('total train image count ', train_inputs.size(0))
-    print('total validation image count ', validation_inputs.size(0))
-    print(training_residuals_histogram)
-    print(validation_residuals_histogram)
+    # Create a string buffer
+    train_report_string_buffer = io.StringIO()
 
+    # Append strings to the buffer
+    train_report_string_buffer.write('epoch : ' + str(num_epochs))
+    train_report_string_buffer.write('\n')
+    train_report_string_buffer.write('learning_rate {:.7f}'.format(learning_rate))
+    train_report_string_buffer.write('\n')
+    train_report_string_buffer.write('epsilon_raw {:.4f}'.format(epsilon_raw))
+    train_report_string_buffer.write('\n')
+    train_report_string_buffer.write('epsilon_scaled {:.4f}'.format(epsilon_scaled))
+    train_report_string_buffer.write('\n')
+    train_report_string_buffer.write('use_76th_embedding : ' + str(use_76th_embedding))
+    train_report_string_buffer.write('\n')
+    train_report_string_buffer.write('\n')
+    train_report_string_buffer.write('\n')
+    train_report_string_buffer.write('loss : {:.4f}'.format(loss.item()))
+    train_report_string_buffer.write('\n')
+    train_report_string_buffer.write('training_accuracy (raw) : {:.4f} %'.format(training_accuracy_raw * 100))
+    train_report_string_buffer.write('\n')
+    train_report_string_buffer.write('training_accuracy (scaled) : {:.4f} %'.format(training_accuracy_scaled * 100))
+    train_report_string_buffer.write('\n')
+    train_report_string_buffer.write('validation_accuracy (raw) : {:.4f} %'.format(validation_accuracy_raw * 100))
+    train_report_string_buffer.write('\n')
+    train_report_string_buffer.write('validation_accuracy (scaled) : {:.4f} %'.format(validation_accuracy_scaled * 100))
+    train_report_string_buffer.write('\n')
+    train_report_string_buffer.write('min training output (raw) : {:.4f}'.format(min_training_output_raw[0]))
+    train_report_string_buffer.write('\n')
+    train_report_string_buffer.write('max training output (raw) : {:.4f}'.format(max_training_output_raw[0]))
+    train_report_string_buffer.write('\n')
+    train_report_string_buffer.write('min training output (scaled) : {:.4f}'.format(min_training_output_scaled[0]))
+    train_report_string_buffer.write('\n')
+    train_report_string_buffer.write('max training output (scaled) : {:.4f}'.format(max_training_output_scaled[0]))
+    train_report_string_buffer.write('\n')
+    train_report_string_buffer.write('min predictions (raw) : {:.4f}'.format(min(predicted_raw)[0]))
+    train_report_string_buffer.write('\n')
+    train_report_string_buffer.write('max predictions (raw) : {:.4f}'.format(max(predicted_raw)[0]))
+    train_report_string_buffer.write('\n')
+    train_report_string_buffer.write('min predictions (scaled) : {:.4f}'.format(min(predicted_scaled)[0]))
+    train_report_string_buffer.write('\n')
+    train_report_string_buffer.write('max predictions (scaled) : {:.4f}'.format(max(predicted_scaled)[0]))
+    train_report_string_buffer.write('\n')
+    train_report_string_buffer.write('min training residual : {:.4f}'.format(min(training_residuals)))
+    train_report_string_buffer.write('\n')
+    train_report_string_buffer.write('max training residual : {:.4f}'.format(max(training_residuals)))
+    train_report_string_buffer.write('\n')
+    train_report_string_buffer.write('min validation residual : {:.4f}'.format(min(validation_residuals)))
+    train_report_string_buffer.write('\n')
+    train_report_string_buffer.write('max validation residual : {:.4f}'.format(max(validation_residuals)))
+    train_report_string_buffer.write('\n')
+    train_report_string_buffer.write('total number of images : ' + str(num_inputs))
+    train_report_string_buffer.write('\n')
+    train_report_string_buffer.write('total train image count ' + str(train_inputs.size(0)))
+    train_report_string_buffer.write('\n')
+    train_report_string_buffer.write('total validation image count ' + str(validation_inputs.size(0)))
+    train_report_string_buffer.write('\n')
+    train_report_string_buffer.write('\n')
+    train_report_string_buffer.write('\n')
+    train_report_string_buffer.write(training_residuals_histogram)
+    train_report_string_buffer.write('\n')
+    train_report_string_buffer.write('\n')
+    train_report_string_buffer.write('\n')
+    train_report_string_buffer.write(validation_residuals_histogram)
+
+    # Get the contents of the buffer as a single string
+    train_report_string = train_report_string_buffer.getvalue()
+
+    print(train_report_string)
+
+    reports_path = output_path + '/report.txt'
+    with open(reports_path, "w", encoding="utf-8") as file:
+        file.write(train_report_string)
+    print("Reports saved at {}".format(reports_path))
 
 if __name__ == '__main__':
     main()
