@@ -128,6 +128,9 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description="Training linear model on image promps with chad score.")
 
     parser.add_argument('--input_path', type=str, help='Path to input zip')
+    parser.add_argument('--num_epochs', type=int, default=1000, help='Number of epochs (default: 1000)')
+    parser.add_argument('--epsilon_raw', type=float, default=10.0, help='Epsilon for raw data (default: 10.0)')
+    parser.add_argument('--epsilon_scaled', type=float, default=0.2, help='Epsilon for scaled data (default: 0.2)')
     parser.add_argument('--use_76th_embedding', action='store_true', help='If this option is set, only use the last entry in the embeddings tensor')
 
     return parser.parse_args()
@@ -140,6 +143,9 @@ def main():
     # Example usage:
     zip_file_path = args.input_path
     use_76th_embedding = args.use_76th_embedding
+    num_epochs = args.num_epochs
+    epsilon_raw = args.epsilon_raw
+    epsilon_scaled = args.epsilon_scaled
 
     inputs = []
     expected_outputs = []
@@ -198,9 +204,6 @@ def main():
     target_outputs_scaled = torch.sigmoid(target_outputs_raw)
     validation_outputs_scaled = torch.sigmoid(validation_outputs_raw)
 
-    num_epochs = 100
-    epsilon_raw = 10
-    epsilon_scaled = 0.2
     training_corrects_raw = 0
     training_corrects_scaled = 0
     min_training_output_raw = 0
