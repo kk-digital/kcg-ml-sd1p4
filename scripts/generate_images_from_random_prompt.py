@@ -207,15 +207,6 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
         with torch.no_grad():
             embedded_vector = cond.cpu().numpy()
 
-            images = txt2img.generate_images(
-                batch_size=opt.batch_size,
-                prompt=this_prompt,
-                uncond_scale=opt.cfg_scale,
-                low_vram=opt.low_vram,
-                seed=this_seed,
-                w = image_width,
-                h = image_height
-                ).to('cpu')
 
         # image latent
         latent = []
