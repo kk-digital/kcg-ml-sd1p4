@@ -127,12 +127,13 @@ def parse_arguments():
     """Command-line arguments for 'classify' command."""
     parser = argparse.ArgumentParser(description="Training linear model on image promps with chad score.")
 
-    parser.add_argument('--input_path', type=str, help='Path to input zip')
+    parser.add_argument('--input_path', type=str, default='./input/set_0000.zip', help='Path to input zip')
     parser.add_argument('--num_epochs', type=int, default=1000, help='Number of epochs (default: 1000)')
     parser.add_argument('--epsilon_raw', type=float, default=10.0, help='Epsilon for raw data (default: 10.0)')
     parser.add_argument('--epsilon_scaled', type=float, default=0.2, help='Epsilon for scaled data (default: 0.2)')
     parser.add_argument('--use_76th_embedding', action='store_true',
                         help='If this option is set, only use the last entry in the embeddings tensor')
+    parser.add_argument('--show_validation_loss', action='store_true', help="whether to show validation loss")
 
     return parser.parse_args()
 
@@ -148,6 +149,7 @@ def main():
     num_epochs = args.num_epochs
     epsilon_raw = args.epsilon_raw
     epsilon_scaled = args.epsilon_scaled
+    show_validation_loss = args.show_validation_loss
 
     inputs = []
     expected_outputs = []
@@ -214,7 +216,10 @@ def main():
     training_residuals = []
     validation_residuals = []
 
+    last_validation_lost = 0
+
     for epoch in range(num_epochs):
+        done = False
         optimizer.zero_grad()
 
         # Forward pass
@@ -229,9 +234,25 @@ def main():
         loss.backward()
         optimizer.step()
 
+        # Validation step
+        model_validation_outputs_raw = linear_regression_model(validation_inputs)
+        validation_loss = mse_loss(model_validation_outputs_raw, validation_outputs_raw)
+
+        # the last validation loss for the first epoch is the current validation loss
+        if (epoch == 0):
+            last_validation_lost = validation_loss
+
+        if last_validation_lost < validation_loss:
+            print('Validation loss is starting to drop, abort training')
+            num_epochs = epoch + 1
+            done = True
+
+        last_validation_lost = validation_loss
+
         if epoch == num_epochs - 1:
             model_outputs_raw = model_outputs_raw.tolist()
             model_outputs_scaled = model_outputs_scaled.tolist()
+
             for index, prediction in enumerate(model_outputs_scaled):
                 residual = abs(model_outputs_scaled[index][0] - target_outputs_scaled[index][0])
                 training_residuals.append(residual)
@@ -247,8 +268,14 @@ def main():
             max_training_output_scaled = max(model_outputs_scaled)
 
         # Print progress
-        if (epoch + 1) % 100 == 0:
-            print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}')
+        if (epoch + 1) % (num_epochs / 10) == 0:
+            if show_validation_loss:
+                print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f} | Validation Loss: {validation_loss.item():.4f}')
+            else:
+                print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}')
+
+        if done:
+            break
 
     # Step 6: Evaluate the Model
     with torch.no_grad():
@@ -264,12 +291,12 @@ def main():
         validation_outputs_raw = validation_outputs_raw.tolist()
         validation_outputs_scaled = validation_outputs_scaled.tolist()
 
-        print(test_X.shape)
-        print('predicted (raw) first 10 elements : ', predicted_raw[:10])
-        print('expected output (raw) first 10 elements : ', validation_outputs_raw[:10])
+        # print(test_X.shape)
+        # print('predicted (raw) first 10 elements : ', predicted_raw[:10])
+        # print('expected output (raw) first 10 elements : ', validation_outputs_raw[:10])
 
-        print('predicted (scaled) first 10 elements : ', predicted_scaled[:10])
-        print('expected output (scaled) first 10 elements : ', validation_outputs_scaled[:10])
+        # print('predicted (scaled) first 10 elements : ', predicted_scaled[:10])
+        # print('expected output (scaled) first 10 elements : ', validation_outputs_scaled[:10])
 
         for index, prediction in enumerate(predicted_raw):
             residual = abs(predicted_raw[index][0] - validation_outputs_raw[index][0])
@@ -285,6 +312,8 @@ def main():
     validation_accuracy_scaled = validation_corrects_scaled / validation_inputs.size(0)
     training_accuracy_raw = training_corrects_raw / train_inputs.size(0)
     training_accuracy_scaled = training_corrects_scaled / train_inputs.size(0)
+
+    print(len(training_residuals))
 
     training_residuals_histogram = report_residuals_histogram(training_residuals, "Training")
     validation_residuals_histogram = report_residuals_histogram(validation_residuals, "Validation")

@@ -404,6 +404,7 @@ options:
   --epsilon_scaled EPSILON_SCALED
                         Epsilon for scaled data (default: 0.2)
   --use_76th_embedding  If this option is set, only use the last entry in the embeddings tensor
+  --show_validation_loss  If this option is set, shows validation loss during training
 ```
 
 #### Example Usage:
