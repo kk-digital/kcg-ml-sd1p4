@@ -22,12 +22,12 @@ We use same notations for $\alpha_t$, $\beta_t$ schedules, etc.
 """
 
 from typing import List
+
+import safetensors
 import torch
 import torch.nn as nn
-import safetensors
-from .model.vae.autoencoder import Autoencoder
-from .model.clip_text_embedder.clip_text_embedder import CLIPTextEmbedder
-from .model.unet.unet import UNetModel
+
+from utility.labml.monit import section
 from .constants import (
     AUTOENCODER_PATH,
     UNET_PATH,
@@ -38,8 +38,10 @@ from .constants import (
     TOKENIZER_PATH,
     TEXT_MODEL_PATH,
 )
+from .model.clip_text_embedder.clip_text_embedder import CLIPTextEmbedder
+from .model.unet.unet import UNetModel
+from .model.vae.autoencoder import Autoencoder
 from .utils_backend import get_device
-from utility.labml.monit import section
 
 
 class UNetWrapper(nn.Module):
@@ -74,15 +76,15 @@ class LatentDiffusion(nn.Module):
     clip_embedder: CLIPTextEmbedder
 
     def __init__(
-        self,
-        latent_scaling_factor: float = 0.18215,
-        n_steps: int = 1000,
-        linear_start: float = 0.00085,
-        linear_end: float = 0.0120,
-        unet_model: UNetModel = None,
-        autoencoder: Autoencoder = None,
-        clip_embedder: CLIPTextEmbedder = None,
-        device=None,
+            self,
+            latent_scaling_factor: float = 0.18215,
+            n_steps: int = 1000,
+            linear_start: float = 0.00085,
+            linear_end: float = 0.0120,
+            unet_model: UNetModel = None,
+            autoencoder: Autoencoder = None,
+            clip_embedder: CLIPTextEmbedder = None,
+            device=None,
     ):
         """
         :param unet_model: is the [U-Net](model/unet.html) that predicts noise
@@ -139,12 +141,12 @@ class LatentDiffusion(nn.Module):
         return self.model
 
     def save_submodels(
-        self,
-        autoencoder_path=AUTOENCODER_PATH,
-        embedder_path=TEXT_EMBEDDER_PATH,
-        unet_path=UNET_PATH
+            self,
+            autoencoder_path=AUTOENCODER_PATH,
+            embedder_path=TEXT_EMBEDDER_PATH,
+            unet_path=UNET_PATH
     ):
-        
+
         self.first_stage_model.save(autoencoder_path=autoencoder_path)
         self.cond_stage_model.save(embedder_path=embedder_path)
         self.model.diffusion_model.save(unet_path=unet_path)
@@ -155,8 +157,8 @@ class LatentDiffusion(nn.Module):
             print(f"Latent diffusion model saved at: {latent_diffusion_path}")
         except Exception as e:
             print(f"Failed to save latent diffusion model at: {latent_diffusion_path}. Error: {e}")
-            
-    def load(self, latent_diffusion_path = LATENT_DIFFUSION_PATH):
+
+    def load(self, latent_diffusion_path=LATENT_DIFFUSION_PATH):
         try:
             safetensors.torch.load_model(self, latent_diffusion_path, strict=False)
             print(f"Latent diffusion model loaded from: {latent_diffusion_path}")
@@ -203,7 +205,7 @@ class LatentDiffusion(nn.Module):
             print("UNet unloaded")
             self.model = None
         else:
-            print("UNet not loaded")        
+            print("UNet not loaded")
 
     def load_clip_embedder(self, embedder_path=TEXT_EMBEDDER_PATH):
         self.cond_stage_model = CLIPTextEmbedder(device=self.device)
@@ -219,12 +221,12 @@ class LatentDiffusion(nn.Module):
             self.cond_stage_model = None
         else:
             print("CLIPTextEmbedder not loaded")
-            
+
     def load_submodels(
-        self,
-        autoencoder_path=AUTOENCODER_PATH,
-        embedder_path=TEXT_EMBEDDER_PATH,
-        unet_path=UNET_PATH,
+            self,
+            autoencoder_path=AUTOENCODER_PATH,
+            embedder_path=TEXT_EMBEDDER_PATH,
+            unet_path=UNET_PATH,
     ):
         self.load_autoencoder(autoencoder_path=autoencoder_path)
         self.load_unet(unet_path=unet_path)
@@ -232,14 +234,14 @@ class LatentDiffusion(nn.Module):
         return self
 
     def load_submodel_tree(
-        self,
-        encoder_path=ENCODER_PATH,
-        decoder_path=DECODER_PATH,
-        autoencoder_path=AUTOENCODER_PATH,
-        embedder_path=TEXT_EMBEDDER_PATH,
-        tokenizer_path=TOKENIZER_PATH,
-        transformer_path=TEXT_MODEL_PATH,
-        unet_path=UNET_PATH,
+            self,
+            encoder_path=ENCODER_PATH,
+            decoder_path=DECODER_PATH,
+            autoencoder_path=AUTOENCODER_PATH,
+            embedder_path=TEXT_EMBEDDER_PATH,
+            tokenizer_path=TOKENIZER_PATH,
+            transformer_path=TEXT_MODEL_PATH,
+            unet_path=UNET_PATH,
     ):
         with section("load submodel tree"):
             self.load_submodels(autoencoder_path=autoencoder_path, embedder_path=embedder_path, unet_path=unet_path)
@@ -248,7 +250,7 @@ class LatentDiffusion(nn.Module):
         return self
 
     def unload_submodels(self):
-        
+
         self.unload_autoencoder()
         self.unload_unet()
         self.unload_clip_embedder()

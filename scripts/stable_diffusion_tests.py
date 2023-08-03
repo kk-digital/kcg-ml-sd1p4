@@ -1,22 +1,22 @@
-import os
-import torch
-import shutil
-from tqdm import tqdm
 import argparse
+import os
+import shutil
+
+import torch
+from tqdm import tqdm
 
 from auxiliary_functions import get_torch_distribution_from_name
-from stable_diffusion.utils_backend import get_device
-from stable_diffusion.utils_image import save_image_grid, save_images
-from stable_diffusion_reference.latent_diffusion import DiffusionWrapper
-from text_to_image import Txt2Img
-from stable_diffusion.latent_diffusion import LatentDiffusion
 from stable_diffusion.constants import CHECKPOINT_PATH, AUTOENCODER_PATH, UNET_PATH, TEXT_EMBEDDER_PATH, \
     LATENT_DIFFUSION_PATH
-from utility.labml.monit import section
+from stable_diffusion.latent_diffusion import LatentDiffusion
+from stable_diffusion.utils_backend import get_device
+from stable_diffusion.utils_image import save_image_grid, save_images
 from stable_diffusion.utils_model import initialize_autoencoder, initialize_encoder, initialize_decoder
 from stable_diffusion.utils_model import initialize_clip_embedder, initialize_tokenizer, initialize_transformer
 from stable_diffusion.utils_model import initialize_unet, initialize_latent_diffusion
-
+from stable_diffusion_reference.latent_diffusion import DiffusionWrapper
+from text_to_image import Txt2Img
+from utility.labml.monit import section
 
 # CHECKPOINT_PATH = os.path.abspath('./input/model/v1-5-pruned-emaonly.ckpt')
 

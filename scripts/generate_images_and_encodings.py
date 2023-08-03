@@ -1,15 +1,15 @@
-import os
-import sys
-import shutil
-import torch
-import numpy as np
 import json
+import os
+import shutil
+import sys
 from os.path import join
+
+import numpy as np
+import torch
 from PIL import Image
 
 base_directory = "./"
 sys.path.insert(0, base_directory)
-
 
 from stable_diffusion.stable_diffusion import StableDiffusion
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
@@ -70,7 +70,7 @@ def generate_images(
     stable_diffusion = init_stable_diffusion(device, sampler_name, n_steps)
     image_encoder = CLIPImageEncoder(device=device)
     # image_encoder.load_submodels()
-    image_encoder.load_clip_model()
+    image_encoder.load_submodels()
     image_encoder.initialize_preprocessor()
     manifest = []
     features = []

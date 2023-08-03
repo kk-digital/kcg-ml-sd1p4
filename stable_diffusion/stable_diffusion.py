@@ -1,7 +1,9 @@
-import os, sys
-import torch
+import os
+import sys
 import time
 from typing import Optional
+
+import torch
 
 sys.path.append(os.path.abspath(""))
 from stable_diffusion.utils_backend import get_device, get_autocast, set_seed
@@ -24,15 +26,15 @@ class StableDiffusion:
     sampler: DiffusionSampler
 
     def __init__(
-        self,
-        *,
-        device=None,
-        model: LatentDiffusion = None,
-        ddim_steps: int = 50,
-        ddim_eta: float = 0.0,
-        force_cpu: bool = False,
-        sampler_name: str = "ddim",
-        n_steps: int = 50,
+            self,
+            *,
+            device=None,
+            model: LatentDiffusion = None,
+            ddim_steps: int = 50,
+            ddim_eta: float = 0.0,
+            force_cpu: bool = False,
+            sampler_name: str = "ddim",
+            n_steps: int = 50,
     ):
         """
         :param checkpoint_path: is the path of the checkpoint
@@ -209,13 +211,12 @@ class StableDiffusion:
 
     def load_model(self, latent_diffusion_path=LATENT_DIFFUSION_PATH):
         with section(f"Latent Diffusion model loading, from {latent_diffusion_path}"):
-            self.model = self.quick_initialize().load(latent_diffusion_path = latent_diffusion_path)
+            self.model = self.quick_initialize().load(latent_diffusion_path=latent_diffusion_path)
             return self.model
 
     def save_model(self, latent_diffusion_path=LATENT_DIFFUSION_PATH):
         with section(f"Latent Diffusion model saving, to {latent_diffusion_path}"):
-            self.model.save(latent_diffusion_path = latent_diffusion_path)
-
+            self.model.save(latent_diffusion_path=latent_diffusion_path)
 
     def unload_model(self):
         # del self.model.autoencoder.encoder
@@ -224,7 +225,6 @@ class StableDiffusion:
         self.model.cond_stage_model.unload_submodels()
         self.model.unload_unet()
         torch.cuda.empty_cache()
-
 
     def quick_initialize(self):
         self.model = LatentDiffusion(

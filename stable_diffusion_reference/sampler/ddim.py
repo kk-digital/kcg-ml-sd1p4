@@ -14,12 +14,13 @@ This implements DDIM sampling from the paper
 """
 
 from typing import Optional, List
+
 import numpy as np
 import torch
 
-from utility.labml import monit
 from stable_diffusion_reference.latent_diffusion import LatentDiffusion
 from stable_diffusion_reference.sampler import DiffusionSampler
+from utility.labml import monit
 
 
 class DDIMSampler(DiffusionSampler):

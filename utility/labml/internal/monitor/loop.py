@@ -1,7 +1,7 @@
 import math
+import sys
 import time
 from typing import Optional, Dict, TYPE_CHECKING, List, Collection
-import sys
 
 sys.path.append("./")
 from utility.labml.internal.monitor.sections import LoopingSection

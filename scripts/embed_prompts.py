@@ -1,14 +1,14 @@
+import argparse
 import os
 import sys
-import argparse
-import torch
 from os.path import join
+
+import torch
 
 sys.path.insert(0, os.getcwd())
 
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion.utils_backend import get_device
-
 
 EMBEDDED_PROMPTS_DIR = os.path.abspath("./input/embedded_prompts/")
 

@@ -1,10 +1,11 @@
 import argparse
-from PIL import Image
-import os
 import math
-import zipfile
+import os
 import shutil
 import tempfile
+import zipfile
+
+from PIL import Image
 
 Image.MAX_IMAGE_PIXELS = None
 
@@ -60,6 +61,7 @@ def create_image_grid(input_path, output_path, rows, columns, img_size):
     # If the input was a zip file, delete the temporary directory
     if zipfile.is_zipfile(input_path):
         shutil.rmtree(temp_dir)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Create an image grid from a directory or a zip of images.')

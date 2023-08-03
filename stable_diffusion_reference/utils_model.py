@@ -11,18 +11,19 @@ import os.path
 import random
 from pathlib import Path
 from typing import BinaryIO, List, Optional, Union
-import torchvision
+
 import PIL
 import numpy as np
 import torch
+import torchvision
 from PIL import Image
 
-from utility.labml import monit
-from utility.labml.logger import inspect
 from stable_diffusion_reference.latent_diffusion import LatentDiffusion
 from stable_diffusion_reference.model.autoencoder import Encoder, Decoder, Autoencoder
 from stable_diffusion_reference.model.clip_embedder import CLIPTextEmbedder
 from stable_diffusion_reference.model.unet import UNetModel
+from utility.labml import monit
+from utility.labml.logger import inspect
 
 
 def set_seed(seed: int):

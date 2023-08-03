@@ -1,11 +1,12 @@
-
+import pytorch_lightning as pl
 import torch
 import torch.nn as nn
-import pytorch_lightning as pl
+
 from stable_diffusion.utils_backend import get_device
 
+
 class ChadScoreModel(pl.LightningModule):
-    def __init__(self, input_size, device = None, xcol='emb', ycol='avg_rating'):
+    def __init__(self, input_size, device=None, xcol='emb', ycol='avg_rating'):
         super().__init__()
 
         self.input_size = input_size
@@ -35,6 +36,7 @@ class ChadScoreModel(pl.LightningModule):
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
         return optimizer
+
 
 class ChadScorePredictor:
     def __init__(self, input_size=768, device=None):

@@ -1,9 +1,8 @@
 import argparse
-import os, sys
+import sys
 from typing import Union, Callable
 
-sys.path.append(os.path.join(".", "stable_diffusion/utils"))
-
+sys.path.append("./")
 from stable_diffusion_reference.cli import check_folder_existence, check_file_existence
 
 
@@ -35,11 +34,11 @@ class CLI:
 
         return self
 
-    def output(self, default='./output', check_exists: Union[bool, Callable]=True):
+    def output(self, default='./output', check_exists: Union[bool, Callable] = True):
         self.parser.add_argument('--output',
-            help='Path to the output directory (default: %(default)s)',
-            default=default
-        )
+                                 help='Path to the output directory (default: %(default)s)',
+                                 default=default
+                                 )
 
         if check_exists:
             check_fn = check_exists if callable(check_exists) else lambda _: check_exists
@@ -47,7 +46,6 @@ class CLI:
             self.checkers.append(
                 lambda args: check_fn(args) and check_folder_existence(args.output)
             )
-
 
         return self
 
@@ -61,7 +59,7 @@ class CLI:
 
         return self
 
-    def artist_file(self, check_exists: Union[bool, Callable]=True):
+    def artist_file(self, check_exists: Union[bool, Callable] = True):
         self.parser.add_argument(
             '--artist_file',
             type=str,
@@ -78,7 +76,7 @@ class CLI:
 
         return self
 
-    def checkpoint_path(self, check_exists: Union[bool, Callable]=True):
+    def checkpoint_path(self, check_exists: Union[bool, Callable] = True):
         self.parser.add_argument(
             '--checkpoint_path',
             type=str,
@@ -185,8 +183,7 @@ class CLI:
 
         return self
 
-
-    def prompts_file(self, check_exists: Union[bool, Callable]=True, required: bool=True):
+    def prompts_file(self, check_exists: Union[bool, Callable] = True, required: bool = True):
         self.parser.add_argument(
             '--prompts_file',
             type=str,
@@ -213,7 +210,6 @@ class CLI:
 
         return self
 
-
     def prompt(self):
         self.parser.add_argument(
             '--prompt',
@@ -225,7 +221,7 @@ class CLI:
 
         return self
 
-    def orig_img(self, check_exists: Union[bool, Callable]=True, required: bool=True):
+    def orig_img(self, check_exists: Union[bool, Callable] = True, required: bool = True):
         self.parser.add_argument(
             "--orig_img",
             type=str,
@@ -235,7 +231,8 @@ class CLI:
 
         if required:
             self.checkers.append(
-                lambda args: self._required(args, 'orig_img', '\nERROR: Please specify the path to the input image with --orig_img')
+                lambda args: self._required(args, 'orig_img',
+                                            '\nERROR: Please specify the path to the input image with --orig_img')
             )
 
         if check_exists:

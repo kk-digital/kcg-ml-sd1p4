@@ -8,22 +8,23 @@ summary: >
 # Utility functions for [stable diffusion](index.html)
 """
 
-import torch
 from pathlib import Path
 from typing import Union
+
 import safetensors
+import torch
 from transformers import CLIPTokenizer, CLIPTextModel
 
 from stable_diffusion.constants import AUTOENCODER_PATH, ENCODER_PATH, DECODER_PATH
+from stable_diffusion.constants import LATENT_DIFFUSION_PATH
 from stable_diffusion.constants import TEXT_EMBEDDER_PATH, TOKENIZER_PATH, TEXT_MODEL_PATH
 from stable_diffusion.constants import UNET_PATH
-from stable_diffusion.constants import LATENT_DIFFUSION_PATH
-from stable_diffusion.utils_backend import get_device
-from utility.labml.monit import section
 from stable_diffusion.latent_diffusion import LatentDiffusion
-from stable_diffusion.model.vae import Autoencoder, Encoder, Decoder
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion.model.unet import UNetModel
+from stable_diffusion.model.vae import Autoencoder, Encoder, Decoder
+from stable_diffusion.utils_backend import get_device
+from utility.labml.monit import section
 
 
 def initialize_encoder(device=None,
@@ -59,7 +60,9 @@ def initialize_decoder(device=None,
     return decoder
     # Initialize the autoencoder
 
-def initialize_autoencoder(device = None, encoder = None, decoder = None, emb_channels = 4, z_channels = 4, force_submodels_init = False) -> Autoencoder:
+
+def initialize_autoencoder(device=None, encoder=None, decoder=None, emb_channels=4, z_channels=4,
+                           force_submodels_init=False) -> Autoencoder:
     # Initialize the autoencoder
 
     with section(f'autoencoder initialization'):
@@ -71,10 +74,11 @@ def initialize_autoencoder(device = None, encoder = None, decoder = None, emb_ch
                 decoder = initialize_decoder(device=device, z_channels=z_channels)
 
         autoencoder = Autoencoder(emb_channels=emb_channels,
-                                    encoder=encoder,
-                                    decoder=decoder,
-                                    z_channels=z_channels).to(device)
+                                  encoder=encoder,
+                                  decoder=decoder,
+                                  z_channels=z_channels).to(device)
     return autoencoder
+
 
 def load_autoencoder(path: Union[str, Path] = AUTOENCODER_PATH, device=None) -> Autoencoder:
     """

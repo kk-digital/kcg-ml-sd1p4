@@ -1,24 +1,26 @@
-import os
-import sys
 import argparse
-import torch
 import hashlib
 import json
-import shutil
+import os
 import random
+from random import randrange
+import shutil
+import sys
 from os.path import join
+
+import torch
+
 
 base_dir = "./"
 sys.path.insert(0, base_dir)
 
+from chad_score.chad_score import ChadScoreModel
 from stable_diffusion.utils_backend import get_device, get_memory_status
 from stable_diffusion.utils_image import to_pil
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
-from chad_score import ChadPredictorModel
 from stable_diffusion import StableDiffusion
 from stable_diffusion.constants import IODirectoryTree
-
 
 EMBEDDED_PROMPTS_DIR = os.path.abspath("./input/embedded_prompts/")
 OUTPUT_DIR = "./output/data/"
@@ -79,9 +81,9 @@ parser.add_argument(
 
 parser.add_argument(
     "--seed",
-    type=int,
-    default=2982,
-    help="The noise seed used to generate the images. Defaults to `2982`. Set to `0` for a random seed.",
+    type=str,
+    default='',
+    help="The noise seed used to generate the images. Defaults to random int from 0 to 2^24. Set to '' for a random seed.",
 )
 parser.add_argument(
     "--noise_multiplier",
@@ -113,7 +115,12 @@ args = parser.parse_args()
 NULL_PROMPT = ""
 PROMPTS = args.prompts
 NUM_ITERATIONS = args.num_iterations
-SEED = args.seed
+
+if args.seed == '':
+    SEED = randrange(0, 2 ** 24)
+else:
+    SEED = int(args.seed)
+
 NOISE_MULTIPLIER = args.noise_multiplier
 DEVICE = get_device(args.cuda_device)
 # BATCH_SIZE = args.batch_size
@@ -294,11 +301,11 @@ if __name__ == "__main__":
     sd = init_stable_diffusion(DEVICE, pt, n_steps=DDIM_STEPS)
 
     image_encoder = CLIPImageEncoder(device=DEVICE)
-    image_encoder.load_submodels(image_processor_path = pt.image_processor_path, vision_model_path = pt.vision_model_path)
+    image_encoder.load_submodels(image_processor_path=pt.image_processor_path, vision_model_path=pt.vision_model_path)
     # image_encoder.initialize_preprocessor()
 
     loaded_model = torch.load(SCORER_CHECKPOINT_PATH)
-    predictor = ChadPredictorModel(768, device=DEVICE)
+    predictor = ChadScoreModel(768, device=DEVICE)
     predictor.load_state_dict(loaded_model)
     predictor.eval()
 
@@ -357,7 +364,7 @@ if __name__ == "__main__":
         # compute hash
         img_hash = calculate_sha256(image.squeeze())
         pil_image = to_pil(image.squeeze())
-        #compute aesthetic score
+        # compute aesthetic score
         # prep_img = image_encoder.preprocess_input(pil_image)
         image_features = image_encoder(pil_image, do_preprocess=True)
         image_features /= image_features.norm(dim=-1, keepdim=True)

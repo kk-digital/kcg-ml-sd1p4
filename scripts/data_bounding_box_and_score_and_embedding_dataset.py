@@ -1,29 +1,32 @@
-import os
-import sys
 import argparse
-import torch
 import hashlib
 import json
-import shutil
-import cv2
-import numpy as np
+import time
 import random
+import shutil
+import sys
 import warnings
 from os.path import join
 from typing import List
+from random import randrange
+import cv2
+import numpy as np
+import os
+import torch
+
 
 base_dir = "./"
 sys.path.insert(0, base_dir)
 
+from chad_score.chad_score import ChadScorePredictor
 from stable_diffusion.utils_backend import get_device, get_memory_status
 from stable_diffusion.utils_image import to_pil
+
 warnings.filterwarnings("ignore", category=UserWarning)
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
-from chad_score import ChadPredictor
 from stable_diffusion import StableDiffusion
 from stable_diffusion.constants import IODirectoryTree
-
 
 EMBEDDED_PROMPTS_DIR = os.path.abspath("./input/embedded_prompts/")
 OUTPUT_DIR = "./output/disturbing_embeddings/"
@@ -32,31 +35,23 @@ IMAGES_DIR = join(OUTPUT_DIR, "images/")
 # SCORER_CHECKPOINT_PATH = os.path.abspath("./input/model/aesthetic_scorer/sac+logos+ava1-l14-linearMSE.pth")
 SCORER_CHECKPOINT_PATH = os.path.abspath("./input/model/aesthetic_scorer/chadscorer.pth")
 
-
-
 # DEVICE = input("Set device: 'cuda:i' or 'cpu'")
 
 prompt_list = ['chibi', 'waifu', 'scifi', 'side scrolling', 'character', 'side scrolling',
                'white background', 'centered', 'full character', 'no background',
                'not centered', 'line drawing', 'sketch', 'black and white',
-               'colored', 'offset', 'video game','exotic', 'sureal', 'miltech', 'fantasy',
+               'colored', 'offset', 'video game', 'exotic', 'sureal', 'miltech', 'fantasy',
                'frank frazetta', 'terraria', 'final fantasy', 'cortex command',
                'Dog', 'Cat', 'Space Ship', 'Airplane', 'Mech', 'Tank', 'Bicycle',
                'Book', 'Chair', 'Table', 'Cup', 'Car', 'Tree', 'Flower', 'Mountain',
                'Smartphone', 'Guitar', 'Sunflower', 'Laptop', 'Coffee Mug', 'water color expressionist',
                'david mckean', 'jock', 'esad ribic', 'chris bachalo', 'expressionism', 'Jackson Pollock',
-               'Alex Kanevskyg', 'Francis Bacon', 'Trash Polka', 'abstract realism', 'andrew salgado', 'alla prima technique',
-               'alla prima', 'expressionist alla prima', 'expressionist alla prima technique' ]
-
+               'Alex Kanevskyg', 'Francis Bacon', 'Trash Polka', 'abstract realism', 'andrew salgado',
+               'alla prima technique',
+               'alla prima', 'expressionist alla prima', 'expressionist alla prima technique']
 
 parser = argparse.ArgumentParser("Embed prompts using CLIP")
 
-parser.add_argument(
-    "--save_embeddings",
-    type=bool,
-    default=False,
-    help="If True, the disturbed embeddings will be saved to disk. Defaults to False.",
-)
 parser.add_argument(
     "--cfg_strength",
     type=int,
@@ -86,8 +81,8 @@ parser.add_argument(
 parser.add_argument(
     "--seed",
     type=str,
-    default=2982,
-    help="The noise seed used to generate the images. Defaults to 2982",
+    default='',
+    help="The noise seed used to generate the images. Defaults to random int 0 to 2^24",
 )
 parser.add_argument(
     "--noise_multiplier",
@@ -112,16 +107,19 @@ args = parser.parse_args()
 
 NULL_PROMPT = ""
 NUM_ITERATIONS = args.num_iterations
-SEED = args.seed
+
+if args.seed == '':
+    SEED = randrange(0, 2 ** 24)
+else:
+    SEED = int(args.seed)
+    
 NOISE_MULTIPLIER = args.noise_multiplier
 DEVICE = args.cuda_device
 BATCH_SIZE = args.batch_size
-SAVE_EMBEDDINGS = args.save_embeddings
 CLEAR_OUTPUT_DIR = args.clear_output_dir
 os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
 
 pt = IODirectoryTree(base_directory=base_dir)
-
 
 try:
     shutil.rmtree(OUTPUT_DIR)
@@ -137,7 +135,6 @@ else:
 
 
 def init_stable_diffusion(device, path_tree: IODirectoryTree, sampler_name="ddim", n_steps=20, ddim_eta=0.0):
-
     device = get_device(device)
 
     stable_diffusion = StableDiffusion(
@@ -150,21 +147,28 @@ def init_stable_diffusion(device, path_tree: IODirectoryTree, sampler_name="ddim
 
     return stable_diffusion
 
-def generate_prompt():
-    # Select 12 items randomly from the prompt_list
-    selected_prompts = random.sample(prompt_list, 15)
 
-    # Join all selected prompts into a single string, separated by commas
-    prompt = ', '.join(selected_prompts)
+def generate_prompt():
+    # Your mandatory phrases
+    mandatory_phrases = ['no background', 'white background', 'centered']
+
+    # Add the mandatory phrases to the prompt multiple times (e.g., 2 times)
+    mandatory_prompts = mandatory_phrases * 2
+
+    # Select remaining items randomly from the prompt_list
+    remaining_items = 9  # 15 - 3 mandatory phrases * 2 occurrences each = 9
+    random_prompts = random.sample(set(prompt_list) - set(mandatory_phrases), remaining_items)
+
+    # Join all selected prompts and mandatory prompts into a single string, separated by commas
+    prompt = ', '.join(mandatory_prompts + random_prompts)
+    
     print(f"Generated prompt: {prompt}")
     return prompt
 
-def embed_and_save_prompts(clip_text_embedder, prompt: str, i: int, null_prompt = NULL_PROMPT):
 
-
+def embed_and_save_prompts(clip_text_embedder, prompt: str, i: int, null_prompt=NULL_PROMPT):
     clip_text_embedder = CLIPTextEmbedder(device=get_device())
     clip_text_embedder.load_submodels()
-
 
     null_cond = clip_text_embedder(null_prompt)
 
@@ -183,31 +187,31 @@ def embed_and_save_prompts(clip_text_embedder, prompt: str, i: int, null_prompt 
     )
 
     get_memory_status(DEVICE)
-    #clip_text_embedder.to("cpu")
+    # clip_text_embedder.to("cpu")
     torch.cuda.empty_cache()
     get_memory_status(DEVICE)
     return embedded_prompt, null_cond
 
-def generate_images_from_disturbed_embeddings(
-    sd: StableDiffusion,
-    clip_text_embedder: CLIPTextEmbedder,
-    prompts: List[str],
-    # null_prompt: torch.Tensor,
-    device=DEVICE,
-    seed=SEED,
-    num_iterations=NUM_ITERATIONS,
-    noise_multiplier=NOISE_MULTIPLIER,
-    batch_size=BATCH_SIZE
-):
 
+def generate_images_from_disturbed_embeddings(
+        sd: StableDiffusion,
+        clip_text_embedder: CLIPTextEmbedder,
+        prompts: List[str],
+        # null_prompt: torch.Tensor,
+        device=DEVICE,
+        seed=SEED,
+        num_iterations=NUM_ITERATIONS,
+        noise_multiplier=NOISE_MULTIPLIER,
+        batch_size=BATCH_SIZE
+):
     null_prompt = clip_text_embedder(NULL_PROMPT).to(device)
 
     for i in range(0, num_iterations):
         embedded_prompt = clip_text_embedder(prompts[i]).to(device)
         print(embedded_prompt.shape)
         dist = torch.distributions.normal.Normal(
-        loc=embedded_prompt.mean(dim=2), scale=embedded_prompt.std(dim=2)
-    )
+            loc=embedded_prompt.mean(dim=2), scale=embedded_prompt.std(dim=2)
+        )
         j = num_iterations - i
 
         noise_i = (
@@ -216,7 +220,8 @@ def generate_images_from_disturbed_embeddings(
         noise_j = (
             dist.sample(sample_shape=torch.Size([768])).permute(1, 0, 2).permute(0, 2, 1)
         ).to(device)
-        embedding_e = embedded_prompt + ((i * noise_multiplier) * noise_i + (j * noise_multiplier) * noise_j) / (2 * num_iterations)
+        embedding_e = embedded_prompt + ((i * noise_multiplier) * noise_i + (j * noise_multiplier) * noise_j) / (
+                    2 * num_iterations)
 
         image_e = sd.generate_images_from_embeddings(
             seed=seed,
@@ -240,6 +245,7 @@ def get_bounding_box_details(img):
     largest_bounding_box = bounding_boxes[np.argmax(areas)]
     return largest_bounding_box
 
+
 def get_bounding_box_center_offset(largest_bounding_box, image_size):
     box_x, box_y, box_w, box_h = largest_bounding_box
     center_x = (box_x + box_w / 2) / image_size[1]
@@ -251,7 +257,6 @@ def get_bounding_box_center_offset(largest_bounding_box, image_size):
     return center_x, center_y, center_offset_x, center_offset_y, box_w, box_h
 
 
-
 def calculate_sha256(tensor):
     if tensor.device == "cpu":
         tensor_bytes = tensor.numpy().tobytes()  # Convert tensor to a byte array
@@ -260,8 +265,9 @@ def calculate_sha256(tensor):
     sha256_hash = hashlib.sha256(tensor_bytes)
     return sha256_hash.hexdigest()
 
+
 def get_image_features(
-    image, model, preprocess, device=DEVICE,
+        image, model, preprocess, device=DEVICE,
 ):
     image = preprocess(image).unsqueeze(0).to(device)
     with torch.no_grad():
@@ -273,6 +279,8 @@ def get_image_features(
 
 def main():
 
+    start_time = time.time()  # Save the start time
+  
     pt = IODirectoryTree(base_directory=base_dir)
     sd = init_stable_diffusion(DEVICE, pt, n_steps=20, sampler_name="ddim", ddim_eta=0.0)
     clip_text_embedder = CLIPTextEmbedder(device=DEVICE)
@@ -283,19 +291,20 @@ def main():
     null_prompt_list = []  # To store the null prompts
     for i in range(NUM_ITERATIONS):
         prompt = generate_prompt()
-    #     print(f"Prompt {i}: {prompt}")  # Print the generated prompt
+        #     print(f"Prompt {i}: {prompt}")  # Print the generated prompt
         prompts.append(prompt)  # Store each prompt for later use
-    #     get_memory_status()
+        #     get_memory_status()
         embedded_prompt, null_prompt = embed_and_save_prompts(clip_text_embedder, prompt, i)
     #     embedded_prompts_list.append(embedded_prompt.cpu())  # Store the embedded prompts
-    #     get_memory_status()
-        torch.save(embedded_prompt, f'{EMBEDDED_PROMPTS_DIR}/embedded_prompt_{i}.pt')
+    #     get_memory_status() 
+        torch.save(embedded_prompt, f'{EMBEDDED_PROMPTS_DIR}/embedded_prompt_{i}.pt')    
         torch.cuda.empty_cache()
     # embedded_prompts_list = [embedded_prompt for embedded_prompt in embedded_prompts]  # Store the embedded prompts
     # null_prompt_list.append(null_prompt)  # Store the null prompts
     # print(f"Image {i} generated.")  # Print when an image is generated
 
-    images_generator = generate_images_from_disturbed_embeddings(sd, clip_text_embedder, prompts, batch_size = 1)  # Use the corresponding prompt for each iteration
+    images_generator = generate_images_from_disturbed_embeddings(sd, clip_text_embedder, prompts,
+                                                                 batch_size=1)  # Use the corresponding prompt for each iteration
     # for i in range(NUM_ITERATIONS):
     #     image, embedding = next(images_generator)
     #     images.append((image.cpu(), embedding.cpu(), prompts[i]))  # Include the prompt with the image and embedding
@@ -304,11 +313,11 @@ def main():
     #     torch.cuda.empty_cache()
 
     image_encoder = CLIPImageEncoder(device=DEVICE)
-    image_encoder.load_clip_model(**pt.clip_model)
+    image_encoder.load_submodels()
     image_encoder.initialize_preprocessor()
 
-    predictor = ChadPredictor(768, device=DEVICE)
-    predictor.load(SCORER_CHECKPOINT_PATH)
+    predictor = ChadScorePredictor(768, device=DEVICE)
+    predictor.load_model(SCORER_CHECKPOINT_PATH)
 
     json_output = []
     manifest = []
@@ -319,7 +328,8 @@ def main():
     manifest_path = join(OUTPUT_DIR, "manifest.json")
     scores_path = join(OUTPUT_DIR, "scores.json")
 
-    for i, (image, embedding, prompt_index) in enumerate(images_generator):  # Retrieve the prompt with the image and embedding
+    for i, (image, embedding, prompt_index) in enumerate(
+            images_generator):  # Retrieve the prompt with the image and embedding
         # images_tensors.append(image)
         torch.cuda.empty_cache()
         get_memory_status(DEVICE)
@@ -337,16 +347,11 @@ def main():
         img_path = "./images/" + os.path.relpath(full_img_path, IMAGES_DIR)
         pil_image.save(full_img_path)
 
-        if SAVE_EMBEDDINGS:
-            embedding_file_name = f"embedding_{i:06d}.pt"
-            embedding_path = join(FEATURES_DIR, embedding_file_name)
-            torch.save(embedding, embedding_path)
-
         manifest_i = {
-                        "file-name": img_file_name,
-                        "file-path": img_path,
-                        "file-hash": img_hash,
-                    }
+            "file-name": img_file_name,
+            "file-path": img_path,
+            "file-hash": img_hash,
+        }
         manifest.append(manifest_i)
 
         scores_i = manifest_i.copy()
@@ -355,7 +360,8 @@ def main():
 
         numpy_img = np.array(pil_image)
         largest_bounding_box = get_bounding_box_details(numpy_img)
-        center_x, center_y, center_offset_x, center_offset_y, box_w, box_h = get_bounding_box_center_offset(largest_bounding_box, numpy_img.shape)
+        center_x, center_y, center_offset_x, center_offset_y, box_w, box_h = get_bounding_box_center_offset(
+            largest_bounding_box, numpy_img.shape)
 
         json_output_i = manifest_i.copy()
         json_output_i["prompt"] = prompts[prompt_index]  # Retrieve the prompt associated with this image
@@ -372,13 +378,16 @@ def main():
 
         json_output.append(json_output_i)
 
-
     # images_grid = torch.cat(images_tensors)
     # save_image_grid(images_grid, join(IMAGES_DIR, "images_grid.png"), nrow=int(math.log(NUM_ITERATIONS, 2)), normalize=True, scale_each=True)
 
     json.dump(json_output, open(json_output_path, "w"), indent=4)
     json.dump(scores, open(scores_path, "w"), indent=4)
     json.dump(manifest, open(manifest_path, "w"), indent=4)
+
+    end_time = time.time()  # Save the end time
+
+    print(f"Execution time: {end_time - start_time} seconds")
 
 if __name__ == "__main__":
     main()

@@ -1,5 +1,5 @@
-from typing import List
 import sys
+from typing import List
 
 sys.path.append("./")
 from utility.labml.internal.logger.destinations import Destination
