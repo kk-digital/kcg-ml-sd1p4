@@ -109,6 +109,33 @@ def report_residuals_histogram(residuals, type):
 
     return histogram_string
 
+def calculate_pairwise_accuracy(predictions, targets, num_samples=16):
+    total_correct = 0
+    total_sampled = 0
+
+    for i, target_i in enumerate(targets):
+        sampled_indices = np.random.choice(len(predictions), num_samples, replace=False)
+
+        for j in sampled_indices:
+            # Skipping the same point
+            if j == i:
+                continue
+            prediction_i = predictions[i]
+            prediction_j = predictions[j]
+
+            if target_i < targets[j]:
+                # Swap if the target indicates x < y, but the prediction says y < x
+                if prediction_i > prediction_j:
+                    total_correct += 1
+            else:
+                # Swap if the target indicates x > y, but the prediction says y > x
+                if prediction_i < prediction_j:
+                    total_correct += 1
+
+            total_sampled += 1
+
+    pairwise_accuracy = total_correct / total_sampled
+    return pairwise_accuracy
 
 # Custom JSON decoder for NumPy arrays
 class NumpyArrayDecoder(json.JSONDecoder):
@@ -212,6 +239,7 @@ def main():
     max_training_output_scaled = 0
     training_residuals = []
     validation_residuals = []
+    pairwise_accuracy = 0
 
     for epoch in range(num_epochs):
         optimizer.zero_grad()
@@ -263,6 +291,8 @@ def main():
         validation_outputs_raw = validation_outputs_raw.tolist()
         validation_outputs_scaled = validation_outputs_scaled.tolist()
 
+        pairwise_accuracy = calculate_pairwise_accuracy(predicted_scaled, validation_outputs_scaled)
+
         print(test_X.shape)
         print('predicted (raw) first 10 elements : ', predicted_raw[:10])
         print('expected output (raw) first 10 elements : ', validation_outputs_raw[:10])
@@ -310,6 +340,8 @@ def main():
     print('total validation image count ', validation_inputs.size(0))
     print(training_residuals_histogram)
     print(validation_residuals_histogram)
+
+    print('pairwise accuracy : ', pairwise_accuracy)
 
 if __name__ == '__main__':
     main()
