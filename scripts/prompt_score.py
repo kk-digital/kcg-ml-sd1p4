@@ -1,11 +1,9 @@
 import argparse
 import hashlib
 import io
-import json
 import os
 import struct
 import sys
-import zipfile
 import numpy as np
 import torch
 import torch.nn as nn
@@ -13,8 +11,8 @@ import torch.optim as optim
 
 
 sys.path.insert(0, os.getcwd())
-from generation_task_result import GenerationTaskResult
 from model.linear_regression import LinearRegressionModel
+from model.util_data_loader import ZipDataLoader
 
 
 def hash_string_to_float32(input_string):
@@ -82,20 +80,6 @@ def report_residuals_histogram(residuals, type):
     return histogram_string
 
 
-# Custom JSON decoder for NumPy arrays
-class NumpyArrayDecoder(json.JSONDecoder):
-    def __init__(self, *args, **kwargs):
-        json.JSONDecoder.__init__(self, object_hook=self.json_to_ndarray, *args, **kwargs)
-
-    def json_to_ndarray(self, dct):
-        if '__ndarray__' in dct:
-            data = np.array(dct['data'], dtype=dct['dtype'])
-            if 'shape' in dct:
-                data = data.reshape(dct['shape'])
-            return data
-        return dct
-
-
 def parse_arguments():
     """Command-line arguments for 'classify' command."""
     parser = argparse.ArgumentParser(description="Training linear model on image promps with chad score.")
@@ -128,39 +112,28 @@ def main():
 
     inputs = []
     expected_outputs = []
-    with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
-        for file_info in zip_ref.infolist():
-            filename, file_extension = os.path.splitext(file_info.filename)
-            if file_extension.lower() == '.jpg':
-                json_filename = filename + '.json'
-                if json_filename in zip_ref.namelist():
-                    json_content = zip_ref.read(json_filename)
 
-                    # Decode the bytes to a string
-                    json_data_string = json_content.decode('utf-8')
+    zip_data_loader = ZipDataLoader()
+    loaded_data = zip_data_loader.load(zip_file_path)
 
-                    # Parse the JSON data into a Python dictionary
-                    data_dict = json.loads(json_data_string, cls=NumpyArrayDecoder)
+    for element in loaded_data:
+        image_meta_data = element['image_meta_data']
+        embedding_vector = element['embedding_vector']
 
-                    image_meta_data = GenerationTaskResult.from_dict(data=data_dict)
-                    embedding_name = image_meta_data.embedding_name
-                    embedding_content = zip_ref.read(embedding_name)
-                    embedding_vector = np.load(io.BytesIO(embedding_content))['data']
+        if use_76th_embedding:
+            embedding_vector = embedding_vector[:, 76]
 
-                    if use_76th_embedding:
-                        embedding_vector = embedding_vector[:, 76]
+        embedding_vector = torch.tensor(embedding_vector, dtype=torch.float32, device=device);
+        # Convert the tensor to a flat vector
+        flat_embedded_prompts = torch.flatten(embedding_vector)
 
-                    embedding_vector = torch.tensor(embedding_vector, dtype=torch.float32, device=device);
-                    # Convert the tensor to a flat vector
-                    flat_embedded_prompts = torch.flatten(embedding_vector)
+        with torch.no_grad():
+            flat_vector = flat_embedded_prompts.cpu().numpy()
 
-                    with torch.no_grad():
-                        flat_vector = flat_embedded_prompts.cpu().numpy()
+        chad_score = image_meta_data.chad_score
 
-                    chad_score = image_meta_data.chad_score
-
-                    inputs.append(flat_vector)
-                    expected_outputs.append(chad_score)
+        inputs.append(flat_vector)
+        expected_outputs.append(chad_score)
 
     linear_regression_model = LinearRegressionModel(len(inputs[0]), device)
     mse_loss = nn.MSELoss()
