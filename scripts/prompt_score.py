@@ -128,6 +128,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description="Training linear model on image promps with chad score.")
 
     parser.add_argument('--input_path', type=str, help='Path to input zip')
+    parser.add_argument('--use_76th_embedding', action='store_true', help='If this option is set, only use the last entry in the embeddings tensor')
 
     return parser.parse_args()
 
@@ -138,6 +139,7 @@ def main():
 
     # Example usage:
     zip_file_path = args.input_path
+    use_76th_embedding = args.use_76th_embedding
 
     inputs = []
     expected_outputs = []
@@ -161,6 +163,8 @@ def main():
                     embedding_content = zip_ref.read(embedding_name)
                     embedding_vector = np.load( io.BytesIO(embedding_content))['data']
 
+                    if use_76th_embedding:
+                        embedding_vector = embedding_vector[:, 76]
 
                     embedding_vector = torch.tensor(embedding_vector, dtype=torch.float32);
                     # Convert the tensor to a flat vector
@@ -174,8 +178,7 @@ def main():
                     inputs.append(flat_vector)
                     expected_outputs.append(chad_score)
 
-
-    linear_regression_model = LinearRegressionModel(77 * 768)
+    linear_regression_model = LinearRegressionModel(len(inputs[0]))
     mse_loss = nn.MSELoss()
     optimizer = optim.SGD(linear_regression_model.parameters(), lr=0.00001)
 
@@ -195,7 +198,7 @@ def main():
     target_outputs_scaled = torch.sigmoid(target_outputs_raw)
     validation_outputs_scaled = torch.sigmoid(validation_outputs_raw)
 
-    num_epochs = 1000
+    num_epochs = 100
     epsilon_raw = 10
     epsilon_scaled = 0.2
     training_corrects_raw = 0
