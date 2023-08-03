@@ -169,7 +169,7 @@ def main():
 
     linear_regression_model = LinearRegressionModel(77 * 768)
     mse_loss = nn.MSELoss()
-    optimizer = optim.SGD(linear_regression_model.parameters(), lr=0.001)
+    optimizer = optim.SGD(linear_regression_model.parameters(), lr=0.00001)
 
     num_inputs = len(inputs)
 
@@ -282,6 +282,7 @@ def main():
     print('total number of images : ', num_inputs)
     print('total train image count ', train_inputs.size(0))
     print('total validation image count ', validation_inputs.size(0))
+    print('\n', residuals_histogram)
 
 if __name__ == '__main__':
     main()
