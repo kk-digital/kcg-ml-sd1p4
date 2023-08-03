@@ -1,15 +1,16 @@
+
 import json
 import numpy as np
 
-
 class GenerationTaskResult:
-    def __init__(self, clip_embedding, latent, image_name, image_hash, image_latent, image_clip_vector, chad_score_model, chad_score, seed, cfg_strength):
-        self.clip_embedding = clip_embedding
-        self.latent = latent
+    def __init__(self, prompt, model, image_name, embedding_name, clip_name, latent_name, image_hash, chad_score_model, chad_score, seed, cfg_strength):
+        self.prompt = prompt
+        self.model = model
         self.image_name = image_name
+        self.embedding_name = embedding_name
+        self.clip_name = clip_name
+        self.latent_name = latent_name
         self.image_hash = image_hash
-        self.image_latent = image_latent
-        self.image_clip_vector = image_clip_vector
         self.chad_score_model = chad_score_model
         self.chad_score = chad_score
         self.seed = seed
@@ -17,12 +18,13 @@ class GenerationTaskResult:
 
     def to_dict(self):
         return {
-            "clip_embedding": self.clip_embedding,
-            "latent": self.latent,
+            "prompt": self.prompt,
+            "model" : self.model,
             "image_name": self.image_name,
+            "embedding_name": self.embedding_name,
+            "clip_name": self.clip_name,
+            "latent_name": self.latent_name,
             "image_hash": self.image_hash,
-            "image_latent": self.image_latent,
-            "image_clip_vector": self.image_clip_vector,
             "chad_score_model": self.chad_score_model,
             "chad_score": self.chad_score,
             "seed": self.seed,
@@ -32,12 +34,13 @@ class GenerationTaskResult:
 
     def from_dict(data):
         return GenerationTaskResult(
-        clip_embedding=data['clip_embedding'],
-        latent=data['latent'],
+        prompt=data['prompt'],
+        model=data['model'],
         image_name=data['image_name'],
+        embedding_name=data['embedding_name'],
+        clip_name=data['clip_name'],
+        latent_name=data['latent_name'],
         image_hash=data['image_hash'],
-        image_latent=data['image_latent'],
-        image_clip_vector=data['image_clip_vector'],
         chad_score_model=data['chad_score_model'],
         chad_score=data['chad_score'],
         seed=data['seed'],
@@ -46,7 +49,7 @@ class GenerationTaskResult:
 
     def save_to_json(self, filename):
         with open(filename, 'w') as file:
-            json.dump(self.to_dict(), file, ensure_ascii=False, cls=NumpyArrayEncoder)
+            json.dump(self.to_dict(), file, ensure_ascii=False, cls=NumpyArrayEncoder, indent=2)
 
     def load_from_json(self, filename):
         with open(filename, 'r') as file:

@@ -43,8 +43,8 @@ class CLIPImageEncoder(nn.Module):
         print("vision_model saved to: ", vision_model_path)
 
     def load_submodels(self, image_processor_path = IMAGE_PROCESSOR_PATH, vision_model_path = VISION_MODEL_PATH):
-            
-        try:        
+
+        try:
             self.vision_model = CLIPVisionModelWithProjection.from_pretrained(vision_model_path, local_files_only=True, use_safetensors = True).eval().to(self.device)
             print(f"CLIPVisionModelWithProjection successfully loaded from : {vision_model_path}\n")
             self.image_processor = CLIPImageProcessor.from_pretrained(image_processor_path, local_files_only=True)
@@ -59,19 +59,19 @@ class CLIPImageEncoder(nn.Module):
             self.vision_model.to('cpu')
             del self.vision_model
             torch.cuda.empty_cache()
-            self.vision_model = None        
+            self.vision_model = None
         if self.image_processor is not None:
             del self.image_processor
             torch.cuda.empty_cache()
             self.image_processor = None
-    
+
     def save(self, image_encoder_path = IMAGE_ENCODER_PATH):
         try:
             safetensors.torch.save_model(self, image_encoder_path)
             print(f"CLIPImageEncoder saved to: {image_encoder_path}")
         except Exception as e:
             print(f"CLIPImageEncoder not saved. Error: {e}")
-            
+
     def load(self, image_encoder_path: str = IMAGE_ENCODER_PATH):
         try:
             safetensors.torch.load_model(self, image_encoder_path, strict=True)
@@ -79,7 +79,7 @@ class CLIPImageEncoder(nn.Module):
             return self
         except Exception as e:
             print(f"CLIPTextEmbedder not loaded. Error: {e}")
-    
+
     def convert_image_to_tensor(self, image: PIL.Image.Image):
         return torch.from_numpy(np.array(image)) \
             .permute(2, 0, 1) \
@@ -91,7 +91,7 @@ class CLIPImageEncoder(nn.Module):
         if self.get_input_type(image) == PIL.Image.Image:
             image = (self.convert_image_to_tensor(image) + 1) / 2
         return self.image_processor(image, return_tensors="pt").to(self.device)
-    
+
     def forward(self, image, do_preprocess = False):
         # Preprocess image
         # Compute CLIP features

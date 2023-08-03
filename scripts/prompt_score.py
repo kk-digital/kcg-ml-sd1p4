@@ -1,3 +1,5 @@
+import zipfile
+import os
 import torch.nn as nn
 import torch.optim as optim
 import torch
@@ -8,14 +10,17 @@ import json
 import io
 import numpy as np
 import sys
+import random
 from PIL import Image
 import hashlib
 import struct
+import argparse
 
 sys.path.insert(0, os.getcwd())
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion.utils_backend import get_device
 from generation_task_result import GenerationTaskResult
+
 
 def hash_string_to_float32(input_string):
     """
@@ -65,7 +70,10 @@ def get_image_features(image_data, device):
 class LinearRegressionModel(nn.Module):
     def __init__(self, input_size):
         super(LinearRegressionModel, self).__init__()
-        self.linear = nn.Linear(input_size, 1)  # One input feature and one output neuron
+        self.linear = nn.Sequential(
+            nn.Linear(input_size, 1),
+            nn.Identity()
+        )
 
     def forward(self, x):
         return self.linear(x)
@@ -81,6 +89,27 @@ def split_data(input_list, validation_ratio=0.2):
 
     return validation_list, train_list
 
+def report_residuals_histogram(residuals, type):
+    max_residual = max(residuals)
+    hist_bins = np.linspace(0, max_residual, 11)
+
+    histogram, bin_edges = np.histogram(residuals, bins=hist_bins)
+    total_residues = len(residuals)
+
+    histogram_string = f"\n{type} Residuals Histogram:\n"
+    histogram_string += f"{'Range':<13} {'Percentage':<12} {'Histogram'}\n"
+
+    max_digits = 12  # Maximum digits for percentage (including decimal point)
+    for i, count in enumerate(histogram):
+        bin_start, bin_end = bin_edges[i], bin_edges[i + 1]
+        percentage = (count / total_residues) * 100
+        asterisks = int(percentage / 2)
+        percentage_str = f"{percentage:.2f}%"
+        histogram_string += f"{bin_start:.2f} - {bin_end:.2f}   {percentage_str:<{max_digits}} {'*' * asterisks}\n"
+
+    return histogram_string
+
+
 # Custom JSON decoder for NumPy arrays
 class NumpyArrayDecoder(json.JSONDecoder):
     def __init__(self, *args, **kwargs):
@@ -94,16 +123,29 @@ class NumpyArrayDecoder(json.JSONDecoder):
             return data
         return dct
 
+def parse_arguments():
+    """Command-line arguments for 'classify' command."""
+    parser = argparse.ArgumentParser(description="Training linear model on image promps with chad score.")
+
+    parser.add_argument('--input_path', type=str, help='Path to input zip')
+    parser.add_argument('--num_epochs', type=int, default=1000, help='Number of epochs (default: 1000)')
+    parser.add_argument('--epsilon_raw', type=float, default=10.0, help='Epsilon for raw data (default: 10.0)')
+    parser.add_argument('--epsilon_scaled', type=float, default=0.2, help='Epsilon for scaled data (default: 0.2)')
+    parser.add_argument('--use_76th_embedding', action='store_true', help='If this option is set, only use the last entry in the embeddings tensor')
+
+    return parser.parse_args()
+
 def main():
+    args = parse_arguments()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     # Example usage:
-    zip_file_path = 'input/random-shit.zip'
-
-    # embed prompt
-    clip_text_embedder = CLIPTextEmbedder(device=get_device(device))
-    clip_text_embedder.load_submodels_auto()
+    zip_file_path = args.input_path
+    use_76th_embedding = args.use_76th_embedding
+    num_epochs = args.num_epochs
+    epsilon_raw = args.epsilon_raw
+    epsilon_scaled = args.epsilon_scaled
 
     inputs = []
     expected_outputs = []
@@ -113,10 +155,7 @@ def main():
             if file_extension.lower() == '.jpg':
                 json_filename = filename + '.json'
                 if json_filename in zip_ref.namelist():
-                    #jpg_content = zip_ref.read(file_info.filename)
                     json_content = zip_ref.read(json_filename)
-                    jpg_filename = file_info.filename
-                    json_filename = json_filename
 
 
                     # Decode the bytes to a string
@@ -126,10 +165,16 @@ def main():
                     data_dict = json.loads(json_data_string, cls=NumpyArrayDecoder)
 
                     image_meta_data = GenerationTaskResult.from_dict(data=data_dict)
+                    embedding_name = image_meta_data.embedding_name
+                    embedding_content = zip_ref.read(embedding_name)
+                    embedding_vector = np.load( io.BytesIO(embedding_content))['data']
 
-                    embedded_prompts = torch.tensor(image_meta_data.clip_embedding, dtype=torch.float32);
+                    if use_76th_embedding:
+                        embedding_vector = embedding_vector[:, 76]
+
+                    embedding_vector = torch.tensor(embedding_vector, dtype=torch.float32);
                     # Convert the tensor to a flat vector
-                    flat_embedded_prompts = torch.flatten(embedded_prompts)
+                    flat_embedded_prompts = torch.flatten(embedding_vector)
 
                     with torch.no_grad():
                        flat_vector = flat_embedded_prompts.cpu().numpy()
@@ -139,66 +184,132 @@ def main():
                     inputs.append(flat_vector)
                     expected_outputs.append(chad_score)
 
-
-    linear_regression_model = LinearRegressionModel(77 * 768)
-    loss_fn = nn.MSELoss()
-    optimizer = optim.SGD(linear_regression_model.parameters(), lr=0.001)
+    linear_regression_model = LinearRegressionModel(len(inputs[0]))
+    mse_loss = nn.MSELoss()
+    optimizer = optim.SGD(linear_regression_model.parameters(), lr=0.00001)
 
     num_inputs = len(inputs)
 
-    validation_inputs, train_inputs = split_data(inputs, validation_ratio=0.4)
-    validation_outputs, train_outputs = split_data(expected_outputs, validation_ratio=0.4)
+    validation_inputs, train_inputs = split_data(inputs, validation_ratio=0.2)
+    validation_outputs, target_outputs = split_data(expected_outputs, validation_ratio=0.2)
 
     train_inputs = torch.tensor(train_inputs, dtype=torch.float32)
-    train_outputs = torch.tensor(train_outputs, dtype=torch.float32)
+    target_outputs = torch.tensor(target_outputs, dtype=torch.float32)
     validation_inputs = torch.tensor(validation_inputs, dtype=torch.float32)
     validation_outputs = torch.tensor(validation_outputs, dtype=torch.float32)
 
-    train_outputs = train_outputs.unsqueeze(1)
-    validation_outputs = validation_outputs.unsqueeze(1)
+    target_outputs_raw = target_outputs.unsqueeze(1)
+    validation_outputs_raw = validation_outputs.unsqueeze(1)
 
-    num_epochs = 10
+    target_outputs_scaled = torch.sigmoid(target_outputs_raw)
+    validation_outputs_scaled = torch.sigmoid(validation_outputs_raw)
+
+    training_corrects_raw = 0
+    training_corrects_scaled = 0
+    min_training_output_raw = 0
+    max_training_output_raw = 0
+    min_training_output_scaled = 0
+    max_training_output_scaled = 0
+    training_residuals = []
+    validation_residuals = []
+
     for epoch in range(num_epochs):
-        # Forward pass
-        outputs = linear_regression_model(train_inputs)
+        optimizer.zero_grad()
 
+        # Forward pass
+        model_outputs_raw = linear_regression_model(train_inputs)
+        model_outputs_scaled = torch.sigmoid(model_outputs_raw)
+
+        #target_outputs_sigmoid = torch.sigmoid(target_outputs)
         # Compute the loss
-        loss = loss_fn(outputs, train_outputs)
+        loss = mse_loss(model_outputs_raw, target_outputs_raw)
 
         # Backward and optimize
-        optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
+        if epoch == num_epochs - 1:
+            model_outputs_raw = model_outputs_raw.tolist()
+            model_outputs_scaled = model_outputs_scaled.tolist()
+            for index, prediction in enumerate(model_outputs_scaled):
+                residual = abs(model_outputs_scaled[index][0] - target_outputs_scaled[index][0])
+                training_residuals.append(residual)
+                if (residual < epsilon_scaled):
+                    training_corrects_scaled += 1
+            for index, prediction in enumerate(model_outputs_raw):
+                residual = abs(model_outputs_raw[index][0] - target_outputs_raw[index][0])
+                if (residual < epsilon_raw):
+                    training_corrects_raw += 1
+            min_training_output_raw = min(model_outputs_raw)
+            max_training_output_raw = max(model_outputs_raw)
+            min_training_output_scaled = min(model_outputs_scaled)
+            max_training_output_scaled = max(model_outputs_scaled)
+
         # Print progress
-        if (epoch + 1) % 10 == 0:
+        if (epoch + 1) % 100 == 0:
             print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}')
 
     # Step 6: Evaluate the Model
     with torch.no_grad():
         test_X = validation_inputs
-        predicted = linear_regression_model(test_X)
+        predicted_raw = linear_regression_model(test_X)
+        predicted_scaled = torch.sigmoid(predicted_raw)
 
-        epsilon = 0.4
-        corrects = 0
+        validation_corrects_raw = 0
+        validation_corrects_scaled = 0
 
-        predicted = predicted.tolist()
-        validation_outputs = validation_outputs.tolist()
+        predicted_raw = predicted_raw.tolist()
+        predicted_scaled = predicted_scaled.tolist()
+        validation_outputs_raw = validation_outputs_raw.tolist()
+        validation_outputs_scaled = validation_outputs_scaled.tolist()
 
         print(test_X.shape)
-        print('predicted : ', predicted)
-        print('validation_outputs : ', validation_outputs)
-        for index, prediction in enumerate(predicted):
-            if (abs(predicted[index][0] - validation_outputs[index][0]) < epsilon):
-                corrects += 1
+        print('predicted (raw) first 10 elements : ', predicted_raw[:10])
+        print('expected output (raw) first 10 elements : ', validation_outputs_raw[:10])
 
-    validation_accuracy = corrects / validation_inputs.size(0)
+        print('predicted (scaled) first 10 elements : ', predicted_scaled[:10])
+        print('expected output (scaled) first 10 elements : ', validation_outputs_scaled[:10])
 
-    print('loss : ', loss.item())
-    print('validation_accuracy : ', validation_accuracy)
+        for index, prediction in enumerate(predicted_raw):
+            residual = abs(predicted_raw[index][0] - validation_outputs_raw[index][0])
+            if (residual < epsilon_raw):
+                validation_corrects_raw += 1
+        for index, prediction in enumerate(predicted_scaled):
+            residual = abs(predicted_scaled[index][0] - validation_outputs_scaled[index][0])
+            validation_residuals.append(residual)
+            if (residual < epsilon_scaled):
+                validation_corrects_scaled += 1
+
+    validation_accuracy_raw = validation_corrects_raw / validation_inputs.size(0)
+    validation_accuracy_scaled = validation_corrects_scaled / validation_inputs.size(0)
+    training_accuracy_raw = training_corrects_raw / train_inputs.size(0)
+    training_accuracy_scaled = training_corrects_scaled / train_inputs.size(0)
+
+    training_residuals_histogram = report_residuals_histogram(training_residuals, "Training")
+    validation_residuals_histogram = report_residuals_histogram(validation_residuals, "Validation")
+
+    print('loss : {:.4f}'.format(loss.item()))
+    print('training_accuracy (raw) : {:.4f} %'.format(training_accuracy_raw * 100))
+    print('training_accuracy (scaled) : {:.4f} %'.format(training_accuracy_scaled * 100))
+    print('validation_accuracy (raw) : {:.4f} %'.format(validation_accuracy_raw * 100))
+    print('validation_accuracy (scaled) : {:.4f} %'.format(validation_accuracy_scaled * 100))
+    print('min training output (raw) : {:.4f}'.format(min_training_output_raw[0]))
+    print('max training output (raw) : {:.4f}'.format(max_training_output_raw[0]))
+    print('min training output (scaled) : {:.4f}'.format(min_training_output_scaled[0]))
+    print('max training output (scaled) : {:.4f}'.format(max_training_output_scaled[0]))
+    print('min predictions (raw) : {:.4f}'.format(min(predicted_raw)[0]))
+    print('max predictions (raw) : {:.4f}'.format(max(predicted_raw)[0]))
+    print('min predictions (scaled) : {:.4f}'.format(min(predicted_scaled)[0]))
+    print('max predictions (scaled) : {:.4f}'.format(max(predicted_scaled)[0]))
+    print('min training residual : {:.4f}'.format(min(training_residuals)))
+    print('max training residual : {:.4f}'.format(max(training_residuals)))
+    print('min validation residual : {:.4f}'.format(min(validation_residuals)))
+    print('max validation residual : {:.4f}'.format(max(validation_residuals)))
     print('total number of images : ', num_inputs)
     print('total train image count ', train_inputs.size(0))
     print('total validation image count ', validation_inputs.size(0))
+    print(training_residuals_histogram)
+    print(validation_residuals_histogram)
 
 if __name__ == '__main__':
     main()

@@ -17,6 +17,7 @@ from stable_diffusion.utils.utils import save_image_grid, save_images
 from stable_diffusion import StableDiffusion
 from utility.labml.monit import section
 
+
 # CHECKPOINT_PATH = os.path.abspath('./input/model/v1-5-pruned-emaonly.ckpt')
 OUTPUT_DIR = os.path.abspath("./output/noise-tests/temperature_range")
 

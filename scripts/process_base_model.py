@@ -28,6 +28,7 @@ from stable_diffusion.utils_model import (
 )
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
 
+
 try:
     from torchinfo import summary
 except:

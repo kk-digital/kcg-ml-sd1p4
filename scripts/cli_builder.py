@@ -1,10 +1,10 @@
 import argparse
 import os, sys
-
-sys.path.append(os.path.join(".", "stable_diffusion/utils"))
-from stable_diffusion_reference.cli import check_folder_existence, check_file_existence
 from typing import Union, Callable
 
+sys.path.append(os.path.join(".", "stable_diffusion/utils"))
+
+from stable_diffusion_reference.cli import check_folder_existence, check_file_existence
 
 
 class CLI:
@@ -159,12 +159,12 @@ class CLI:
         self.parser.add_argument(
             '--seed',
             type=str,
-            default='0',
+            default='',
             help='Seed for the image generation (default: %(default)s)'
         )
 
         return self
-    
+
     def num_iterations(self):
         self.parser.add_argument(
             '--num_iterations',

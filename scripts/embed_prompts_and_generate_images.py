@@ -8,6 +8,7 @@ import shutil
 import math
 from torch.mps import empty_cache as mps_empty_cache
 from os.path import join
+
 base_dir = "./"
 sys.path.insert(0, base_dir)
 
@@ -18,6 +19,7 @@ from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
 from chad_score import ChadPredictor
 from stable_diffusion import StableDiffusion
 from stable_diffusion.constants import IODirectoryTree
+
 
 EMBEDDED_PROMPTS_DIR = os.path.abspath("./input/embedded_prompts/")
 OUTPUT_DIR = "./output/disturbing_embeddings/"

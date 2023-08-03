@@ -1,5 +1,6 @@
-
 import torch.nn.functional as F
+
+
 def chad_training_step(model, batch, xcol='emb', ycol='avg_rating'):
     x = batch[xcol]
     y = batch[ycol].reshape(-1, 1)

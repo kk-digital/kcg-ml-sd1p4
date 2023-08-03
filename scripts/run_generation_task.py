@@ -6,6 +6,8 @@ sys.path.insert(0, base_directory)
 
 from generation_task import GenerationTask
 from text_to_image import text_to_image
+from generate_images_from_random_prompt import generate_images_from_random_prompt
+
 
 def parse_arguments():
     """Command-line arguments for 'classify' command."""
@@ -19,6 +21,10 @@ def text_to_image_handler(generation_task):
     text_to_image(generation_task.prompt, generation_task.output_path, 'ddim', "./input/model/v1-5-pruned-emaonly.safetensors", True, 50,
                   generation_task.cfg_strength, False, False, 'cuda:0', generation_task.num_images, generation_task.seed)
 
+def generate_images_from_prompt_handler(generation_task):
+    generate_images_from_random_prompt(generation_task.num_images, generation_task.image_width, generation_task.image_height, generation_task.cfg_strength,
+                                       generation_task.batch_size, generation_task.checkpoint_path, generation_task.output_path, generation_task.seed, generation_task.flash,
+                                       generation_task.device, generation_task.sampler, generation_task.steps, generation_task.force_cpu)
 def main():
     args = parse_arguments()
 
@@ -32,6 +38,8 @@ def main():
 
     if generation_task.generation_task_type == 'text_to_image':
         text_to_image_handler(generation_task)
+    elif generation_task.generation_task_type == 'generate_images_from_random_prompt':
+        generate_images_from_prompt_handler(generation_task)
 
 
 if __name__ == '__main__':

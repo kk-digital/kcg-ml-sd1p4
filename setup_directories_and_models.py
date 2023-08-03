@@ -8,6 +8,7 @@ from utility.labml.monit import section
 from stable_diffusion.utils_model import initialize_latent_diffusion
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
 
+
 config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
 parser = argparse.ArgumentParser(description="Setup a config file with the default IO directory structure.")
 
@@ -71,7 +72,7 @@ config["MODELS_DIRS"] = {
         'CLIP_MODELS_DIR':  '${ROOT_DIRS:ROOT_MODELS_DIR}clip/',
         'CLIP_MODEL_DIR': '${MODELS_DIRS:CLIP_MODELS_DIR}${BASE:CLIP_MODEL_NAME}/',
         'TEXT_EMBEDDER_DIR': '${MODELS_DIRS:CLIP_MODELS_DIR}text_embedder/',
-        'IMAGE_ENCODER_DIR': '${MODELS_DIRS:CLIP_MODELS_DIR}image_encoder/'        
+        'IMAGE_ENCODER_DIR': '${MODELS_DIRS:CLIP_MODELS_DIR}image_encoder/'
 }
 # config["MODELS_DIRS"] = dict(
 #         SD_DEFAULT_MODEL_DIR = SD_DEFAULT_MODEL_DIR,
@@ -101,11 +102,11 @@ config["STABLE_DIFFUSION_PATHS"] = {
 print_section(config, "STABLE_DIFFUSION_PATHS")
 
 config["CLIP_PATHS"] = dict(
-    
+
     IMAGE_PROCESSOR_PATH = "${MODELS_DIRS:IMAGE_ENCODER_DIR}image_processor",
     VISION_MODEL_PATH = "${MODELS_DIRS:IMAGE_ENCODER_DIR}vision_model",
     IMAGE_ENCODER_PATH = "${MODELS_DIRS:IMAGE_ENCODER_DIR}image_encoder.safetensors",
-    
+
     TOKENIZER_PATH = "${MODELS_DIRS:TEXT_EMBEDDER_DIR}tokenizer",
     TEXT_MODEL_PATH = '${MODELS_DIRS:TEXT_EMBEDDER_DIR}text_model',
     TEXT_EMBEDDER_PATH = "${MODELS_DIRS:TEXT_EMBEDDER_DIR}text_embedder.safetensors"
@@ -115,8 +116,8 @@ print_section(config, "CLIP_PATHS")
 
 with open('config.ini', 'w') as configfile:
     config.write(configfile)
-    
-    
+
+
 def create_directory_tree_folders(config):
     for section in config.sections():
         if section.endswith("_DIRS"):
@@ -139,9 +140,9 @@ if __name__ == "__main__":
                 print("CLIP model downloaded successfully.")
             except Exception as e:
                 print("Error downloading CLIP model. Error: ", e)
-    
+
     if DOWNLOAD_BASE_SD_MODEL:
-    
+
         sd_url = r'https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors'
 
         with section("Initializing Stable Diffusion model's checkpoint download."):
@@ -156,7 +157,7 @@ if __name__ == "__main__":
 if __name__ == "__main__":
 
     model = initialize_latent_diffusion(
-            path=config["STABLE_DIFFUSION_PATHS"].get('CHECKPOINT_PATH'), 
+            path=config["STABLE_DIFFUSION_PATHS"].get('CHECKPOINT_PATH'),
             force_submodels_init=True
         )
     # summary(model)
@@ -184,4 +185,3 @@ if __name__ == "__main__":
         model.unload_submodels()  # unloads latent diffusion submodels
     with section("save latent diffusion model"):
         model.save()  # saves latent diffusion model with loaded state dict and unloaded submodels
-

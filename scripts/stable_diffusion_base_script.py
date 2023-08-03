@@ -4,6 +4,7 @@ from typing import Union, Optional
 from pathlib import Path
 
 sys.path.append(os.path.abspath(''))
+
 from stable_diffusion.utils_backend import get_device
 from stable_diffusion.utils_image import load_img
 from stable_diffusion.sampler.ddim import DDIMSampler
@@ -13,6 +14,7 @@ from stable_diffusion.latent_diffusion import LatentDiffusion
 from stable_diffusion.sampler import DiffusionSampler
 from stable_diffusion.constants import LATENT_DIFFUSION_PATH
 from utility.labml.monit import section
+
 
 class ModelLoadError(Exception):
     pass
@@ -142,11 +144,11 @@ class StableDiffusionBaseScript:
     def initialize_script(self, autoencoder=None, clip_text_embedder=None, unet_model=None, force_submodels_init=False,
                           path=None):
         """You can initialize the autoencoder, CLIP and UNet models externally and pass them to the script.
-        Use the methods: 
+        Use the methods:
             stable_diffusion.utils.model.initialize_autoencoder,
-            stable_diffusion.utils.model.initialize_clip_embedder 
-            and 
-            stable_diffusion.utils.model.initialize_unet 
+            stable_diffusion.utils.model.initialize_clip_embedder
+            and
+            stable_diffusion.utils.model.initialize_unet
         to initialize them.
         If you don't initialize them externally, the script will initialize them internally.
         Args:

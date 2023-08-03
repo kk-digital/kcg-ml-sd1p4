@@ -5,6 +5,7 @@ import torch
 from os.path import join
 
 sys.path.insert(0, os.getcwd())
+
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion.utils_backend import get_device
 

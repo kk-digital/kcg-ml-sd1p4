@@ -25,6 +25,7 @@ from chad_score import ChadPredictor
 from stable_diffusion import StableDiffusion
 from stable_diffusion.constants import IODirectoryTree
 
+
 EMBEDDED_PROMPTS_DIR = os.path.abspath("./input/embedded_prompts/")
 OUTPUT_DIR = "./output/disturbing_embeddings/"
 FEATURES_DIR = join(OUTPUT_DIR, "features/")
@@ -37,12 +38,12 @@ SCORER_CHECKPOINT_PATH = os.path.abspath("./input/model/aesthetic_scorer/chadsco
 # DEVICE = input("Set device: 'cuda:i' or 'cpu'")
 
 prompt_list = ['chibi', 'waifu', 'scifi', 'side scrolling', 'character', 'side scrolling',
-               'white background', 'centered', 'full character', 'no background', 
+               'white background', 'centered', 'full character', 'no background',
                'not centered', 'line drawing', 'sketch', 'black and white',
                'colored', 'offset', 'video game','exotic', 'sureal', 'miltech', 'fantasy',
                'frank frazetta', 'terraria', 'final fantasy', 'cortex command',
-               'Dog', 'Cat', 'Space Ship', 'Airplane', 'Mech', 'Tank', 'Bicycle', 
-               'Book', 'Chair', 'Table', 'Cup', 'Car', 'Tree', 'Flower', 'Mountain', 
+               'Dog', 'Cat', 'Space Ship', 'Airplane', 'Mech', 'Tank', 'Bicycle',
+               'Book', 'Chair', 'Table', 'Cup', 'Car', 'Tree', 'Flower', 'Mountain',
                'Smartphone', 'Guitar', 'Sunflower', 'Laptop', 'Coffee Mug', 'water color expressionist',
                'david mckean', 'jock', 'esad ribic', 'chris bachalo', 'expressionism', 'Jackson Pollock',
                'Alex Kanevskyg', 'Francis Bacon', 'Trash Polka', 'abstract realism', 'andrew salgado', 'alla prima technique',
@@ -123,7 +124,7 @@ os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
 pt = IODirectoryTree(base_directory=base_dir)
 
 
-try: 
+try:
     shutil.rmtree(OUTPUT_DIR)
 except Exception as e:
     print(e, "\n", "Creating the paths...")
@@ -184,12 +185,12 @@ def embed_and_save_prompts(clip_text_embedder, prompt: str, i: int, null_prompt 
 
     embedded_prompt = clip_text_embedder(prompt).cpu()
     torch.save(embedded_prompt, join(EMBEDDED_PROMPTS_DIR, f"embedded_prompt_{i}.pt"))
-    
+
     print(
         "Prompts embeddings saved at: ",
         f"{join(EMBEDDED_PROMPTS_DIR, f'embedded_prompt_{i}.pt')}",
     )
-    
+
     get_memory_status(DEVICE)
     #clip_text_embedder.to("cpu")
     torch.cuda.empty_cache()
@@ -227,9 +228,9 @@ def generate_images_from_disturbed_embeddings(
         embedding_e = embedded_prompt + ((i * noise_multiplier) * noise_i + (j * noise_multiplier) * noise_j) / (2 * num_iterations)
 
         image_e = sd.generate_images_from_embeddings(
-            seed=seed, 
-            embedded_prompt=embedding_e, 
-            null_prompt=null_prompt, 
+            seed=seed,
+            embedded_prompt=embedding_e,
+            null_prompt=null_prompt,
             batch_size=batch_size
         ).to("cpu")
         torch.cuda.empty_cache()
@@ -294,7 +295,7 @@ def main():
         prompt = generate_prompt()
     #     print(f"Prompt {i}: {prompt}")  # Print the generated prompt
         prompts.append(prompt)  # Store each prompt for later use
-    #     get_memory_status()        
+    #     get_memory_status()
         embedded_prompt, null_prompt = embed_and_save_prompts(clip_text_embedder, prompt, i)
     #     embedded_prompts_list.append(embedded_prompt.cpu())  # Store the embedded prompts
     #     get_memory_status() 
@@ -310,7 +311,7 @@ def main():
     #     images.append((image.cpu(), embedding.cpu(), prompts[i]))  # Include the prompt with the image and embedding
     #     # images.append((image, embedding, prompts[i]))  # Include the prompt with the image and embedding
     #     get_memory_status()
-    #     torch.cuda.empty_cache() 
+    #     torch.cuda.empty_cache()
 
     image_encoder = CLIPImageEncoder(device=DEVICE)
     image_encoder.load_clip_model(**pt.clip_model)
@@ -323,7 +324,7 @@ def main():
     manifest = []
     scores = []
     images_tensors = []
-    
+
     json_output_path = join(FEATURES_DIR, "features.json")
     manifest_path = join(OUTPUT_DIR, "manifest.json")
     scores_path = join(OUTPUT_DIR, "scores.json")
@@ -340,7 +341,7 @@ def main():
         image_features = image_encoder(prep_img)
         image_features /= image_features.norm(dim=-1, keepdim=True)
         score = predictor.model(image_features.to(DEVICE).float())
-        
+
         img_file_name = f"image_{i:06d}.png"
         full_img_path = join(IMAGES_DIR, img_file_name)
         img_path = "./images/" + os.path.relpath(full_img_path, IMAGES_DIR)
@@ -351,7 +352,7 @@ def main():
             embedding_path = join(FEATURES_DIR, embedding_file_name)
             torch.save(embedding, embedding_path)
 
-        manifest_i = {                     
+        manifest_i = {
                         "file-name": img_file_name,
                         "file-path": img_path,
                         "file-hash": img_hash,
@@ -380,11 +381,11 @@ def main():
         json_output_i["clip-vector"] = image_features.tolist()
 
         json_output.append(json_output_i)
-        
+
 
     # images_grid = torch.cat(images_tensors)
     # save_image_grid(images_grid, join(IMAGES_DIR, "images_grid.png"), nrow=int(math.log(NUM_ITERATIONS, 2)), normalize=True, scale_each=True)
-    
+
     json.dump(json_output, open(json_output_path, "w"), indent=4)
     json.dump(scores, open(scores_path, "w"), indent=4)
     json.dump(manifest, open(manifest_path, "w"), indent=4)
