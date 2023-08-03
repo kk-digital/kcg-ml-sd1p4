@@ -181,39 +181,48 @@ def main():
     validation_inputs = torch.tensor(validation_inputs, dtype=torch.float32)
     validation_outputs = torch.tensor(validation_outputs, dtype=torch.float32)
 
-    target_outputs = target_outputs.unsqueeze(1)
-    validation_outputs = validation_outputs.unsqueeze(1)
+    target_outputs_raw = target_outputs.unsqueeze(1)
+    validation_outputs_raw = validation_outputs.unsqueeze(1)
 
-    target_outputs = torch.sigmoid(target_outputs)
-    validation_outputs = torch.sigmoid(validation_outputs)
+    target_outputs_scaled = torch.sigmoid(target_outputs_raw)
+    validation_outputs_scaled = torch.sigmoid(validation_outputs_raw)
 
-    num_epochs = 1000
+    num_epochs = 2000
     epsilon = 0.2
-    training_corrects = 0
-    min_training_output = 0
-    max_training_output = 0
+    training_corrects_raw = 0
+    training_corrects_scaled = 0
+    min_training_output_raw = 0
+    max_training_output_raw = 0
+    min_training_output_scaled = 0
+    max_training_output_scaled = 0
+    validation_residuals = []
+
     for epoch in range(num_epochs):
         optimizer.zero_grad()
 
         # Forward pass
-        model_outputs = linear_regression_model(train_inputs)
-        model_outputs = torch.sigmoid(model_outputs)
+        model_outputs_raw = linear_regression_model(train_inputs)
+        model_outputs_scaled = torch.sigmoid(model_outputs_raw)
 
-        target_outputs_sigmoid = target_outputs
         #target_outputs_sigmoid = torch.sigmoid(target_outputs)
         # Compute the loss
-        loss = mse_loss(model_outputs, target_outputs_sigmoid)
+        loss = mse_loss(model_outputs_raw, target_outputs_raw)
 
         # Backward and optimize
         loss.backward()
         optimizer.step()
 
         if epoch == num_epochs - 1:
-            for index, prediction in enumerate(model_outputs):
-                if (abs(model_outputs[index][0] - target_outputs_sigmoid[index][0]) < epsilon):
-                    training_corrects += 1
-            min_training_output = min(model_outputs)
-            max_training_output = max(model_outputs)
+            for index, prediction in enumerate(model_outputs_scaled):
+                if (abs(model_outputs_scaled[index][0] - target_outputs_scaled[index][0]) < epsilon):
+                    training_corrects_scaled += 1
+            for index, prediction in enumerate(model_outputs_raw):
+                if (abs(model_outputs_raw[index][0] - target_outputs_raw[index][0]) < epsilon):
+                    training_corrects_raw += 1
+            min_training_output_raw = min(model_outputs_raw)
+            max_training_output_raw = max(model_outputs_raw)
+            min_training_output_scaled = min(model_outputs_scaled)
+            max_training_output_scaled = max(model_outputs_scaled)
 
         # Print progress
         if (epoch + 1) % 100 == 0:
