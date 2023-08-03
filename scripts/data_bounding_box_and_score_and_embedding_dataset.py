@@ -11,6 +11,7 @@ from typing import List
 from random import randrange
 import cv2
 import numpy as np
+import os
 import torch
 
 
@@ -51,12 +52,6 @@ prompt_list = ['chibi', 'waifu', 'scifi', 'side scrolling', 'character', 'side s
 
 parser = argparse.ArgumentParser("Embed prompts using CLIP")
 
-parser.add_argument(
-    "--save_embeddings",
-    type=bool,
-    default=False,
-    help="If True, the disturbed embeddings will be saved to disk. Defaults to False.",
-)
 parser.add_argument(
     "--cfg_strength",
     type=int,
@@ -121,7 +116,6 @@ else:
 NOISE_MULTIPLIER = args.noise_multiplier
 DEVICE = args.cuda_device
 BATCH_SIZE = args.batch_size
-SAVE_EMBEDDINGS = args.save_embeddings
 CLEAR_OUTPUT_DIR = args.clear_output_dir
 os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
 
@@ -283,6 +277,7 @@ def get_image_features(
     image_features = image_features.cpu().detach().numpy()
     return image_features
 
+def main():
 
     start_time = time.time()  # Save the start time
   
@@ -302,7 +297,7 @@ def get_image_features(
         embedded_prompt, null_prompt = embed_and_save_prompts(clip_text_embedder, prompt, i)
     #     embedded_prompts_list.append(embedded_prompt.cpu())  # Store the embedded prompts
     #     get_memory_status() 
-    #     torch.save(embedded_prompt, f'{EMBEDDED_PROMPTS_DIR}/embedded_prompt_{i}.pt')    
+        torch.save(embedded_prompt, f'{EMBEDDED_PROMPTS_DIR}/embedded_prompt_{i}.pt')    
         torch.cuda.empty_cache()
     # embedded_prompts_list = [embedded_prompt for embedded_prompt in embedded_prompts]  # Store the embedded prompts
     # null_prompt_list.append(null_prompt)  # Store the null prompts
@@ -351,11 +346,6 @@ def get_image_features(
         full_img_path = join(IMAGES_DIR, img_file_name)
         img_path = "./images/" + os.path.relpath(full_img_path, IMAGES_DIR)
         pil_image.save(full_img_path)
-
-        if SAVE_EMBEDDINGS:
-            embedding_file_name = f"embedding_{i:06d}.pt"
-            embedding_path = join(FEATURES_DIR, embedding_file_name)
-            torch.save(embedding, embedding_path)
 
         manifest_i = {
             "file-name": img_file_name,

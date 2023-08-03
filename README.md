@@ -248,7 +248,7 @@ Outputs in: `./output/disturbing_embeddings`
 Try running:
 
 ```bash
-python3 ./scripts/data_bounding_box_and_score_and_embedding_dataset.py --num_iterations 10 --save_embeddings True
+python3 ./scripts/data_bounding_box_and_score_and_embedding_dataset.py --num_iterations 10 
 ```
 
 - `--save_embeddings`: If True, the disturbed embeddings will be saved to disk. Defaults to `False`.
