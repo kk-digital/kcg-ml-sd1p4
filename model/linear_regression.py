@@ -11,6 +11,10 @@ class LinearRegressionModel():
         self.model_type = 'linear-regression'
         self.device = device
 
+    def save(self, model_path):
+        # Saving the model to disk
+        torch.save(self.model.state_dict(), model_path)
+
     def load(self, model_path):
         # Loading state dictionary
         state = torch.load(model_path, map_location=self.device)
