@@ -6,7 +6,7 @@ import os
 import shutil
 import sys
 from os.path import join
-
+from random import randrange
 import torch
 from torch.mps import empty_cache as mps_empty_cache
 
@@ -66,8 +66,8 @@ parser.add_argument(
 parser.add_argument(
     "--seed",
     type=str,
-    default=2982,
-    help="The noise seed used to generate the images. Defaults to 2982",
+    default='',
+    help="The noise seed used to generate the images. Defaults to random int from 0 to 2^24",
 )
 parser.add_argument(
     "--noise_multiplier",
@@ -99,7 +99,12 @@ args = parser.parse_args()
 NULL_PROMPT = ""
 PROMPT = args.prompt
 NUM_ITERATIONS = args.num_iterations
-SEED = args.seed
+
+if args.seed == '':
+    SEED = randrange(0, 2 ** 24)
+else:
+    SEED = int(args.seed)
+
 NOISE_MULTIPLIER = args.noise_multiplier
 DEVICE = get_device(args.cuda_device)
 BATCH_SIZE = args.batch_size
