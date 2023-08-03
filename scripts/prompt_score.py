@@ -187,8 +187,9 @@ def main():
     target_outputs_scaled = torch.sigmoid(target_outputs_raw)
     validation_outputs_scaled = torch.sigmoid(validation_outputs_raw)
 
-    num_epochs = 2000
-    epsilon = 0.2
+    num_epochs = 1000
+    epsilon_raw = 10
+    epsilon_scaled = 0.2
     training_corrects_raw = 0
     training_corrects_scaled = 0
     min_training_output_raw = 0
@@ -214,10 +215,10 @@ def main():
 
         if epoch == num_epochs - 1:
             for index, prediction in enumerate(model_outputs_scaled):
-                if (abs(model_outputs_scaled[index][0] - target_outputs_scaled[index][0]) < epsilon):
+                if (abs(model_outputs_scaled[index][0] - target_outputs_scaled[index][0]) < epsilon_scaled):
                     training_corrects_scaled += 1
             for index, prediction in enumerate(model_outputs_raw):
-                if (abs(model_outputs_raw[index][0] - target_outputs_raw[index][0]) < epsilon):
+                if (abs(model_outputs_raw[index][0] - target_outputs_raw[index][0]) < epsilon_raw):
                     training_corrects_raw += 1
             min_training_output_raw = min(model_outputs_raw)
             max_training_output_raw = max(model_outputs_raw)
@@ -251,12 +252,12 @@ def main():
 
         for index, prediction in enumerate(predicted_raw):
             residual = abs(predicted_raw[index][0] - validation_outputs_raw[index][0])
-            if (residual < epsilon):
+            if (residual < epsilon_raw):
                 validation_corrects_raw += 1
         for index, prediction in enumerate(predicted_scaled):
             residual = abs(predicted_scaled[index][0] - validation_outputs_scaled[index][0])
             validation_residuals.append(residual)
-            if (residual < epsilon):
+            if (residual < epsilon_scaled):
                 validation_corrects_scaled += 1
 
     validation_accuracy_raw = validation_corrects_raw / validation_inputs.size(0)
