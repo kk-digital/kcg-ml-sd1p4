@@ -51,7 +51,7 @@ the safetensors version of `openai/clip-vit-large-patch14`, found in [refs/pr/19
 The `setup_directories_and_models.py` script will set up the folder structure, download both these models (depending on the args given), and process them.
 
 ```bash
-python3 ./setup_directories_and_models.py --download_base_clip_model True --download_base_sd_model True
+python3 ./setup_directories_and_models.py --download_base_clip_model True --download_base_sd_model True --download_text_model True
 ```
 
 Then you already should be able to run:
