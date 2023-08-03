@@ -134,7 +134,7 @@ def generate_images_from_embeddings(
                         seed=noise_seed,
                         temperature=TEMPERATURE,
                         uncond_scale=cfg_scale
-                    ).to("cpu")
+                    )
                     # print(images.shape)
                     save_images(images, dest_path=dest_path)
                     img_row.append(images)

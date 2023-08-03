@@ -103,7 +103,7 @@ def main():
                     uncond_scale=opt.cfg_scale,
                     low_vram=opt.low_vram,
                     seed=seed_array[i % len(seed_array)]
-                ).to('cpu')
+                )
 
                 print(images.shape)
                 save_images(images, filename)
