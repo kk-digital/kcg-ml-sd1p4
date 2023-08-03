@@ -203,7 +203,7 @@ python3 ./scripts/generate_images_from_temperature_range.py -d 4 --params_range 
 - `-cp, --checkpoint_path`: The path to the checkpoint file to load from. Defaults to the `CHECKPOINT_PATH` constant, which is expected to be `"./input/model/v1-5-pruned-emaonly.safetensors"`.
 - `-F, --fully_initialize`: Whether to fully initialize or not. Defaults to `False`.
 - `-d, --distribution_index`: The distribution index to use. Defaults to 4. Options: 0: "Normal", 1: "Cauchy", 2: "Gumbel", 3: "Laplace", 4: "Logistic".
-- `-s, --seed`: The seed value. Defaults to `2982`.
+- `-s, --seed`: The seed value. Defaults to random int `0 to 2^24`.
 - `-bs, --batch_size`: The batch size to use. Defaults to `1`.
 - `--params_steps`: The number of steps for the parameters. Defaults to `3`.
 - `--params_range`: The range of parameters. Defaults to `[0.49, 0.54]`.
@@ -238,7 +238,7 @@ Outputs in: `./output/disturbing_embeddings`
 
 - `--prompt`: The prompt to embed. Defaults to `"A woman with flowers in her hair in a courtyard, in the style of Frank Frazetta"`.
 - `--num_iterations`: The number of iterations to batch-generate images. Defaults to `8`.
-- `--seed`: The noise seed used to generate the images. Defaults to `2982`.
+- `--seed`: The noise seed used to generate the images. Defaults to random int `0 to 2^24`.
 - `--noise_multiplier`: The multiplier for the amount of noise used to disturb the prompt embedding. Defaults to `0.01`.
 - `--cuda_device`: The CUDA device to use. Defaults to `"get_device()"`.
 
@@ -256,7 +256,7 @@ python3 ./scripts/data_bounding_box_and_score_and_embedding_dataset.py --num_ite
 - `embedded_prompts_dir`: The path to the directory containing the embedded prompts tensors. Defaults to a constant EMBEDDED_PROMPTS_DIR, which is expected to be `'./input/embedded_prompts/'`
 - `num_iterations`: The number of iterations to batch-generate images. Defaults to `8`.
 - `batch_size`: The number of images to generate per batch. Defaults to `1`.
-- `seed`: The noise seed used to generate the images. Defaults to `2982`.
+- `seed`: The noise seed used to generate the images. Defaults to random int `0 to 2^24``.
 - `noise_multiplier`: The multiplier for the amount of noise used to disturb the prompt embedding. Defaults to `0.008`.
 - `cuda_device`: The CUDA device to use. Defaults to `'get_device()'`.
 - `clear_output_dir`: If True, the output directory will be cleared before generating images. Defaults to `False`.

@@ -69,14 +69,11 @@ def main():
 
     # default seed value is random int from 0 to 2^24
     if opt.seed == '':
-        rand_seed = randrange(2**24)
+        rand_seed = randrange(0, 2**24)
         seed_string_array = str(rand_seed)
 
     # Convert the elements in the list to integers (optional, if needed)
     seed_array = [int(num) for num in seed_string_array]
-
-    if len(seed_array) == 0:
-        seed_array = [0]
 
     # timestamp = datetime.now().strftime('%d-%m-%Y-%H-%M-%S')
     # filename = os.path.join(opt.output, f'{timestamp}.jpg')
