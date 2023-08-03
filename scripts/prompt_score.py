@@ -13,72 +13,18 @@ import torch.optim as optim
 sys.path.insert(0, os.getcwd())
 from model.linear_regression import LinearRegressionModel
 from model.util_data_loader import ZipDataLoader
-
-
-def hash_string_to_float32(input_string):
-    """
-    Hash a string and represent the hash as a 32-bit floating-point number (Float32).
-
-    Parameters:
-        input_string (str): The input string to be hashed.
-
-    Returns:
-        np.float32: The 32-bit floating-point number representing the hash.
-    """
-    try:
-        # Convert the string to bytes (required for hashlib)
-        input_bytes = input_string.encode('utf-8')
-
-        # Get the hash object for the desired algorithm (SHA-256 used here)
-        hash_object = hashlib.sha256()
-
-        # Update the hash object with the input bytes
-        hash_object.update(input_bytes)
-
-        # Get the binary representation of the hash value
-        hash_bytes = hash_object.digest()
-
-        # Convert the first 4 bytes (32 bits) of the hash into a float32
-        float32_hash = struct.unpack('<f', hash_bytes[:4])[0]
-
-        return float32_hash
-    except ValueError:
-        raise ValueError("Error hashing the input string.")
-
+from model.util_histogram import UtilHistogram
 
 
 def split_data(input_list, validation_ratio=0.2):
     # Calculate the number of samples for validation and train sets
     num_validation_samples = int(len(input_list) * validation_ratio)
-    num_train_samples = len(input_list) - num_validation_samples
 
     # Split the input_list into validation and train lists
     validation_list = input_list[:num_validation_samples]
     train_list = input_list[num_validation_samples:]
 
     return validation_list, train_list
-
-
-def report_residuals_histogram(residuals, type):
-    max_residual = max(residuals)
-    hist_bins = np.linspace(0, max_residual, 11)
-
-    histogram, bin_edges = np.histogram(residuals, bins=hist_bins)
-    total_residues = len(residuals)
-
-    histogram_string = f"\n{type} Residuals Histogram:\n"
-    histogram_string += f"{'Range':<13} {'Percentage':<12} {'Histogram'}\n"
-
-    max_digits = 12  # Maximum digits for percentage (including decimal point)
-    for i, count in enumerate(histogram):
-        bin_start, bin_end = bin_edges[i], bin_edges[i + 1]
-        percentage = (count / total_residues) * 100
-        asterisks = int(percentage / 2)
-        percentage_str = f"{percentage:.2f}%"
-        histogram_string += f"{bin_start:.2f} - {bin_end:.2f}   {percentage_str:<{max_digits}} {'*' * asterisks}\n"
-
-    return histogram_string
-
 
 def parse_arguments():
     """Command-line arguments for 'classify' command."""
@@ -109,6 +55,8 @@ def main():
     epsilon_scaled = args.epsilon_scaled
     show_validation_loss = args.show_validation_loss
     output_path = args.output_path
+
+    util_histogram = UtilHistogram()
 
     inputs = []
     expected_outputs = []
@@ -240,20 +188,6 @@ def main():
         validation_outputs_raw = validation_outputs_raw.tolist()
         validation_outputs_scaled = validation_outputs_scaled.tolist()
 
-        # print(test_X.shape)
-        # print('predicted (raw) first 10 elements : ', predicted_raw[:10])
-        # print('expected output (raw) first 10 elements : ', validation_outputs_raw[:10])
-
-        # print('predicted (scaled) first 10 elements : ', predicted_scaled[:10])
-        # print('expected output (scaled) first 10 elements : ', validation_outputs_scaled[:10])
-
-        # converting all tensors back to cpu memory
-
-        train_inputs = train_inputs.cpu()
-        target_outputs = target_outputs.cpu()
-        validation_inputs = validation_inputs.cpu()
-        validation_outputs = validation_outputs.cpu()
-
         for index, prediction in enumerate(predicted_raw):
             residual = abs(predicted_raw[index][0] - validation_outputs_raw[index][0])
             if (residual < epsilon_raw):
@@ -269,8 +203,8 @@ def main():
     training_accuracy_raw = training_corrects_raw / train_inputs.size(0)
     training_accuracy_scaled = training_corrects_scaled / train_inputs.size(0)
 
-    training_residuals_histogram = report_residuals_histogram(training_residuals, "Training")
-    validation_residuals_histogram = report_residuals_histogram(validation_residuals, "Validation")
+    training_residuals_histogram = util_histogram.report_residuals_histogram(training_residuals, "Training")
+    validation_residuals_histogram = util_histogram.report_residuals_histogram(validation_residuals, "Validation")
 
     # Create a string buffer
     train_report_string_buffer = io.StringIO()
