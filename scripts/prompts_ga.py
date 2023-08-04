@@ -85,7 +85,7 @@ def generate_prompts(num_prompts):
     prompt_topics = [
     'chibi', 'waifu', 'cyborg', 'dragon', 'android', 'mecha', 
     'companion', 'furry', 'robot',
-    'mercentary',, 'wizard', 'pet', 
+    'mercentary', 'wizard', 'pet',
     'shapeshifter', 'pilot', 'time traveler', "engineer", "slaver",
     ]
 
