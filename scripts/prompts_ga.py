@@ -236,7 +236,8 @@ prompt_segments = ['chibi', 'waifu', 'cyborg', 'dragon', 'android', 'nekomimi', 
 
 # Generate 6 random prompts with modifiers (initial population)
 PROMPT = generate_prompts(prompt_segments)
-PROMPT = PROMPT[:20]
+#PROMPT = PROMPT[:20]
+PROMPT = PROMPT[:POPULATION_SIZE]
 
 # Load Stable Diffusion
 sd = StableDiffusion(device=DEVICE, n_steps=N_STEPS)
