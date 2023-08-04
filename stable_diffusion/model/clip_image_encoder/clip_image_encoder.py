@@ -49,10 +49,10 @@ class CLIPImageEncoder(nn.Module):
                                                                                use_safetensors=True)
                                  .eval()
                                  .to(self.device))
-            logger.info(f"CLIPVisionModelWithProjection successfully loaded from : {vision_model_path}\n")
+            logger.info(f"CLIP VisionModelWithProjection successfully loaded from : {vision_model_path}\n")
             self.image_processor = CLIPImageProcessor.from_pretrained(image_processor_path, local_files_only=True)
 
-            logger.info(f"CLIPImageProcessor successfully loaded from : {image_processor_path}\n")
+            logger.info(f"CLIP ImageProcessor successfully loaded from : {image_processor_path}\n")
             return self
         except Exception as e:
             logger.error('Error loading submodels: ', e)
@@ -72,17 +72,17 @@ class CLIPImageEncoder(nn.Module):
     def save(self, image_encoder_path=IMAGE_ENCODER_PATH):
         try:
             safetensors.torch.save_model(self, image_encoder_path)
-            print(f"CLIPImageEncoder saved to: {image_encoder_path}")
+            print(f"CLIP ImageEncoder saved to: {image_encoder_path}")
         except Exception as e:
-            print(f"CLIPImageEncoder not saved. Error: {e}")
+            print(f"CLIP ImageEncoder not saved. Error: {e}")
 
     def load(self, image_encoder_path: str = IMAGE_ENCODER_PATH):
         try:
             safetensors.torch.load_model(self, image_encoder_path, strict=True)
-            print(f"CLIPTextEmbedder loaded from: {image_encoder_path}")
+            print(f"CLIP TextEmbedder loaded from: {image_encoder_path}")
             return self
         except Exception as e:
-            print(f"CLIPTextEmbedder not loaded. Error: {e}")
+            print(f"CLIP TextEmbedder not loaded. Error: {e}")
 
     def convert_image_to_tensor(self, image: PIL.Image.Image):
         return torch.from_numpy(np.array(image)) \

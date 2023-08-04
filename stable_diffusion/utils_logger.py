@@ -28,7 +28,7 @@ class CustomFormatter(logging.Formatter):
 
 # Create a root logger
 logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.WARNING)
 
 # Create a console handler
 ch = logging.StreamHandler()
