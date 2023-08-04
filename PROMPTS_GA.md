@@ -14,7 +14,26 @@ python scripts/prompts_ga.py \
   --mutation_probability 0.05 \
   --crossover_type single_point \
   --keep_elitism 0 \
-  --mutation_type random
+  --mutation_type random \
+  --mutation_percent_genes 0.05
+```
+
+CLI args:
+
+```
+options:
+  --generations GENERATIONS
+                        Number of generations to run.
+  --mutation_probability MUTATION_PROBABILITY
+                        Probability of mutation.
+  --keep_elitism KEEP_ELITISM
+                        1 to keep best individual, 0 otherwise.
+  --crossover_type CROSSOVER_TYPE
+                        Type of crossover operation.
+  --mutation_type MUTATION_TYPE
+                        Type of mutation operation.
+  --mutation_percent_genes MUTATION_PERCENT_GENES
+                        The percentage of genes to be mutated.
 ```
 
 ## Available Selection Operators
