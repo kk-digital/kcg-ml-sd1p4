@@ -249,6 +249,7 @@ def genetic_algorithm_loop(sd, embedded_prompts, null_prompt, generations=10, po
                            initial_population=embedded_prompts_list,
                            mutation_percent_genes=mutation_rate*100,
                            mutation_probability=0.05,
+                           keep_elitism=0,
                            crossover_type="single_point",
                            mutation_type="random",
                            #on_start=on_start,
