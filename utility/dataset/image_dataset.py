@@ -3,7 +3,7 @@ import os
 import random
 import zipfile
 
-from utils.dataset.image_dataset_storage_format.validator import ImageDatasetStorageFormatValidator
+from utility.dataset.image_dataset_storage_format.validator import ImageDatasetStorageFormatValidator
 
 
 class ImageFeatures:

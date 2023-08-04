@@ -8,7 +8,7 @@ import re
 from PIL import Image
 from PIL import UnidentifiedImageError
 
-from utils.clip.clip_feature_zip_loader import ClipFeatureZipLoader
+from utility.clip.clip_feature_zip_loader import ClipFeatureZipLoader
 from .image_dataset_storage_format import *
 
 # no max for image pixel size
