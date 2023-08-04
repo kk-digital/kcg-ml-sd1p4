@@ -85,9 +85,6 @@ class CLIPTextEmbedder(nn.Module):
         return self
 
     def unload_submodels(self):
-
-        print("Memory status before unloading submodels: \n")
-        get_memory_status()
         if self.tokenizer is not None:
             self.tokenizer
             del self.tokenizer
@@ -97,8 +94,6 @@ class CLIPTextEmbedder(nn.Module):
             del self.transformer
             self.transformer = None
         torch.cuda.empty_cache()
-        print("Memory status after the unloading: \n")
-        get_memory_status()
 
     def save(self, embedder_path: str = TEXT_EMBEDDER_PATH):
         try:
