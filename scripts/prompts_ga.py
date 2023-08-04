@@ -1,7 +1,7 @@
 import os, sys
 base_dir = os.getcwd()
 sys.path.insert(0, base_dir)
-from chad_score.chad_score import ChadScorePredictor
+
 import torch
 from typing import List
 import configparser
@@ -16,10 +16,11 @@ from os.path import join
 import clip
 import pygad
 
+from chad_score.chad_score import ChadScorePredictor
+
 from stable_diffusion import StableDiffusion
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
-
 from stable_diffusion.utils_model import *
 from stable_diffusion.utils_backend import *
 from stable_diffusion.utils_backend import get_device, get_memory_status
@@ -36,7 +37,7 @@ chad_score_predictor = ChadScorePredictor(device=device)
 chad_score_predictor.load_model()
 
 # Variables
-SEED = 1337
+#SEED = 1337
 BATCH_SIZE = 1
 POPULATION_SIZE = 12
 GEN_IMAGE_N_GENERATIONS = 50
