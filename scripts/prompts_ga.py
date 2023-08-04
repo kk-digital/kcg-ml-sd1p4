@@ -86,11 +86,8 @@ def generate_prompts(num_prompts):
     prompt_topics = [
     'chibi', 'waifu', 'cyborg', 'dragon', 'android', 'mecha', 
     'companion', 'furry', 'robot',
-<<<<<<< HEAD
     'mercentary', 'wizard', 'pet', 
-=======
     'mercentary', 'wizard', 'pet',
->>>>>>> refs/remotes/origin/main
     'shapeshifter', 'pilot', 'time traveler', "engineer", "slaver",
     ]
 
