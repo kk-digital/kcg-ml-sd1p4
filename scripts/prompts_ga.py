@@ -128,48 +128,6 @@ def normalized(a, axis=-1, order=2):
     l2[l2 == 0] = 1
     return a / np.expand_dims(l2, axis)
 
-# Mutation function to add noise to numpy arrays
-def mutate(embedded_prompts):
-    # Calculate the mean and standard deviation along the last axis (axis=2)
-    mean_embedded_prompts = np.mean(embedded_prompts, axis=2)
-    std_embedded_prompts = np.std(embedded_prompts, axis=2)
-
-    # Generate noise with the same shape as the embedded_prompts
-    noise_shape = (embedded_prompts.shape[0], embedded_prompts.shape[1], 768)
-    noise = np.random.normal(loc=mean_embedded_prompts, scale=std_embedded_prompts, size=noise_shape)
-
-    # Generate a random value for the noise multiplier
-    random_val = np.random.rand()
-    noise_multiplier = min_val + random_val * (0.1 - 0.01)
-
-    # Add noise to the embedded_prompts
-    embedding_e = embedded_prompts + noise_multiplier * noise
-
-    return embedding_e
-
-# Crossover function (using single-point crossover)
-def crossover(individual1, individual2):
-    # Check if the individuals have the same shape
-    if individual1.shape != individual2.shape:
-        raise ValueError("Individuals must have the same shape for crossover.")
-
-    # Flatten the individuals to make it easier to perform crossover
-    flat_individual1 = individual1.flatten()
-    flat_individual2 = individual2.flatten()
-
-    # Randomly choose the crossover point
-    crossover_point = np.random.randint(0, flat_individual1.shape[0])
-
-    # Perform crossover by swapping genetic material
-    offspring1 = np.concatenate((flat_individual1[:crossover_point], flat_individual2[crossover_point:]))
-    offspring2 = np.concatenate((flat_individual2[:crossover_point], flat_individual1[crossover_point:]))
-
-    # Reshape the offspring back to the original shape
-    offspring1 = offspring1.reshape(individual1.shape)
-    offspring2 = offspring2.reshape(individual2.shape)
-
-    return offspring1, offspring2
-
 def generate_images_from_embeddings(embedded_prompts_array, null_prompt):
     # print(embedded_prompts_array.to('cuda0'))
     embedded_prompt = embedded_prompts_array.to('cuda').view(1, 77, 768)
