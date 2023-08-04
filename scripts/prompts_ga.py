@@ -259,69 +259,6 @@ def genetic_algorithm_loop(sd, embedded_prompts, null_prompt, generations=10, po
 
     ga_instance.run()
     return ga_instance.best_solution()
-    # print('1')
-    # # Run the GA loop
-    # for generation in range(ga_instance.num_generations):
-    #   # Perform crossover to create new individuals
-    #     parents = ga_instance.population.copy()
-    #     print('2')
-    #     for parent1, parent2 in zip(parents[::2], parents[1::2]):
-    #         print('3')
-    #         child1, child2 = crossover(parent1, parent2)
-    #         print('4')
-    #         # ga_instance.population = np.append(ga_instance.population, [child1, child2])
-    #         ga_instance.add_individual([child1, child2])
-    #         # ga_instance.population.concatenate([child1, child2])
-    #         print('5')
-
-    #     # Perform mutation on some individuals
-    #     for idx, individual in enumerate(ga_instance.population):
-    #         print('6')
-    #         if np.random.rand() < ga_instance.mutation_percent:
-    #             print('7')
-    #             ga_instance.population[idx] = mutate(individual, mutation_rate)
-
-    #     # Perform fitness calculation and update the population
-    #     ga_instance.population = ga_instance.cal_pop_fitness()
-    #     ga_instance.population = ga_instance.sort_population()
-
-    #     # Truncate the population to the original size
-    #     ga_instance.population = ga_instance.population[:population_size]
-
-    #     # Get the best solution from the GA
-    #     best_solution, best_solution_fitness, best_solution_idx = ga_instance.best_solution()
-
-    #     print("Generation:", generation)
-    #     print("The current best chadscore for our youngsters is:", best_solution_fitness)
-
-    #     # Save images every N generations (ex. 10)
-    #     if generation % 1 == 0:
-    #       # Convert the solution back to the original shape (1, 77, 768)
-    #       solution_reshaped = best_solution.reshape(1, 77, 768)
-    #       solution_reshaped = torch.tensor(solution_reshaped, dtype=torch.float32)
-
-    #       # Copy the tensor to CUDA device if 'device' is 'cuda'
-    #       if device == 'cuda':
-    #         solution_reshaped = solution_reshaped.to(device)
-
-    #       image = generate_images_from_embeddings(solution_reshaped, null_prompt)
-    #       pil_image = to_pil(image[0])
-    #       filename=f"{IMAGES_DIR}/{generation}.png"
-    #       pil_image.show()
-    #       pil_image.save(filename)
-
-    # # Get the final best solution and images
-    # best_solution, best_solution_fitness = ga_instance.best_solution()
-    # best_solution = best_solution.reshape(1, 77, 768)  # Reshape the best solution to the correct shape
-    # final_image = sd.generate_images_from_embeddings(embedded_prompt=best_solution, null_prompt=null_prompt)
-
-    # # Save the final best solution images
-    # final_filename=f"{IMAGES_DIR}/final.png"
-    # pil_final = to_pil(final_image[0])
-    # pil_final.show()
-    # pil_final.save(final_filename)
-
-    # return best_solution
 
 # List of prompt segments
 prompt_segments = ['chibi', 'waifu', 'cyborg', 'dragon', 'android', 'nekomimi', 'mecha', 'kitsune', 'AI companion', 'furry detective', 'robot butler', 'futuristic steampunk', 'cybernetic implants', 'anthropomorphic AI', 'mechanical wizard', 'kemonomimi', 'android rebellion', 'magical robot pet', 'intergalactic furball', 'cyberpunk android', 'shapeshifting furry', 'mech pilot', 'furry time traveler']
@@ -329,9 +266,6 @@ prompt_segments = ['chibi', 'waifu', 'cyborg', 'dragon', 'android', 'nekomimi', 
 # Generate 6 random prompts with modifiers (initial population)
 PROMPT = generate_prompts(prompt_segments)
 PROMPT = PROMPT[:20]
-
-# Print the generated prompts
-# print(PROMPT)
 
 # Load Stable Diffusion
 sd = StableDiffusion(device=DEVICE, n_steps=N_STEPS)
@@ -352,18 +286,5 @@ embedded_prompts_tensor = torch.tensor(embedded_prompts_array)
 # Call the GA loop function with your initialized StableDiffusion model
 best_solution = genetic_algorithm_loop(sd, embedded_prompts_tensor, null_prompt, generations=5)
 print('best_solution', best_solution)
-
-# print("Best solution found!")
-
-# torch.save(embedded_prompts, join(EMBEDDED_PROMPTS_DIR, "embedded_final_solution.pt"))
-# print("Saving solution...")
-
-# # Test calculate chadscore
-# chad = ChadPredictor(768)
-# chad.load("./input/model/aesthetic_scorer/sac+logos+ava1-l14-linearMSE.pth")
-# device = "cuda" if torch.cuda.is_available() else "cpu"
-# if device == "cuda":
-#   chad.model.to("cuda")
-# chad.model.eval()
 
 del preprocess, image_features_clip_model, sd
