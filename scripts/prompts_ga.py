@@ -328,7 +328,7 @@ prompt_segments = ['chibi', 'waifu', 'cyborg', 'dragon', 'android', 'nekomimi', 
 
 # Generate 6 random prompts with modifiers (initial population)
 PROMPT = generate_prompts(prompt_segments)
-PROMPT = PROMPT[:6]
+PROMPT = PROMPT[:20]
 
 # Print the generated prompts
 # print(PROMPT)
@@ -350,7 +350,7 @@ num_genes = embedded_prompts_array.shape[1]
 embedded_prompts_tensor = torch.tensor(embedded_prompts_array)
 
 # Call the GA loop function with your initialized StableDiffusion model
-best_solution = genetic_algorithm_loop(sd, embedded_prompts_tensor, null_prompt, generations=1)
+best_solution = genetic_algorithm_loop(sd, embedded_prompts_tensor, null_prompt, generations=5)
 print('best_solution', best_solution)
 
 # print("Best solution found!")
