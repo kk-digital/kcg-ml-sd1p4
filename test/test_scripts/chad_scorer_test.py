@@ -6,7 +6,7 @@ import torch
 
 sys.path.insert(0, os.getcwd())
 from chad_score.chad_score import ChadScorePredictor
-from utils.clip.clip_feature_zip_loader import ClipFeatureZipLoader
+from utility.clip.clip_feature_zip_loader import ClipFeatureZipLoader
 
 
 def test_chad_scorer():
