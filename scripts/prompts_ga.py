@@ -208,8 +208,8 @@ def on_mutation(ga_instance, offspring_mutation):
     print("Performing mutation at generation: ", ga_instance.generations_completed)
 
 def on_generation(ga_instance):
-    print("Completed one generation")
     generation = ga_instance.generations_completed
+    print("Generation #", generation)
     file_dir = os.path.join(IMAGES_DIR, str(generation))
     os.makedirs(file_dir)
     for i, ind in enumerate(ga_instance.population):
