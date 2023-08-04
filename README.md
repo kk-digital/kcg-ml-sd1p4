@@ -216,7 +216,6 @@ Try running:
 python3 ./scripts/data_bounding_box_and_score_and_embedding_dataset.py --num_iterations 10 
 ```
 
-- `--save_embeddings`: If True, the disturbed embeddings will be saved to disk. Defaults to `False`.
 - `cfg_strength`: Configuration strength. Defaults to `12`.
 - `embedded_prompts_dir`: The path to the directory containing the embedded prompts tensors. Defaults to a constant EMBEDDED_PROMPTS_DIR, which is expected to be `'./input/embedded_prompts/'`
 - `num_iterations`: The number of iterations to batch-generate images. Defaults to `8`.
