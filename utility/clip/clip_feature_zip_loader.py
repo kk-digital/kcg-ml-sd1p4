@@ -15,7 +15,7 @@ Image.MAX_IMAGE_PIXELS = None
 
 sys.path.insert(0, os.path.join(os.getcwd(), 'utils', 'dataset'))
 
-from utils.dataset.image_dataset_storage_format.constants import list_of_supported_image_extensions
+from utility.dataset.image_dataset_storage_format.constants import list_of_supported_image_extensions
 
 
 # TODO: this will all be removed after we have calculation of clip in

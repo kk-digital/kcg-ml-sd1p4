@@ -13,7 +13,7 @@ sys.path.insert(0, base_directory)
 sys.path.insert(0, os.path.join(base_directory, 'utils', 'dataset'))
 
 from stable_diffusion.utils_backend import get_device
-from utility.utils.dataset.image_dataset import ImageDataset
+from utility.dataset.image_dataset import ImageDataset
 from chad_score.chad_score import ChadScorePredictor
 
 

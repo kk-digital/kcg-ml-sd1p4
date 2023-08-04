@@ -8,7 +8,7 @@ sys.path.insert(0, os.getcwd())
 
 from stable_diffusion.utils_backend import get_device
 from chad_score.chad_score import ChadScorePredictor
-from utility.utils.clip.clip_feature_zip_loader import ClipFeatureZipLoader
+from utility.clip.clip_feature_zip_loader import ClipFeatureZipLoader
 
 
 def parse_arguments():
