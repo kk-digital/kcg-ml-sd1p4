@@ -9,8 +9,8 @@
     - [Installing Requirements](#installing-requirements)
     - [Downloading Models](#downloading-models)
     - [Processing Models](#processing-models)
-  - [Text To Image](#text-to-image)
   - [Running Stable Diffusion scripts](#running-stable-diffusion-scripts)
+    - [Text To Image](#text-to-image)
     - [Embed prompts](#embed-prompts)
     - [Images from embeddings](#images-from-embeddings)
     - [Images from distributions](#images-from-distributions)
@@ -51,9 +51,12 @@ Then you already should be able to run:
 python3 ./scripts/txt2img.py --num_images 2 --prompt 'A purple rainbow, filled with grass'
 ```
 
-## Text To Image
+## Running Stable Diffusion scripts
+
+### Text To Image
 
 Takes in a prompt and generates images
+
 These are the available CLI arguments:
 
 ```
@@ -91,7 +94,6 @@ Example Usage:
 python3 ./scripts/text_to_image.py --prompt "character, chibi, waifu, side scrolling, white background, centered" --checkpoint_path "./input/model/v1-5-pruned-emaonly.safetensors" --batch_size 1 --num_images 6
 ```
 
-## Running Stable Diffusion scripts
 ### Embed prompts
 
 Saves a tensor of a batch of prompts embeddings, and the tensor for the null prompt `""`.
