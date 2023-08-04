@@ -46,7 +46,7 @@ CFG_STRENGTH = 9
 N_STEPS = 12 #20
 GENERATIONS = 2000 #how many generations to run
 
-MUTATION_RATE = 0.00
+MUTATION_RATE = 0.01
 
 #Why are you using this prompt generator?
 EMBEDDED_PROMPTS_DIR = os.path.abspath(join(base_dir, "./input/embedded_prompts/"))
