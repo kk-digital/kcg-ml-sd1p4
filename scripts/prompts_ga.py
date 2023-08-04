@@ -46,6 +46,8 @@ CFG_STRENGTH = 9
 N_STEPS = 12 #20
 GENERATIONS = 2000 #how many generations to run
 
+MUTATION_RATE = 0.00
+
 #Why are you using this prompt generator?
 EMBEDDED_PROMPTS_DIR = os.path.abspath(join(base_dir, "./input/embedded_prompts/"))
 
@@ -84,7 +86,7 @@ def generate_prompts(num_prompts):
     prompt_topics = [
     'chibi', 'waifu', 'cyborg', 'dragon', 'android', 'mecha', 
     'companion', 'furry', 'robot',
-    'mercentary',, 'wizard', 'pet', 
+    'mercentary', 'wizard', 'pet', 
     'shapeshifter', 'pilot', 'time traveler', "engineer", "slaver",
     ]
 
@@ -182,9 +184,12 @@ def calculate_chad_score(ga_instance, solution, solution_idx):
 
     with torch.no_grad():
         image_features = image_features_clip_model.encode_image(unsqueezed_image)
+        chad_score = chad_score_predictor.get_chad_score(image_features.type(torch.cuda.FloatTensor))
 
-        im_emb_arr = normalized(image_features.cpu().detach().numpy() )
-        chad_score = chad_score_predictor.get_chad_score(torch.from_numpy(im_emb_arr).to(device).type(torch.cuda.FloatTensor))
+        #im_emb_arr = normalized(image_features.cpu().detach().numpy() )
+        #chad_score = chad_score_predictor.get_chad_score(torch.from_numpy(im_emb_arr).to(device).type(torch.cuda.FloatTensor))
+        #chad_score = chad_score_predictor.get_chad_score(torch.from_numpy(im_emb_arr).to(device).type(torch.cuda.FloatTensor))
+
         # chad_score = prediction.item()
         return chad_score
 
@@ -221,7 +226,7 @@ def on_generation(ga_instance):
         pil_image.save(filename)
 
 # Define the GA loop function
-def genetic_algorithm_loop(sd, embedded_prompts, null_prompt, generations=10, population_size=POPULATION_SIZE, mutation_rate=0.4):
+def genetic_algorithm_loop(sd, embedded_prompts, null_prompt, generations, mutation_rate, population_size=POPULATION_SIZE,):
     
     print("genetic_algorithm_loop: population_size= ", population_size)
 
@@ -295,7 +300,7 @@ num_genes = embedded_prompts_array.shape[1]
 embedded_prompts_tensor = torch.tensor(embedded_prompts_array)
 
 # Call the GA loop function with your initialized StableDiffusion model
-best_solution = genetic_algorithm_loop(sd, embedded_prompts_tensor, NULL_PROMPT, generations=GENERATIONS)
+best_solution = genetic_algorithm_loop(sd, embedded_prompts_tensor, NULL_PROMPT, generations=GENERATIONS, mutation_rate=MUTATION_RATE)
 print('best_solution', best_solution)
 
 del preprocess, image_features_clip_model, sd
