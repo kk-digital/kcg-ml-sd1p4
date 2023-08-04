@@ -5,53 +5,44 @@
 ## Summary
 
 - [kcg-ml-sd1p4](#kcg-ml-sd1p4)
-  - [Summary](#summary)
-  - [Installing requirements](#installing-requirements)
-  - [Downloading models and setting up directories](#downloading-models-and-setting-up-directories)
+  - [Prerequisites](#prerequisites)
+    - [Installing Requirements](#installing-requirements)
+    - [Downloading Models](#downloading-models)
+    - [Processing Models](#processing-models)
+  - [Running Stable Diffusion scripts](#running-stable-diffusion-scripts)
     - [Text To Image](#text-to-image)
-      - [Example Usage:](#example-usage)
-  - [Running `stable_diffusion` scripts](#running-stable_diffusion-scripts)
-      - [Embed prompts](#embed-prompts)
-      - [Images from embeddings](#images-from-embeddings)
-      - [Images from distributions](#images-from-distributions)
-      - [Images from temperature range](#images-from-temperature-range)
-      - [Images and encodings](#images-and-encodings)
-      - [Perturbations on prompts embeddings](#perturbations-on-prompts-embeddings)
-      - [Random Pormpts Generation and Disturbing Embeddings Image Generation](#random-pormpts-generation-and-disturbing-embeddings-image-generation)
-      - [Image Grid Generator](#image-grid-generator)
-        - [Usage](#usage)
+    - [Embed prompts](#embed-prompts)
+    - [Images from embeddings](#images-from-embeddings)
+    - [Images from distributions](#images-from-distributions)
+    - [Images from temperature range](#images-from-temperature-range)
+    - [Images and encodings](#images-and-encodings)
+    - [Perturbations on prompts embeddings](#perturbations-on-prompts-embeddings)
+    - [Random Prompts Generation and Disturbing Embeddings Image Generation](#random-prompts-generation-and-disturbing-embeddings-image-generation)
+    - [Image Grid Generator](#image-grid-generator)
     - [Generate Images Random Prompt](#generate-images-random-prompt)
     - [Chad Score](#chad-score)
-      - [Example Usage:](#example-usage-1)
-      - [using python3](#using-python3)
-      - [using python](#using-python)
     - [Chad Sort](#chad-sort)
-      - [Example Usage:](#example-usage-2)
-      - [using python3](#using-python3-1)
-      - [using python](#using-python-1)
     - [Running GenerationTask](#running-generationtask)
-      - [Example Usage:](#example-usage-3)
-      - [using python3](#using-python3-2)
-      - [using python](#using-python-2)
+    - [Prompt Score](#prompt-score)
 
-## Installing requirements
+## Prerequisites
+
+### Installing Requirements
+Run: 
 ```bash
 pip3 install -r requirements.txt
 ```
 
-## Downloading models and setting up directories
-
-We need two checkpoints: 
-
-`v1-5-pruned-emaonly.safetensors` from `https://huggingface.co/runwayml/
-stable-diffusion-v1-5/`; 
-
-the safetensors version of `openai/clip-vit-large-patch14`, found in [refs/pr/19](https://huggingface.co/openai/clip-vit-large-patch14/tree/refs%2Fpr%2F19).
-
-The `setup_directories_and_models.py` script will set up the folder structure, download both these models (depending on the args given), and process them.
-
+### Downloading Models
+Run: 
 ```bash
-python3 ./setup_directories_and_models.py --download_base_clip_model True --download_base_sd_model True --download_text_model True
+python3 ./download_models.py
+```
+
+### Processing Models
+Run: 
+```bash
+python3 ./process_models.py
 ```
 
 Then you already should be able to run:
@@ -59,34 +50,13 @@ Then you already should be able to run:
 ```bash
 python3 ./scripts/txt2img.py --num_images 2 --prompt 'A purple rainbow, filled with grass'
 ```
-<!-- 
-Download the currently supported checkpoint, `v1-5-pruned-emaonly.safetensors`, to `./input/model/`.
 
-```bash
-./download-model.sh
-```
-
-Alternatively, if you prefer to download directly, use [this link.](https://mega.nz/file/AVZnGbzL#EfXN4YINe0Wb7ukiqpCPa7THssugyCQU8pvpMpvxPAw)
-## Saving submodels
-
-Start by running this.
-
-This script initializes a `LatentDiffusion` module, load its weights from a checkpoint file at `./input/model/v1-5-pruned-emaonly.safetensors` and then save all submodules.
-**Note**: saving these models will take an extra ~5GB of storage.
-
-```bash
-python scripts/process_base_model.py input/model/v1-5-pruned-emaonly.safetensors
-```
-
-**Command line arguments**
-
-- `-g, --granularity`: Determines the height in the model tree on which to save the submodels. Defaults to `0`, saving all submodels of the `LatentDiffusion` class and all submodels thereof. If `1` is given, it saves only up to the first level, i.e., autoencoder, UNet and CLIP text embedder. *Note*: that the other scripts and notebooks expect this to be ran with `0`.
-- `--root_models_path`: Base directory for the models' folder structure. Defaults to the constant `ROOT_MODELS_DIR`, which is expected to be `./input/model/`.
-- `--checkpoint_path`: Relative path of the checkpoint file (*.safetensors). Defaults to the constant `CHECKPOINT_PATH`, which is expected to be `'./input/model/v1-5-pruned-emaonly.safetensors' = os.path.join(ROOT_MODELS_DIR, 'v1-5-pruned-emaonly.safetensors')`. -->
+## Running Stable Diffusion scripts
 
 ### Text To Image
 
 Takes in a prompt and generates images
+
 These are the available CLI arguments:
 
 ```
@@ -119,17 +89,12 @@ options:
                         Number of images to output
 ```
 
-#### Example Usage:
-
+Example Usage:
 ``` shell
 python3 ./scripts/text_to_image.py --prompt "character, chibi, waifu, side scrolling, white background, centered" --checkpoint_path "./input/model/v1-5-pruned-emaonly.safetensors" --batch_size 1 --num_images 6
 ```
 
-## Running `stable_diffusion` scripts
-
-There are five other new scripts besides `scripts/process_base_model.py`.
-
-#### Embed prompts
+### Embed prompts
 
 Saves a tensor of a batch of prompts embeddings, and the tensor for the null prompt `""`.
 
@@ -144,7 +109,7 @@ python3 ./scripts/embed_prompts.py --prompts 'A painting of a computer virus', '
 - `-p, --prompts`: The prompts to embed. Defaults to `['A painting of a computer virus', 'An old photo of a computer scientist']`.
 - `--embedded_prompts_dir`: The path to the directory containing the embedded prompts tensors. Defaults to a constant `EMBEDDED_PROMPTS_DIR`, which is expected to be `'./input/embedded_prompts/'`.
 -
-#### Images from embeddings
+### Images from embeddings
 
 Only run this _after_ generating the embedded prompts with the [above script](#embed-prompts).
 
@@ -165,7 +130,7 @@ python3 ./scripts/generate_images_from_embeddings.py --num_seeds 4 --temperature
 - `--clear_output_dir`: Either to clear or not the output directory before running. Defaults to `False`.
 - `--cuda_device`: CUDA device to use. Defaults to `get_device()`.
 
-#### Images from distributions
+### Images from distributions
 
 Try running:
 ```bash
@@ -188,7 +153,7 @@ python3 ./scripts/generate_images_from_distributions.py -d 4 --params_steps 4 --
 - `--clear_output_dir`: Either to clear or not the output directory before running. Defaults to `False`.
 - `--cuda_device`: CUDA device to use. Defaults to `"get_device()"`.
 
-#### Images from temperature range
+### Images from temperature range
 
 Try running:
 
@@ -214,7 +179,7 @@ python3 ./scripts/generate_images_from_temperature_range.py -d 4 --params_range 
 - `--cuda_device`: The CUDA device to use. Defaults to `"get_device()"`.
 
 
-#### Images and encodings
+### Images and encodings
 
 Try running:
 ```bash
@@ -228,7 +193,7 @@ python3 ./scripts/generate_images_and_encodings.py --prompt "An oil painting of 
 - `--prompt`: The prompt to render. It is an optional argument. Defaults to `"a painting of a cute monkey playing guitar"`.
 - `--cuda_device`: CUDA device to use for generation. Defaults to `"get_device()"`.
 
-#### Perturbations on prompts embeddings
+### Perturbations on prompts embeddings
 
 Try running:
 ```bash
@@ -243,7 +208,7 @@ Outputs in: `./output/disturbing_embeddings`
 - `--cuda_device`: The CUDA device to use. Defaults to `"get_device()"`.
 
 
-#### Random Prompts Generation and Disturbing Embeddings Image Generation
+### Random Prompts Generation and Disturbing Embeddings Image Generation
 
 Try running:
 
@@ -261,11 +226,9 @@ python3 ./scripts/data_bounding_box_and_score_and_embedding_dataset.py --num_ite
 - `clear_output_dir`: If True, the output directory will be cleared before generating images. Defaults to `False`.
 
 
-#### Image Grid Generator
+### Image Grid Generator
 
 The Image Grid generator is a script that generates a grid of images from a directory or a zip file containing images. 
-
-##### Usage
 
 Run the script with the following command:
 
@@ -324,16 +287,9 @@ options:
                         Path to the model used for scoring the image
 ```
 
-#### Example Usage:
-
-#### using python3
+Example Usage:
 ``` shell
 python3 ./scripts/chad_score.py --model-path="input/model/chad_score/chad-score-v1.pth" --image-path="test/test_images/test_img.jpg"
-```
-
-#### using python
-``` shell
-python ./scripts/chad_score.py --model-path="input/model/chad_score/chad-score-v1.pth" --image-path="test/test_images/test_img.jpg"
 ```
 
 ### Chad Sort
@@ -353,16 +309,10 @@ options:
                         Number of folders to output
 ```
 
-#### Example Usage:
+Example Usage:
 
-#### using python3
 ``` shell
 python3 ./scripts/chad_sort.py --dataset-path "test/test_zip_files/test-dataset-correct-format.zip" --output-path "/output/chad_sort/"
-```
-
-#### using python
-``` shell
-python ./scripts/chad_sort.py --dataset-path "test/test_zip_files/test-dataset-correct-format.zip" --output-path "./output/chad_sort/"
 ```
 
 ### Running GenerationTask
@@ -377,9 +327,7 @@ options:
                         Path to the task .json file
 ```
 
-#### Example Usage:
-
-#### using python3
+Example Usage:
 ``` shell
 python3 ./scripts/run_generation_task.py --task_path './test/test_generation_task/text_to_image_v1.json'
 ```
@@ -406,8 +354,7 @@ options:
   --show_validation_loss  If this option is set, shows validation loss during training
 ```
 
-#### Example Usage:
-
+Example Usage:
 ``` shell
 python scripts/prompt_score.py --input_path input/set_0000_v2.zip --use_76th_embedding --num_epochs 200 --epsilon_raw 10 --epsilon_scaled 0.2
 ```
