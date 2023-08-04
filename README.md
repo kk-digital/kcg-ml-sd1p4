@@ -1,6 +1,6 @@
 # kcg-ml-sd1p4
 
-[![Build Status](http://85.17.25.95:8111/app/rest/builds/buildType:(id:KcgMlSd1p4_Build)/statusIcon)](http://teamcity/viewType.html?buildTypeId=KcgMlSd1p4_Build&guest=1)
+[![Build Status](http://103.230.15.156:8111/app/rest/builds/buildType:(id:KcgMlSd1p4_Build)/statusIcon)](http://teamcity/viewType.html?buildTypeId=KcgMlSd1p4_Build&guest=1)
 
 ## Summary
 
