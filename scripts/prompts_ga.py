@@ -243,7 +243,8 @@ def genetic_algorithm_loop(sd, embedded_prompts, null_prompt, generations=10, po
     # Initialize the GA
     ga_instance = pygad.GA(num_generations=generations,
                            num_parents_mating=num_parents_mating,
-                           fitness_func=calculate_chad_score,
+                           # fitness_func=calculate_chad_score,
+                           fitness_func=cached_fitness_func,
                            sol_per_pop=population_size,
                            num_genes=num_genes,
                            initial_population=embedded_prompts_list,
