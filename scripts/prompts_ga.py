@@ -14,6 +14,7 @@ from os.path import join
 
 import clip
 import pygad
+import argparse
 
 #import safetensors as st
 
@@ -221,7 +222,16 @@ def on_generation(ga_instance):
         pil_image.save(filename)
 
 # Define the GA loop function
-def genetic_algorithm_loop(sd, embedded_prompts, null_prompt, generations=10, population_size=POPULATION_SIZE, mutation_rate=0.4):
+def genetic_algorithm_loop(sd,
+                           embedded_prompts,
+                           null_prompt,
+                           generations=10,
+                           population_size=POPULATION_SIZE,
+                           mutation_percent_genes=0.05,
+                           keep_elitism=0,
+                           mutation_probability=0.05,
+                           crossover_type="single_point",
+                           mutation_type="random"):
     
     print("genetic_algorithm_loop: population_size= ", population_size)
 
@@ -247,11 +257,12 @@ def genetic_algorithm_loop(sd, embedded_prompts, null_prompt, generations=10, po
                            sol_per_pop=population_size,
                            num_genes=num_genes,
                            initial_population=embedded_prompts_list,
-                           mutation_percent_genes=mutation_rate*100,
-                           mutation_probability=0.05,
-                           keep_elitism=0,
-                           crossover_type="single_point",
-                           mutation_type="random",
+                           # Pygad uses 0-100 range for percentage
+                           mutation_percent_genes=mutation_percent_genes*100,
+                           mutation_probability=mutation_probability,
+                           keep_elitism=keep_elitism,
+                           crossover_type=crossover_type,
+                           mutation_type=mutation_type,
                            #on_start=on_start,
                            on_fitness=on_fitness,
                            #on_parents=on_parents,
@@ -299,7 +310,15 @@ num_genes = embedded_prompts_array.shape[1]
 embedded_prompts_tensor = torch.tensor(embedded_prompts_array)
 
 # Call the GA loop function with your initialized StableDiffusion model
-best_solution = genetic_algorithm_loop(sd, embedded_prompts_tensor, NULL_PROMPT, generations=GENERATIONS)
+best_solution = genetic_algorithm_loop(
+    sd,
+    embedded_prompts_tensor,
+    NULL_PROMPT,
+    generations=GENERATIONS,
+    mutation_probability=mutation_probability,
+    keep_elitism=0, # Don't keep best individual if 0
+    crossover_type="single_point",
+    mutation_type="random")
 print('best_solution', best_solution)
 
 del preprocess, image_features_clip_model, sd
