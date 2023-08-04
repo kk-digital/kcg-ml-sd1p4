@@ -14,6 +14,7 @@ from os.path import join
 
 import clip
 import pygad
+import argparse
 
 #import safetensors as st
 
@@ -31,22 +32,21 @@ from stable_diffusion.constants import IODirectoryTree, create_directory_tree_fo
 from stable_diffusion.constants import TOKENIZER_PATH, TEXT_MODEL_PATH
 from transformers import CLIPTextModel, CLIPTokenizer
 
+# Add argparse arguments
+parser = argparse.ArgumentParser(description="Run genetic algorithm with specified parameters.")
+parser.add_argument('--generations', type=int, default=2000, help="Number of generations to run.")
+parser.add_argument('--mutation_probability', type=float, default=0.05, help="Probability of mutation.")
+parser.add_argument('--keep_elitism', type=int, default=0, help="1 to keep best individual, 0 otherwise.")
+parser.add_argument('--crossover_type', type=str, default="single_point", help="Type of crossover operation.")
+parser.add_argument('--mutation_type', type=str, default="random", help="Type of mutation operation.")
+parser.add_argument('--mutation_percent_genes', type=float, default="random", help="The percentage of genes to be mutated.")
+args = parser.parse_args()
+
 DEVICE = torch.device('cuda:0')
 device = DEVICE
 image_features_clip_model, preprocess = clip.load("ViT-L/14", device=device)
 chad_score_predictor = ChadScorePredictor(device=device)
 chad_score_predictor.load_model('input/model/chad_score/chad-score-v1.pth')
-
-# Variables
-#TODO: implement batch size
-#BATCH_SIZE = 1
-
-POPULATION_SIZE = 16
-CFG_STRENGTH = 9
-N_STEPS = 12 #20
-GENERATIONS = 2000 #how many generations to run
-
-MUTATION_RATE = 0.01
 
 #Why are you using this prompt generator?
 EMBEDDED_PROMPTS_DIR = os.path.abspath(join(base_dir, "./input/embedded_prompts/"))
@@ -86,7 +86,11 @@ def generate_prompts(num_prompts):
     prompt_topics = [
     'chibi', 'waifu', 'cyborg', 'dragon', 'android', 'mecha', 
     'companion', 'furry', 'robot',
+<<<<<<< HEAD
     'mercentary', 'wizard', 'pet', 
+=======
+    'mercentary', 'wizard', 'pet',
+>>>>>>> refs/remotes/origin/main
     'shapeshifter', 'pilot', 'time traveler', "engineer", "slaver",
     ]
 
@@ -213,8 +217,8 @@ def on_mutation(ga_instance, offspring_mutation):
     print("Performing mutation at generation: ", ga_instance.generations_completed)
 
 def on_generation(ga_instance):
-    print("Completed one generation")
     generation = ga_instance.generations_completed
+    print("Generation #", generation)
     file_dir = os.path.join(IMAGES_DIR, str(generation))
     os.makedirs(file_dir)
     for i, ind in enumerate(ga_instance.population):
@@ -226,7 +230,20 @@ def on_generation(ga_instance):
         pil_image.save(filename)
 
 # Define the GA loop function
+<<<<<<< HEAD
 def genetic_algorithm_loop(sd, embedded_prompts, null_prompt, generations, mutation_rate, population_size=POPULATION_SIZE,):
+=======
+def genetic_algorithm_loop(sd,
+                           embedded_prompts,
+                           null_prompt,
+                           generations=10,
+                           population_size=POPULATION_SIZE,
+                           mutation_percent_genes=0.05,
+                           keep_elitism=0,
+                           mutation_probability=0.05,
+                           crossover_type="single_point",
+                           mutation_type="random"):
+>>>>>>> refs/remotes/origin/main
     
     print("genetic_algorithm_loop: population_size= ", population_size)
 
@@ -252,7 +269,12 @@ def genetic_algorithm_loop(sd, embedded_prompts, null_prompt, generations, mutat
                            sol_per_pop=population_size,
                            num_genes=num_genes,
                            initial_population=embedded_prompts_list,
-                           mutation_percent_genes=mutation_rate*100,
+                           # Pygad uses 0-100 range for percentage
+                           mutation_percent_genes=mutation_percent_genes*100,
+                           mutation_probability=mutation_probability,
+                           keep_elitism=keep_elitism,
+                           crossover_type=crossover_type,
+                           mutation_type=mutation_type,
                            #on_start=on_start,
                            on_fitness=on_fitness,
                            #on_parents=on_parents,
@@ -273,7 +295,6 @@ def genetic_algorithm_loop(sd, embedded_prompts, null_prompt, generations, mutat
 
     ga_instance.run()
     return ga_instance.best_solution()
-
 
 # Generate 6 random prompts with modifiers (initial population)
 PROMPT = generate_prompts(POPULATION_SIZE)
@@ -299,8 +320,38 @@ num_individuals = embedded_prompts_array.shape[0]
 num_genes = embedded_prompts_array.shape[1]
 embedded_prompts_tensor = torch.tensor(embedded_prompts_array)
 
+generations = args.generations
+mutation_probability = args.mutation_probability
+keep_elitism = args.keep_elitism
+crossover_type = args.crossover_type
+mutation_type = args.mutation_type
+mutation_percent_genes = args.mutation_percent_genes
+
 # Call the GA loop function with your initialized StableDiffusion model
-best_solution = genetic_algorithm_loop(sd, embedded_prompts_tensor, NULL_PROMPT, generations=GENERATIONS, mutation_rate=MUTATION_RATE)
+
+
+# Variables
+#TODO: implement batch size
+#BATCH_SIZE = 1
+
+POPULATION_SIZE = 16
+CFG_STRENGTH = 9
+N_STEPS = 12 #20
+
+MUTATION_RATE = 0.01
+
+best_solution = genetic_algorithm_loop(
+    sd,
+    embedded_prompts_tensor,
+    NULL_PROMPT,
+    generations=GENERATIONS,
+    mutation_percent_genes=mutation_percent_genes,
+    mutation_probability=mutation_probability,
+    keep_elitism=keep_elitism,
+    crossover_type=crossover_type,
+    mutation_type=mutation_type,
+    mutation_rate=MUTATION_RATE)
+
 print('best_solution', best_solution)
 
 del preprocess, image_features_clip_model, sd
