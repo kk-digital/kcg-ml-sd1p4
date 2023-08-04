@@ -10,7 +10,7 @@ Example Usage:
 
 ``` shell
 python scripts/prompts_ga.py \
-  --generations 2 \
+  --generations 100 \
   --mutation_probability 0.05 \
   --crossover_type single_point \
   --keep_elitism 0 \

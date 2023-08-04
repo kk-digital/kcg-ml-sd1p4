@@ -39,7 +39,7 @@ parser.add_argument('--mutation_probability', type=float, default=0.05, help="Pr
 parser.add_argument('--keep_elitism', type=int, default=0, help="1 to keep best individual, 0 otherwise.")
 parser.add_argument('--crossover_type', type=str, default="single_point", help="Type of crossover operation.")
 parser.add_argument('--mutation_type', type=str, default="random", help="Type of mutation operation.")
-parser.add_argument('--mutation_percent_genes', type=str, default="random", help="The percentage of genes to be mutated.")
+parser.add_argument('--mutation_percent_genes', type=float, default="random", help="The percentage of genes to be mutated.")
 args = parser.parse_args()
 
 DEVICE = torch.device('cuda:0')
