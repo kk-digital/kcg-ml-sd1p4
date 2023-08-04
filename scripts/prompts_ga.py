@@ -40,10 +40,10 @@ chad_score_predictor.load_model()
 # Variables
 #SEED = 1337
 BATCH_SIZE = 1
-POPULATION_SIZE = 3
+POPULATION_SIZE = 4
 CFG_STRENGTH = 9
 N_STEPS = 12 #20
-GENERATIONS = 200 #how many generations to run
+GENERATIONS = 2000 #how many generations to run
 
 #Why are you using this prompt generator?
 EMBEDDED_PROMPTS_DIR = os.path.abspath(join(base_dir, "./input/embedded_prompts/"))
@@ -138,7 +138,7 @@ def normalized(a, axis=-1, order=2):
 def generate_images_from_embeddings(embedded_prompts_array, null_prompt):
     # print(embedded_prompts_array.to('cuda0'))
     SEED = random.randint(0, 2**24)
-    print("max_seed= ", 2**24)
+    #print("max_seed= ", 2**24)
 
     embedded_prompt = embedded_prompts_array.to('cuda').view(1, 77, 768)
     return sd.generate_images_from_embeddings(
@@ -177,9 +177,11 @@ def cached_fitness_func(ga_instance, solution, solution_idx):
 def on_fitness(ga_instance, population_fitness):
     population_fitness_np = np.array(population_fitness)
     print("Generation #", ga_instance.generations_completed)
+    print("Population Size= ", len(population_fitness_np))
     print("Fitness (mean): ", np.mean(population_fitness_np))
     print("Fitness (variance): ", np.var(population_fitness_np))
     print("Fitness (best): ", np.max(population_fitness_np))
+    print("fitness array= ", str(population_fitness_np))
 
 def on_mutation(ga_instance, offspring_mutation):
     print("Performing mutation at generation: ", ga_instance.generations_completed)
