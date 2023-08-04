@@ -39,14 +39,15 @@ chad_score_predictor.load_model()
 # Variables
 #SEED = 1337
 BATCH_SIZE = 1
-POPULATION_SIZE = 12
-GEN_IMAGE_N_GENERATIONS = 50
+POPULATION_SIZE = 3
 CFG_STRENGTH = 9
-N_STEPS = 20
+N_STEPS = 12 #20
+GENERATIONS = 200 #how many generations to run
+
+#Why are you using this prompt generator?
 EMBEDDED_PROMPTS_DIR = os.path.abspath(join(base_dir, "./input/embedded_prompts/"))
-OUTPUT_DIR = os.path.abspath(
-    os.path.join(base_dir, "./output/ga/")
-)
+
+OUTPUT_DIR = os.path.abspath(os.path.join(base_dir, "./output/ga/"))
 IMAGES_DIR = os.path.abspath(join(OUTPUT_DIR, "images/"))
 FEATURES_DIR = os.path.abspath(join(OUTPUT_DIR, "features/"))
 
@@ -131,6 +132,7 @@ def normalized(a, axis=-1, order=2):
 
 def generate_images_from_embeddings(embedded_prompts_array, null_prompt):
     # print(embedded_prompts_array.to('cuda0'))
+    SEED = random.randint(0, 2^24)
     embedded_prompt = embedded_prompts_array.to('cuda').view(1, 77, 768)
     return sd.generate_images_from_embeddings(
         seed=SEED, embedded_prompt=embedded_prompt, null_prompt=null_prompt)
@@ -243,7 +245,7 @@ num_genes = embedded_prompts_array.shape[1]
 embedded_prompts_tensor = torch.tensor(embedded_prompts_array)
 
 # Call the GA loop function with your initialized StableDiffusion model
-best_solution = genetic_algorithm_loop(sd, embedded_prompts_tensor, null_prompt, generations=5)
+best_solution = genetic_algorithm_loop(sd, embedded_prompts_tensor, null_prompt, generations=GENERATIONS)
 print('best_solution', best_solution)
 
 del preprocess, image_features_clip_model, sd
