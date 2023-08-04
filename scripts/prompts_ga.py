@@ -35,12 +35,13 @@ DEVICE = torch.device('cuda:0')
 device = DEVICE
 image_features_clip_model, preprocess = clip.load("ViT-L/14", device=device)
 chad_score_predictor = ChadScorePredictor(device=device)
-chad_score_predictor.load_model()
+chad_score_predictor.load_model('input/model/chad_score/chad-score-v1.pth')
 
 # Variables
-#SEED = 1337
-BATCH_SIZE = 1
-POPULATION_SIZE = 4
+#TODO: implement batch size
+#BATCH_SIZE = 1
+
+POPULATION_SIZE = 16
 CFG_STRENGTH = 9
 N_STEPS = 12 #20
 GENERATIONS = 2000 #how many generations to run
@@ -77,25 +78,45 @@ os.makedirs(IMAGES_DIR, exist_ok=True)
 os.makedirs(FEATURES_DIR, exist_ok=True)
 
 # Function to generate prompts
-def generate_prompts(prompt_segments, num_prompts=6):
-    # Select 6 random segments from the prompt_segments list
-    selected_prompts = random.sample(prompt_segments, num_prompts)
+def generate_prompts(num_prompts):
+    print("generate_prompts: Generating prompts")
+    # List of prompt segments
+    prompt_topics = [
+    'chibi', 'waifu', 'cyborg', 'dragon', 'android', 'mecha', 
+    'companion', 'furry', 'robot',
+    'mercentary',, 'wizard', 'pet', 
+    'shapeshifter', 'pilot', 'time traveler', "engineer", "slaver",
+    ]
 
     # Add modifiers to the selected prompts
-    modifiers = [
-        'beautiful', 'gorgeous', 'stunning', 'charming', 'captivating', 'breathtaking',
-        'masterpiece', 'exquisite', 'magnificent', 'majestic', 'elegant', 'sublime',
-        'ugly', 'hideous', 'grotesque', 'repulsive', 'disgusting', 'revolting',
+    prompt_modifiers = [
+        'beautiful', 'unreal', 'masterpiece', 'gorgeous', 'stunning',
+        'captivating', 'breathtaking',
+        'exquisite', 'magnificent', 'majestic', 'elegant', 'sublime',
         'futuristic', 'cyberpunk', 'hi-tech', 'advanced', 'innovative', 'modern',
         'fantasy', 'mythical', 'scifi', 'side scrolling', 'character', 'side scrolling',
         'white background', 'centered', 'full character', 'no background', 'not centered',
-        'line drawing', 'sketch', 'black and white', 'colored', 'offset', 'video game']
-    prompts_with_modifiers = [f"{modifier} {prompt}" for modifier in modifiers for prompt in selected_prompts]
+        'line drawing', 'sketch', 'black and white', 'colored','video game'
+        ]
 
-    # Join the prompts with commas to separate phases
-    prompt_phrases = ", ".join(prompts_with_modifiers)
+    prompt_list = []
+    prompt_base = "side scrolling, chibi, waifu, centered, white background, "
+    prompt_topic_count = 2
+    prompt_modifiers_count = 8
 
-    return prompt_phrases
+    for i in range(0, num_prompts):
+        prompt = prompt_base    
+        for j in range(0, prompt_topic_count):
+            prompt += random.choice(prompt_topics)
+        for k in range(0, prompt_modifiers_count):
+            prompt += random.choice(prompt_modifiers)
+        prompt_list.append(prompt)
+
+    print("prompt_list:")
+    for i in range(0, len(prompt_list)):
+        print("prompt ", i, ": ", prompt_list[i])
+    
+    return prompt_list
 
 #def embed_and_save_prompts(prompts: list, null_prompt=NULL_PROMPT):
 #def embed_and_save_prompts(prompts: list):
@@ -200,7 +221,7 @@ def on_generation(ga_instance):
         pil_image.save(filename)
 
 # Define the GA loop function
-def genetic_algorithm_loop(sd, embedded_prompts, null_prompt, generations=10, population_size=POPULATION_SIZE, mutation_rate=0.4, num_parents_mating=2):
+def genetic_algorithm_loop(sd, embedded_prompts, null_prompt, generations=10, population_size=POPULATION_SIZE, mutation_rate=0.4):
     
     print("genetic_algorithm_loop: population_size= ", population_size)
 
@@ -210,12 +231,17 @@ def genetic_algorithm_loop(sd, embedded_prompts, null_prompt, generations=10, po
     # Reshape the 'embedded_prompts' tensor to a 2D numpy array
     embedded_prompts_array = embedded_prompts_cpu.detach().numpy()
     num_individuals = embedded_prompts_array.shape[0]
-    num_genes = embedded_prompts_array.shape[1]
+    
+    #num_genes = embedded_prompts_array.shape[1]
+    num_genes = 77*768 #59136
+    #print("num_genes= ", num_genes)
+
     embedded_prompts_list = embedded_prompts_array.reshape(num_individuals, num_genes).tolist()
 
+    parent_selection_type = "tournament" #"sss", rws, sus, rank, tournament
     # Initialize the GA
     ga_instance = pygad.GA(num_generations=generations,
-                           num_parents_mating=num_parents_mating,
+                           num_parents_mating=population_size/2,
                            # fitness_func=calculate_chad_score,
                            fitness_func=cached_fitness_func,
                            sol_per_pop=population_size,
@@ -228,16 +254,24 @@ def genetic_algorithm_loop(sd, embedded_prompts, null_prompt, generations=10, po
                            #on_crossover=on_crossover,
                            on_mutation=on_mutation,
                            on_generation=on_generation,
-                           on_stop=on_fitness)
+                           on_stop=on_fitness,
+                           parent_selection_type= parent_selection_type,
+                           keep_parents=0
+                           )
+
+    '''
+    keep_parents=-1 : Number of parents to keep in the current population.
+    -1 (default) means keep all parents in the next population. 0 means keep no parents in the next population. A value greater than 0 means keep the specified number of parents in the next population. 
+    '''
+    ga_instance.keep_parents = 0
+    ga_instance.num_parents_mating = 8
 
     ga_instance.run()
     return ga_instance.best_solution()
 
-# List of prompt segments
-prompt_segments = ['chibi', 'waifu', 'cyborg', 'dragon', 'android', 'nekomimi', 'mecha', 'kitsune', 'AI companion', 'furry detective', 'robot butler', 'futuristic steampunk', 'cybernetic implants', 'anthropomorphic AI', 'mechanical wizard', 'kemonomimi', 'android rebellion', 'magical robot pet', 'intergalactic furball', 'cyberpunk android', 'shapeshifting furry', 'mech pilot', 'furry time traveler']
 
 # Generate 6 random prompts with modifiers (initial population)
-PROMPT = generate_prompts(prompt_segments)
+PROMPT = generate_prompts(POPULATION_SIZE)
 #PROMPT = PROMPT[:20]
 PROMPT = PROMPT[:POPULATION_SIZE]
 
