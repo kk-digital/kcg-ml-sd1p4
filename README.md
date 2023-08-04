@@ -10,7 +10,6 @@
     - [Downloading Models](#downloading-models)
     - [Processing Models](#processing-models)
   - [Text To Image](#text-to-image)
-      - [Example Usage:](#example-usage)
   - [Running Stable Diffusion scripts](#running-stable-diffusion-scripts)
     - [Embed prompts](#embed-prompts)
     - [Images from embeddings](#images-from-embeddings)
@@ -20,21 +19,11 @@
     - [Perturbations on prompts embeddings](#perturbations-on-prompts-embeddings)
     - [Random Prompts Generation and Disturbing Embeddings Image Generation](#random-prompts-generation-and-disturbing-embeddings-image-generation)
     - [Image Grid Generator](#image-grid-generator)
-        - [Usage](#usage)
     - [Generate Images Random Prompt](#generate-images-random-prompt)
     - [Chad Score](#chad-score)
-      - [Example Usage:](#example-usage-1)
-      - [using python3](#using-python3)
-      - [using python](#using-python)
     - [Chad Sort](#chad-sort)
-      - [Example Usage:](#example-usage-2)
-      - [using python3](#using-python3-1)
-      - [using python](#using-python-1)
     - [Running GenerationTask](#running-generationtask)
-      - [Example Usage:](#example-usage-3)
-      - [using python3](#using-python3-2)
     - [Prompt Score](#prompt-score)
-      - [Example Usage:](#example-usage-4)
 
 ## Prerequisites
 
@@ -97,8 +86,7 @@ options:
                         Number of images to output
 ```
 
-#### Example Usage:
-
+Example Usage:
 ``` shell
 python3 ./scripts/text_to_image.py --prompt "character, chibi, waifu, side scrolling, white background, centered" --checkpoint_path "./input/model/v1-5-pruned-emaonly.safetensors" --batch_size 1 --num_images 6
 ```
@@ -241,8 +229,6 @@ python3 ./scripts/data_bounding_box_and_score_and_embedding_dataset.py --num_ite
 
 The Image Grid generator is a script that generates a grid of images from a directory or a zip file containing images. 
 
-##### Usage
-
 Run the script with the following command:
 
     python ./utility/scripts/grid_generator.py --input_path ./test/test_images/clip_segmentation --output_path ./tmp --rows 3 --columns 2  --img_size 256
@@ -300,16 +286,9 @@ options:
                         Path to the model used for scoring the image
 ```
 
-#### Example Usage:
-
-#### using python3
+Example Usage:
 ``` shell
 python3 ./scripts/chad_score.py --model-path="input/model/chad_score/chad-score-v1.pth" --image-path="test/test_images/test_img.jpg"
-```
-
-#### using python
-``` shell
-python ./scripts/chad_score.py --model-path="input/model/chad_score/chad-score-v1.pth" --image-path="test/test_images/test_img.jpg"
 ```
 
 ### Chad Sort
@@ -329,16 +308,10 @@ options:
                         Number of folders to output
 ```
 
-#### Example Usage:
+Example Usage:
 
-#### using python3
 ``` shell
 python3 ./scripts/chad_sort.py --dataset-path "test/test_zip_files/test-dataset-correct-format.zip" --output-path "/output/chad_sort/"
-```
-
-#### using python
-``` shell
-python ./scripts/chad_sort.py --dataset-path "test/test_zip_files/test-dataset-correct-format.zip" --output-path "./output/chad_sort/"
 ```
 
 ### Running GenerationTask
@@ -353,9 +326,7 @@ options:
                         Path to the task .json file
 ```
 
-#### Example Usage:
-
-#### using python3
+Example Usage:
 ``` shell
 python3 ./scripts/run_generation_task.py --task_path './test/test_generation_task/text_to_image_v1.json'
 ```
@@ -382,8 +353,7 @@ options:
   --show_validation_loss  If this option is set, shows validation loss during training
 ```
 
-#### Example Usage:
-
+Example Usage:
 ``` shell
 python scripts/prompt_score.py --input_path input/set_0000_v2.zip --use_76th_embedding --num_epochs 200 --epsilon_raw 10 --epsilon_scaled 0.2
 ```
