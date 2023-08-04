@@ -22,7 +22,7 @@ base_directory = "./"
 sys.path.insert(0, base_directory)
 
 from chad_score.chad_score import ChadScorePredictor
-from utils.clip.clip_features_image import ClipImageFeatures
+from model.util_clip import UtilClip
 from prompt_generator import PromptGenerator
 from generation_task_result import GenerationTaskResult
 from stable_diffusion.utils_backend import get_autocast, set_seed
@@ -119,8 +119,8 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
     CrossAttention.use_flash_attention = flash
 
     # Load default clip model
-    clip_image_features = ClipImageFeatures(device=device)
-    clip_image_features.load_model()
+    util_clip = UtilClip(device=device)
+    util_clip.load_model()
 
     # Load default chad model
     # hard coded for now
@@ -212,7 +212,7 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
         tmp_start_time = time.time()
 
         # get image features
-        image_features = clip_image_features.get_image_features(image)
+        image_features = util_clip.get_image_features(image)
 
         # Capture the ending time
         tmp_end_time = time.time()
