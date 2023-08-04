@@ -49,6 +49,8 @@ OUTPUT_DIR = os.path.abspath(
 IMAGES_DIR = os.path.abspath(join(OUTPUT_DIR, "images/"))
 FEATURES_DIR = os.path.abspath(join(OUTPUT_DIR, "features/"))
 
+fitness_cache = {}
+
 # NULL_PROMPT = ""
 NULL_PROMPT = torch.tensor(()).to('cuda')
 # DEVICE = input("Set device: 'cuda:i' or 'cpu'")
@@ -196,6 +198,13 @@ def calculate_chad_score(ga_instance, solution, solution_idx):
         chad_score = chad_score_predictor.get_chad_score(torch.from_numpy(im_emb_arr).to(device).type(torch.cuda.FloatTensor))
         # chad_score = prediction.item()
         return chad_score
+
+def cached_fitness_func(ga_instance, solution, solution_idx):
+    if tuple(solution) in fitness_cache:
+        print('Returning cached score', fitness_cache[tuple(solution)])
+    if tuple(solution) not in fitness_cache:
+        fitness_cache[tuple(solution)] = calculate_chad_score(ga_instance, solution, solution_idx)
+    return fitness_cache[tuple(solution)]
 
 def on_fitness(ga_instance, population_fitness):
     population_fitness_np = np.array(population_fitness)
