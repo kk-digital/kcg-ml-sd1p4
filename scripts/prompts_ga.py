@@ -218,12 +218,14 @@ def on_mutation(ga_instance, offspring_mutation):
 
 def on_generation(ga_instance):
     print("Completed one generation")
+    generation = ga_instance.generations_completed
+    file_dir = os.path.join(IMAGES_DIR, str(generation))
+    os.makedirs(file_dir)
     for i, ind in enumerate(ga_instance.population):
-        generation = ga_instance.generations_completed
         image = generate_images_from_embeddings(torch.tensor(ind, dtype=torch.float16), NULL_PROMPT)
         pil_image = to_pil(image[0])
         # filename=f"{IMAGES_DIR}/{}/{}.png"
-        filename=os.path.join(IMAGES_DIR, generation, f'{i}.png')
+        filename = os.path.join(file_dir, f'{i}.png')
         # pil_image.show()
         pil_image.save(filename)
 
