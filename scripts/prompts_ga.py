@@ -45,7 +45,6 @@ chad_score_predictor.load_model('input/model/chad_score/chad-score-v1.pth')
 POPULATION_SIZE = 16
 CFG_STRENGTH = 9
 N_STEPS = 12 #20
-GENERATIONS = 2000 #how many generations to run
 
 #Why are you using this prompt generator?
 EMBEDDED_PROMPTS_DIR = os.path.abspath(join(base_dir, "./input/embedded_prompts/"))
@@ -318,21 +317,18 @@ parser.add_argument('--crossover_type', type=str, default="single_point", help="
 parser.add_argument('--mutation_type', type=str, default="random", help="Type of mutation operation.")
 args = parser.parse_args()
 
-# Variables
-GENERATIONS = args.generations
+generations = args.generations
 mutation_probability = args.mutation_probability
 keep_elitism = args.keep_elitism
 crossover_type = args.crossover_type
 mutation_type = args.mutation_type
-
-# rest of your code ...
 
 # Call the GA loop function with your initialized StableDiffusion model
 best_solution = genetic_algorithm_loop(
     sd,
     embedded_prompts_tensor,
     NULL_PROMPT,
-    generations=GENERATIONS,
+    generations=generations,
     mutation_probability=mutation_probability,
     keep_elitism=keep_elitism,
     crossover_type=crossover_type,
