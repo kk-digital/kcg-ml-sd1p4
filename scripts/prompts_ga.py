@@ -32,6 +32,16 @@ from stable_diffusion.constants import IODirectoryTree, create_directory_tree_fo
 from stable_diffusion.constants import TOKENIZER_PATH, TEXT_MODEL_PATH
 from transformers import CLIPTextModel, CLIPTokenizer
 
+# Add argparse arguments
+parser = argparse.ArgumentParser(description="Run genetic algorithm with specified parameters.")
+parser.add_argument('--generations', type=int, default=2000, help="Number of generations to run.")
+parser.add_argument('--mutation_probability', type=float, default=0.05, help="Probability of mutation.")
+parser.add_argument('--keep_elitism', type=int, default=0, help="1 to keep best individual, 0 otherwise.")
+parser.add_argument('--crossover_type', type=str, default="single_point", help="Type of crossover operation.")
+parser.add_argument('--mutation_type', type=str, default="random", help="Type of mutation operation.")
+parser.add_argument('--mutation_percent_genes', type=str, default="random", help="The percentage of genes to be mutated.")
+args = parser.parse_args()
+
 DEVICE = torch.device('cuda:0')
 device = DEVICE
 image_features_clip_model, preprocess = clip.load("ViT-L/14", device=device)
@@ -283,7 +293,6 @@ def genetic_algorithm_loop(sd,
     ga_instance.run()
     return ga_instance.best_solution()
 
-
 # Generate 6 random prompts with modifiers (initial population)
 PROMPT = generate_prompts(POPULATION_SIZE)
 #PROMPT = PROMPT[:20]
@@ -307,16 +316,6 @@ embedded_prompts_array = embedded_prompts_cpu.detach().numpy()
 num_individuals = embedded_prompts_array.shape[0]
 num_genes = embedded_prompts_array.shape[1]
 embedded_prompts_tensor = torch.tensor(embedded_prompts_array)
-
-# Add argparse arguments
-parser = argparse.ArgumentParser(description="Run genetic algorithm with specified parameters.")
-parser.add_argument('--generations', type=int, default=2000, help="Number of generations to run.")
-parser.add_argument('--mutation_probability', type=float, default=0.05, help="Probability of mutation.")
-parser.add_argument('--keep_elitism', type=int, default=0, help="1 to keep best individual, 0 otherwise.")
-parser.add_argument('--crossover_type', type=str, default="single_point", help="Type of crossover operation.")
-parser.add_argument('--mutation_type', type=str, default="random", help="Type of mutation operation.")
-parser.add_argument('--mutation_percent_genes', type=str, default="random", help="The percentage of genes to be mutated.")
-args = parser.parse_args()
 
 generations = args.generations
 mutation_probability = args.mutation_probability
