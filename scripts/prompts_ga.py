@@ -315,6 +315,7 @@ parser.add_argument('--mutation_probability', type=float, default=0.05, help="Pr
 parser.add_argument('--keep_elitism', type=int, default=0, help="1 to keep best individual, 0 otherwise.")
 parser.add_argument('--crossover_type', type=str, default="single_point", help="Type of crossover operation.")
 parser.add_argument('--mutation_type', type=str, default="random", help="Type of mutation operation.")
+parser.add_argument('--mutation_percent_genes', type=str, default="random", help="The percentage of genes to be mutated.")
 args = parser.parse_args()
 
 generations = args.generations
@@ -322,6 +323,7 @@ mutation_probability = args.mutation_probability
 keep_elitism = args.keep_elitism
 crossover_type = args.crossover_type
 mutation_type = args.mutation_type
+mutation_percent_genes = args.mutation_percent_genes
 
 # Call the GA loop function with your initialized StableDiffusion model
 best_solution = genetic_algorithm_loop(
@@ -329,6 +331,7 @@ best_solution = genetic_algorithm_loop(
     embedded_prompts_tensor,
     NULL_PROMPT,
     generations=generations,
+    mutation_percent_genes=mutation_percent_genes,
     mutation_probability=mutation_probability,
     keep_elitism=keep_elitism,
     crossover_type=crossover_type,
