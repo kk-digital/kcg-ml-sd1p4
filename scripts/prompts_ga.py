@@ -9,12 +9,13 @@ import hashlib
 import json
 import math
 import numpy as np
-import safetensors as st
 import random
 from os.path import join
-# Load chadscore and clip
+
 import clip
 import pygad
+
+#import safetensors as st
 
 from chad_score.chad_score import ChadScorePredictor
 
@@ -53,8 +54,9 @@ FEATURES_DIR = os.path.abspath(join(OUTPUT_DIR, "features/"))
 
 fitness_cache = {}
 
-# NULL_PROMPT = ""
+# NULL_PROMPT is completely wrong
 NULL_PROMPT = torch.tensor(()).to('cuda')
+
 # DEVICE = input("Set device: 'cuda:i' or 'cpu'")
 config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
 config.read(os.path.join(base_dir, "config.ini"))
@@ -95,8 +97,10 @@ def generate_prompts(prompt_segments, num_prompts=6):
 
     return prompt_phrases
 
-def embed_and_save_prompts(prompts: list, null_prompt=NULL_PROMPT):
-    null_prompt = null_prompt
+#def embed_and_save_prompts(prompts: list, null_prompt=NULL_PROMPT):
+#def embed_and_save_prompts(prompts: list):
+def get_prompt_clip_embedding(prompts: list):
+    #null_prompt = null_prompt
     prompts = prompts
 
     clip_text_embedder = CLIPTextEmbedder(device=get_device())
@@ -121,7 +125,8 @@ def embed_and_save_prompts(prompts: list, null_prompt=NULL_PROMPT):
     torch.cuda.empty_cache()
     get_memory_status()
 
-    return embedded_prompts, null_prompt
+    #return embedded_prompts, null_prompt
+    return embedded_prompts
 
 def normalized(a, axis=-1, order=2):
     import numpy as np
@@ -132,7 +137,9 @@ def normalized(a, axis=-1, order=2):
 
 def generate_images_from_embeddings(embedded_prompts_array, null_prompt):
     # print(embedded_prompts_array.to('cuda0'))
-    SEED = random.randint(0, 2^24)
+    SEED = random.randint(0, 2**24)
+    print("max_seed= ", 2**24)
+
     embedded_prompt = embedded_prompts_array.to('cuda').view(1, 77, 768)
     return sd.generate_images_from_embeddings(
         seed=SEED, embedded_prompt=embedded_prompt, null_prompt=null_prompt)
@@ -192,6 +199,9 @@ def on_generation(ga_instance):
 
 # Define the GA loop function
 def genetic_algorithm_loop(sd, embedded_prompts, null_prompt, generations=10, population_size=POPULATION_SIZE, mutation_rate=0.4, num_parents_mating=2):
+    
+    print("genetic_algorithm_loop: population_size= ", population_size)
+
     # Move the 'embedded_prompts' tensor to CPU memory
     embedded_prompts_cpu = embedded_prompts.cpu()
 
@@ -234,7 +244,10 @@ sd.quick_initialize().load_autoencoder(**pt.autoencoder).load_decoder(**pt.decod
 sd.model.load_unet(**pt.unet)
 
 # Generate embeddings for each prompt
-embedded_prompts, null_prompt = embed_and_save_prompts(PROMPT)
+embedded_prompts = get_prompt_clip_embedding(PROMPT)
+
+print("embedded_prompt, tensor shape= "+ str(torch.Tensor.size(embedded_prompts)))
+
 embedding = embedded_prompts
 num_images = embedding.shape[0]
 
@@ -245,7 +258,7 @@ num_genes = embedded_prompts_array.shape[1]
 embedded_prompts_tensor = torch.tensor(embedded_prompts_array)
 
 # Call the GA loop function with your initialized StableDiffusion model
-best_solution = genetic_algorithm_loop(sd, embedded_prompts_tensor, null_prompt, generations=GENERATIONS)
+best_solution = genetic_algorithm_loop(sd, embedded_prompts_tensor, NULL_PROMPT, generations=GENERATIONS)
 print('best_solution', best_solution)
 
 del preprocess, image_features_clip_model, sd
