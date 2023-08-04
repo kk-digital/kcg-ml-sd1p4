@@ -291,26 +291,14 @@ def main():
     null_prompt_list = []  # To store the null prompts
     for i in range(NUM_ITERATIONS):
         prompt = generate_prompt()
-        #     print(f"Prompt {i}: {prompt}")  # Print the generated prompt
         prompts.append(prompt)  # Store each prompt for later use
-        #     get_memory_status()
         embedded_prompt, null_prompt = embed_and_save_prompts(clip_text_embedder, prompt, i)
-    #     embedded_prompts_list.append(embedded_prompt.cpu())  # Store the embedded prompts
-    #     get_memory_status() 
         torch.save(embedded_prompt, f'{EMBEDDED_PROMPTS_DIR}/embedded_prompt_{i}.pt')    
         torch.cuda.empty_cache()
-    # embedded_prompts_list = [embedded_prompt for embedded_prompt in embedded_prompts]  # Store the embedded prompts
-    # null_prompt_list.append(null_prompt)  # Store the null prompts
-    # print(f"Image {i} generated.")  # Print when an image is generated
 
     images_generator = generate_images_from_disturbed_embeddings(sd, clip_text_embedder, prompts,
                                                                  batch_size=1)  # Use the corresponding prompt for each iteration
-    # for i in range(NUM_ITERATIONS):
-    #     image, embedding = next(images_generator)
-    #     images.append((image.cpu(), embedding.cpu(), prompts[i]))  # Include the prompt with the image and embedding
-    #     # images.append((image, embedding, prompts[i]))  # Include the prompt with the image and embedding
-    #     get_memory_status()
-    #     torch.cuda.empty_cache()
+
 
     image_encoder = CLIPImageEncoder(device=DEVICE)
     image_encoder.load_submodels()
