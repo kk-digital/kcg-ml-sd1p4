@@ -330,7 +330,7 @@ def main():
         image_features /= image_features.norm(dim=-1, keepdim=True)
         score = predictor.model(image_features.to(DEVICE).float())
 
-        img_file_name = f"image_{i:06d}.png"
+        img_file_name = f"image_{i:06d}.jpg"
         full_img_path = join(IMAGES_DIR, img_file_name)
         img_path = "./images/" + os.path.relpath(full_img_path, IMAGES_DIR)
         pil_image.save(full_img_path)
@@ -366,8 +366,6 @@ def main():
 
         json_output.append(json_output_i)
 
-    # images_grid = torch.cat(images_tensors)
-    # save_image_grid(images_grid, join(IMAGES_DIR, "images_grid.png"), nrow=int(math.log(NUM_ITERATIONS, 2)), normalize=True, scale_each=True)
 
     json.dump(json_output, open(json_output_path, "w"), indent=4)
     json.dump(scores, open(scores_path, "w"), indent=4)
