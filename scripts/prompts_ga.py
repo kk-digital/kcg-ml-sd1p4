@@ -10,9 +10,34 @@ TODO:
 
 TODO:
 - GA for direct latent generation (64*64 = 4096)
+- using chad score
+
+TODO:
+- GA for direct latent generation (64x64 = 4096)
+- GA for matching input image (mean squared)
+
+TODO:
+- GA for direct latent generation (64x64 = 4096)
+- GA for matching input image, clip score
 
 TODO:
 - GA for latent/bounding box size
+
+TODO:
+- two different clip functions
+- custom scoring function
+- jitters after crop
+
+TODO:
+- GA for searching for clip textt embedding (77*768)
+- to minimized mean squared error against target image
+
+TODO:
+- GA for searching for clip text embedding (77*768)
+- to maximize clip scores against a single image or set of images
+
+TODO:
+- operate on latent with 
 
 '''
 
@@ -63,7 +88,7 @@ parser.add_argument('--mutation_type', type=str, default="random", help="Type of
 parser.add_argument('--mutation_percent_genes', type=float, default="0.001", help="The percentage of genes to be mutated.")
 args = parser.parse_args()
 
-FIXED_SEED = False
+FIXED_SEED = True
 CONVERT_GREY_SCALE_FOR_SCORING = True
 
 DEVICE = torch.device('cuda:0')
@@ -296,7 +321,7 @@ CFG_STRENGTH = 9
 MUTATION_RATE = 0.01
 
 generations = args.generations
-population_size = 16
+population_size = 64
 mutation_percent_genes = args.mutation_percent_genes
 mutation_probability = args.mutation_probability
 keep_elitism = args.keep_elitism
@@ -308,10 +333,18 @@ mutation_rate = 0.001
 parent_selection_type = "tournament" #"sss", rws, sus, rank, tournament
 
 #num_parents_mating = int(population_size *.80)
-num_parents_mating = int(population_size *.80)
-keep_elitism = int(population_size*0.20)
-mutation_probability = 0.001
-mutation_type = "adaptive" #try adaptive mutation
+num_parents_mating = int(population_size *.50)
+keep_elitism = 4 #int(population_size*0.20)
+mutation_probability = 0.10
+#mutation_type = "adaptive" #try adaptive mutation
+mutation_type="swap"
+
+'''
+Random: mutation_type=random
+Swap: mutation_type=swap
+Inversion: mutation_type=inversion
+Scramble: mutation_type=scramble
+'''
 
 #adaptive mutation: 
 #https://neptune.ai/blog/adaptive-mutation-in-genetic-algorithm-with-python-examples
@@ -333,7 +366,8 @@ embedded_prompts_list = embedded_prompts_array.reshape(population_size, 77*768).
 
 # Reshape the 'embedded_prompts' tensor to a 2D numpy array
 
-num_individuals = embedded_prompts_array.shape[0]
+#num_individuals = embedded_prompts_array.shape[0]
+#num_individuals = population_size
 
 #random_mutation_min_val=5,
 #random_mutation_max_val=10,
@@ -351,7 +385,7 @@ ga_instance = pygad.GA(initial_population=embedded_prompts_list,
                        sol_per_pop=population_size,
                        num_genes=77*768, #59136
                        # Pygad uses 0-100 range for percentage
-                       #mutation_percent_genes=mutation_percent_genes*100,
+                       mutation_percent_genes=0.01,
                        #mutation_probability=mutation_probability,
                        mutation_probability=[.30, 0.05],
                        keep_elitism=keep_elitism,
@@ -364,8 +398,8 @@ ga_instance = pygad.GA(initial_population=embedded_prompts_list,
                        parent_selection_type= parent_selection_type,
                        keep_parents=0,
                        mutation_by_replacement=False,
-                       random_mutation_min_val= -0.10, 
-                       random_mutation_max_val= 0.10,
+                       random_mutation_min_val= -0.5, 
+                       random_mutation_max_val= 0.5,
                        #fitness_func=calculate_chad_score,
                        #on_parents=on_parents,
                        #on_crossover=on_crossover,
