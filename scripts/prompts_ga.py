@@ -1,3 +1,9 @@
+
+'''
+TODO:
+- GA search over noise seed for fixed prompt
+'''
+
 import os, sys
 base_dir = os.getcwd()
 sys.path.insert(0, base_dir)
@@ -181,9 +187,16 @@ def calculate_chad_score(ga_instance, solution, solution_idx):
     image = generate_images_from_embeddings(solution_tensor, NULL_PROMPT)
 
     pil_image = to_pil(image[0])  # Convert to (height, width, channels)
+
+    #convert to grey scale
+    if True:
+        pil_image = pil_image.convert("L")
+        pil_image = pil_image.convert("RGB")
+
     unsqueezed_image = preprocess(pil_image).unsqueeze(0).to(device)
 
     with torch.no_grad():
+
         image_features = image_features_clip_model.encode_image(unsqueezed_image)
         chad_score = chad_score_predictor.get_chad_score(image_features.type(torch.cuda.FloatTensor))
 
@@ -249,13 +262,13 @@ def prompt_embedding_vectors(sd, prompt_count):
 
 # Call the GA loop function with your initialized StableDiffusion model
 
-N_STEPS = 12 #20
+N_STEPS = 20 #20, 12
 CFG_STRENGTH = 9
 
 MUTATION_RATE = 0.01
 
 generations = args.generations
-population_size = 16
+population_size = 128
 mutation_percent_genes = args.mutation_percent_genes
 mutation_probability = args.mutation_probability
 keep_elitism = args.keep_elitism
@@ -267,8 +280,8 @@ mutation_rate = 0.001
 parent_selection_type = "tournament" #"sss", rws, sus, rank, tournament
 
 #num_parents_mating = int(population_size *.80)
-num_parents_mating = 1
-keep_elitism = 0
+num_parents_mating = int(population_size *.80)
+keep_elitism = int(population_size*0.20)
 mutation_probability = 0.001
 mutation_type = "adaptive" #try adaptive mutation
 
@@ -298,14 +311,14 @@ num_individuals = embedded_prompts_array.shape[0]
 #random_mutation_max_val=10,
 #mutation_by_replacement=True,
 
-#note: uniform is good
-crossover_type = "two_points"
+#note: uniform is good, two_points"
+crossover_type = "uniform"
 
 num_genes = 77*768 #59136
 # Initialize the GA
 ga_instance = pygad.GA(initial_population=embedded_prompts_list,
                        num_generations=generations,
-                       num_parents_mating=2,
+                       num_parents_mating=num_parents_mating,
                        fitness_func=cached_fitness_func,
                        sol_per_pop=population_size,
                        num_genes=77*768, #59136
