@@ -1,4 +1,6 @@
 from .main_loop import *
 from .prompt_generator import *
-from .sd import *
-from .clip_text import *
+
+from .model_sd import *
+from .model_clip_text import *
+from .model_chad_score import *

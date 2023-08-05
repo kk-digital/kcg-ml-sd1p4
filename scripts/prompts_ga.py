@@ -72,13 +72,14 @@ from chad_score.chad_score import ChadScorePredictor
 from stable_diffusion import StableDiffusion
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
 from stable_diffusion.utils_model import *
+#TODO: rename stable_diffusion.utils_backend to /utils/cuda.py
 from stable_diffusion.utils_backend import *
 from stable_diffusion.utils_backend import get_device, get_memory_status
 from stable_diffusion.utils_model import initialize_latent_diffusion
 from stable_diffusion.utils_image import *
 from stable_diffusion.constants import IODirectoryTree, create_directory_tree_folders
 from stable_diffusion.constants import TOKENIZER_PATH, TEXT_MODEL_PATH
-from transformers import CLIPTextModel, CLIPTokenizer
+#from transformers import CLIPTextModel, CLIPTokenizer
 
 #from ga import generate_prompts
 import ga
@@ -98,11 +99,15 @@ args = parser.parse_args()
 FIXED_SEED = True
 CONVERT_GREY_SCALE_FOR_SCORING = True
 
+chad_score_predictor = LoadChadScoreModel('input/model/chad_score/chad-score-v1.pth')
+
+'''
 DEVICE = torch.device('cuda:0')
 device = DEVICE
 image_features_clip_model, preprocess = clip.load("ViT-L/14", device=device)
 chad_score_predictor = ChadScorePredictor(device=device)
 chad_score_predictor.load_model('input/model/chad_score/chad-score-v1.pth')
+'''
 
 #Why are you using this prompt generator?
 EMBEDDED_PROMPTS_DIR = os.path.abspath(join(base_dir, "./input/embedded_prompts/"))
