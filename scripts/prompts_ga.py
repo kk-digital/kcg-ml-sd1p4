@@ -70,7 +70,6 @@ import argparse
 from chad_score.chad_score import ChadScorePredictor
 
 from stable_diffusion import StableDiffusion
-from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
 from stable_diffusion.utils_model import *
 from stable_diffusion.utils_backend import *
@@ -135,38 +134,6 @@ os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(IMAGES_DIR, exist_ok=True)
 os.makedirs(FEATURES_DIR, exist_ok=True)
-
-
-#def embed_and_save_prompts(prompts: list, null_prompt=NULL_PROMPT):
-#def embed_and_save_prompts(prompts: list):
-def get_prompt_clip_embedding(prompts: list):
-    #null_prompt = null_prompt
-    prompts = prompts
-
-    clip_text_embedder = CLIPTextEmbedder(device=get_device())
-    clip_text_embedder.load_submodels(**pt.embedder_submodels)
-
-    embedded_prompts = []
-    for prompt in prompts:
-        embeddings = clip_text_embedder.forward(prompt)
-        # Flattening tensor and appending
-        embedded_prompts.append(embeddings.view(-1))
-    embedded_prompts = torch.stack(embedded_prompts)
-    torch.save(embedded_prompts, join(EMBEDDED_PROMPTS_DIR, "embedded_prompts.pt"))
-
-    print(
-        "Prompts embeddings saved at: ",
-        f"{join(EMBEDDED_PROMPTS_DIR, 'embedded_prompts.pt')}",
-    )
-
-    get_memory_status()
-    clip_text_embedder.to("cpu")
-    del clip_text_embedder
-    torch.cuda.empty_cache()
-    get_memory_status()
-
-    #return embedded_prompts, null_prompt
-    return embedded_prompts
 
 def normalized(a, axis=-1, order=2):
     import numpy as np
@@ -254,11 +221,12 @@ def on_generation(ga_instance):
 
 def prompt_embedding_vectors(sd, prompt_count):
     PROMPT = ga.generate_prompts(prompt_count)
-    PROMPT = PROMPT[:prompt_count]
+    #PROMPT = PROMPT[:prompt_count]
 
 
     # Generate embeddings for each prompt
-    embedded_prompts = get_prompt_clip_embedding(PROMPT)
+    #embedded_prompts = get_prompt_clip_embedding(PROMPT)
+    embedded_prompts = ga.clip_text_get_prompt_embedding(ModelConfig=pt, prompts=PROMPT)
 
     if torch.equal(embedded_prompts[0], embedded_prompts[1]):
         print("WARNING: embedded_prompts[0] == embedded_prompts[1]")
