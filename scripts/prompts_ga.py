@@ -321,7 +321,7 @@ crossover_type = args.crossover_type
 mutation_type = args.mutation_type
 mutation_rate = 0.001
 
-parent_selection_type = "tournament" #"sss", rws, sus, rank, tournament
+parent_selection_type = "rank" #"sss", rws, sus, rank, tournament
 
 num_parents_mating = population_size / 4
 
@@ -340,6 +340,7 @@ embedded_prompts_cpu = embedded_prompts.cpu()
 embedded_prompts_array = embedded_prompts_cpu.detach().numpy()
 embedded_prompts_list = embedded_prompts_array.reshape(population_size, 77*768).tolist()
 
+
 # Reshape the 'embedded_prompts' tensor to a 2D numpy array
 
 num_individuals = embedded_prompts_array.shape[0]
@@ -351,7 +352,7 @@ ga_instance = pygad.GA(initial_population=embedded_prompts_list,
                        num_parents_mating=num_parents_mating,
                        fitness_func=cached_fitness_func,
                        sol_per_pop=population_size,
-                       num_genes=(77*768), #59136
+                       num_genes=77*768, #59136
                        # Pygad uses 0-100 range for percentage
                        mutation_percent_genes=mutation_percent_genes*100,
                        mutation_probability=mutation_probability,
