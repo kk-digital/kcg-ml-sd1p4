@@ -39,7 +39,7 @@ parser.add_argument('--mutation_probability', type=float, default=0.05, help="Pr
 parser.add_argument('--keep_elitism', type=int, default=0, help="1 to keep best individual, 0 otherwise.")
 parser.add_argument('--crossover_type', type=str, default="single_point", help="Type of crossover operation.")
 parser.add_argument('--mutation_type', type=str, default="random", help="Type of mutation operation.")
-parser.add_argument('--mutation_percent_genes', type=float, default="random", help="The percentage of genes to be mutated.")
+parser.add_argument('--mutation_percent_genes', type=float, default="0.001", help="The percentage of genes to be mutated.")
 args = parser.parse_args()
 
 DEVICE = torch.device('cuda:0')
@@ -227,21 +227,17 @@ def on_generation(ga_instance):
         pil_image.save(filename)
 
 # Define the GA loop function
-<<<<<<< HEAD
-def genetic_algorithm_loop(sd, embedded_prompts, null_prompt, generations, mutation_rate, population_size=POPULATION_SIZE,):
-=======
 def genetic_algorithm_loop(sd,
                            embedded_prompts,
                            null_prompt,
-                           generations=10,
-                           population_size=POPULATION_SIZE,
-                           mutation_percent_genes=0.05,
-                           keep_elitism=0,
-                           mutation_probability=0.05,
-                           crossover_type="single_point",
-                           mutation_type="random"):
->>>>>>> refs/remotes/origin/main
-    
+                           generations,
+                           population_size,
+                           keep_elitism,
+                           mutation_percent_genes,
+                           mutation_probability,
+                           crossover_type,
+                           mutation_type,
+                           num_parents_mating):
     print("genetic_algorithm_loop: population_size= ", population_size)
 
     # Move the 'embedded_prompts' tensor to CPU memory
@@ -255,100 +251,142 @@ def genetic_algorithm_loop(sd,
     num_genes = 77*768 #59136
     #print("num_genes= ", num_genes)
 
-    embedded_prompts_list = embedded_prompts_array.reshape(num_individuals, num_genes).tolist()
+    embedded_prompts_list = embedded_prompts_array.reshape(num_individuals, 77*768).tolist()
 
     parent_selection_type = "tournament" #"sss", rws, sus, rank, tournament
     # Initialize the GA
-    ga_instance = pygad.GA(num_generations=generations,
+    ga_instance = pygad.GA(initial_population=embedded_prompts_list,
+                           num_generations=generations,
                            num_parents_mating=population_size/2,
-                           # fitness_func=calculate_chad_score,
                            fitness_func=cached_fitness_func,
                            sol_per_pop=population_size,
-                           num_genes=num_genes,
-                           initial_population=embedded_prompts_list,
+                           num_genes=77*768, #59136
                            # Pygad uses 0-100 range for percentage
                            mutation_percent_genes=mutation_percent_genes*100,
                            mutation_probability=mutation_probability,
                            keep_elitism=keep_elitism,
                            crossover_type=crossover_type,
                            mutation_type=mutation_type,
-                           #on_start=on_start,
                            on_fitness=on_fitness,
-                           #on_parents=on_parents,
-                           #on_crossover=on_crossover,
                            on_mutation=on_mutation,
                            on_generation=on_generation,
                            on_stop=on_fitness,
                            parent_selection_type= parent_selection_type,
                            keep_parents=0
+                           #fitness_func=calculate_chad_score,
+                           #on_parents=on_parents,
+                           #on_crossover=on_crossover,
+                           #on_start=on_start,
                            )
-
-    '''
-    keep_parents=-1 : Number of parents to keep in the current population.
-    -1 (default) means keep all parents in the next population. 0 means keep no parents in the next population. A value greater than 0 means keep the specified number of parents in the next population. 
-    '''
-    ga_instance.keep_parents = 0
-    ga_instance.num_parents_mating = 8
 
     ga_instance.run()
     return ga_instance.best_solution()
 
-# Generate 6 random prompts with modifiers (initial population)
-PROMPT = generate_prompts(POPULATION_SIZE)
-#PROMPT = PROMPT[:20]
-PROMPT = PROMPT[:POPULATION_SIZE]
+
+def prompt_embedding_vectors(sd, prompt_count):
+    PROMPT = generate_prompts(prompt_count)
+    PROMPT = PROMPT[:prompt_count]
+
+
+    # Generate embeddings for each prompt
+    embedded_prompts = get_prompt_clip_embedding(PROMPT)
+
+    print("embedded_prompt, tensor shape= "+ str(torch.Tensor.size(embedded_prompts)))
+
+    embedding = embedded_prompts
+    num_images = embedding.shape[0]
+
+    embedded_prompts_cpu = embedded_prompts.cpu()
+    embedded_prompts_array = embedded_prompts_cpu.detach().numpy()
+    num_individuals = embedded_prompts_array.shape[0]
+    num_genes = embedded_prompts_array.shape[1]
+    embedded_prompts_tensor = torch.tensor(embedded_prompts_array)
+    return embedded_prompts_tensor
+
+
+# Call the GA loop function with your initialized StableDiffusion model
+
+N_STEPS = 12 #20
+CFG_STRENGTH = 9
+
+MUTATION_RATE = 0.01
+
+generations = args.generations
+population_size = 16
+mutation_percent_genes = args.mutation_percent_genes
+mutation_probability = args.mutation_probability
+keep_elitism = args.keep_elitism
+
+crossover_type = args.crossover_type
+mutation_type = args.mutation_type
+mutation_rate = 0.001
+
+parent_selection_type = "tournament" #"sss", rws, sus, rank, tournament
+
+num_parents_mating = population_size / 4
+
 
 # Load Stable Diffusion
 sd = StableDiffusion(device=DEVICE, n_steps=N_STEPS)
 sd.quick_initialize().load_autoencoder(**pt.autoencoder).load_decoder(**pt.decoder)
 sd.model.load_unet(**pt.unet)
+#calculate prompts
+embedded_prompts = prompt_embedding_vectors(sd, population_size)
 
-# Generate embeddings for each prompt
-embedded_prompts = get_prompt_clip_embedding(PROMPT)
+print("genetic_algorithm_loop: population_size= ", population_size)
 
-print("embedded_prompt, tensor shape= "+ str(torch.Tensor.size(embedded_prompts)))
-
-embedding = embedded_prompts
-num_images = embedding.shape[0]
-
+# Move the 'embedded_prompts' tensor to CPU memory
 embedded_prompts_cpu = embedded_prompts.cpu()
 embedded_prompts_array = embedded_prompts_cpu.detach().numpy()
+embedded_prompts_list = embedded_prompts_array.reshape(population_size, 77*768).tolist()
+
+# Reshape the 'embedded_prompts' tensor to a 2D numpy array
+
 num_individuals = embedded_prompts_array.shape[0]
-num_genes = embedded_prompts_array.shape[1]
-embedded_prompts_tensor = torch.tensor(embedded_prompts_array)
 
-generations = args.generations
-mutation_probability = args.mutation_probability
-keep_elitism = args.keep_elitism
-crossover_type = args.crossover_type
-mutation_type = args.mutation_type
-mutation_percent_genes = args.mutation_percent_genes
+num_genes = 77*768 #59136
+# Initialize the GA
+ga_instance = pygad.GA(initial_population=embedded_prompts_list,
+                       num_generations=generations,
+                       num_parents_mating=num_parents_mating,
+                       fitness_func=cached_fitness_func,
+                       sol_per_pop=population_size,
+                       num_genes=(77*768), #59136
+                       # Pygad uses 0-100 range for percentage
+                       mutation_percent_genes=mutation_percent_genes*100,
+                       mutation_probability=mutation_probability,
+                       keep_elitism=keep_elitism,
+                       crossover_type=crossover_type,
+                       mutation_type=mutation_type,
+                       on_fitness=on_fitness,
+                       on_mutation=on_mutation,
+                       on_generation=on_generation,
+                       on_stop=on_fitness,
+                       parent_selection_type= parent_selection_type,
+                       keep_parents=0
+                       #fitness_func=calculate_chad_score,
+                       #on_parents=on_parents,
+                       #on_crossover=on_crossover,
+                       #on_start=on_start,
+                       )
 
-# Call the GA loop function with your initialized StableDiffusion model
+ga_instance.run()
+#ga_instance.best_solution()
 
-
-# Variables
-#TODO: implement batch size
-#BATCH_SIZE = 1
-
-POPULATION_SIZE = 16
-CFG_STRENGTH = 9
-N_STEPS = 12 #20
-
-MUTATION_RATE = 0.01
-
+'''
 best_solution = genetic_algorithm_loop(
     sd,
     embedded_prompts_tensor,
     NULL_PROMPT,
-    generations=GENERATIONS,
+    generations=arg.generations,
+    population_size=arg.population_size,
     mutation_percent_genes=mutation_percent_genes,
     mutation_probability=mutation_probability,
-    keep_elitism=keep_elitism,
+    keep_elitism=arg.keep_elitism,
     crossover_type=crossover_type,
     mutation_type=mutation_type,
     mutation_rate=MUTATION_RATE)
-
-print('best_solution', best_solution)
+'''
+#print('best_solution', best_solution)
 
 del preprocess, image_features_clip_model, sd
