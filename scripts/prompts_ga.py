@@ -2,6 +2,18 @@
 '''
 TODO:
 - GA search over noise seed for fixed prompt
+
+TODO:
+- compute clip, get gradient of chadscore, then go back to latent
+- possible get gradient going back to embedding (impossible)
+-- sampling process is non differentiable
+
+TODO:
+- GA for direct latent generation (64*64 = 4096)
+
+TODO:
+- GA for latent/bounding box size
+
 '''
 
 import os, sys
@@ -38,6 +50,9 @@ from stable_diffusion.constants import IODirectoryTree, create_directory_tree_fo
 from stable_diffusion.constants import TOKENIZER_PATH, TEXT_MODEL_PATH
 from transformers import CLIPTextModel, CLIPTokenizer
 
+
+random.seed()
+
 # Add argparse arguments
 parser = argparse.ArgumentParser(description="Run genetic algorithm with specified parameters.")
 parser.add_argument('--generations', type=int, default=2000, help="Number of generations to run.")
@@ -47,6 +62,9 @@ parser.add_argument('--crossover_type', type=str, default="single_point", help="
 parser.add_argument('--mutation_type', type=str, default="random", help="Type of mutation operation.")
 parser.add_argument('--mutation_percent_genes', type=float, default="0.001", help="The percentage of genes to be mutated.")
 args = parser.parse_args()
+
+FIXED_SEED = False
+CONVERT_GREY_SCALE_FOR_SCORING = True
 
 DEVICE = torch.device('cuda:0')
 device = DEVICE
@@ -168,6 +186,9 @@ def normalized(a, axis=-1, order=2):
 def generate_images_from_embeddings(embedded_prompts_array, null_prompt):
     # print(embedded_prompts_array.to('cuda0'))
     SEED = random.randint(0, 2**24)
+    
+    if FIXED_SEED == True:
+        SEED = 54846
     #print("max_seed= ", 2**24)
 
     embedded_prompt = embedded_prompts_array.to('cuda').view(1, 77, 768)
@@ -189,7 +210,7 @@ def calculate_chad_score(ga_instance, solution, solution_idx):
     pil_image = to_pil(image[0])  # Convert to (height, width, channels)
 
     #convert to grey scale
-    if True:
+    if CONVERT_GREY_SCALE_FOR_SCORING == True:
         pil_image = pil_image.convert("L")
         pil_image = pil_image.convert("RGB")
 
@@ -247,15 +268,22 @@ def prompt_embedding_vectors(sd, prompt_count):
     # Generate embeddings for each prompt
     embedded_prompts = get_prompt_clip_embedding(PROMPT)
 
+    if torch.equal(embedded_prompts[0], embedded_prompts[1]):
+        print("WARNING: embedded_prompts[0] == embedded_prompts[1]")
+        CRASH
+
     print("embedded_prompt, tensor shape= "+ str(torch.Tensor.size(embedded_prompts)))
 
     embedding = embedded_prompts
-    num_images = embedding.shape[0]
+    #num_images = embedding.shape[0]
+    #num_images = prompt_count
 
     embedded_prompts_cpu = embedded_prompts.cpu()
     embedded_prompts_array = embedded_prompts_cpu.detach().numpy()
-    num_individuals = embedded_prompts_array.shape[0]
-    num_genes = embedded_prompts_array.shape[1]
+    #num_individuals = embedded_prompts_array.shape[0]
+    #num_individuals = prompt_count
+    #num_genes = embedded_prompts_array.shape[1]
+    #num_genes = 77*768
     embedded_prompts_tensor = torch.tensor(embedded_prompts_array)
     return embedded_prompts_tensor
 
@@ -268,7 +296,7 @@ CFG_STRENGTH = 9
 MUTATION_RATE = 0.01
 
 generations = args.generations
-population_size = 128
+population_size = 16
 mutation_percent_genes = args.mutation_percent_genes
 mutation_probability = args.mutation_probability
 keep_elitism = args.keep_elitism
