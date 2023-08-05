@@ -110,9 +110,9 @@ def generate_prompts(num_prompts):
     for i in range(0, num_prompts):
         prompt = prompt_base    
         for j in range(0, prompt_topic_count):
-            prompt += random.choice(prompt_topics)
+            prompt = prompt + ", " + random.choice(prompt_topics)
         for k in range(0, prompt_modifiers_count):
-            prompt += random.choice(prompt_modifiers)
+            prompt = prompt + ", " + random.choice(prompt_modifiers)
         prompt_list.append(prompt)
 
     print("prompt_list:")
@@ -226,63 +226,6 @@ def on_generation(ga_instance):
         # pil_image.show()
         pil_image.save(filename)
 
-# Define the GA loop function
-def genetic_algorithm_loop(sd,
-                           embedded_prompts,
-                           null_prompt,
-                           generations,
-                           population_size,
-                           keep_elitism,
-                           mutation_percent_genes,
-                           mutation_probability,
-                           crossover_type,
-                           mutation_type,
-                           num_parents_mating):
-    print("genetic_algorithm_loop: population_size= ", population_size)
-
-    # Move the 'embedded_prompts' tensor to CPU memory
-    embedded_prompts_cpu = embedded_prompts.cpu()
-
-    # Reshape the 'embedded_prompts' tensor to a 2D numpy array
-    embedded_prompts_array = embedded_prompts_cpu.detach().numpy()
-    num_individuals = embedded_prompts_array.shape[0]
-    
-    #num_genes = embedded_prompts_array.shape[1]
-    num_genes = 77*768 #59136
-    #print("num_genes= ", num_genes)
-
-    embedded_prompts_list = embedded_prompts_array.reshape(num_individuals, 77*768).tolist()
-
-    parent_selection_type = "tournament" #"sss", rws, sus, rank, tournament
-    # Initialize the GA
-    ga_instance = pygad.GA(initial_population=embedded_prompts_list,
-                           num_generations=generations,
-                           num_parents_mating=population_size/2,
-                           fitness_func=cached_fitness_func,
-                           sol_per_pop=population_size,
-                           num_genes=77*768, #59136
-                           # Pygad uses 0-100 range for percentage
-                           mutation_percent_genes=mutation_percent_genes*100,
-                           mutation_probability=mutation_probability,
-                           keep_elitism=keep_elitism,
-                           crossover_type=crossover_type,
-                           mutation_type=mutation_type,
-                           on_fitness=on_fitness,
-                           on_mutation=on_mutation,
-                           on_generation=on_generation,
-                           on_stop=on_fitness,
-                           parent_selection_type= parent_selection_type,
-                           keep_parents=0
-                           #fitness_func=calculate_chad_score,
-                           #on_parents=on_parents,
-                           #on_crossover=on_crossover,
-                           #on_start=on_start,
-                           )
-
-    ga_instance.run()
-    return ga_instance.best_solution()
-
-
 def prompt_embedding_vectors(sd, prompt_count):
     PROMPT = generate_prompts(prompt_count)
     PROMPT = PROMPT[:prompt_count]
@@ -321,9 +264,16 @@ crossover_type = args.crossover_type
 mutation_type = args.mutation_type
 mutation_rate = 0.001
 
-parent_selection_type = "rank" #"sss", rws, sus, rank, tournament
+parent_selection_type = "tournament" #"sss", rws, sus, rank, tournament
 
-num_parents_mating = int(population_size / 4)
+#num_parents_mating = int(population_size *.80)
+num_parents_mating = 1
+keep_elitism = 0
+mutation_probability = 0.001
+mutation_type = "adaptive" #try adaptive mutation
+
+#adaptive mutation: 
+#https://neptune.ai/blog/adaptive-mutation-in-genetic-algorithm-with-python-examples
 
 # Load Stable Diffusion
 sd = StableDiffusion(device=DEVICE, n_steps=N_STEPS)
@@ -344,17 +294,25 @@ embedded_prompts_list = embedded_prompts_array.reshape(population_size, 77*768).
 
 num_individuals = embedded_prompts_array.shape[0]
 
+#random_mutation_min_val=5,
+#random_mutation_max_val=10,
+#mutation_by_replacement=True,
+
+#note: uniform is good
+crossover_type = "two_points"
+
 num_genes = 77*768 #59136
 # Initialize the GA
 ga_instance = pygad.GA(initial_population=embedded_prompts_list,
                        num_generations=generations,
-                       num_parents_mating=num_parents_mating,
+                       num_parents_mating=2,
                        fitness_func=cached_fitness_func,
                        sol_per_pop=population_size,
                        num_genes=77*768, #59136
                        # Pygad uses 0-100 range for percentage
-                       mutation_percent_genes=mutation_percent_genes*100,
-                       mutation_probability=mutation_probability,
+                       #mutation_percent_genes=mutation_percent_genes*100,
+                       #mutation_probability=mutation_probability,
+                       mutation_probability=[.30, 0.05],
                        keep_elitism=keep_elitism,
                        crossover_type=crossover_type,
                        mutation_type=mutation_type,
@@ -363,7 +321,10 @@ ga_instance = pygad.GA(initial_population=embedded_prompts_list,
                        on_generation=on_generation,
                        on_stop=on_fitness,
                        parent_selection_type= parent_selection_type,
-                       keep_parents=0
+                       keep_parents=0,
+                       mutation_by_replacement=False,
+                       random_mutation_min_val= -0.10, 
+                       random_mutation_max_val= 0.10,
                        #fitness_func=calculate_chad_score,
                        #on_parents=on_parents,
                        #on_crossover=on_crossover,
@@ -371,22 +332,13 @@ ga_instance = pygad.GA(initial_population=embedded_prompts_list,
                        )
 
 ga_instance.run()
-#ga_instance.best_solution()
 
 '''
-best_solution = genetic_algorithm_loop(
-    sd,
-    embedded_prompts_tensor,
-    NULL_PROMPT,
-    generations=arg.generations,
-    population_size=arg.population_size,
-    mutation_percent_genes=mutation_percent_genes,
-    mutation_probability=mutation_probability,
-    keep_elitism=arg.keep_elitism,
-    crossover_type=crossover_type,
-    mutation_type=mutation_type,
-    mutation_rate=MUTATION_RATE)
+Notes:
+- 14 generatoins, readed 14 best
+- with 12 rounds/iterations
+- population size 16
+- with uniform cross over
 '''
-#print('best_solution', best_solution)
 
 del preprocess, image_features_clip_model, sd
