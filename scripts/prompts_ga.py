@@ -169,8 +169,7 @@ def generate_images_from_embeddings(embedded_prompts_array, null_prompt):
 
 # Function to calculate the chad score for batch of images
 def calculate_chad_score(ga_instance, solution, solution_idx):
-    # Convert the numpy array to a PyTorch tensor
-    solution_tensor = torch.tensor(solution, dtype=torch.float32)
+
 
     # Copy the tensor to CUDA device if 'device' is 'cuda'
     # if device == 'cuda':
@@ -186,15 +185,22 @@ def calculate_chad_score(ga_instance, solution, solution_idx):
     
     #WARNING: WTF is this line?
     #TODO: Delete next line, wtf
-    embedded_prompt = embedded_prompts_array.to('cuda').view(1, 77, 768)
-    
+
+    # Convert the numpy array to a PyTorch tensor
+    solution_tensor = torch.tensor(solution, dtype=torch.float32)
+    embedded_prompt = torch.tensor(solution, dtype=torch.float32).to('cuda')
+
+    print("embedded_prompt, tensor size, before= ",str(torch.Tensor.size(embedded_prompt)) )
+    embedded_prompt = embedded_prompt.view(1, 77, 768)
+    print("embedded_prompt, tensor size, after= ",str(torch.Tensor.size(embedded_prompt)) )
+ 
     #TODO: why are we regenerating the image?
     #WARNING: Is not using NoGrad internally
     #WARNING: Is using autocast internally
     image = sd.generate_images_from_embeddings(
                 seed=SEED,
                 embedded_prompt=embedded_prompt,
-                null_prompt=null_prompt
+                null_prompt=NULL_PROMPT
         )
 
     pil_image = to_pil(image[0])  # Convert to (height, width, channels)
@@ -333,6 +339,8 @@ embedded_prompts = prompt_embedding_vectors(sd, population_size)
 
 print("genetic_algorithm_loop: population_size= ", population_size)
 
+#ERROR: REVIEW
+#TODO: What is this doing?
 # Move the 'embedded_prompts' tensor to CPU memory
 embedded_prompts_cpu = embedded_prompts.cpu()
 embedded_prompts_array = embedded_prompts_cpu.detach().numpy()
