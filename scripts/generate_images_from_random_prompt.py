@@ -90,7 +90,7 @@ class Txt2Img(StableDiffusionBaseScript):
 
 
 def generate_images_from_random_prompt(num_images, image_width, image_height, cfg_strength, batch_size,
-                                       checkpoint_path, output, seed, flash, device, sampler, steps, force_cpu):
+                                       checkpoint_path, output, seed, flash, device, sampler, steps, force_cpu, num_datasets):
     # Hard coded prompts
     arg_prompt = r"chibi, waifu, scifi, side scrolling, character, side scrolling, white background, centered," \
                  r" full character, no background, not centered, line drawing, sketch, black and white," \
@@ -139,188 +139,189 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
     txt2img.initialize_latent_diffusion(autoencoder=None, clip_text_embedder=None, unet_model=None,
                                         path=checkpoint_path, force_submodels_init=True)
 
-    current_task_index = 0
-    generation_task_result_list = []
-    min_chad_score = 999999.0
-    max_chad_score = -999999.0
+    for current_task_index in range(num_datasets):
+        print("Generating Dataset : " +  str(current_task_index))
+        generation_task_result_list = []
+        min_chad_score = 999999.0
+        max_chad_score = -999999.0
 
-    prompt_list = prompt.split(',');
-    prompt_generator = PromptGenerator(prompt_list)
+        prompt_list = prompt.split(',');
+        prompt_generator = PromptGenerator(prompt_list)
 
-    for i in range(num_images):
-        num_prompts_per_image = 12
-        this_prompt = prompt_generator.random_prompt(num_prompts_per_image)
-        this_seed = seed_array[i % len(seed_array)]
+        for i in range(num_images):
+            num_prompts_per_image = 12
+            this_prompt = prompt_generator.random_prompt(num_prompts_per_image)
+            this_seed = seed_array[i % len(seed_array)]
 
-        print("Generating image " + str(i) + " out of " + str(num_images));
-        print("Prompt : ", this_prompt)
-        print("Seed : ", this_seed)
-        start_time = time.time()
-        timestamp = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+            print("Generating image " + str(i) + " out of " + str(num_images));
+            print("Prompt : ", this_prompt)
+            print("Seed : ", this_seed)
+            start_time = time.time()
+            timestamp = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+
+            total_digits = 4
+
+            base_file_name = f'{i:0{total_digits}d}-{timestamp}'
+            image_name = base_file_name + '.jpg'
+
+            filename = output + image_name
+
+            # Capture the starting time
+            tmp_start_time = time.time()
+
+            un_cond, cond = txt2img.get_text_conditioning(cfg_strength, this_prompt, batch_size)
+
+            # Capture the ending time
+            tmp_end_time = time.time()
+            # Calculate the execution time
+            tmp_execution_time = tmp_end_time - tmp_start_time
+
+            print("Embedding vector Time:", tmp_execution_time, "seconds")
+
+            # Capture the starting time
+            tmp_start_time = time.time()
+
+            images = txt2img.generate_images_from_embeddings(
+                batch_size=batch_size,
+                embedded_prompt=cond,
+                null_prompt=un_cond,
+                uncond_scale=cfg_strength,
+                seed=this_seed,
+                w=image_width,
+                h=image_height
+            )
+
+            # Capture the ending time
+            tmp_end_time = time.time()
+            # Calculate the execution time
+            tmp_execution_time = tmp_end_time - tmp_start_time
+
+            print("Image generation Time:", tmp_execution_time, "seconds")
+
+            image_list, image_hash_list = save_images(images, filename)
+            image_hash = image_hash_list[0]
+            image = image_list[0]
+
+            # convert tensor to numpy array
+            with torch.no_grad():
+                embedded_vector = cond.cpu().numpy()
+
+            # image latent
+            latent = []
+
+            # Capture the starting time
+            tmp_start_time = time.time()
+
+            # get image features
+            image_features = util_clip.get_image_features(image)
+
+            # Capture the ending time
+            tmp_end_time = time.time()
+            # Calculate the execution time
+            tmp_execution_time = tmp_end_time - tmp_start_time
+
+            print("Image features Time:", tmp_execution_time, "seconds")
+
+            # Capture the starting time
+            tmp_start_time = time.time()
+
+            # compute chad score
+            chad_score = chad_score_predictor.get_chad_score(image_features)
+
+            # Capture the ending time
+            tmp_end_time = time.time()
+            # Calculate the execution time
+            tmp_execution_time = tmp_end_time - tmp_start_time
+
+            print("Chad Score Time:", tmp_execution_time, "seconds")
+
+            # update the min, max for chad_score
+            min_chad_score = min(min_chad_score, chad_score)
+            max_chad_score = max(max_chad_score, chad_score)
+
+            embedding_vector_filename = base_file_name + '.embedding.npz'
+            clip_features_filename = base_file_name + '.clip.npz'
+            latent_filename = base_file_name + '.latent.npz'
+
+            generation_task_result = GenerationTaskResult(this_prompt, model_name, image_name, embedding_vector_filename,
+                                                          clip_features_filename, latent_filename,
+                                                          image_hash, chad_score_model_name, chad_score, this_seed,
+                                                          cfg_strength)
+            # get numpy list from image_features
+            with torch.no_grad():
+                image_features_numpy = image_features.cpu().numpy()
+
+            # save embedding vector to its own file
+            embedding_vector_filepath = output + '/' + embedding_vector_filename
+            np.savez_compressed(embedding_vector_filepath, data=embedded_vector)
+
+            # save image features to its own file
+            clip_features_filepath = output + '/' + clip_features_filename
+            np.savez_compressed(clip_features_filepath, data=image_features_numpy)
+
+            # save image latent to its own file
+            latent_filepath = output + '/' + latent_filename
+            np.savez_compressed(latent_filepath, data=latent)
+
+            # Save the data to a JSON file
+            json_filename = output + '/' + base_file_name + '.json'
+
+            generation_task_result_list.append({
+                'image_filename': filename,
+                'json_filename': json_filename,
+                'embedding_vector_filepath': embedding_vector_filepath,
+                'clip_features_filepath': clip_features_filepath,
+                'latent_filepath': latent_filepath,
+                'generation_task_result': generation_task_result
+            })
+
+            # Capture the ending time
+            end_time = time.time()
+
+            # Calculate the execution time
+            execution_time = end_time - start_time
+
+            print("Execution Time:", execution_time, "seconds")
+
+        # chad score value should be between [0, 1]
+        for generation_task_result_item in generation_task_result_list:
+            generation_task_result = generation_task_result_item['generation_task_result']
+            json_filename = generation_task_result_item['json_filename']
+
+            # chad score value should be between [0, 1]
+            # normalized_chad_score = (generation_task_result.chad_score - min_chad_score) / (max_chad_score - min_chad_score)
+            # generation_task_result.chad_score = normalized_chad_score
+
+            # save to json file
+            generation_task_result.save_to_json(json_filename)
 
         total_digits = 4
 
-        base_file_name = f'{i:0{total_digits}d}-{timestamp}'
-        image_name = base_file_name + '.jpg'
+        zip_filename = output + '/' + 'set_' + f'{current_task_index:0{total_digits}d}' + '.zip';
+        # create zip for generated images
+        with ZipFile(zip_filename, 'w', compression=zipfile.ZIP_DEFLATED) as file:
+            print('Created zip file ' + zip_filename)
+            zip_task_index = 1
+            for generation_task_result_item in generation_task_result_list:
+                print('Zipping task ' + str(zip_task_index) + ' out of ' + str(len(generation_task_result_list)))
+                generation_task_result = generation_task_result_item['generation_task_result']
 
-        filename = output + image_name
+                json_filename = generation_task_result_item['json_filename']
+                image_filename = generation_task_result_item['image_filename']
+                embedding_vector_filename = generation_task_result.embedding_name
+                clip_features_filename = generation_task_result.clip_name
+                latent_filename = generation_task_result.latent_name
 
-        # Capture the starting time
-        tmp_start_time = time.time()
+                embedding_vector_filepath = generation_task_result_item['embedding_vector_filepath']
+                clip_features_filepath = generation_task_result_item['clip_features_filepath']
+                latent_filepath = generation_task_result_item['latent_filepath']
 
-        un_cond, cond = txt2img.get_text_conditioning(cfg_strength, this_prompt, batch_size)
-
-        # Capture the ending time
-        tmp_end_time = time.time()
-        # Calculate the execution time
-        tmp_execution_time = tmp_end_time - tmp_start_time
-
-        print("Embedding vector Time:", tmp_execution_time, "seconds")
-
-        # Capture the starting time
-        tmp_start_time = time.time()
-
-        images = txt2img.generate_images_from_embeddings(
-            batch_size=batch_size,
-            embedded_prompt=cond,
-            null_prompt=un_cond,
-            uncond_scale=cfg_strength,
-            seed=this_seed,
-            w=image_width,
-            h=image_height
-        )
-
-        # Capture the ending time
-        tmp_end_time = time.time()
-        # Calculate the execution time
-        tmp_execution_time = tmp_end_time - tmp_start_time
-
-        print("Image generation Time:", tmp_execution_time, "seconds")
-
-        image_list, image_hash_list = save_images(images, filename)
-        image_hash = image_hash_list[0]
-        image = image_list[0]
-
-        # convert tensor to numpy array
-        with torch.no_grad():
-            embedded_vector = cond.cpu().numpy()
-
-        # image latent
-        latent = []
-
-        # Capture the starting time
-        tmp_start_time = time.time()
-
-        # get image features
-        image_features = util_clip.get_image_features(image)
-
-        # Capture the ending time
-        tmp_end_time = time.time()
-        # Calculate the execution time
-        tmp_execution_time = tmp_end_time - tmp_start_time
-
-        print("Image features Time:", tmp_execution_time, "seconds")
-
-        # Capture the starting time
-        tmp_start_time = time.time()
-
-        # compute chad score
-        chad_score = chad_score_predictor.get_chad_score(image_features)
-
-        # Capture the ending time
-        tmp_end_time = time.time()
-        # Calculate the execution time
-        tmp_execution_time = tmp_end_time - tmp_start_time
-
-        print("Chad Score Time:", tmp_execution_time, "seconds")
-
-        # update the min, max for chad_score
-        min_chad_score = min(min_chad_score, chad_score)
-        max_chad_score = max(max_chad_score, chad_score)
-
-        embedding_vector_filename = base_file_name + '.embedding.npz'
-        clip_features_filename = base_file_name + '.clip.npz'
-        latent_filename = base_file_name + '.latent.npz'
-
-        generation_task_result = GenerationTaskResult(this_prompt, model_name, image_name, embedding_vector_filename,
-                                                      clip_features_filename, latent_filename,
-                                                      image_hash, chad_score_model_name, chad_score, this_seed,
-                                                      cfg_strength)
-        # get numpy list from image_features
-        with torch.no_grad():
-            image_features_numpy = image_features.cpu().numpy()
-
-        # save embedding vector to its own file
-        embedding_vector_filepath = output + '/' + embedding_vector_filename
-        np.savez_compressed(embedding_vector_filepath, data=embedded_vector)
-
-        # save image features to its own file
-        clip_features_filepath = output + '/' + clip_features_filename
-        np.savez_compressed(clip_features_filepath, data=image_features_numpy)
-
-        # save image latent to its own file
-        latent_filepath = output + '/' + latent_filename
-        np.savez_compressed(latent_filepath, data=latent)
-
-        # Save the data to a JSON file
-        json_filename = output + '/' + base_file_name + '.json'
-
-        generation_task_result_list.append({
-            'image_filename': filename,
-            'json_filename': json_filename,
-            'embedding_vector_filepath': embedding_vector_filepath,
-            'clip_features_filepath': clip_features_filepath,
-            'latent_filepath': latent_filepath,
-            'generation_task_result': generation_task_result
-        })
-
-        # Capture the ending time
-        end_time = time.time()
-
-        # Calculate the execution time
-        execution_time = end_time - start_time
-
-        print("Execution Time:", execution_time, "seconds")
-
-    # chad score value should be between [0, 1]
-    for generation_task_result_item in generation_task_result_list:
-        generation_task_result = generation_task_result_item['generation_task_result']
-        json_filename = generation_task_result_item['json_filename']
-
-        # chad score value should be between [0, 1]
-        # normalized_chad_score = (generation_task_result.chad_score - min_chad_score) / (max_chad_score - min_chad_score)
-        # generation_task_result.chad_score = normalized_chad_score
-
-        # save to json file
-        generation_task_result.save_to_json(json_filename)
-
-    total_digits = 4
-
-    zip_filename = output + '/' + 'set_' + f'{current_task_index:0{total_digits}d}' + '.zip';
-    # create zip for generated images
-    with ZipFile(zip_filename, 'w', compression=zipfile.ZIP_DEFLATED) as file:
-        print('Created zip file ' + zip_filename)
-        zip_task_index = 1
-        for generation_task_result_item in generation_task_result_list:
-            print('Zipping task ' + str(zip_task_index) + ' out of ' + str(len(generation_task_result_list)))
-            generation_task_result = generation_task_result_item['generation_task_result']
-
-            json_filename = generation_task_result_item['json_filename']
-            image_filename = generation_task_result_item['image_filename']
-            embedding_vector_filename = generation_task_result.embedding_name
-            clip_features_filename = generation_task_result.clip_name
-            latent_filename = generation_task_result.latent_name
-
-            embedding_vector_filepath = generation_task_result_item['embedding_vector_filepath']
-            clip_features_filepath = generation_task_result_item['clip_features_filepath']
-            latent_filepath = generation_task_result_item['latent_filepath']
-
-            file.write(json_filename, arcname=os.path.basename(json_filename))
-            file.write(image_filename, arcname=os.path.basename(image_filename))
-            file.write(embedding_vector_filepath, arcname=embedding_vector_filename)
-            file.write(clip_features_filepath, arcname=clip_features_filename)
-            file.write(latent_filepath, arcname=latent_filename)
-            zip_task_index += 1
+                file.write(json_filename, arcname=os.path.basename(json_filename))
+                file.write(image_filename, arcname=os.path.basename(image_filename))
+                file.write(embedding_vector_filepath, arcname=embedding_vector_filename)
+                file.write(clip_features_filepath, arcname=clip_features_filename)
+                file.write(latent_filepath, arcname=latent_filename)
+                zip_task_index += 1
 
 
 def main():
@@ -341,12 +342,13 @@ def main():
         .output_metadata() \
         .image_width() \
         .image_height() \
+        .num_datasets() \
         .parse()
 
     generate_images_from_random_prompt(opt.num_images, opt.image_width, opt.image_height, opt.cfg_scale,
                                        opt.batch_size, opt.checkpoint_path, opt.output, opt.seed, opt.flash,
                                        opt.cuda_device,
-                                       opt.sampler, opt.steps, opt.force_cpu)
+                                       opt.sampler, opt.steps, opt.force_cpu, opt.num_datasets)
 
 
 if __name__ == "__main__":

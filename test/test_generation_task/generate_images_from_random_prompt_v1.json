@@ -12,5 +12,6 @@
   "device" : null,
   "sampler" : "ddim",
   "steps" : 50,
-  "force_cpu" : false
+  "force_cpu" : false,
+  "num_datasets" : 1
 }
