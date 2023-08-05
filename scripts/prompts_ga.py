@@ -86,6 +86,9 @@ import ga
 
 random.seed()
 
+#TODO: Using wrong function for getting device; use util
+DEVICE = torch.device('cuda:0')
+
 # Add argparse arguments
 parser = argparse.ArgumentParser(description="Run genetic algorithm with specified parameters.")
 parser.add_argument('--generations', type=int, default=2000, help="Number of generations to run.")
@@ -99,15 +102,21 @@ args = parser.parse_args()
 FIXED_SEED = True
 CONVERT_GREY_SCALE_FOR_SCORING = True
 
-chad_score_predictor = LoadChadScoreModel('input/model/chad_score/chad-score-v1.pth')
+chad_score_predictor = ga.LoadChadScoreModel('input/model/chad_score/chad-score-v1.pth')
 
-'''
-DEVICE = torch.device('cuda:0')
-device = DEVICE
-image_features_clip_model, preprocess = clip.load("ViT-L/14", device=device)
-chad_score_predictor = ChadScorePredictor(device=device)
-chad_score_predictor.load_model('input/model/chad_score/chad-score-v1.pth')
-'''
+
+#load clip
+#get clip preprocessor
+image_features_clip_model, preprocess = clip.load("ViT-L/14", device=DEVICE)
+
+#chad_score_predictor = ChadScorePredictor(device=device)
+#chad_score_predictor.load_model('input/model/chad_score/chad-score-v1.pth')
+
+#load chad score
+chad_score_model_path = 'input/model/chad_score/chad-score-v1.pth'
+chad_score_predictor = ChadScorePredictor(device=DEVICE)
+chad_score_predictor.load_model(chad_score_model_path)
+
 
 #Why are you using this prompt generator?
 EMBEDDED_PROMPTS_DIR = os.path.abspath(join(base_dir, "./input/embedded_prompts/"))
@@ -178,7 +187,7 @@ def calculate_chad_score(ga_instance, solution, solution_idx):
         pil_image = pil_image.convert("L")
         pil_image = pil_image.convert("RGB")
 
-    unsqueezed_image = preprocess(pil_image).unsqueeze(0).to(device)
+    unsqueezed_image = preprocess(pil_image).unsqueeze(0).to(DEVICE)
 
     with torch.no_grad():
 
