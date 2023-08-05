@@ -17,6 +17,7 @@ from zipfile import ZipFile
 from random import randrange
 import numpy as np
 import torch
+import random
 
 base_directory = "./"
 sys.path.insert(0, base_directory)
@@ -109,12 +110,13 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
 
     # default seed value is random int from 0 to 2^24
     if seed == '':
-        rand_seed = randrange(0, 2 ** 24)
-        seed_string_array = str(rand_seed)
+        # Generate an array of 12 random integers in the range [0, 2^24)
+        seed_string_array = [random.randint(0, 2 ** 24 - 1) for _ in range(12)]
 
     # Convert the elements in the list to integers
-    seed_array = [int(num) for num in seed_string_array]
+    seed_array = seed_string_array
 
+    print(seed_array)
     # Set flash attention
     CrossAttention.use_flash_attention = flash
 
