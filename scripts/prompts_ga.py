@@ -37,7 +37,13 @@ TODO:
 - to maximize clip scores against a single image or set of images
 
 TODO:
-- operate on latent with 
+- operate on latent (64x64) with GA or with gradient
+
+Objective:
+- stable inversion
+-- maximization should produce good images
+- generate/rank
+- 
 
 '''
 
@@ -75,6 +81,8 @@ from stable_diffusion.constants import IODirectoryTree, create_directory_tree_fo
 from stable_diffusion.constants import TOKENIZER_PATH, TEXT_MODEL_PATH
 from transformers import CLIPTextModel, CLIPTokenizer
 
+#from ga import generate_prompts
+import ga
 
 random.seed()
 
@@ -106,7 +114,7 @@ FEATURES_DIR = os.path.abspath(join(OUTPUT_DIR, "features/"))
 
 fitness_cache = {}
 
-# NULL_PROMPT is completely wrong
+#TODO: NULL_PROMPT is completely wrong
 NULL_PROMPT = torch.tensor(()).to('cuda')
 
 # DEVICE = input("Set device: 'cuda:i' or 'cpu'")
@@ -128,47 +136,6 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(IMAGES_DIR, exist_ok=True)
 os.makedirs(FEATURES_DIR, exist_ok=True)
 
-# Function to generate prompts
-def generate_prompts(num_prompts):
-    print("generate_prompts: Generating prompts")
-    # List of prompt segments
-    prompt_topics = [
-    'chibi', 'waifu', 'cyborg', 'dragon', 'android', 'mecha', 
-    'companion', 'furry', 'robot',
-    'mercentary', 'wizard', 'pet', 
-    'mercentary', 'wizard', 'pet',
-    'shapeshifter', 'pilot', 'time traveler', "engineer", "slaver",
-    ]
-
-    # Add modifiers to the selected prompts
-    prompt_modifiers = [
-        'beautiful', 'unreal', 'masterpiece', 'gorgeous', 'stunning',
-        'captivating', 'breathtaking',
-        'exquisite', 'magnificent', 'majestic', 'elegant', 'sublime',
-        'futuristic', 'cyberpunk', 'hi-tech', 'advanced', 'innovative', 'modern',
-        'fantasy', 'mythical', 'scifi', 'side scrolling', 'character', 'side scrolling',
-        'white background', 'centered', 'full character', 'no background', 'not centered',
-        'line drawing', 'sketch', 'black and white', 'colored','video game'
-        ]
-
-    prompt_list = []
-    prompt_base = "side scrolling, chibi, waifu, centered, white background, "
-    prompt_topic_count = 2
-    prompt_modifiers_count = 8
-
-    for i in range(0, num_prompts):
-        prompt = prompt_base    
-        for j in range(0, prompt_topic_count):
-            prompt = prompt + ", " + random.choice(prompt_topics)
-        for k in range(0, prompt_modifiers_count):
-            prompt = prompt + ", " + random.choice(prompt_modifiers)
-        prompt_list.append(prompt)
-
-    print("prompt_list:")
-    for i in range(0, len(prompt_list)):
-        print("prompt ", i, ": ", prompt_list[i])
-    
-    return prompt_list
 
 #def embed_and_save_prompts(prompts: list, null_prompt=NULL_PROMPT):
 #def embed_and_save_prompts(prompts: list):
@@ -286,7 +253,7 @@ def on_generation(ga_instance):
         pil_image.save(filename)
 
 def prompt_embedding_vectors(sd, prompt_count):
-    PROMPT = generate_prompts(prompt_count)
+    PROMPT = ga.generate_prompts(prompt_count)
     PROMPT = PROMPT[:prompt_count]
 
 
@@ -321,7 +288,7 @@ CFG_STRENGTH = 9
 MUTATION_RATE = 0.01
 
 generations = args.generations
-population_size = 64
+population_size = 12
 mutation_percent_genes = args.mutation_percent_genes
 mutation_probability = args.mutation_probability
 keep_elitism = args.keep_elitism
@@ -333,8 +300,8 @@ mutation_rate = 0.001
 parent_selection_type = "tournament" #"sss", rws, sus, rank, tournament
 
 #num_parents_mating = int(population_size *.80)
-num_parents_mating = int(population_size *.50)
-keep_elitism = 4 #int(population_size*0.20)
+num_parents_mating = int(population_size *.25)
+keep_elitism = 0 #int(population_size*0.20)
 mutation_probability = 0.10
 #mutation_type = "adaptive" #try adaptive mutation
 mutation_type="swap"
@@ -387,7 +354,7 @@ ga_instance = pygad.GA(initial_population=embedded_prompts_list,
                        # Pygad uses 0-100 range for percentage
                        mutation_percent_genes=0.01,
                        #mutation_probability=mutation_probability,
-                       mutation_probability=[.30, 0.05],
+                       mutation_probability=0.30,
                        keep_elitism=keep_elitism,
                        crossover_type=crossover_type,
                        mutation_type=mutation_type,
