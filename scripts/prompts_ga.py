@@ -102,15 +102,9 @@ args = parser.parse_args()
 FIXED_SEED = True
 CONVERT_GREY_SCALE_FOR_SCORING = True
 
-chad_score_predictor = ga.LoadChadScoreModel('input/model/chad_score/chad-score-v1.pth')
-
-
 #load clip
 #get clip preprocessor
 image_features_clip_model, preprocess = clip.load("ViT-L/14", device=DEVICE)
-
-#chad_score_predictor = ChadScorePredictor(device=device)
-#chad_score_predictor.load_model('input/model/chad_score/chad-score-v1.pth')
 
 #load chad score
 chad_score_model_path = 'input/model/chad_score/chad-score-v1.pth'
@@ -189,8 +183,14 @@ def calculate_chad_score(ga_instance, solution, solution_idx):
         SEED = 54846
 
     #image = generate_images_from_embeddings(solution_tensor, NULL_PROMPT)
+    
+    #WARNING: WTF is this line?
+    #TODO: Delete next line, wtf
     embedded_prompt = embedded_prompts_array.to('cuda').view(1, 77, 768)
     
+    #TODO: why are we regenerating the image?
+    #WARNING: Is not using NoGrad internally
+    #WARNING: Is using autocast internally
     image = sd.generate_images_from_embeddings(
                 seed=SEED,
                 embedded_prompt=embedded_prompt,
@@ -237,7 +237,20 @@ def on_generation(ga_instance):
     file_dir = os.path.join(IMAGES_DIR, str(generation))
     os.makedirs(file_dir)
     for i, ind in enumerate(ga_instance.population):
-        image = generate_images_from_embeddings(torch.tensor(ind, dtype=torch.float16), NULL_PROMPT)
+        SEED = random.randint(0, 2**24)
+        if FIXED_SEED == True:
+            SEED = 54846
+
+        #WARNING: Is not using no grad internally
+        #WARNING: Is using autocast internally
+        #ERROR: dtype=torch.float16
+        #image = generate_images_from_embeddings(torch.tensor(ind, dtype=torch.float16), NULL_PROMPT)
+        prompt_embedding = torch.tensor(ind, dtype=torch.float32)
+        image = sd.generate_images_from_embeddings(
+            seed=SEED,
+            embedded_prompt=prompt_embedding,
+            null_prompt=NULL_PROMPT
+        )
         pil_image = to_pil(image[0])
         #TODO: g0000_000.png
         filename = os.path.join(file_dir, f'{i}.png')
@@ -324,12 +337,6 @@ print("genetic_algorithm_loop: population_size= ", population_size)
 embedded_prompts_cpu = embedded_prompts.cpu()
 embedded_prompts_array = embedded_prompts_cpu.detach().numpy()
 embedded_prompts_list = embedded_prompts_array.reshape(population_size, 77*768).tolist()
-
-
-# Reshape the 'embedded_prompts' tensor to a 2D numpy array
-
-#num_individuals = embedded_prompts_array.shape[0]
-#num_individuals = population_size
 
 #random_mutation_min_val=5,
 #random_mutation_max_val=10,
