@@ -149,13 +149,17 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(IMAGES_DIR, exist_ok=True)
 os.makedirs(FEATURES_DIR, exist_ok=True)
 
+#TODO: wtf is this function
+'''
 def normalized(a, axis=-1, order=2):
     import numpy as np
 
     l2 = np.atleast_1d(np.linalg.norm(a, order, axis))
     l2[l2 == 0] = 1
     return a / np.expand_dims(l2, axis)
+'''
 
+'''
 def generate_images_from_embeddings(embedded_prompts_array, null_prompt):
     # print(embedded_prompts_array.to('cuda0'))
     SEED = random.randint(0, 2**24)
@@ -167,6 +171,7 @@ def generate_images_from_embeddings(embedded_prompts_array, null_prompt):
     embedded_prompt = embedded_prompts_array.to('cuda').view(1, 77, 768)
     return sd.generate_images_from_embeddings(
         seed=SEED, embedded_prompt=embedded_prompt, null_prompt=null_prompt)
+'''
 
 # Function to calculate the chad score for batch of images
 def calculate_chad_score(ga_instance, solution, solution_idx):
@@ -178,7 +183,19 @@ def calculate_chad_score(ga_instance, solution, solution_idx):
     #     solution_reshaped = solution_reshaped.to(device)
 
     # Generate an image using the solution
-    image = generate_images_from_embeddings(solution_tensor, NULL_PROMPT)
+
+    SEED = random.randint(0, 2**24)
+    if FIXED_SEED == True:
+        SEED = 54846
+
+    #image = generate_images_from_embeddings(solution_tensor, NULL_PROMPT)
+    embedded_prompt = embedded_prompts_array.to('cuda').view(1, 77, 768)
+    
+    image = sd.generate_images_from_embeddings(
+                seed=SEED,
+                embedded_prompt=embedded_prompt,
+                null_prompt=null_prompt
+        )
 
     pil_image = to_pil(image[0])  # Convert to (height, width, channels)
 
@@ -190,15 +207,9 @@ def calculate_chad_score(ga_instance, solution, solution_idx):
     unsqueezed_image = preprocess(pil_image).unsqueeze(0).to(DEVICE)
 
     with torch.no_grad():
-
         image_features = image_features_clip_model.encode_image(unsqueezed_image)
         chad_score = chad_score_predictor.get_chad_score(image_features.type(torch.cuda.FloatTensor))
-
         #im_emb_arr = normalized(image_features.cpu().detach().numpy() )
-        #chad_score = chad_score_predictor.get_chad_score(torch.from_numpy(im_emb_arr).to(device).type(torch.cuda.FloatTensor))
-        #chad_score = chad_score_predictor.get_chad_score(torch.from_numpy(im_emb_arr).to(device).type(torch.cuda.FloatTensor))
-
-        # chad_score = prediction.item()
         return chad_score
 
 def cached_fitness_func(ga_instance, solution, solution_idx):
@@ -228,9 +239,8 @@ def on_generation(ga_instance):
     for i, ind in enumerate(ga_instance.population):
         image = generate_images_from_embeddings(torch.tensor(ind, dtype=torch.float16), NULL_PROMPT)
         pil_image = to_pil(image[0])
-        # filename=f"{IMAGES_DIR}/{}/{}.png"
+        #TODO: g0000_000.png
         filename = os.path.join(file_dir, f'{i}.png')
-        # pil_image.show()
         pil_image.save(filename)
 
 def prompt_embedding_vectors(sd, prompt_count):
@@ -242,23 +252,26 @@ def prompt_embedding_vectors(sd, prompt_count):
     #embedded_prompts = get_prompt_clip_embedding(PROMPT)
     embedded_prompts = ga.clip_text_get_prompt_embedding(ModelConfig=pt, prompts=PROMPT)
 
-    if torch.equal(embedded_prompts[0], embedded_prompts[1]):
-        print("WARNING: embedded_prompts[0] == embedded_prompts[1]")
-        CRASH
-
     print("embedded_prompt, tensor shape= "+ str(torch.Tensor.size(embedded_prompts)))
 
     embedding = embedded_prompts
     #num_images = embedding.shape[0]
     #num_images = prompt_count
 
+    '''
     embedded_prompts_cpu = embedded_prompts.cpu()
     embedded_prompts_array = embedded_prompts_cpu.detach().numpy()
+    embedded_prompts_tensor = torch.tensor(embedded_prompts_array)
+    '''
+
+    #TODO: uhhh, wtf
+    embedded_prompts_tensor = torch.tensor(embedded_prompts.cpu().detach().numpy())
+
     #num_individuals = embedded_prompts_array.shape[0]
     #num_individuals = prompt_count
     #num_genes = embedded_prompts_array.shape[1]
     #num_genes = 77*768
-    embedded_prompts_tensor = torch.tensor(embedded_prompts_array)
+    
     return embedded_prompts_tensor
 
 
