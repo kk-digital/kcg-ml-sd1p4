@@ -323,8 +323,7 @@ mutation_rate = 0.001
 
 parent_selection_type = "rank" #"sss", rws, sus, rank, tournament
 
-num_parents_mating = population_size / 4
-
+num_parents_mating = int(population_size / 4)
 
 # Load Stable Diffusion
 sd = StableDiffusion(device=DEVICE, n_steps=N_STEPS)
