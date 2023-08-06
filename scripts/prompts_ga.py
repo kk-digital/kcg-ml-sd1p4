@@ -187,11 +187,11 @@ def calculate_chad_score(ga_instance, solution, solution_idx):
     prompt_embedding = prompt_embedding.view(1, 77, 768).to(DEVICE)
     #print("embedded_prompt, tensor size, after= ",str(torch.Tensor.size(embedded_prompt)) )
 
-    print("Calculation Chad Score: sd.generate_images_from_embeddings")
+    #print("Calculation Chad Score: sd.generate_images_from_embeddings")
     #print("prompt_embedded_prompt= " + str(prompt_embedding.get_device()))
     #print("null_prompt device= " + str(NULL_PROMPT.get_device()))
-    print("embedded_prompt, tensor size= ",str(torch.Tensor.size(prompt_embedding)) )
-    print("NULL_PROMPT, tensor size= ",str(torch.Tensor.size(NULL_PROMPT)) ) 
+    #print("embedded_prompt, tensor size= ",str(torch.Tensor.size(prompt_embedding)) )
+    #print("NULL_PROMPT, tensor size= ",str(torch.Tensor.size(NULL_PROMPT)) ) 
     #TODO: why are we regenerating the image?
 
     #NOTE: Is using NoGrad internally
@@ -322,7 +322,8 @@ sd.model.load_unet(**pt.unet)
 
 #Get embedding of null prompt
 NULL_PROMPT = prompt_embedding_vectors(sd,[""])[0]
-print("NULL_PROMPT= ", str(NULL_PROMPT))
+#print("NULL_PROMPT= ", str(NULL_PROMPT))
+#print("NULL_PROMPT size= ", str(torch.Tensor.size(NULL_PROMPT)))
 
 #generate prompts and get embeddings
 prompts_array = ga.generate_prompts(population_size)
