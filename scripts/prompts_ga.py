@@ -122,7 +122,7 @@ FEATURES_DIR = os.path.abspath(join(OUTPUT_DIR, "features/"))
 fitness_cache = {}
 
 #TODO: NULL_PROMPT is completely wrong
-NULL_PROMPT = torch.tensor(()).to('cuda')
+NULL_PROMPT = torch.tensor(()).to(DEVICE)
 
 # DEVICE = input("Set device: 'cuda:i' or 'cpu'")
 config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
@@ -187,19 +187,23 @@ def calculate_chad_score(ga_instance, solution, solution_idx):
     #TODO: Delete next line, wtf
 
     # Convert the numpy array to a PyTorch tensor
-    solution_tensor = torch.tensor(solution, dtype=torch.float32)
-    embedded_prompt = torch.tensor(solution, dtype=torch.float32).to('cuda')
-
-    print("embedded_prompt, tensor size, before= ",str(torch.Tensor.size(embedded_prompt)) )
-    embedded_prompt = embedded_prompt.view(1, 77, 768)
-    print("embedded_prompt, tensor size, after= ",str(torch.Tensor.size(embedded_prompt)) )
+    prompt_embedding = torch.tensor(solution, dtype=torch.float32)
+    prompt_embedding = prompt_embedding.view(1, 77, 768).to(DEVICE)
+    #print("embedded_prompt, tensor size, after= ",str(torch.Tensor.size(embedded_prompt)) )
  
     #TODO: why are we regenerating the image?
     #WARNING: Is not using NoGrad internally
     #WARNING: Is using autocast internally
+
+    print("Calculation Chad Score: sd.generate_images_from_embeddings")
+    #print("prompt_embedded_prompt= " + str(prompt_embedding.get_device()))
+    #print("null_prompt device= " + str(NULL_PROMPT.get_device()))
+    print("embedded_prompt, tensor size= ",str(torch.Tensor.size(prompt_embedding)) )
+    print("NULL_PROMPT, tensor size= ",str(torch.Tensor.size(NULL_PROMPT)) ) 
+    
     image = sd.generate_images_from_embeddings(
                 seed=SEED,
-                embedded_prompt=embedded_prompt,
+                embedded_prompt=prompt_embedding,
                 null_prompt=NULL_PROMPT
         )
 
@@ -251,7 +255,21 @@ def on_generation(ga_instance):
         #WARNING: Is using autocast internally
         #ERROR: dtype=torch.float16
         #image = generate_images_from_embeddings(torch.tensor(ind, dtype=torch.float16), NULL_PROMPT)
-        prompt_embedding = torch.tensor(ind, dtype=torch.float32)
+        prompt_embedding = torch.tensor(ind, dtype=torch.float32).to(DEVICE)
+        prompt_embedding = embedded_prompt.view(1, 77, 768)
+
+        #prompt_embedding.to(DEVICE)
+        
+        #embedded_prompt = torch.tensor(solution, dtype=torch.float32).to(DEVICE)
+
+        #NULL_PROMPT.to(DEVICE)
+
+        #torch.Tensor.get_device
+        #print("prompt_embedding device= " + str(prompt_embedding.get_device()))
+        #print("null_prompt device= " + str(NULL_PROMPT.get_device()))
+        print("embedded_prompt, tensor size= ",str(torch.Tensor.size(prompt_embedding)) )
+        print("NULL_PROMPT, tensor size= ",str(torch.Tensor.size(NULL_PROMPT)) ) 
+
         image = sd.generate_images_from_embeddings(
             seed=SEED,
             embedded_prompt=prompt_embedding,
