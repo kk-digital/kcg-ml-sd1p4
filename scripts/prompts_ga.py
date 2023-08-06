@@ -107,8 +107,7 @@ parser.add_argument('--mutation_type', type=str, default="random", help="Type of
 parser.add_argument('--mutation_percent_genes', type=float, default="0.001", help="The percentage of genes to be mutated.")
 args = parser.parse_args()
 
-#TODO: Using wrong function for getting device; use util
-DEVICE = torch.device('cuda:0')
+DEVICE = get_device()
 
 #load clip
 #get clip preprocessor
