@@ -302,14 +302,14 @@ def prompt_embedding_vectors(sd, prompt_count):
 
     #TODO: uhhh, wtf
     #embedded_prompts_tensor = torch.tensor(embedded_prompts.cpu().detach().numpy())
-    embedded_prompts_tensor.to("cpu")
+    embedded_prompts.to("cpu")
 
     #num_individuals = embedded_prompts_array.shape[0]
     #num_individuals = prompt_count
     #num_genes = embedded_prompts_array.shape[1]
     #num_genes = 77*768
     
-    return embedded_prompts_tensor
+    return embedded_prompts
 
 
 # Call the GA loop function with your initialized StableDiffusion model
