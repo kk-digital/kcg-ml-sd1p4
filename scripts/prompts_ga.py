@@ -130,7 +130,7 @@ FEATURES_DIR = os.path.abspath(join(OUTPUT_DIR, "features/"))
 fitness_cache = {}
 
 #TODO: NULL_PROMPT is completely wrong
-NULL_PROMPT = torch.tensor(()).to(DEVICE)
+NULL_PROMPT = None #assign later
 
 # DEVICE = input("Set device: 'cuda:i' or 'cpu'")
 config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
@@ -177,30 +177,15 @@ def generate_images_from_embeddings(embedded_prompts_array, null_prompt):
 
 # Function to calculate the chad score for batch of images
 def calculate_chad_score(ga_instance, solution, solution_idx):
-
-
-    # Copy the tensor to CUDA device if 'device' is 'cuda'
-    # if device == 'cuda':
-    #     solution_reshaped = solution_reshaped.to(device)
-
-    # Generate an image using the solution
-
+    #set seed
     SEED = random.randint(0, 2**24)
     if FIXED_SEED == True:
         SEED = 54846
-
-    #image = generate_images_from_embeddings(solution_tensor, NULL_PROMPT)
-    
-
-    #WARNING: WTF is this line?
-    #TODO: Delete next line, wtf
 
     # Convert the numpy array to a PyTorch tensor
     prompt_embedding = torch.tensor(solution, dtype=torch.float32)
     prompt_embedding = prompt_embedding.view(1, 77, 768).to(DEVICE)
     #print("embedded_prompt, tensor size, after= ",str(torch.Tensor.size(embedded_prompt)) )
- 
-
 
     print("Calculation Chad Score: sd.generate_images_from_embeddings")
     #print("prompt_embedded_prompt= " + str(prompt_embedding.get_device()))
@@ -208,19 +193,17 @@ def calculate_chad_score(ga_instance, solution, solution_idx):
     print("embedded_prompt, tensor size= ",str(torch.Tensor.size(prompt_embedding)) )
     print("NULL_PROMPT, tensor size= ",str(torch.Tensor.size(NULL_PROMPT)) ) 
     #TODO: why are we regenerating the image?
-    #WARNING: Is not using NoGrad internally
-    #WARNING: Is using autocast internally
 
+    #NOTE: Is using NoGrad internally
+    #NOTE: Is using autocast internally
     image = sd.generate_images_from_embeddings(
         seed=SEED,
         embedded_prompt=prompt_embedding,
         null_prompt=NULL_PROMPT,
         uncond_scale=CFG_STRENGTH
     )
-
     #move back to cpu
     prompt_embedding.to("cpu")
-
     del prompt_embedding
     
     pil_image = to_pil(image[0])  # Convert to (height, width, channels)
@@ -231,7 +214,7 @@ def calculate_chad_score(ga_instance, solution, solution_idx):
         pil_image = pil_image.convert("RGB")
 
     unsqueezed_image = preprocess(pil_image).unsqueeze(0).to(DEVICE)
-
+    #get clip encoding of model
     with torch.no_grad():
         image_features = image_features_clip_model.encode_image(unsqueezed_image)
         chad_score = chad_score_predictor.get_chad_score(image_features.type(torch.cuda.FloatTensor))
@@ -265,19 +248,9 @@ def on_generation(ga_instance):
         SEED = random.randint(0, 2**24)
         if FIXED_SEED == True:
             SEED = 54846
-
-        #ERROR: dtype=torch.float16
-        #image = generate_images_from_embeddings(torch.tensor(ind, dtype=torch.float16), NULL_PROMPT)
         prompt_embedding = torch.tensor(ind, dtype=torch.float32).to(DEVICE)
         prompt_embedding = prompt_embedding.view(1, 77, 768)
 
-        #prompt_embedding.to(DEVICE)
-        
-        #embedded_prompt = torch.tensor(solution, dtype=torch.float32).to(DEVICE)
-
-        #NULL_PROMPT.to(DEVICE)
-
-        #torch.Tensor.get_device
         #print("prompt_embedding device= " + str(prompt_embedding.get_device()))
         #print("null_prompt device= " + str(NULL_PROMPT.get_device()))
         print("prompt_embedding, tensor size= ",str(torch.Tensor.size(prompt_embedding)) )
@@ -300,28 +273,11 @@ def on_generation(ga_instance):
         filename = os.path.join(file_dir, f'{i}.png')
         pil_image.save(filename)
 
-def prompt_embedding_vectors(sd, prompt_count):
-    PROMPT = ga.generate_prompts(prompt_count)
-    #PROMPT = PROMPT[:prompt_count]
-
-
+def prompt_embedding_vectors(sd, prompt_array):
     # Generate embeddings for each prompt
-    #embedded_prompts = get_prompt_clip_embedding(PROMPT)
-    embedded_prompts = ga.clip_text_get_prompt_embedding(ModelConfig=pt, prompts=PROMPT)
-
-    print("embedded_prompt, tensor shape= "+ str(torch.Tensor.size(embedded_prompts)))
-
-    embedding = embedded_prompts
-
-    #TODO: uhhh, wtf
-    #embedded_prompts_tensor = torch.tensor(embedded_prompts.cpu().detach().numpy())
+    embedded_prompts = ga.clip_text_get_prompt_embedding(ModelConfig=pt, prompts=prompt_array)
+    #print("embedded_prompt, tensor shape= "+ str(torch.Tensor.size(embedded_prompts)))
     embedded_prompts.to("cpu")
-
-    #num_individuals = embedded_prompts_array.shape[0]
-    #num_individuals = prompt_count
-    #num_genes = embedded_prompts_array.shape[1]
-    #num_genes = 77*768
-    
     return embedded_prompts
 
 
@@ -363,7 +319,14 @@ sd = StableDiffusion(device=DEVICE, n_steps=N_STEPS)
 sd.quick_initialize().load_autoencoder(**pt.autoencoder).load_decoder(**pt.decoder)
 sd.model.load_unet(**pt.unet)
 #calculate prompts
-embedded_prompts = prompt_embedding_vectors(sd, population_size)
+
+#Get embedding of null prompt
+NULL_PROMPT = prompt_embedding_vectors(sd,[""])[0]
+print("NULL_PROMPT= ", str(NULL_PROMPT))
+
+#generate prompts and get embeddings
+prompts_array = ga.generate_prompts(population_size)
+embedded_prompts = prompt_embedding_vectors(sd, prompt_array=prompts_array)
 
 print("genetic_algorithm_loop: population_size= ", population_size)
 

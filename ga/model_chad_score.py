@@ -13,8 +13,10 @@ from chad_score.chad_score import ChadScorePredictor
 
 #todo, wrong device function
 
+'''
 def LoadChadScoreModel(ModelPath):
 	device = torch.device('cuda:0')
 	chad_score_predictor = ChadScorePredictor(device=device)
 	chad_score_predictor.load_model(ModelPath)
 	return chad_score_predictor
+'''

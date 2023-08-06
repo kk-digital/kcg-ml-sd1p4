@@ -20,18 +20,23 @@ def clip_text_get_prompt_embedding(ModelConfig, prompts: list):
     clip_text_embedder = CLIPTextEmbedder(device=get_device())
     clip_text_embedder.load_submodels(**ModelConfig.embedder_submodels)
 
-    embedded_prompts = []
+    prompt_embedding_list = []
     for prompt in prompts:
         embeddings = clip_text_embedder.forward(prompt)
         # Flattening tensor and appending
-        embedded_prompts.append(embeddings.view(-1))
-    embedded_prompts = torch.stack(embedded_prompts)
+
+        print("clip_text_get_prompt_embedding, 1 embedding= ", str(prompt_embedding))
+        prompt_embedding = prompt_embedding.view(-1)
+        print("clip_text_get_prompt_embedding, 2 embedding= ", str(prompt_embedding))
+        prompt_embedding_list.append(prompt_embedding)
+
+    prompt_embedding_list = torch.stack(prompt_embedding_list)
     #TODO: why is it saving here?
     '''
-    torch.save(embedded_prompts, join(EMBEDDED_PROMPTS_DIR, "embedded_prompts.pt"))
+    torch.save(prompt_embedding_list, join(prompt_embedding_list_DIR, "prompt_embedding_list.pt"))
     print(
         "Prompts embeddings saved at: ",
-        f"{join(EMBEDDED_PROMPTS_DIR, 'embedded_prompts.pt')}",
+        f"{join(prompt_embedding_list_DIR, 'prompt_embedding_list.pt')}",
     )
 	'''
 	
@@ -42,4 +47,4 @@ def clip_text_get_prompt_embedding(ModelConfig, prompts: list):
     torch.cuda.empty_cache()
     #get_memory_status()
 
-    return embedded_prompts
+    return prompt_embedding_list
