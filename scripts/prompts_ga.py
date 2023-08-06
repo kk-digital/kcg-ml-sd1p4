@@ -206,7 +206,11 @@ def calculate_chad_score(ga_instance, solution, solution_idx):
                 embedded_prompt=prompt_embedding,
                 null_prompt=NULL_PROMPT
         )
+    #move back to cpu
+    prompt_embedding.to("cpu")
 
+    del prompt_embedding
+    
     pil_image = to_pil(image[0])  # Convert to (height, width, channels)
 
     #convert to grey scale
@@ -219,7 +223,6 @@ def calculate_chad_score(ga_instance, solution, solution_idx):
     with torch.no_grad():
         image_features = image_features_clip_model.encode_image(unsqueezed_image)
         chad_score = chad_score_predictor.get_chad_score(image_features.type(torch.cuda.FloatTensor))
-        #im_emb_arr = normalized(image_features.cpu().detach().numpy() )
         return chad_score
 
 def cached_fitness_func(ga_instance, solution, solution_idx):
@@ -256,7 +259,7 @@ def on_generation(ga_instance):
         #ERROR: dtype=torch.float16
         #image = generate_images_from_embeddings(torch.tensor(ind, dtype=torch.float16), NULL_PROMPT)
         prompt_embedding = torch.tensor(ind, dtype=torch.float32).to(DEVICE)
-        prompt_embedding = embedded_prompt.view(1, 77, 768)
+        prompt_embedding = prompt_embedding.view(1, 77, 768)
 
         #prompt_embedding.to(DEVICE)
         
@@ -267,7 +270,7 @@ def on_generation(ga_instance):
         #torch.Tensor.get_device
         #print("prompt_embedding device= " + str(prompt_embedding.get_device()))
         #print("null_prompt device= " + str(NULL_PROMPT.get_device()))
-        print("embedded_prompt, tensor size= ",str(torch.Tensor.size(prompt_embedding)) )
+        print("prompt_embedding, tensor size= ",str(torch.Tensor.size(prompt_embedding)) )
         print("NULL_PROMPT, tensor size= ",str(torch.Tensor.size(NULL_PROMPT)) ) 
 
         image = sd.generate_images_from_embeddings(
@@ -275,6 +278,10 @@ def on_generation(ga_instance):
             embedded_prompt=prompt_embedding,
             null_prompt=NULL_PROMPT
         )
+        #move to gpu and cleanup
+        prompt_embedding.to("cpu")
+        del prompt_embedding
+
         pil_image = to_pil(image[0])
         #TODO: g0000_000.png
         filename = os.path.join(file_dir, f'{i}.png')
@@ -292,17 +299,10 @@ def prompt_embedding_vectors(sd, prompt_count):
     print("embedded_prompt, tensor shape= "+ str(torch.Tensor.size(embedded_prompts)))
 
     embedding = embedded_prompts
-    #num_images = embedding.shape[0]
-    #num_images = prompt_count
-
-    '''
-    embedded_prompts_cpu = embedded_prompts.cpu()
-    embedded_prompts_array = embedded_prompts_cpu.detach().numpy()
-    embedded_prompts_tensor = torch.tensor(embedded_prompts_array)
-    '''
 
     #TODO: uhhh, wtf
-    embedded_prompts_tensor = torch.tensor(embedded_prompts.cpu().detach().numpy())
+    #embedded_prompts_tensor = torch.tensor(embedded_prompts.cpu().detach().numpy())
+    embedded_prompts_tensor.to("cpu")
 
     #num_individuals = embedded_prompts_array.shape[0]
     #num_individuals = prompt_count
