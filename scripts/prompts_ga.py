@@ -1,5 +1,10 @@
 
 '''
+
+TODO:
+- generate N individuals
+- then take latents as linear combination of best 64 (float 64 space)
+
 TODO:
 - GA search over noise seed for fixed prompt
 
@@ -86,8 +91,11 @@ import ga
 
 random.seed()
 
-#TODO: Using wrong function for getting device; use util
-DEVICE = torch.device('cuda:0')
+N_STEPS = 20 #20, 12
+CFG_STRENGTH = 9
+
+FIXED_SEED = True
+CONVERT_GREY_SCALE_FOR_SCORING = False
 
 # Add argparse arguments
 parser = argparse.ArgumentParser(description="Run genetic algorithm with specified parameters.")
@@ -99,8 +107,8 @@ parser.add_argument('--mutation_type', type=str, default="random", help="Type of
 parser.add_argument('--mutation_percent_genes', type=float, default="0.001", help="The percentage of genes to be mutated.")
 args = parser.parse_args()
 
-FIXED_SEED = True
-CONVERT_GREY_SCALE_FOR_SCORING = True
+#TODO: Using wrong function for getting device; use util
+DEVICE = torch.device('cuda:0')
 
 #load clip
 #get clip preprocessor
@@ -183,6 +191,7 @@ def calculate_chad_score(ga_instance, solution, solution_idx):
 
     #image = generate_images_from_embeddings(solution_tensor, NULL_PROMPT)
     
+
     #WARNING: WTF is this line?
     #TODO: Delete next line, wtf
 
@@ -191,21 +200,24 @@ def calculate_chad_score(ga_instance, solution, solution_idx):
     prompt_embedding = prompt_embedding.view(1, 77, 768).to(DEVICE)
     #print("embedded_prompt, tensor size, after= ",str(torch.Tensor.size(embedded_prompt)) )
  
-    #TODO: why are we regenerating the image?
-    #WARNING: Is not using NoGrad internally
-    #WARNING: Is using autocast internally
+
 
     print("Calculation Chad Score: sd.generate_images_from_embeddings")
     #print("prompt_embedded_prompt= " + str(prompt_embedding.get_device()))
     #print("null_prompt device= " + str(NULL_PROMPT.get_device()))
     print("embedded_prompt, tensor size= ",str(torch.Tensor.size(prompt_embedding)) )
     print("NULL_PROMPT, tensor size= ",str(torch.Tensor.size(NULL_PROMPT)) ) 
-    
+    #TODO: why are we regenerating the image?
+    #WARNING: Is not using NoGrad internally
+    #WARNING: Is using autocast internally
+
     image = sd.generate_images_from_embeddings(
-                seed=SEED,
-                embedded_prompt=prompt_embedding,
-                null_prompt=NULL_PROMPT
-        )
+        seed=SEED,
+        embedded_prompt=prompt_embedding,
+        null_prompt=NULL_PROMPT,
+        uncond_scale=CFG_STRENGTH
+    )
+
     #move back to cpu
     prompt_embedding.to("cpu")
 
@@ -254,8 +266,6 @@ def on_generation(ga_instance):
         if FIXED_SEED == True:
             SEED = 54846
 
-        #WARNING: Is not using no grad internally
-        #WARNING: Is using autocast internally
         #ERROR: dtype=torch.float16
         #image = generate_images_from_embeddings(torch.tensor(ind, dtype=torch.float16), NULL_PROMPT)
         prompt_embedding = torch.tensor(ind, dtype=torch.float32).to(DEVICE)
@@ -273,11 +283,14 @@ def on_generation(ga_instance):
         print("prompt_embedding, tensor size= ",str(torch.Tensor.size(prompt_embedding)) )
         print("NULL_PROMPT, tensor size= ",str(torch.Tensor.size(NULL_PROMPT)) ) 
 
+        #WARNING: Is using autocast internally
         image = sd.generate_images_from_embeddings(
             seed=SEED,
             embedded_prompt=prompt_embedding,
-            null_prompt=NULL_PROMPT
+            null_prompt=NULL_PROMPT,
+            uncond_scale=CFG_STRENGTH
         )
+
         #move to gpu and cleanup
         prompt_embedding.to("cpu")
         del prompt_embedding
@@ -313,9 +326,6 @@ def prompt_embedding_vectors(sd, prompt_count):
 
 
 # Call the GA loop function with your initialized StableDiffusion model
-
-N_STEPS = 20 #20, 12
-CFG_STRENGTH = 9
 
 MUTATION_RATE = 0.01
 
