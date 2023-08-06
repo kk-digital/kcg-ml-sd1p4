@@ -22,7 +22,7 @@ def clip_text_get_prompt_embedding(ModelConfig, prompts: list):
 
     prompt_embedding_list = []
     for prompt in prompts:
-        embeddings = clip_text_embedder.forward(prompt)
+        prompt_embedding = clip_text_embedder.forward(prompt)
         # Flattening tensor and appending
 
         print("clip_text_get_prompt_embedding, 1 embedding= ", str(prompt_embedding))
