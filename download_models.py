@@ -86,7 +86,10 @@ def connect_to_minio_client():
     return client
 
 def download_from_minio(client, bucket_name, object_name, output_path):
-    client.fget_object(bucket_name, object_name, output_path, progress=Progress())
+    if not os.path.isfile(output_path):
+        client.fget_object(bucket_name, object_name, output_path, progress=Progress())
+    else:
+        logger.info(f"{object_name} already exists.")
 
 def is_minio_server_accesssible():
     r = requests.head("http://" + MINIO_ADDRESS + "/minio/health/live")
