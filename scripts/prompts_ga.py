@@ -224,11 +224,13 @@ def calculate_chad_score(ga_instance, solution, solution_idx):
         return chad_score
 
 def cached_fitness_func(ga_instance, solution, solution_idx):
-    if tuple(solution) in fitness_cache:
-        print('Returning cached score', fitness_cache[tuple(solution)])
-    if tuple(solution) not in fitness_cache:
-        fitness_cache[tuple(solution)] = calculate_chad_score(ga_instance, solution, solution_idx)
-    return fitness_cache[tuple(solution)]
+    solution_copy = solution.copy()  # flatten() is destructive operation
+    solution_flattened = solution_copy.flatten()
+    if tuple(solution_flattened) in fitness_cache:
+        print('Returning cached score', fitness_cache[tuple(solution_flattened)])
+    if tuple(solution_flattened) not in fitness_cache:
+        fitness_cache[tuple(solution_flattened)] = calculate_chad_score(ga_instance, solution, solution_idx)
+    return fitness_cache[tuple(solution_flattened)]
 
 def on_fitness(ga_instance, population_fitness):
     population_fitness_np = np.array(population_fitness)
