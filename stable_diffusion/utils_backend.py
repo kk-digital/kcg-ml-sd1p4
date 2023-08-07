@@ -8,8 +8,8 @@ from stable_diffusion.utils_logger import logger
 def get_device(device=None):
     device_priority = {
         'cuda': [torch.cuda.is_available,
-                 lambda x: logger.info(f'Using CUDA device {x.index}: {torch.cuda.get_device_name(x)}')],
-        'mps': [torch.backends.mps.is_available, lambda _: logger.info('Using MPS device')],
+                 lambda x: logger.debug(f'Using CUDA device {torch.cuda.get_device_name(x)}')],
+        'mps': [torch.backends.mps.is_available, lambda _: logger.debug('Using MPS device')],
         'cpu': [lambda: True, lambda x: logger.warning(
             f'You are running this script without CUDA or MPS (current device: {x}). It may be very slow')
                 ]
