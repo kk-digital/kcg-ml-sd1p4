@@ -3,7 +3,7 @@ import os
 import shutil
 import sys
 from os.path import join
-
+from random import randrange
 import torch
 from tqdm import tqdm
 
@@ -18,8 +18,6 @@ from stable_diffusion.utils_image import save_images, save_image_grid
 
 OUTPUT_DIR = os.path.abspath("./output/noise-tests/from_embeddings")
 EMBEDDED_PROMPTS_DIR = os.path.abspath("./input/embedded_prompts/")
-
-NOISE_SEEDS = [2982, 4801, 1995, 3598, 987, 3688, 8872, 762]
 
 parser = argparse.ArgumentParser(description="")
 
@@ -55,7 +53,11 @@ DDIM_ETA = args.ddim_eta
 CLEAR_OUTPUT_DIR = args.clear_output_dir
 DEVICE = get_device(args.cuda_device)
 
-NOISE_SEEDS = NOISE_SEEDS[:NUM_SEEDS]
+# generate noise seeds int 0 to 0^24
+NOISE_SEEDS = []
+for i in range(NUM_SEEDS):
+    rand_seed = randrange(0, 2**24)
+    NOISE_SEEDS.append(rand_seed)
 
 
 def init_stable_diffusion(device, sampler_name="ddim", n_steps=20, ddim_eta=0.0):

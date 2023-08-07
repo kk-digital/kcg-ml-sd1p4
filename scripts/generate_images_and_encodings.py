@@ -3,7 +3,6 @@ import os
 import shutil
 import sys
 from os.path import join
-
 import numpy as np
 import torch
 from PIL import Image
@@ -16,8 +15,6 @@ from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
 from cli_builder import CLI
 from stable_diffusion.utils_backend import get_device
 from stable_diffusion.utils_image import calculate_sha256
-
-noise_seeds = [2982, 4801, 1995, 3598, 987, 3688, 8872, 762]
 
 OUTPUT_DIR = "./output/stable_diffusion/"
 FEATURES_DIR = join(OUTPUT_DIR, "features/")
