@@ -30,3 +30,4 @@ pygad==3.1.0
 safetensors==0.3.1
 openai-clip
 opencv-python==4.8.0.74
+minio
