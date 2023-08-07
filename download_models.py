@@ -85,7 +85,6 @@ if __name__ == "__main__":
     if is_minio_accessible:
         minio_client = connect_to_minio_client()
 
-
     with section("Downloading CLIP model"):
         # DOWNLOAD_BASE_CLIP_MODEL
         clip_model_dir = config["MODELS_DIRS"].get('clip_model_dir')
