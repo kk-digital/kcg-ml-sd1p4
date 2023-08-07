@@ -80,9 +80,9 @@ if __name__ == "__main__":
             "Downloading CLIP model, SD model. This may take a while.\n"):
 
         # check if minio server is available
-        is_minio_accessible = is_minio_server_accesssible()
-        if is_minio_accessible:
-            minio_client = connect_to_minio_client()
+        # is_minio_accessible = is_minio_server_accesssible()
+        # if is_minio_accessible:
+        #     minio_client = connect_to_minio_client()
 
         # DOWNLOAD_BASE_CLIP_MODEL
         clip_model_dir = config["MODELS_DIRS"].get('clip_model_dir')
