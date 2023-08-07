@@ -337,7 +337,7 @@ print("genetic_algorithm_loop: population_size= ", population_size)
 #ERROR: REVIEW
 #TODO: What is this doing?
 # Move the 'embedded_prompts' tensor to CPU memory
-embedded_prompts_cpu = embedded_prompts.cpu()
+embedded_prompts_cpu = embedded_prompts.to("cpu")
 embedded_prompts_array = embedded_prompts_cpu.detach().numpy()
 embedded_prompts_list = embedded_prompts_array.reshape(population_size, 77*768).tolist()
 
