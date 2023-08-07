@@ -20,6 +20,8 @@ from typing import List
 
 import safetensors
 
+from ...utils_logger import logger
+
 sys.path.insert(0, os.getcwd())
 from .auxiliary_classes import *
 from stable_diffusion.constants import DECODER_PATH
@@ -105,10 +107,10 @@ class Decoder(nn.Module):
     def load(self, decoder_path: str = DECODER_PATH):
         try:
             safetensors.torch.load_model(self, decoder_path)
-            print(f"Loaded decoder from {decoder_path}")
+            logger.debug(f"Loaded decoder from {decoder_path}")
             return self
         except Exception as e:
-            print(f"Failed to load decoder from {decoder_path}. Error: {e}")
+            logger.error(f"Failed to load decoder from {decoder_path}. Error: {e}")
 
     def forward(self, z: torch.Tensor):
         """

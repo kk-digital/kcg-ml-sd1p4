@@ -27,6 +27,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torchinfo import summary
 
+from stable_diffusion.utils_logger import logger
+
 sys.path.insert(0, os.getcwd())
 from .unet_attention import SpatialTransformer
 from stable_diffusion.constants import UNET_PATH
@@ -159,10 +161,10 @@ class UNetModel(nn.Module):
     def load(self, unet_path=UNET_PATH):
         try:
             safetensors.torch.load_model(self, unet_path)
-            print(f"UNet loaded from: {unet_path}")
+            logger.debug(f"UNet loaded from: {unet_path}")
             return self
         except Exception as e:
-            print(f"Error loading UNet from {unet_path}: {e}")
+            logger.error(f"Error loading UNet from {unet_path}: {e}")
 
     def time_step_embedding(self, time_steps: torch.Tensor, max_period: int = 10000):
         """
