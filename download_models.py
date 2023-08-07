@@ -9,7 +9,7 @@ from minio import Minio
 
 from stable_diffusion.utils_logger import logger
 from utility.labml.monit import section
-import utility.minio as minio
+from utility.minio.progress import Progress
 
 config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
 config.read('config.ini')
@@ -86,7 +86,7 @@ def connect_to_minio_client():
     return client
 
 def download_from_minio(client, bucket_name, object_name, output_path):
-    client.fget_object(bucket_name, object_name, output_path, progress=minio.Progress())
+    client.fget_object(bucket_name, object_name, output_path, progress=Progress())
 
 def is_minio_server_accesssible():
     r = requests.head("http://" + MINIO_ADDRESS + "/minio/health/live")
