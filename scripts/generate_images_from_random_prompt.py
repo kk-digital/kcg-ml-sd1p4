@@ -110,7 +110,7 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
 
     # default seed value is random int from 0 to 2^24
     if seed == '':
-        # Generate an array of 12 random integers in the range [0, 2^24)
+        # Generate an array of random integers in the range [0, 2^24)
         seed_string_array = [random.randint(0, 2 ** 24 - 1) for _ in range(num_images * num_datasets)]
 
     # Convert the elements in the list to integers
