@@ -30,7 +30,7 @@ def generate_images_from_prompt_handler(generation_task):
                                        generation_task.batch_size, generation_task.checkpoint_path,
                                        generation_task.output_path, generation_task.seed, generation_task.flash,
                                        generation_task.device, generation_task.sampler, generation_task.steps,
-                                       generation_task.force_cpu)
+                                       generation_task.force_cpu, generation_task.num_datasets)
 
 
 def main():
