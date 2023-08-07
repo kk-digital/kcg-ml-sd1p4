@@ -1,17 +1,17 @@
 import configparser
-import json
-import os
 import math
+import os
 import time
-from tqdm import tqdm
+
 import requests
+from tqdm import tqdm
+
 from stable_diffusion.utils_logger import logger
 from utility.labml.monit import section
 
 config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
 config.read('config.ini')
-print_section = lambda config, section: logger.debug(f"config.ini [{section}]: ",
-                                              json.dumps({k: v for k, v in config[section].items()}, indent=4))
+
 
 def create_directory_tree_folders(config):
     for section in config.sections():
@@ -19,9 +19,11 @@ def create_directory_tree_folders(config):
             for k, v in config[section].items():
                 os.makedirs(v, exist_ok=True)
 
+
 def create_directory_if_not_exists(directory_path):
     if not os.path.exists(directory_path):
         os.makedirs(directory_path)
+
 
 def download_file(url, file_path, description, update_interval=500, chunk_size=4096):
     if not os.path.isfile(file_path):
@@ -68,14 +70,16 @@ def download_file(url, file_path, description, update_interval=500, chunk_size=4
 
                             counter = 0
     else:
-        logger.info(f"{description} already exists.")
+        logger.debug(f"{description} already exists.")
+
 
 if __name__ == "__main__":
-    create_directory_tree_folders(config)
+    with section("Creating directory tree folders."):
+        create_directory_tree_folders(config)
 
-    with section(
-            "Downloading CLIP model, SD model. This may take a while.\n"):
+    logger.info("Downloading models. This may take a while.")
 
+    with section("Downloading CLIP model"):
         # DOWNLOAD_BASE_CLIP_MODEL
         clip_model_dir = config["MODELS_DIRS"].get('clip_model_dir')
         create_directory_if_not_exists(clip_model_dir)
@@ -83,6 +87,7 @@ if __name__ == "__main__":
         clip_url = r'https://huggingface.co/openai/clip-vit-large-patch14/resolve/refs%2Fpr%2F19/model.safetensors'
         download_file(clip_url, clip_path, "CLIP model")
 
+    with section("Downloading Base Diffusion model"):
         # DOWNLOAD_BASE_SD_MODEL
         root_models_dir = config["ROOT_DIRS"].get('root_models_dir')
         create_directory_if_not_exists(root_models_dir)
@@ -90,6 +95,7 @@ if __name__ == "__main__":
         sd_url = r'https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors'
         download_file(sd_url, sd_path, "Stable Diffusion checkpoint")
 
+    with section("Downloading Text model"):
         # DOWNLOAD_TEXT_MODEL
         root_models_dir = config["CLIP_MODELS_DIRS"].get('text_model_dir')
         create_directory_if_not_exists(root_models_dir)

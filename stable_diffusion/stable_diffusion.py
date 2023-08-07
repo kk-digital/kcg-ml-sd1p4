@@ -5,6 +5,8 @@ from typing import Optional
 
 import torch
 
+from stable_diffusion.utils_logger import logger
+
 sys.path.append(os.path.abspath(""))
 from stable_diffusion.utils_backend import get_device, get_autocast, set_seed
 from stable_diffusion.utils_image import load_img
@@ -52,14 +54,10 @@ class StableDiffusion:
         self._n_steps = n_steps
 
         if self._model is None:
-            print(
-                "WARNING: `LatentDiffusion` model is `None` given. Initialize one with the appropriate method."
-            )
+            logger.warning("`LatentDiffusion` model is `None` given. Initialize one with the appropriate method.")
         elif type(self._model) == LatentDiffusion:
-
-            print("LatentDiffusion model given. Initializing sampler.")
+            logger.info("LatentDiffusion model given. Initializing sampler.")
             self.model = self._model
-            # print("WARNING: LatentDiffusion model not given. An empty model will be initialized.")
 
     @property
     def device(self):
@@ -219,8 +217,6 @@ class StableDiffusion:
             self.model.save(latent_diffusion_path=latent_diffusion_path)
 
     def unload_model(self):
-        # del self.model.autoencoder.encoder
-        # del self.model.autoencoder.decoder
         self.model.first_stage_model.unload_submodels()
         self.model.cond_stage_model.unload_submodels()
         self.model.unload_unet()

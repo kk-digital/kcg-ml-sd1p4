@@ -1,3 +1,4 @@
+import io
 import math
 import sys
 import time
@@ -56,6 +57,9 @@ class Section:
         raise NotImplementedError()
 
     def __enter__(self):
+        self.output_capture = io.StringIO()
+        self.current_stdout = sys.stdout
+        sys.stdout = self.output_capture
         self._state = 'entered'
         self._has_entered_ever = True
         self.is_successful = True
@@ -73,6 +77,19 @@ class Section:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        sys.stdout = self.current_stdout
+        self.output_capture.seek(0)
+        buffer = self.output_capture.readlines()
+
+        # In case, we are already inside another section
+        if self.current_stdout is not sys.__stdout__:
+            if '\r\n' in buffer[0]:  # Iterable
+                buffer.pop(0)
+            buffer.pop(0)
+
+        if len(buffer) > 1:
+            for line in buffer:
+                print('\t' + line, end='')
         if exc_val is not None:
             self.is_successful = False
         self._state = 'exited'
@@ -165,11 +182,11 @@ class OuterSection(Section):
         if self._state == 'none':
             return
 
-        parts = [("  " * self._level + f"{self._name}", None)]
+        parts = [("  " * self._level + f"{self._name}", Text.title if self._state == 'entered' else None)]
 
         if self._state == 'entered':
             if self._progress == 0.:
-                parts.append("...")
+                parts.append("\n")
             else:
                 parts.append((f" {math.floor(self._progress * 100) :4.0f}%", Text.meta2))
         else:
