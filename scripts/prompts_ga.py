@@ -85,7 +85,7 @@ from stable_diffusion.utils_image import *
 from stable_diffusion.constants import IODirectoryTree, create_directory_tree_folders
 from stable_diffusion.constants import TOKENIZER_PATH, TEXT_MODEL_PATH
 #from transformers import CLIPTextModel, CLIPTokenizer
-
+from ga.utils import get_next_ga_dir
 #from ga import generate_prompts
 import ga
 
@@ -123,8 +123,10 @@ chad_score_predictor.load_model(chad_score_model_path)
 EMBEDDED_PROMPTS_DIR = os.path.abspath(join(base_dir, 'input', 'embedded_prompts'))
 
 OUTPUT_DIR = os.path.abspath(join(base_dir, 'output', 'ga'))
-IMAGES_DIR = os.path.abspath(join(OUTPUT_DIR, "images/"))
+IMAGES_ROOT_DIR = os.path.abspath(join(OUTPUT_DIR, "images/"))
 FEATURES_DIR = os.path.abspath(join(OUTPUT_DIR, "features/"))
+# Creating new subdirectory for this run of the GA (e.g. output/ga/images/ga001)
+IMAGES_DIR = get_next_ga_dir(IMAGES_ROOT_DIR)
 
 fitness_cache = {}
 
@@ -142,6 +144,7 @@ pt.create_directory_tree_folders()
 
 print(EMBEDDED_PROMPTS_DIR)
 print(OUTPUT_DIR)
+print(IMAGES_ROOT_DIR)
 print(IMAGES_DIR)
 print(FEATURES_DIR)
 
@@ -149,6 +152,7 @@ os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(IMAGES_DIR, exist_ok=True)
 os.makedirs(FEATURES_DIR, exist_ok=True)
+os.makedirs(IMAGES_ROOT_DIR)
 
 #TODO: wtf is this function
 '''
@@ -173,30 +177,6 @@ def generate_images_from_embeddings(embedded_prompts_array, null_prompt):
     return sd.generate_images_from_embeddings(
         seed=SEED, embedded_prompt=embedded_prompt, null_prompt=null_prompt)
 '''
-
-def get_next_ga_dir(directory_path):
-    num_digits = 3  # Number of digits for subdirectory names
-    subdirectory_prefix = "ga"
-    subdirectory_pattern = subdirectory_prefix + "{:0" + str(num_digits) + "}"
-
-    existing_subdirs = [d for d in os.listdir(directory_path) if os.path.isdir(os.path.join(directory_path, d)) and d.startswith(subdirectory_prefix)]
-
-    if not existing_subdirs:
-        # If no subdirectories exist, return "ga000"
-        next_subdir_name = subdirectory_pattern.format(0)
-    else:
-        # Find the latest subdirectory name and extract the number part
-        latest_subdir_name = max(existing_subdirs)
-        latest_subdir_number = int(latest_subdir_name[2:])
-
-        # Increment the number and format it with the specified number of digits
-        next_subdir_number = latest_subdir_number + 1
-        next_subdir_name = subdirectory_pattern.format(next_subdir_number)
-
-    # Join the next subdirectory name with the input directory path
-    next_subdirectory_path = os.path.join(directory_path, next_subdir_name)
-
-    return next_subdirectory_path
 
 # Function to calculate the chad score for batch of images
 def calculate_chad_score(ga_instance, solution, solution_idx):
@@ -303,10 +283,6 @@ def prompt_embedding_vectors(sd, prompt_array):
     #print("embedded_prompt, tensor shape= "+ str(torch.Tensor.size(embedded_prompts)))
     embedded_prompts.to("cpu")
     return embedded_prompts
-
-
-# Creating new subdirectory for this run of the GA (e.g. output/ga/images/ga001)
-os.makedirs(get_next_ga_dir(IMAGES_DIR))
 
 # Call the GA loop function with your initialized StableDiffusion model
 
