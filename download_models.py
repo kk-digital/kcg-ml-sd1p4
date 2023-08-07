@@ -81,7 +81,7 @@ if __name__ == "__main__":
 
         # check if minio server is available
         is_minio_accessible = is_minio_server_accesssible()
-        if is_minio_server_accesssible:
+        if is_minio_accessible:
             minio_client = connect_to_minio_client()
 
         # DOWNLOAD_BASE_CLIP_MODEL
