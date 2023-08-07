@@ -80,11 +80,10 @@ if __name__ == "__main__":
 
     logger.info("Downloading models. This may take a while.")
 
-
-        # check if minio server is available
-        is_minio_accessible = is_minio_server_accesssible()
-        if is_minio_accessible:
-            minio_client = connect_to_minio_client()
+    # check if minio server is available
+    is_minio_accessible = is_minio_server_accesssible()
+    if is_minio_accessible:
+        minio_client = connect_to_minio_client()
 
 
     with section("Downloading CLIP model"):
