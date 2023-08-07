@@ -85,7 +85,7 @@ from stable_diffusion.utils_image import *
 from stable_diffusion.constants import IODirectoryTree, create_directory_tree_folders
 from stable_diffusion.constants import TOKENIZER_PATH, TEXT_MODEL_PATH
 #from transformers import CLIPTextModel, CLIPTokenizer
-
+from ga.utils import get_next_ga_dir
 #from ga import generate_prompts
 import ga
 
@@ -114,17 +114,19 @@ DEVICE = get_device()
 image_features_clip_model, preprocess = clip.load("ViT-L/14", device=DEVICE)
 
 #load chad score
-chad_score_model_path = 'input/model/chad_score/chad-score-v1.pth'
+chad_score_model_path = os.path.join('input', 'model', 'chad_score', 'chad-score-v1.pth')
 chad_score_predictor = ChadScorePredictor(device=DEVICE)
 chad_score_predictor.load_model(chad_score_model_path)
 
 
 #Why are you using this prompt generator?
-EMBEDDED_PROMPTS_DIR = os.path.abspath(join(base_dir, "./input/embedded_prompts/"))
+EMBEDDED_PROMPTS_DIR = os.path.abspath(join(base_dir, 'input', 'embedded_prompts'))
 
-OUTPUT_DIR = os.path.abspath(os.path.join(base_dir, "./output/ga/"))
-IMAGES_DIR = os.path.abspath(join(OUTPUT_DIR, "images/"))
+OUTPUT_DIR = os.path.abspath(join(base_dir, 'output', 'ga'))
+IMAGES_ROOT_DIR = os.path.abspath(join(OUTPUT_DIR, "images/"))
 FEATURES_DIR = os.path.abspath(join(OUTPUT_DIR, "features/"))
+# Creating new subdirectory for this run of the GA (e.g. output/ga/images/ga001)
+IMAGES_DIR = get_next_ga_dir(IMAGES_ROOT_DIR)
 
 fitness_cache = {}
 
@@ -142,6 +144,7 @@ pt.create_directory_tree_folders()
 
 print(EMBEDDED_PROMPTS_DIR)
 print(OUTPUT_DIR)
+print(IMAGES_ROOT_DIR)
 print(IMAGES_DIR)
 print(FEATURES_DIR)
 
@@ -149,6 +152,7 @@ os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(IMAGES_DIR, exist_ok=True)
 os.makedirs(FEATURES_DIR, exist_ok=True)
+os.makedirs(IMAGES_ROOT_DIR, exist_ok=True)
 
 #TODO: wtf is this function
 '''
@@ -279,7 +283,6 @@ def prompt_embedding_vectors(sd, prompt_array):
     #print("embedded_prompt, tensor shape= "+ str(torch.Tensor.size(embedded_prompts)))
     embedded_prompts.to("cpu")
     return embedded_prompts
-
 
 # Call the GA loop function with your initialized StableDiffusion model
 
