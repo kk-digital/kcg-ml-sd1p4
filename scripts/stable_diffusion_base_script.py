@@ -13,7 +13,7 @@ from stable_diffusion.sampler.ddim import DDIMSampler
 from stable_diffusion.sampler.ddpm import DDPMSampler
 from stable_diffusion.utils_model import initialize_latent_diffusion
 from stable_diffusion.latent_diffusion import LatentDiffusion
-from stable_diffusion.sampler import DiffusionSampler
+from stable_diffusion.sampler.diffusion import DiffusionSampler
 from stable_diffusion.constants import LATENT_DIFFUSION_PATH
 from utility.labml.monit import section
 
