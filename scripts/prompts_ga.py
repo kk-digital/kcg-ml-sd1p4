@@ -238,9 +238,10 @@ def on_fitness(ga_instance, population_fitness):
 def on_mutation(ga_instance, offspring_mutation):
     print("Performing mutation at generation: ", ga_instance.generations_completed)
 
-def on_generation(ga_instance):
+def store_generation_images(ga_instance):
     generation = ga_instance.generations_completed
     print("Generation #", generation)
+    print("Population size: ", len(ga_instance.population))
     file_dir = os.path.join(IMAGES_DIR, str(generation))
     os.makedirs(file_dir)
     for i, ind in enumerate(ga_instance.population):
@@ -361,17 +362,17 @@ ga_instance = pygad.GA(initial_population=embedded_prompts_list,
                        mutation_type=mutation_type,
                        on_fitness=on_fitness,
                        on_mutation=on_mutation,
-                       on_generation=on_generation,
+                       on_generation=store_generation_images,
                        on_stop=on_fitness,
                        parent_selection_type= parent_selection_type,
                        keep_parents=0,
-                       mutation_by_replacement=False,
-                       random_mutation_min_val= -0.5, 
-                       random_mutation_max_val= 0.5,
+                       mutation_by_replacement=True,
+                       random_mutation_min_val= 5,
+                       random_mutation_max_val=10,
                        #fitness_func=calculate_chad_score,
                        #on_parents=on_parents,
                        #on_crossover=on_crossover,
-                       #on_start=on_start,
+                       on_start=store_generation_images,
                        )
 
 ga_instance.run()
