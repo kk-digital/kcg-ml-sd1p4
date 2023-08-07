@@ -273,9 +273,9 @@ def store_generation_images(ga_instance):
         del prompt_embedding
 
         pil_image = to_pil(image[0])
-        #TODO: g0000_000.png
-        filename = os.path.join(file_dir, f'{i}.png')
+        filename = os.path.join(file_dir, f'g{generation:04}_{i:03}.png')
         pil_image.save(filename)
+
 
 def prompt_embedding_vectors(sd, prompt_array):
     # Generate embeddings for each prompt
