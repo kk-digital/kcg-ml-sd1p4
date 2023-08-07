@@ -19,6 +19,9 @@ import os
 import sys
 import safetensors
 
+from stable_diffusion.utils_logger import logger
+from utility.labml.monit import section
+
 sys.path.insert(0, os.getcwd())
 from .auxiliary_classes import *
 from .encoder import Encoder
@@ -76,11 +79,11 @@ class Autoencoder(nn.Module):
     def load(self, autoencoder_path=AUTOENCODER_PATH):
         try:
             safetensors.torch.load_model(self, autoencoder_path, strict=True)
-            print(f"Autoencoder loaded from: {autoencoder_path}")
+            logger.debug(f"Autoencoder loaded from: {autoencoder_path}")
             self.eval()
             return self
         except Exception as e:
-            print(f"Autoencoder not loaded. Error: {e}")
+            logger.error(f"Autoencoder not loaded. Error: {e}")
             return None
 
     def load_submodels(self, encoder_path=ENCODER_PATH, decoder_path=DECODER_PATH):
@@ -89,21 +92,22 @@ class Autoencoder(nn.Module):
         ### Load the model from a checkpoint
         """
 
-        self.encoder = Encoder(device=self.device)
-        self.encoder.load(encoder_path=encoder_path)
-        print(f"Encoder loaded from: {encoder_path}")
-        self.encoder.eval()
-        self.decoder = Decoder(device=self.device)
-        self.decoder.load(decoder_path=decoder_path)
-        print(f"Decoder loaded from: {decoder_path}")
-        self.decoder.eval()
-        return self
+        with section("Loading encoder and decoder"):
+            self.encoder = Encoder(device=self.device)
+            self.encoder.load(encoder_path=encoder_path)
+            logger.debug(f"Encoder loaded from: {encoder_path}")
+            self.encoder.eval()
+            self.decoder = Decoder(device=self.device)
+            self.decoder.load(decoder_path=decoder_path)
+            logger.debug(f"Decoder loaded from: {decoder_path}")
+            self.decoder.eval()
+            return self
 
     def load_encoder(self, encoder_path=ENCODER_PATH):
 
         self.encoder = Encoder(device=self.device)
         self.encoder.load(encoder_path=encoder_path)
-        print(f"Encoder loaded from: {encoder_path}")
+        logger.debug(f"Encoder loaded from: {encoder_path}")
         self.encoder.eval()
         return self.encoder
 
@@ -111,7 +115,7 @@ class Autoencoder(nn.Module):
 
         self.decoder = Decoder(device=self.device)
         self.decoder.load(decoder_path=decoder_path)
-        print(f"Decoder loaded from: {decoder_path}")
+        logger.debug(f"Decoder loaded from: {decoder_path}")
         self.decoder.eval()
         return self.decoder
 

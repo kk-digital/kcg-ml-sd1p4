@@ -156,7 +156,6 @@ class Monitor:
             err = RuntimeError('Section outside loop')
             for s in reversed(self.__sections):
                 s.__exit__(type(err), err, err.__traceback__)
-            # raise RuntimeError("Cannot start a loop within a section")
 
         self.__loop = Loop(iterator=iterator_,
                            monitor=self,

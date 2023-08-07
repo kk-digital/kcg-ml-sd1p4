@@ -228,9 +228,12 @@ class LatentDiffusion(nn.Module):
             embedder_path=TEXT_EMBEDDER_PATH,
             unet_path=UNET_PATH,
     ):
-        self.load_autoencoder(autoencoder_path=autoencoder_path)
-        self.load_unet(unet_path=unet_path)
-        self.load_clip_embedder(embedder_path=embedder_path)
+        with section("Autoencoder"):
+            self.load_autoencoder(autoencoder_path=autoencoder_path)
+        with section("UNet"):
+            self.load_unet(unet_path=unet_path)
+        with section("CLIPTextEmbedder"):
+            self.load_clip_embedder(embedder_path=embedder_path)
         return self
 
     def load_submodel_tree(
@@ -243,7 +246,7 @@ class LatentDiffusion(nn.Module):
             transformer_path=TEXT_MODEL_PATH,
             unet_path=UNET_PATH,
     ):
-        with section("load submodel tree"):
+        with section("Load submodel tree"):
             self.load_submodels(autoencoder_path=autoencoder_path, embedder_path=embedder_path, unet_path=unet_path)
             self.first_stage_model.load_submodels(encoder_path=encoder_path, decoder_path=decoder_path)
             self.cond_stage_model.load_submodels(tokenizer_path=tokenizer_path, transformer_path=transformer_path)
