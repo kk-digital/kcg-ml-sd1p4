@@ -13,6 +13,7 @@ import sys
 import time
 from datetime import datetime
 from random import randrange
+import random
 
 base_dir = "./"
 sys.path.insert(0, base_dir)
@@ -69,11 +70,11 @@ def main():
 
     # default seed value is random int from 0 to 2^24
     if opt.seed == '':
-        rand_seed = randrange(0, 2**24)
-        seed_string_array = str(rand_seed)
+        # Generate an array of random integers in the range [0, 2^24)
+        seed_string_array = [random.randint(0, 2 ** 24 - 1) for _ in range(opt.num_images)]
 
     # Convert the elements in the list to integers (optional, if needed)
-    seed_array = [int(num) for num in seed_string_array]
+    seed_array = seed_string_array
 
     # timestamp = datetime.now().strftime('%d-%m-%Y-%H-%M-%S')
     # filename = os.path.join(opt.output, f'{timestamp}.jpg')
