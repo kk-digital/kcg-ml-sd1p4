@@ -143,6 +143,15 @@ class CLI:
 
         return self
 
+    def num_datasets(self):
+        self.parser.add_argument(
+            '--num_datasets',
+            type=int,
+            default=1,
+            help='Number of datasets to generate (default: %(default)s)'
+        )
+
+        return self
     def num_images(self):
         self.parser.add_argument(
             '--num_images',

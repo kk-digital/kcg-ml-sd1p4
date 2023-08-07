@@ -2,7 +2,7 @@ import argparse
 import os
 import shutil
 import sys
-
+from random import randrange
 import torch
 from tqdm import tqdm
 
@@ -16,13 +16,9 @@ from stable_diffusion.utils_backend import get_device
 from stable_diffusion.utils_image import save_images, save_image_grid
 
 OUTPUT_DIR = os.path.abspath("./output/noise-tests/from_distributions")
-
-NOISE_SEEDS = [2982, 4801, 1995, 3598, 987, 3688, 8872, 762]
-
 # CHECKPOINT_PATH = os.path.abspath('./input/model/v1-5-pruned-emaonly.ckpt')
 
 parser = argparse.ArgumentParser(description="")
-
 parser.add_argument(
     "--prompt",
     type=str,
@@ -77,7 +73,11 @@ DDIM_ETA = args.ddim_eta
 CLEAR_OUTPUT_DIR = args.clear_output_dir
 DEVICE = get_device(args.cuda_device)
 
-NOISE_SEEDS = NOISE_SEEDS[:NUM_SEEDS]
+# generate noise seeds int 0 to 0^24
+NOISE_SEEDS = []
+for i in range(NUM_SEEDS):
+    rand_seed = randrange(0, 2**24)
+    NOISE_SEEDS.append(rand_seed)
 
 __DISTRIBUTIONS = {
     "Normal": dict(loc=0.0, scale=1.0),

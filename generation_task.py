@@ -7,7 +7,7 @@ class GenerationTask:
 
     def __init__(self, generation_task_type, prompt, model_name, cfg_strength, iterations, denoiser, seed, output_path,
                  num_images, image_width, image_height, batch_size, checkpoint_path, flash, device, sampler, steps,
-                 force_cpu):
+                 force_cpu, num_datasets):
         self.generation_task_type = generation_task_type
         self.prompt = prompt
         self.model_name = model_name
@@ -26,6 +26,7 @@ class GenerationTask:
         self.sampler = sampler
         self.steps = steps
         self.force_cpu = force_cpu
+        self.num_datasets
 
     def to_dict(self):
         return {
@@ -47,7 +48,7 @@ class GenerationTask:
             'sampler': self.sampler,
             'steps': self.steps,
             'force_cpu': self.force_cpu,
-
+            'num_datasets': self.num_datasets,
         }
 
     def from_dict(data):
@@ -69,6 +70,7 @@ class GenerationTask:
             device=data.get('device', 'cuda'),
             sampler=data.get('sampler', 'ddim'),
             steps=data.get('steps', 50),
+            num_datasets=data.get('num_datasets', 1),
             force_cpu=data.get('force_cpu', False))
 
     def save_to_json(self, filename):
