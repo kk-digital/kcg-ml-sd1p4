@@ -125,8 +125,15 @@ EMBEDDED_PROMPTS_DIR = os.path.abspath(join(base_dir, 'input', 'embedded_prompts
 OUTPUT_DIR = os.path.abspath(join(base_dir, 'output', 'ga'))
 IMAGES_ROOT_DIR = os.path.abspath(join(OUTPUT_DIR, "images/"))
 FEATURES_DIR = os.path.abspath(join(OUTPUT_DIR, "features/"))
+
+os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+os.makedirs(FEATURES_DIR, exist_ok=True)
+os.makedirs(IMAGES_ROOT_DIR, exist_ok=True)
+
 # Creating new subdirectory for this run of the GA (e.g. output/ga/images/ga001)
 IMAGES_DIR = get_next_ga_dir(IMAGES_ROOT_DIR)
+os.makedirs(IMAGES_DIR, exist_ok=True)
 
 fitness_cache = {}
 
@@ -147,12 +154,6 @@ print(OUTPUT_DIR)
 print(IMAGES_ROOT_DIR)
 print(IMAGES_DIR)
 print(FEATURES_DIR)
-
-os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
-os.makedirs(OUTPUT_DIR, exist_ok=True)
-os.makedirs(IMAGES_DIR, exist_ok=True)
-os.makedirs(FEATURES_DIR, exist_ok=True)
-os.makedirs(IMAGES_ROOT_DIR, exist_ok=True)
 
 #TODO: wtf is this function
 '''
