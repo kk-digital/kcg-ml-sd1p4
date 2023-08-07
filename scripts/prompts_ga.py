@@ -152,7 +152,7 @@ os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(IMAGES_DIR, exist_ok=True)
 os.makedirs(FEATURES_DIR, exist_ok=True)
-os.makedirs(IMAGES_ROOT_DIR)
+os.makedirs(IMAGES_ROOT_DIR, exist_ok=True)
 
 #TODO: wtf is this function
 '''
