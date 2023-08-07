@@ -5,20 +5,15 @@ import math
 import time
 from tqdm import tqdm
 import requests
-from minio import Minio
 
 from stable_diffusion.utils_logger import logger
 from utility.labml.monit import section
-from utility.minio.progress import Progress
+from utility.minio.cmd import is_minio_server_accesssible, connect_to_minio_client, download_from_minio
 
 config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
 config.read('config.ini')
 print_section = lambda config, section: logger.debug(f"config.ini [{section}]: ",
                                               json.dumps({k: v for k, v in config[section].items()}, indent=4))
-
-# TODO: remove hardcode in the future
-#  use config file
-MINIO_ADDRESS = "192.168.3.5:9000"
 
 
 def create_directory_tree_folders(config):
@@ -77,23 +72,6 @@ def download_file(url, file_path, description, update_interval=500, chunk_size=4
                             counter = 0
     else:
         logger.info(f"{description} already exists.")
-
-
-def connect_to_minio_client():
-    print("Connecting to minio client...")
-    client = Minio(MINIO_ADDRESS, secure=False)
-    print("Successfully connected to minio client...")
-    return client
-
-def download_from_minio(client, bucket_name, object_name, output_path):
-    if not os.path.isfile(output_path):
-        client.fget_object(bucket_name, object_name, output_path, progress=Progress())
-    else:
-        logger.info(f"{object_name} already exists.")
-
-def is_minio_server_accesssible():
-    r = requests.head("http://" + MINIO_ADDRESS + "/minio/health/live")
-    return r.status_code == 200
 
 if __name__ == "__main__":
     create_directory_tree_folders(config)
