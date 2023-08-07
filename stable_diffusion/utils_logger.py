@@ -1,4 +1,5 @@
 import logging
+import sys
 
 
 class CustomFormatter(logging.Formatter):
@@ -26,13 +27,23 @@ class CustomFormatter(logging.Formatter):
         return formatter.format(record)
 
 
+class ImmediateStreamHandler(logging.StreamHandler):
+    def emit(self, record):
+        if sys.stdout is sys.__stdout__:
+            super().emit(record)
+            self.flush()
+        else:
+            print(self.format(record),flush=True)
+            self.flush()
+
+
 # Create a root logger
 logger = logging.getLogger()
-logger.setLevel(logging.WARNING)
+logger.setLevel(logging.INFO)
 
 # Create a console handler
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
+ch = ImmediateStreamHandler()
+ch.setLevel(logging.INFO)
 
 # Add the formatter to the console handler and logger
 ch.setFormatter(CustomFormatter())
