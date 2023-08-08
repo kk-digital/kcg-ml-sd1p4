@@ -338,11 +338,11 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
                 latent_filepath = generation_task_result_item['latent_filepath']
 
                 # Now, when writing files to the zip, you should specify the folder name in the arcname
-                file.write(json_filename, arcname='json/' + os.path.basename(json_filename))
+                file.write(json_filename, arcname='image/' + os.path.basename(json_filename))
                 file.write(image_filename, arcname='image/' + os.path.basename(image_filename))
-                file.write(embedding_vector_filepath, arcname='embedding/' + embedding_vector_filename)
+                file.write(embedding_vector_filepath, arcname='feature/' + embedding_vector_filename)
                 file.write(clip_features_filepath, arcname='feature/' + clip_features_filename)
-                file.write(latent_filepath, arcname='latent/' + latent_filename)
+                file.write(latent_filepath, arcname='feature/' + latent_filename)
                 
                 zip_task_index += 1
 
