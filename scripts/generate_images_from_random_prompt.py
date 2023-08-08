@@ -165,7 +165,15 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
             base_file_name = f'{i:0{total_digits}d}-{timestamp}'
             image_name = base_file_name + '.jpg'
 
-            filename = output + image_name
+            # Define the images sub-directory
+            image_dir = output + '/images'
+
+            # Create this directory if it does not exist
+            os.makedirs(image_dir, exist_ok=True)
+
+            # Specify the filename with the path to the images directory
+            filename = image_dir + '/' + image_name
+
 
             # Capture the starting time
             tmp_start_time = time.time()
@@ -240,6 +248,16 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
             min_chad_score = min(min_chad_score, chad_score)
             max_chad_score = max(max_chad_score, chad_score)
 
+            embedding_dir = output + '/embedding_vector'
+            clip_dir = output + '/clip'
+            latent_dir = output + '/latent'
+            json_dir = output + '/json'
+
+            os.makedirs(embedding_dir, exist_ok=True)
+            os.makedirs(clip_dir, exist_ok=True)
+            os.makedirs(latent_dir, exist_ok=True)
+            os.makedirs(json_dir, exist_ok=True)
+
             embedding_vector_filename = base_file_name + '.embedding.npz'
             clip_features_filename = base_file_name + '.clip.npz'
             latent_filename = base_file_name + '.latent.npz'
@@ -253,19 +271,19 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
                 image_features_numpy = image_features.cpu().numpy()
 
             # save embedding vector to its own file
-            embedding_vector_filepath = output + '/' + embedding_vector_filename
+            embedding_vector_filepath = embedding_dir + '/' + embedding_vector_filename
             np.savez_compressed(embedding_vector_filepath, data=embedded_vector)
 
             # save image features to its own file
-            clip_features_filepath = output + '/' + clip_features_filename
+            clip_features_filepath = clip_dir + '/' + clip_features_filename
             np.savez_compressed(clip_features_filepath, data=image_features_numpy)
 
             # save image latent to its own file
-            latent_filepath = output + '/' + latent_filename
+            latent_filepath = latent_dir + '/' + latent_filename
             np.savez_compressed(latent_filepath, data=latent)
 
             # Save the data to a JSON file
-            json_filename = output + '/' + base_file_name + '.json'
+            json_filename = json_dir + '/' + base_file_name + '.json'
 
             generation_task_result_list.append({
                 'image_filename': filename,
