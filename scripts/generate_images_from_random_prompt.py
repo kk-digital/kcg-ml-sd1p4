@@ -18,6 +18,7 @@ from random import randrange
 import numpy as np
 import torch
 import random
+import shutil
 
 base_directory = "./"
 sys.path.insert(0, base_directory)
@@ -166,7 +167,7 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
             image_name = base_file_name + '.jpg'
 
             # Define the images sub-directory
-            image_dir = output + '/images'
+            image_dir = output + '/image'
 
             # Create this directory if it does not exist
             os.makedirs(image_dir, exist_ok=True)
@@ -248,10 +249,10 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
             min_chad_score = min(min_chad_score, chad_score)
             max_chad_score = max(max_chad_score, chad_score)
 
-            embedding_dir = output + '/embedding_vectors'
-            clip_dir = output + '/features'
-            latent_dir = output + '/latents'
-            json_dir = output + '/jsons'
+            embedding_dir = output + '/embedding'
+            clip_dir = output + '/feature'
+            latent_dir = output + '/latent'
+            json_dir = output + '/json'
 
             os.makedirs(embedding_dir, exist_ok=True)
             os.makedirs(clip_dir, exist_ok=True)
@@ -338,12 +339,19 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
 
                 # Now, when writing files to the zip, you should specify the folder name in the arcname
                 file.write(json_filename, arcname='json/' + os.path.basename(json_filename))
-                file.write(image_filename, arcname='images/' + os.path.basename(image_filename))
-                file.write(embedding_vector_filepath, arcname='embedding_vector/' + embedding_vector_filename)
+                file.write(image_filename, arcname='image/' + os.path.basename(image_filename))
+                file.write(embedding_vector_filepath, arcname='embedding/' + embedding_vector_filename)
                 file.write(clip_features_filepath, arcname='clip/' + clip_features_filename)
                 file.write(latent_filepath, arcname='latent/' + latent_filename)
                 
                 zip_task_index += 1
+
+                directories_to_delete = ["image", "embedding", "feature", "json", "latent"]  # Adjust if you have different folder names
+                for dir_name in directories_to_delete:
+                    dir_path = os.path.join(output, dir_name)
+                    if os.path.exists(dir_path):
+                        shutil.rmtree(dir_path)
+                        print(f"Deleted folder: {dir_name}")
 
 
 
