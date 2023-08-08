@@ -275,6 +275,48 @@ options:
 python3 ./scripts/generate_images_from_random_prompt.py --checkpoint_path "./input/model/v1-5-pruned-emaonly.safetensors" --cfg_scale 7 --num_images 10 --output "/output/"
 ```
 
+### Generate Images From Prompt Generator
+
+To generate images from random prompt, these are the available CLI arguments:
+
+```
+options:
+  --batch_size   BATCH_SIZE
+                        How many images to generate at once
+  --output        OUTPUT
+                        Number of folders to
+  --sampler       SAMPLER
+                        Name of the sampler to use
+  --checkpoint_path     CHECKPOINT_PATH
+                        Path to the checkpoint file
+  --flash         FLASH
+                        Whether to use flash attention
+  --steps         STEPS
+                        Number of steps to use
+  --cgf_scale         SCALE
+                        Unconditional guidance scale: eps = eps(x, empty) + scale * (eps(x, cond) - eps(x, empty))
+  --seed      SEED
+                        Array of seed for the image generation: example '0, 1, 0, 7', Its better if the size of the array is the same as the number of generated images
+  --low-vram      LOW_VRAM
+                        Limit vram usage
+  --force_cpu     FORCE_CPU
+                        Force cpu usage
+  --cuda_device   CUDA_DEVICE
+                        Cuda device to use for generation process
+  --num_images    NUM_IMAGES
+                        Number of images to output
+  --num_phrases    NUM_PHRASES
+                        Number of phrases per prompt
+  --image_width IMAGE_WIDTH
+                        Generated image width, default is 512
+  --image_height IMAGE_HEIGHT
+                        Generated image width, default is 512
+```
+
+``` shell
+python3 ./scripts/generate_images_from_prompt_generator.py --checkpoint_path "./input/model/v1-5-pruned-emaonly.safetensors" --cfg_scale 7 --num_images 10 --num-phrases 12 --output "./output/"
+```
+
 ### Chad Score
 
 To get the chad score of an image, these are the available CLI arguments:
