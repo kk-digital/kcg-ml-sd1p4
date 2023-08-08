@@ -20,6 +20,7 @@
     - [Random Prompts Generation and Disturbing Embeddings Image Generation](#random-prompts-generation-and-disturbing-embeddings-image-generation)
     - [Image Grid Generator](#image-grid-generator)
     - [Generate Images Random Prompt](#generate-images-random-prompt)
+    - [Generate Images From Prompt Generator](#generate-images-from-prompt-generator)
     - [Chad Score](#chad-score)
     - [Chad Sort](#chad-sort)
     - [Running GenerationTask](#running-generationtask)
