@@ -316,7 +316,8 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
 
         total_digits = 4
 
-        zip_filename = output + '/' + 'set_' + f'{current_task_index:0{total_digits}d}' + '.zip';
+        zip_filename = output + '/' + 'set_' + f'{current_task_index:0{total_digits}d}' + '.zip'
+
         # create zip for generated images
         with ZipFile(zip_filename, 'w', compression=zipfile.ZIP_DEFLATED) as file:
             print('Created zip file ' + zip_filename)
@@ -335,12 +336,15 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
                 clip_features_filepath = generation_task_result_item['clip_features_filepath']
                 latent_filepath = generation_task_result_item['latent_filepath']
 
-                file.write(json_filename, arcname=os.path.basename(json_filename))
-                file.write(image_filename, arcname=os.path.basename(image_filename))
-                file.write(embedding_vector_filepath, arcname=embedding_vector_filename)
-                file.write(clip_features_filepath, arcname=clip_features_filename)
-                file.write(latent_filepath, arcname=latent_filename)
+                # Now, when writing files to the zip, you should specify the folder name in the arcname
+                file.write(json_filename, arcname='json/' + os.path.basename(json_filename))
+                file.write(image_filename, arcname='images/' + os.path.basename(image_filename))
+                file.write(embedding_vector_filepath, arcname='embedding_vector/' + embedding_vector_filename)
+                file.write(clip_features_filepath, arcname='clip/' + clip_features_filename)
+                file.write(latent_filepath, arcname='latent/' + latent_filename)
+                
                 zip_task_index += 1
+
 
 
 def main():
