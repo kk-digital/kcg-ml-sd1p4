@@ -110,7 +110,6 @@ def main():
                     seed=seed_array[i % len(seed_array)]
                 )
 
-                print(images.shape)
                 save_images(images, filename)
 
                 # Capture the ending time

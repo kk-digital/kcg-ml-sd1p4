@@ -22,9 +22,12 @@ import torch
 from torch import nn
 from transformers import CLIPTokenizer, CLIPTextModel, CLIPTextConfig
 
+from stable_diffusion.utils_logger import logger
+from utility.labml.monit import section
+
 sys.path.insert(0, os.getcwd())
 from stable_diffusion.constants import TEXT_EMBEDDER_PATH, TOKENIZER_PATH, TEXT_MODEL_PATH
-from stable_diffusion.utils_backend import get_device, get_memory_status
+from stable_diffusion.utils_backend import get_device
 
 
 # TEXT_EMBEDDER_PATH = os.path.abspath('./input/model/clip/clip_embedder.ckpt')
@@ -69,14 +72,15 @@ class CLIPTextEmbedder(nn.Module):
 
     def load_submodels(self, tokenizer_path=TOKENIZER_PATH, transformer_path=TEXT_MODEL_PATH):
 
-        self.tokenizer = CLIPTokenizer.from_pretrained(tokenizer_path, local_files_only=True)
-        print(f"Tokenizer successfully loaded from : {tokenizer_path}\n")
-        self.transformer = CLIPTextModel.from_pretrained(transformer_path, local_files_only=True,
-                                                         use_safetensors=True).eval().to(self.device)
-        # self.init_submodels(tokenizer_path = tokenizer_path, transformer_path = transformer_path)
-        # safetensors.torch.load_model(self.transformer, os.path.join(transformer_path, '/model.safetensors'))
-        print(f"CLIP text model successfully loaded from : {transformer_path}\n")
-        return self
+        with section("Loading tokenizer and transformer"):
+            self.tokenizer = CLIPTokenizer.from_pretrained(tokenizer_path, local_files_only=True)
+            logger.debug(f"Tokenizer successfully loaded from : {tokenizer_path}")
+            self.transformer = CLIPTextModel.from_pretrained(transformer_path, local_files_only=True,
+                                                             use_safetensors=True).eval().to(self.device)
+            # self.init_submodels(tokenizer_path = tokenizer_path, transformer_path = transformer_path)
+            # safetensors.torch.load_model(self.transformer, os.path.join(transformer_path, '/model.safetensors'))
+            logger.debug(f"CLIP text model successfully loaded from : {transformer_path}")
+            return self
 
     def load_submodels_auto(self):
 
@@ -105,10 +109,10 @@ class CLIPTextEmbedder(nn.Module):
     def load(self, embedder_path: str = TEXT_EMBEDDER_PATH):
         try:
             safetensors.torch.load_model(self, embedder_path, strict=True)
-            print(f"CLIPTextEmbedder loaded from: {embedder_path}")
+            logger.debug(f"CLIPTextEmbedder loaded from: {embedder_path}")
             return self
         except Exception as e:
-            print(f"CLIPTextEmbedder not loaded. Error: {e}")
+            logger.error(f"CLIPTextEmbedder not loaded. Error: {e}")
 
     def forward(self, prompts: List[str]):
         """
