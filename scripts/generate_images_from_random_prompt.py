@@ -249,10 +249,10 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
             min_chad_score = min(min_chad_score, chad_score)
             max_chad_score = max(max_chad_score, chad_score)
 
-            embedding_dir = output + '/embedding'
-            clip_dir = output + '/feature'
-            latent_dir = output + '/latent'
-            json_dir = output + '/json'
+            embedding_dir = os.path.join(output, 'embedding')
+            clip_dir = os.path.join(output, 'feature')
+            latent_dir = os.path.join(output, 'latent')
+            json_dir = os.path.join(output, 'json')
 
             os.makedirs(embedding_dir, exist_ok=True)
             os.makedirs(clip_dir, exist_ok=True)
