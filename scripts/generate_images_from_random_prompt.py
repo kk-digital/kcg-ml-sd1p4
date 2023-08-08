@@ -346,6 +346,14 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
                 
                 zip_task_index += 1
 
+        directories_to_delete = ["image", "embedding", "feature", "json", "latent"]  # Adjust if you have different folder names
+        for dir_name in directories_to_delete:
+            dir_path = os.path.join(output, dir_name)
+            if os.path.exists(dir_path):
+                shutil.rmtree(dir_path)
+                print(f"Deleted folder: {dir_name}")
+
+
 
 
 def main():
