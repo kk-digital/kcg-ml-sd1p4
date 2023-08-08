@@ -176,6 +176,8 @@ def generate_prompts(num_prompts, num_phrases):
 
             print("Number of tokens: {0}".format(num_tokens))
             print("Elapsed Time: {0}s".format(time.time() - start))
+            print("-------------------------------------------------------------------------")
+
 
         prompt_list.append(GeneratedPrompt(prompt_dict, prompt_vector))
 
