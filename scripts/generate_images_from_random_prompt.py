@@ -97,7 +97,7 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
                  r" full character, no background, not centered, line drawing, sketch, black and white," \
                  r" colored, offset, video game,exotic, sureal, miltech, fantasy, frank frazetta," \
                  r" terraria, final fantasy, cortex command, surreal, water color expressionist, david mckean, " \
-                 r" jock, esad ribic, chris bachalo, expressionism, Jackson Pollock, Alex Kanevskyg, Francis Bacon, Trash Polka," \
+                 r" jock, esad ribic, chris bachalo, expressionism, Jackson Pollock, Alex Kanevsky, Francis Bacon, Trash Polka," \
                  r" abstract realism, andrew salgado, alla prima technique, alla prima, expressionist alla prima, expressionist alla prima technique"
 
     prompt = arg_prompt
