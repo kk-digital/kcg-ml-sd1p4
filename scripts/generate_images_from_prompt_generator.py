@@ -18,7 +18,7 @@ from random import randrange
 import numpy as np
 import torch
 import random
-
+import shutil
 base_directory = "./"
 sys.path.insert(0, base_directory)
 
@@ -77,6 +77,12 @@ def generate_images_from_prompt_generator(num_images, num_phrases, image_width, 
 
     for current_task_index in range(num_datasets):
         print("Generating Dataset : " +  str(current_task_index))
+        folder_name = 'set_' + f'{current_task_index:04d}'
+        output_path = os.path.join(output, folder_name)
+        # create folder if doesn't exist
+        if not os.path.exists(output_path):
+            os.mkdir(output_path)
+
         generation_task_result_list = []
         min_chad_score = 999999.0
         max_chad_score = -999999.0
@@ -91,12 +97,10 @@ def generate_images_from_prompt_generator(num_images, num_phrases, image_width, 
             start_time = time.time()
             timestamp = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
 
-            total_digits = 4
-
-            base_file_name = f'{i:0{total_digits}d}-{timestamp}'
+            base_file_name = f'{i:04d}-{timestamp}'
             image_name = base_file_name + '.jpg'
 
-            filename = output + image_name
+            filename = os.path.join(output_path, image_name)
 
             # Capture the starting time
             tmp_start_time = time.time()
@@ -184,19 +188,23 @@ def generate_images_from_prompt_generator(num_images, num_phrases, image_width, 
                 image_features_numpy = image_features.cpu().numpy()
 
             # save embedding vector to its own file
-            embedding_vector_filepath = output + '/' + embedding_vector_filename
+            embedding_vector_filepath = output_path + '/' + embedding_vector_filename
             np.savez_compressed(embedding_vector_filepath, data=embedded_vector)
 
             # save image features to its own file
-            clip_features_filepath = output + '/' + clip_features_filename
+            clip_features_filepath = output_path + '/' + clip_features_filename
             np.savez_compressed(clip_features_filepath, data=image_features_numpy)
 
             # save image latent to its own file
-            latent_filepath = output + '/' + latent_filename
+            latent_filepath = output_path + '/' + latent_filename
             np.savez_compressed(latent_filepath, data=latent)
 
             # Save the data to a JSON file
-            json_filename = output + '/' + base_file_name + '.json'
+            json_filename = output_path + '/' + base_file_name + '.json'
+
+            # save generation_task_result
+            # save to json file
+            generation_task_result.save_to_json(json_filename)
 
             generation_task_result_list.append({
                 'image_filename': filename,
@@ -215,45 +223,8 @@ def generate_images_from_prompt_generator(num_images, num_phrases, image_width, 
 
             print("Execution Time:", execution_time, "seconds")
 
-        # chad score value should be between [0, 1]
-        for generation_task_result_item in generation_task_result_list:
-            generation_task_result = generation_task_result_item['generation_task_result']
-            json_filename = generation_task_result_item['json_filename']
-
-            # chad score value should be between [0, 1]
-            # normalized_chad_score = (generation_task_result.chad_score - min_chad_score) / (max_chad_score - min_chad_score)
-            # generation_task_result.chad_score = normalized_chad_score
-
-            # save to json file
-            generation_task_result.save_to_json(json_filename)
-
-        total_digits = 4
-
-        zip_filename = output + '/' + 'set_' + f'{current_task_index:0{total_digits}d}' + '.zip';
         # create zip for generated images
-        with ZipFile(zip_filename, 'w', compression=zipfile.ZIP_DEFLATED) as file:
-            print('Created zip file ' + zip_filename)
-            zip_task_index = 1
-            for generation_task_result_item in generation_task_result_list:
-                print('Zipping task ' + str(zip_task_index) + ' out of ' + str(len(generation_task_result_list)))
-                generation_task_result = generation_task_result_item['generation_task_result']
-
-                json_filename = generation_task_result_item['json_filename']
-                image_filename = generation_task_result_item['image_filename']
-                embedding_vector_filename = generation_task_result.embedding_name
-                clip_features_filename = generation_task_result.clip_name
-                latent_filename = generation_task_result.latent_name
-
-                embedding_vector_filepath = generation_task_result_item['embedding_vector_filepath']
-                clip_features_filepath = generation_task_result_item['clip_features_filepath']
-                latent_filepath = generation_task_result_item['latent_filepath']
-
-                file.write(json_filename, arcname=os.path.basename(json_filename))
-                file.write(image_filename, arcname=os.path.basename(image_filename))
-                file.write(embedding_vector_filepath, arcname=embedding_vector_filename)
-                file.write(clip_features_filepath, arcname=clip_features_filename)
-                file.write(latent_filepath, arcname=latent_filename)
-                zip_task_index += 1
+        shutil.make_archive(output_path, 'zip', output_path)
 
 
 def main():
