@@ -341,17 +341,10 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
                 file.write(json_filename, arcname='json/' + os.path.basename(json_filename))
                 file.write(image_filename, arcname='image/' + os.path.basename(image_filename))
                 file.write(embedding_vector_filepath, arcname='embedding/' + embedding_vector_filename)
-                file.write(clip_features_filepath, arcname='clip/' + clip_features_filename)
+                file.write(clip_features_filepath, arcname='feature/' + clip_features_filename)
                 file.write(latent_filepath, arcname='latent/' + latent_filename)
                 
                 zip_task_index += 1
-
-                directories_to_delete = ["image", "embedding", "feature", "json", "latent"]  # Adjust if you have different folder names
-                for dir_name in directories_to_delete:
-                    dir_path = os.path.join(output, dir_name)
-                    if os.path.exists(dir_path):
-                        shutil.rmtree(dir_path)
-                        print(f"Deleted folder: {dir_name}")
 
 
 
