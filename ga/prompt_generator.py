@@ -123,18 +123,20 @@ def initialize_prompt_list():
     prompt_list.add_type_to_phrase("fantasy", "modifier")
     prompt_list.add_type_to_phrase("mythical", "modifier")
     prompt_list.add_type_to_phrase("scifi", "modifier")
-    prompt_list.add_type_to_phrase("side scrolling", "modifier")
     prompt_list.add_type_to_phrase("character", "modifier")
-    prompt_list.add_type_to_phrase("white background", "modifier")
-    prompt_list.add_type_to_phrase("centered", "modifier")
     prompt_list.add_type_to_phrase("full character", "modifier")
-    prompt_list.add_type_to_phrase("no background", "modifier")
-    prompt_list.add_type_to_phrase("not centered", "modifier")
-    prompt_list.add_type_to_phrase("line drawing", "modifier")
-    prompt_list.add_type_to_phrase("sketch", "modifier")
     prompt_list.add_type_to_phrase("black and white", "modifier")
     prompt_list.add_type_to_phrase("colored", "modifier")
     prompt_list.add_type_to_phrase("video game", "modifier")
+
+    prompt_list.add_type_to_phrase("white background", "constraint")
+    prompt_list.add_type_to_phrase("no background", "constraint")
+    prompt_list.add_type_to_phrase("not centered", "constraint")
+    prompt_list.add_type_to_phrase("centered", "constraint")
+
+    prompt_list.add_type_to_phrase("sketch", "style")
+    prompt_list.add_type_to_phrase("line drawing", "style")
+    prompt_list.add_type_to_phrase("side scrolling", "style")
 
     return prompt_list.Prompts
 
