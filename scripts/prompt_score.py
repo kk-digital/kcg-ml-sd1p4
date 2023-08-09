@@ -62,7 +62,16 @@ def main():
     expected_outputs = []
 
     zip_data_loader = ZipDataLoader()
-    loaded_data = zip_data_loader.load(zip_file_path)
+
+    loaded_data = []
+    if os.path.isdir(zip_file_path):
+        file_list = os.listdir(zip_file_path)
+        zip_files = [file for file in file_list if file.endswith('.zip')]
+        for zip_file_name in zip_files:
+            final_path = os.path.join(zip_file_path, zip_file_name)
+            loaded_data = loaded_data + zip_data_loader.load(final_path)
+    else:
+        loaded_data = zip_data_loader.load(zip_file_path)
 
     for element in loaded_data:
         image_meta_data = element['image_meta_data']
