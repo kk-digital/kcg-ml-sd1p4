@@ -25,6 +25,7 @@
     - [Chad Sort](#chad-sort)
     - [Running GenerationTask](#running-generationtask)
     - [Prompt Score](#prompt-score)
+    - [Auto-ml](#auto-ml)
 
 ## Prerequisites
 
@@ -427,4 +428,27 @@ Example Usage:
 
 ``` shell
 python scripts/prompt_gradient.py --input_path input/set_0000_v2.zip --model_path output/models/prompt_score.pth --iterations 10 --learning_rate 0.01
+```
+
+### Auto-ml
+_Note: Current only support dataset generated from Generate Images Random Prompt_
+```
+usage: auto_ml.py [-h] [--x-input X_INPUT] [--total-time TOTAL_TIME] [--per-run-time PER_RUN_TIME] [--dataset-zip-path DATASET_ZIP_PATH] [--output OUTPUT]
+
+Run automl on a dataset with embeddings or clip feature and chad score
+
+options:
+  -h, --help            show this help message and exit
+  --x-input X_INPUT     X-input will be either embedding or clip
+  --total-time TOTAL_TIME
+                        Time limit in seconds for the search of appropriate models
+  --per-run-time PER_RUN_TIME
+                        Time limit for a single call to the machine learning model
+  --dataset-zip-path DATASET_ZIP_PATH
+                        Path to the dataset to be used
+  --output OUTPUT       Output path where the plot image will be saved
+```
+Example Usage:
+``` shell
+python scripts/auto_ml.py --dataset-zip-path ./input/set_0002.zip --x-input "clip" --output "./output"
 ```

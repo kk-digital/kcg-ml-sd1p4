@@ -18,6 +18,7 @@ from random import randrange
 import numpy as np
 import torch
 import random
+import shutil
 
 base_directory = "./"
 sys.path.insert(0, base_directory)
@@ -97,7 +98,7 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
                  r" full character, no background, not centered, line drawing, sketch, black and white," \
                  r" colored, offset, video game,exotic, sureal, miltech, fantasy, frank frazetta," \
                  r" terraria, final fantasy, cortex command, surreal, water color expressionist, david mckean, " \
-                 r" jock, esad ribic, chris bachalo, expressionism, Jackson Pollock, Alex Kanevskyg, Francis Bacon, Trash Polka," \
+                 r" jock, esad ribic, chris bachalo, expressionism, Jackson Pollock, Alex Kanevsky, Francis Bacon, Trash Polka," \
                  r" abstract realism, andrew salgado, alla prima technique, alla prima, expressionist alla prima, expressionist alla prima technique"
 
     prompt = arg_prompt
@@ -165,7 +166,15 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
             base_file_name = f'{i:0{total_digits}d}-{timestamp}'
             image_name = base_file_name + '.jpg'
 
-            filename = output + image_name
+            # Define the images sub-directory
+            image_dir = output + '/image'
+
+            # Create this directory if it does not exist
+            os.makedirs(image_dir, exist_ok=True)
+
+            # Specify the filename with the path to the images directory
+            filename = image_dir + '/' + image_name
+
 
             # Capture the starting time
             tmp_start_time = time.time()
@@ -240,6 +249,16 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
             min_chad_score = min(min_chad_score, chad_score)
             max_chad_score = max(max_chad_score, chad_score)
 
+            embedding_dir = os.path.join(output, 'embedding')
+            clip_dir = os.path.join(output, 'feature')
+            latent_dir = os.path.join(output, 'latent')
+            json_dir = os.path.join(output, 'json')
+
+            os.makedirs(embedding_dir, exist_ok=True)
+            os.makedirs(clip_dir, exist_ok=True)
+            os.makedirs(latent_dir, exist_ok=True)
+            os.makedirs(json_dir, exist_ok=True)
+
             embedding_vector_filename = base_file_name + '.embedding.npz'
             clip_features_filename = base_file_name + '.clip.npz'
             latent_filename = base_file_name + '.latent.npz'
@@ -253,19 +272,19 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
                 image_features_numpy = image_features.cpu().numpy()
 
             # save embedding vector to its own file
-            embedding_vector_filepath = output + '/' + embedding_vector_filename
+            embedding_vector_filepath = embedding_dir + '/' + embedding_vector_filename
             np.savez_compressed(embedding_vector_filepath, data=embedded_vector)
 
             # save image features to its own file
-            clip_features_filepath = output + '/' + clip_features_filename
+            clip_features_filepath = clip_dir + '/' + clip_features_filename
             np.savez_compressed(clip_features_filepath, data=image_features_numpy)
 
             # save image latent to its own file
-            latent_filepath = output + '/' + latent_filename
+            latent_filepath = latent_dir + '/' + latent_filename
             np.savez_compressed(latent_filepath, data=latent)
 
             # Save the data to a JSON file
-            json_filename = output + '/' + base_file_name + '.json'
+            json_filename = json_dir + '/' + base_file_name + '.json'
 
             generation_task_result_list.append({
                 'image_filename': filename,
@@ -298,7 +317,8 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
 
         total_digits = 4
 
-        zip_filename = output + '/' + 'set_' + f'{current_task_index:0{total_digits}d}' + '.zip';
+        zip_filename = output + '/' + 'set_' + f'{current_task_index:0{total_digits}d}' + '.zip'
+
         # create zip for generated images
         with ZipFile(zip_filename, 'w', compression=zipfile.ZIP_DEFLATED) as file:
             print('Created zip file ' + zip_filename)
@@ -317,12 +337,23 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
                 clip_features_filepath = generation_task_result_item['clip_features_filepath']
                 latent_filepath = generation_task_result_item['latent_filepath']
 
-                file.write(json_filename, arcname=os.path.basename(json_filename))
-                file.write(image_filename, arcname=os.path.basename(image_filename))
-                file.write(embedding_vector_filepath, arcname=embedding_vector_filename)
-                file.write(clip_features_filepath, arcname=clip_features_filename)
-                file.write(latent_filepath, arcname=latent_filename)
+                # Now, when writing files to the zip, you should specify the folder name in the arcname
+                file.write(json_filename, arcname='image/' + os.path.basename(json_filename))
+                file.write(image_filename, arcname='image/' + os.path.basename(image_filename))
+                file.write(embedding_vector_filepath, arcname='feature/' + embedding_vector_filename)
+                file.write(clip_features_filepath, arcname='feature/' + clip_features_filename)
+                file.write(latent_filepath, arcname='feature/' + latent_filename)
+                
                 zip_task_index += 1
+
+        directories_to_delete = ["image", "embedding", "feature", "json", "latent"]  # Adjust if you have different folder names
+        for dir_name in directories_to_delete:
+            dir_path = os.path.join(output, dir_name)
+            if os.path.exists(dir_path):
+                shutil.rmtree(dir_path)
+                print(f"Deleted folder: {dir_name}")
+
+
 
 
 def main():

@@ -7,10 +7,10 @@ class GeneratedPrompt():
     def __init__(self, prompt_dict: [], prompt_vector: []):
         self.prompt_dict = prompt_dict
         self.prompt_str = ', '.join([prompt.Phrase for prompt in prompt_dict])
-        self.num_of_topics = len([prompt.Phrase for prompt in prompt_dict if "topic" in prompt.Types])
-        self.num_of_modifiers = len([prompt.Phrase for prompt in prompt_dict if "modifier" in prompt.Types])
-        self.num_of_style = len([prompt.Phrase for prompt in prompt_dict if "style" in prompt.Types])
-        self.num_of_constraints = len([prompt.Phrase for prompt in prompt_dict if "constraint" in prompt.Types])
+        self.num_topics = len([prompt.Phrase for prompt in prompt_dict if "topic" in prompt.Types])
+        self.num_modifiers = len([prompt.Phrase for prompt in prompt_dict if "modifier" in prompt.Types])
+        self.num_styles = len([prompt.Phrase for prompt in prompt_dict if "style" in prompt.Types])
+        self.num_constraints = len([prompt.Phrase for prompt in prompt_dict if "constraint" in prompt.Types])
 
         # prompt_vector is a vector of 0 or 1, 1 if that index of prompt list is used
         self.prompt_vector = prompt_vector
@@ -145,18 +145,18 @@ prompts = initialize_prompt_list()
 
 
 # Function to generate prompts
-def generate_prompts(num_prompts, num_phrases):
+def generate_prompts(prompt_count, prompt_phrase_length):
     print("generate_prompts: Generating prompts")
 
     prompt_list = []
     enc = tiktoken.get_encoding("cl100k_base")
 
-    for i in range(0, num_prompts):
+    for i in range(0, prompt_count):
         num_tokens = 100
         while num_tokens > 77:
             prompt_dict = []
             prompt_vector = [0] * len(prompts)
-            for j in range(0, num_phrases):
+            for j in range(0, prompt_phrase_length):
                 random_prompt = random.choice(
                     [item for item in prompts if (prompt_vector[item.Index] == 0)])
                 prompt_index = random_prompt.Index
@@ -186,10 +186,10 @@ def generate_prompts(num_prompts, num_phrases):
     print("prompt_list:")
     for i in range(0, len(prompt_list)):
         print("prompt ", i, ": prompt_str:", prompt_list[i].prompt_str)
-        print("prompt ", i, ": number of topics:", prompt_list[i].num_of_topics)
-        print("prompt ", i, ": number of modifiers:", prompt_list[i].num_of_modifiers)
-        print("prompt ", i, ": number of styles:", prompt_list[i].num_of_style)
-        print("prompt ", i, ": number of constraints:", prompt_list[i].num_of_constraints)
+        print("prompt ", i, ": number of topics:", prompt_list[i].num_topics)
+        print("prompt ", i, ": number of modifiers:", prompt_list[i].num_modifiers)
+        print("prompt ", i, ": number of styles:", prompt_list[i].num_styles)
+        print("prompt ", i, ": number of constraints:", prompt_list[i].num_constraints)
         print("prompt ", i, ": prompt_vector:", prompt_list[i].prompt_vector)
         print("-------------------------------------------------------------------------")
 
