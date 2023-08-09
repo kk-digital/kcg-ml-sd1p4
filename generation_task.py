@@ -26,7 +26,7 @@ class GenerationTask:
         self.sampler = sampler
         self.steps = steps
         self.force_cpu = force_cpu
-        self.num_datasets
+        self.num_datasets = num_datasets
 
     def to_dict(self):
         return {
