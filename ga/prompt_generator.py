@@ -145,13 +145,13 @@ prompts = initialize_prompt_list()
 
 
 # Function to generate prompts
-def generate_prompts(num_prompts, num_phrases):
+def generate_prompts(prompt_phrase_length, num_phrases):
     print("generate_prompts: Generating prompts")
 
     prompt_list = []
     enc = tiktoken.get_encoding("cl100k_base")
 
-    for i in range(0, num_prompts):
+    for i in range(0, prompt_phrase_length):
         num_tokens = 100
         while num_tokens > 77:
             prompt_dict = []
