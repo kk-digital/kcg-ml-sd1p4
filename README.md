@@ -385,8 +385,12 @@ and outputs a chad score.
 
 ``` shell
 options:
---input_path INPUT_PATH
+  --input_path INPUT_PATH
                         Path to input zip
+  --output_path OUTPUT_PATH
+                        Path output folder
+  --model_output_name MODEL_OUTPUT_NAME
+                        Filename of the trained model
   --num_epochs NUM_EPOCHS
                         Number of epochs (default: 1000)
   --epsilon_raw EPSILON_RAW
@@ -394,10 +398,33 @@ options:
   --epsilon_scaled EPSILON_SCALED
                         Epsilon for scaled data (default: 0.2)
   --use_76th_embedding  If this option is set, only use the last entry in the embeddings tensor
-  --show_validation_loss  If this option is set, shows validation loss during training
+  --show_validation_loss
+                        whether to show validation loss
 ```
 
 Example Usage:
 ``` shell
-python scripts/prompt_score.py --input_path input/set_0000_v2.zip --use_76th_embedding --num_epochs 200 --epsilon_raw 10 --epsilon_scaled 0.2
+python scripts/prompt_score.py --input_path input/set_0000_v2.zip --use_76th_embedding --num_epochs 200 --epsilon_raw 10 --epsilon_scaled 0.2 --model_output_name prompt_score.pth
+```
+
+### Prompt Embeddings Gradient Optimization
+
+Optimizes an embedding vector using gradients.
+
+``` shell
+options:
+  --input_path INPUT_PATH
+                        Path to input zip
+  --model_path MODEL_PATH
+                        Path to the model
+  --iterations ITERATIONS
+                        How many iterations to perform
+  --learning_rate LEARNING_RATE
+                        Learning rate to use when optimizing
+```
+
+Example Usage:
+
+``` shell
+python scripts/prompt_gradient.py --input_path input/set_0000_v2.zip --model_path output/models/prompt_score.pth --iterations 10 --learning_rate 0.01
 ```
