@@ -10,6 +10,7 @@ import json
 import math
 import numpy as np
 import random
+import cv2
 from os.path import join
 
 import clip
