@@ -12,8 +12,8 @@ class LinearRegressionModel():
         self.device = device
 
     def compute_gradient(self, input_vector, real_output):
-        input_vector = torch.tensor(input_vector, requires_grad=True)
-        predicted_output = self.model(input_vector)
+        input_tensor = input_vector.clone().detach().requires_grad_(True)
+        predicted_output = self.model(input_tensor)
 
         self.model.zero_grad()
 
@@ -21,7 +21,10 @@ class LinearRegressionModel():
         loss = mse_loss(predicted_output, real_output)
         loss.backward()
 
-        input_gradient = input_vector.grad.data
+        input_gradient = input_tensor.grad.data
+
+        input_tensor.to("cpu")
+        del input_tensor
 
         return input_gradient
 
