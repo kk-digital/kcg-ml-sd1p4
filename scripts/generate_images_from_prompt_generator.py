@@ -19,6 +19,7 @@ import numpy as np
 import torch
 import random
 import shutil
+
 base_directory = "./"
 sys.path.insert(0, base_directory)
 
@@ -32,8 +33,10 @@ from stable_diffusion.utils_image import save_images
 from stable_diffusion.model.unet.unet_attention import CrossAttention
 from cli_builder import CLI
 
+
 def generate_images_from_prompt_generator(num_images, num_phrases, image_width, image_height, cfg_strength, batch_size,
-                                       checkpoint_path, output, seed, flash, device, sampler, steps, force_cpu, num_datasets):
+                                          checkpoint_path, output, seed, flash, device, sampler, steps, force_cpu,
+                                          num_datasets):
     model_name = os.path.basename(checkpoint_path)
     # get prompts from prompt generator
     generated_prompt_list = generate_prompts(num_images, num_phrases)
@@ -76,7 +79,7 @@ def generate_images_from_prompt_generator(num_images, num_phrases, image_width, 
                                         path=checkpoint_path, force_submodels_init=True)
 
     for current_task_index in range(num_datasets):
-        print("Generating Dataset : " +  str(current_task_index))
+        print("Generating Dataset : " + str(current_task_index))
         folder_name = 'set_' + f'{current_task_index:04d}'
         output_path = os.path.join(output, folder_name)
         # create folder if doesn't exist
@@ -88,7 +91,8 @@ def generate_images_from_prompt_generator(num_images, num_phrases, image_width, 
         max_chad_score = -999999.0
 
         for i in range(num_images):
-            this_prompt = generated_prompt_list[i].prompt_str
+            prompt_dict = generated_prompt_list[i]
+            this_prompt = prompt_dict.prompt_str
             this_seed = seed_array[(i + current_task_index * num_images) % len(seed_array)]
 
             print("Generating image " + str(i) + " out of " + str(num_images));
@@ -179,7 +183,8 @@ def generate_images_from_prompt_generator(num_images, num_phrases, image_width, 
             clip_features_filename = base_file_name + '.clip.npz'
             latent_filename = base_file_name + '.latent.npz'
 
-            generation_task_result = GenerationTaskResult(this_prompt, model_name, image_name, embedding_vector_filename,
+            generation_task_result = GenerationTaskResult(this_prompt, model_name, image_name,
+                                                          embedding_vector_filename,
                                                           clip_features_filename, latent_filename,
                                                           image_hash, chad_score_model_name, chad_score, this_seed,
                                                           cfg_strength)
@@ -199,12 +204,17 @@ def generate_images_from_prompt_generator(num_images, num_phrases, image_width, 
             latent_filepath = output_path + '/' + latent_filename
             np.savez_compressed(latent_filepath, data=latent)
 
+            # save prompt dict to its own file
+            prompt_dict_filename = base_file_name + '.prompt_dict.npz'
+            prompt_dict_filepath = output_path + '/' + prompt_dict_filename
+            np.savez_compressed(prompt_dict_filepath, prompt_dict=prompt_dict.prompt_dict,
+                                prompt_str=prompt_dict.prompt_str, prompt_vector=prompt_dict.prompt_vector,
+                                num_topics=prompt_dict.num_topics, num_modifiers=prompt_dict.num_modifiers,
+                                num_styles=prompt_dict.num_styles,
+                                num_constraints=prompt_dict.num_constraints)
+
             # Save the data to a JSON file
             json_filename = output_path + '/' + base_file_name + '.json'
-
-            # save generation_task_result
-            # save to json file
-            generation_task_result.save_to_json(json_filename)
 
             generation_task_result_list.append({
                 'image_filename': filename,
@@ -214,6 +224,10 @@ def generate_images_from_prompt_generator(num_images, num_phrases, image_width, 
                 'latent_filepath': latent_filepath,
                 'generation_task_result': generation_task_result
             })
+
+            # save generation_task_result
+            # save to json file
+            generation_task_result.save_to_json(json_filename)
 
             # Capture the ending time
             end_time = time.time()
@@ -249,10 +263,11 @@ def main():
         .num_phrases() \
         .parse()
 
-    generate_images_from_prompt_generator(opt.num_images, opt.num_phrases, opt.image_width, opt.image_height, opt.cfg_scale,
-                                       opt.batch_size, opt.checkpoint_path, opt.output, opt.seed, opt.flash,
-                                       opt.cuda_device,
-                                       opt.sampler, opt.steps, opt.force_cpu, opt.num_datasets)
+    generate_images_from_prompt_generator(opt.num_images, opt.num_phrases, opt.image_width, opt.image_height,
+                                          opt.cfg_scale,
+                                          opt.batch_size, opt.checkpoint_path, opt.output, opt.seed, opt.flash,
+                                          opt.cuda_device,
+                                          opt.sampler, opt.steps, opt.force_cpu, opt.num_datasets)
 
 
 if __name__ == "__main__":
