@@ -100,7 +100,7 @@ class ModelConfig:
         if to_dict:
             return {key: value for key, value in results}
 
-        return results[0] if len(results) == 1 else [value for _, value in results]
+        return results[0][0] if len(results) == 1 else [value for _, value in results]
 
     def get_model(self, *paths, to_dict=False, extension=DEFAULT_EXTENSION, raise_error=False, check_existence=None):
         """
