@@ -2,7 +2,7 @@ from minio import Minio
 import os
 import requests
 from .progress import Progress
-from stable_diffusion.utils_logger import logger
+from utility.utils_logger import logger
 
 # TODO: remove hardcode in the future
 #  use config file

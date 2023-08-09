@@ -35,8 +35,8 @@ from .constants import (
     TEXT_EMBEDDER_PATH,
     ENCODER_PATH,
     DECODER_PATH,
-    TOKENIZER_PATH,
-    TEXT_MODEL_PATH,
+    TOKENIZER_DIR_PATH,
+    TEXT_MODEL_DIR_PATH,
 )
 from .model.clip_text_embedder.clip_text_embedder import CLIPTextEmbedder
 from .model.unet.unet import UNetModel
@@ -242,8 +242,8 @@ class LatentDiffusion(nn.Module):
             decoder_path=DECODER_PATH,
             autoencoder_path=AUTOENCODER_PATH,
             embedder_path=TEXT_EMBEDDER_PATH,
-            tokenizer_path=TOKENIZER_PATH,
-            transformer_path=TEXT_MODEL_PATH,
+            tokenizer_path=TOKENIZER_DIR_PATH,
+            transformer_path=TEXT_MODEL_DIR_PATH,
             unet_path=UNET_PATH,
     ):
         with section("Load submodel tree"):

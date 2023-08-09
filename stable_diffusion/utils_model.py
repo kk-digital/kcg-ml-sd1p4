@@ -17,7 +17,7 @@ from transformers import CLIPTokenizer, CLIPTextModel
 
 from stable_diffusion.constants import AUTOENCODER_PATH, ENCODER_PATH, DECODER_PATH
 from stable_diffusion.constants import LATENT_DIFFUSION_PATH
-from stable_diffusion.constants import TEXT_EMBEDDER_PATH, TOKENIZER_PATH, TEXT_MODEL_PATH
+from stable_diffusion.constants import TEXT_EMBEDDER_PATH, TOKENIZER_DIR_PATH, TEXT_MODEL_DIR_PATH
 from stable_diffusion.constants import UNET_PATH
 from stable_diffusion.latent_diffusion import LatentDiffusion
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
@@ -65,7 +65,7 @@ def initialize_autoencoder(device=None, encoder=None, decoder=None, emb_channels
                            force_submodels_init=False) -> Autoencoder:
     # Initialize the autoencoder
 
-    with section(f'autoencoder initialization'):
+    with section('Autoencoder initialization'):
         device = get_device(device)
         if force_submodels_init:
             if encoder is None:
@@ -124,7 +124,7 @@ def initialize_tokenizer(device=None, version="openai/clip-vit-large-patch14") -
     return tokenizer
 
 
-def load_tokenizer(path: Union[str, Path] = TOKENIZER_PATH, device=None) -> CLIPTokenizer:
+def load_tokenizer(path: Union[str, Path] = TOKENIZER_DIR_PATH, device=None) -> CLIPTokenizer:
     with section(f"CLIP tokenizer loading, from {path}"):
         device = get_device(device)
         tokenizer = torch.load(path, map_location=device).eval()
@@ -137,7 +137,7 @@ def initialize_transformer(device=None, version="openai/clip-vit-large-patch14")
     return transformer
 
 
-def load_transformer(path: Union[str, Path] = TEXT_MODEL_PATH, device=None) -> CLIPTextModel:
+def load_transformer(path: Union[str, Path] = TEXT_MODEL_DIR_PATH, device=None) -> CLIPTextModel:
     with section(f"CLIP transformer loading, from {path}"):
         device = get_device(device)
         transformer = torch.load(path, map_location=device).eval()
@@ -155,7 +155,7 @@ def initialize_clip_embedder(device=None, init_transformer=False) -> CLIPTextEmb
         )
 
         if init_transformer:
-            initialize_transformer().save_pretrained(TEXT_MODEL_PATH)
+            initialize_transformer().save_pretrained(TEXT_MODEL_DIR_PATH)
 
         # This is temporary, we should call load_submodels instead
         clip_text_embedder.load_submodels_auto()

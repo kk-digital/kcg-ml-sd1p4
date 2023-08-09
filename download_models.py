@@ -1,29 +1,20 @@
-import configparser
 import math
 import os
 import time
+
 import requests
 from tqdm import tqdm
 
-from stable_diffusion.utils_logger import logger
+from configs.model_config import ModelConfig
+from utility.utils_logger import logger
 from utility.labml.monit import section
 from utility.minio.cmd import is_minio_server_accesssible, connect_to_minio_client, download_from_minio
 
-config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
-config.read('config.ini')
-
+config = ModelConfig()
 
 
 def create_directory_tree_folders(config):
-    for section in config.sections():
-        if section.endswith("_DIRS"):
-            for k, v in config[section].items():
-                os.makedirs(v, exist_ok=True)
-
-
-def create_directory_if_not_exists(directory_path):
-    if not os.path.exists(directory_path):
-        os.makedirs(directory_path)
+    config.create_paths()
 
 
 def download_file(url, file_path, description, update_interval=500, chunk_size=4096):
@@ -38,6 +29,7 @@ def download_file(url, file_path, description, update_interval=500, chunk_size=4
                 return f'{mem:.2f}{size}'
             else:
                 return f'{mem}{size}'
+
         with open(file_path, 'wb') as f:
             response = requests.get(url, stream=True)
             total_length = response.headers.get('content-length')
@@ -87,9 +79,7 @@ if __name__ == "__main__":
 
     with section("Downloading CLIP model"):
         # DOWNLOAD_BASE_CLIP_MODEL
-        clip_model_dir = config["MODELS_DIRS"].get('clip_model_dir')
-        create_directory_if_not_exists(clip_model_dir)
-        clip_path = os.path.join(clip_model_dir, 'model.safetensors')
+        clip_path = config.get_model('clip/vit-large-patch14', check_existence=False)
         clip_url = r'https://huggingface.co/openai/clip-vit-large-patch14/resolve/refs%2Fpr%2F19/model.safetensors'
 
         if is_minio_accessible:
@@ -101,9 +91,7 @@ if __name__ == "__main__":
 
     with section("Downloading Text model"):
         # DOWNLOAD_TEXT_MODEL
-        root_models_dir = config["CLIP_MODELS_DIRS"].get('text_model_dir')
-        create_directory_if_not_exists(root_models_dir)
-        model_path = os.path.join(root_models_dir, 'pytorch_model.bin')
+        model_path = config.get_model('clip/text_model', extension='.bin', check_existence=False)
         model_url = r'https://huggingface.co/openai/clip-vit-large-patch14/resolve/main/pytorch_model.bin'
         if is_minio_accessible:
             bucket_name = "clip-vit-large-patch14"
@@ -111,12 +99,11 @@ if __name__ == "__main__":
             download_from_minio(minio_client, bucket_name, object_name, model_path)
         else:
             download_file(model_url, model_path, "Pytorch Model Bin")
-            
+
     with section("Downloading Base Diffusion model"):
         # DOWNLOAD_BASE_SD_MODEL
-        root_models_dir = config["ROOT_DIRS"].get('root_models_dir')
-        create_directory_if_not_exists(root_models_dir)
-        sd_path = os.path.join(root_models_dir, 'v1-5-pruned-emaonly.safetensors')
+
+        sd_path = config.get_model('sd/v1-5-pruned-emaonly', check_existence=False)
         sd_url = r'https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors'
         if is_minio_accessible:
             bucket_name = "stable-diffusion-models"

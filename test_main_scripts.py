@@ -26,9 +26,11 @@ class TestScripts(unittest.TestCase):
         # Assert that return code is 0
         self.assertEqual(process.returncode, 0, f"{command} failed with return code {process.returncode}")
 
-    def test_01_process_base_model(self):
-        self.run_script("./setup_directories_and_models", download_base_clip_model="True",
-                        download_base_sd_model="True")
+    def test_01_dowload_models(self):
+        self.run_script("./download_models.py")
+
+    def test_01_02_dowload_models(self):
+        self.run_script("./process_models.py")
 
     def test_02_text_to_image(self):
         self.run_script(f"{self.scripts_path}text_to_image",

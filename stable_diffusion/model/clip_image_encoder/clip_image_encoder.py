@@ -12,8 +12,8 @@ from torchvision.transforms import Compose, Resize, CenterCrop, Normalize, Lambd
 
 
 sys.path.insert(0, os.getcwd())
-from stable_diffusion.utils_logger import logger
-from stable_diffusion.constants import IMAGE_PROCESSOR_PATH, VISION_MODEL_PATH, IMAGE_ENCODER_PATH
+from utility.utils_logger import logger
+from stable_diffusion.constants import IMAGE_PROCESSOR_DIR_PATH, VISION_MODEL_DIR_PATH, IMAGE_ENCODER_PATH
 from stable_diffusion.utils_backend import get_device
 from transformers import CLIPImageProcessor, CLIPVisionModelWithProjection
 
@@ -36,14 +36,14 @@ class CLIPImageEncoder(nn.Module):
 
         self.to(self.device)
 
-    def save_submodels(self, image_processor_path=IMAGE_PROCESSOR_PATH, vision_model_path=VISION_MODEL_PATH):
+    def save_submodels(self, image_processor_path=IMAGE_PROCESSOR_DIR_PATH, vision_model_path=VISION_MODEL_DIR_PATH):
         # Save the model to the specified folder
         self.image_processor.save_pretrained(image_processor_path)
         print("image_processor saved to: ", image_processor_path)
         self.vision_model.save_pretrained(vision_model_path, safe_serialization=True)
         print("vision_model saved to: ", vision_model_path)
 
-    def load_submodels(self, image_processor_path=IMAGE_PROCESSOR_PATH, vision_model_path=VISION_MODEL_PATH):
+    def load_submodels(self, image_processor_path=IMAGE_PROCESSOR_DIR_PATH, vision_model_path=VISION_MODEL_DIR_PATH):
         try:
             self.vision_model = (CLIPVisionModelWithProjection.from_pretrained(vision_model_path, local_files_only=True,
                                                                                use_safetensors=True)
