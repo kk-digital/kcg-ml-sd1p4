@@ -212,6 +212,8 @@ def store_generation_images(ga_instance):
 
 
 def prompt_embedding_vectors(sd, prompt_array):
+    print(type(prompt_array))
+    print(prompt_array)
     # Generate embeddings for each prompt
     embedded_prompts = ga.clip_text_get_prompt_embedding(ModelConfig=pt, prompts=prompt_array)
     #print("embedded_prompt, tensor shape= "+ str(torch.Tensor.size(embedded_prompts)))
