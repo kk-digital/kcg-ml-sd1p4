@@ -317,3 +317,14 @@ class CLI:
             checker(args)
 
         return args
+
+    def num_phrases(self):
+        self.parser.add_argument(
+            '--num-phrases',
+            type=int,
+            nargs="?",
+            help='The number of phrases for the prompt to generate',
+            default=12
+        )
+
+        return self

@@ -125,8 +125,15 @@ EMBEDDED_PROMPTS_DIR = os.path.abspath(join(base_dir, 'input', 'embedded_prompts
 OUTPUT_DIR = os.path.abspath(join(base_dir, 'output', 'ga'))
 IMAGES_ROOT_DIR = os.path.abspath(join(OUTPUT_DIR, "images/"))
 FEATURES_DIR = os.path.abspath(join(OUTPUT_DIR, "features/"))
+
+os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+os.makedirs(FEATURES_DIR, exist_ok=True)
+os.makedirs(IMAGES_ROOT_DIR, exist_ok=True)
+
 # Creating new subdirectory for this run of the GA (e.g. output/ga/images/ga001)
 IMAGES_DIR = get_next_ga_dir(IMAGES_ROOT_DIR)
+os.makedirs(IMAGES_DIR, exist_ok=True)
 
 fitness_cache = {}
 
@@ -147,12 +154,6 @@ print(OUTPUT_DIR)
 print(IMAGES_ROOT_DIR)
 print(IMAGES_DIR)
 print(FEATURES_DIR)
-
-os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
-os.makedirs(OUTPUT_DIR, exist_ok=True)
-os.makedirs(IMAGES_DIR, exist_ok=True)
-os.makedirs(FEATURES_DIR, exist_ok=True)
-os.makedirs(IMAGES_ROOT_DIR, exist_ok=True)
 
 #TODO: wtf is this function
 '''
@@ -224,11 +225,13 @@ def calculate_chad_score(ga_instance, solution, solution_idx):
         return chad_score
 
 def cached_fitness_func(ga_instance, solution, solution_idx):
-    if tuple(solution) in fitness_cache:
-        print('Returning cached score', fitness_cache[tuple(solution)])
-    if tuple(solution) not in fitness_cache:
-        fitness_cache[tuple(solution)] = calculate_chad_score(ga_instance, solution, solution_idx)
-    return fitness_cache[tuple(solution)]
+    solution_copy = solution.copy()  # flatten() is destructive operation
+    solution_flattened = solution_copy.flatten()
+    if tuple(solution_flattened) in fitness_cache:
+        print('Returning cached score', fitness_cache[tuple(solution_flattened)])
+    if tuple(solution_flattened) not in fitness_cache:
+        fitness_cache[tuple(solution_flattened)] = calculate_chad_score(ga_instance, solution, solution_idx)
+    return fitness_cache[tuple(solution_flattened)]
 
 def on_fitness(ga_instance, population_fitness):
     population_fitness_np = np.array(population_fitness)
