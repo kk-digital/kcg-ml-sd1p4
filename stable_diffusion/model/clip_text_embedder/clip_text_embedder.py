@@ -22,8 +22,8 @@ import torch
 from torch import nn
 from transformers import CLIPTokenizer, CLIPTextModel, CLIPTextConfig
 
-from stable_diffusion.utils_logger import logger
 from utility.labml.monit import section
+from utility.utils_logger import logger
 
 sys.path.insert(0, os.getcwd())
 from stable_diffusion.constants import TEXT_EMBEDDER_PATH, TOKENIZER_DIR_PATH, TEXT_MODEL_DIR_PATH

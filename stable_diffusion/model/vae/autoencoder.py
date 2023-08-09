@@ -19,7 +19,7 @@ import os
 import sys
 import safetensors
 
-from stable_diffusion.utils_logger import logger
+from utility.utils_logger import logger
 from utility.labml.monit import section
 
 sys.path.insert(0, os.getcwd())

@@ -45,6 +45,7 @@ class CLIPImageEncoder(nn.Module):
 
     def load_submodels(self, image_processor_path=IMAGE_PROCESSOR_DIR_PATH, vision_model_path=VISION_MODEL_DIR_PATH):
         try:
+            print("Loading image_processor from: ", vision_model_path)
             self.vision_model = (CLIPVisionModelWithProjection.from_pretrained(vision_model_path, local_files_only=True,
                                                                                use_safetensors=True)
                                  .eval()

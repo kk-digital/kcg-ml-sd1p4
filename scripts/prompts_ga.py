@@ -53,16 +53,12 @@ Objective:
 '''
 
 import os, sys
+
+from configs.model_config import ModelConfig
+
 base_dir = os.getcwd()
 sys.path.insert(0, base_dir)
 
-import torch
-from typing import List
-import configparser
-import hashlib
-import json
-import math
-import numpy as np
 import random
 from os.path import join
 
@@ -137,10 +133,7 @@ fitness_cache = {}
 NULL_PROMPT = None #assign later
 
 # DEVICE = input("Set device: 'cuda:i' or 'cpu'")
-config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
-config.read(os.path.join(base_dir, "config.ini"))
-config['BASE']['BASE_DIRECTORY'] = base_dir
-config["BASE"].get('base_io_directory')
+config = ModelConfig()
 
 pt = IODirectoryTree(base_io_directory_prefix = config["BASE"].get('base_io_directory_prefix'), base_directory=base_dir)
 

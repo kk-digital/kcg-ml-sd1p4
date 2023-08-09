@@ -21,7 +21,7 @@ from typing import List
 
 import safetensors
 
-from ...utils_logger import logger
+from utility.utils_logger import logger
 
 sys.path.insert(0, os.getcwd())
 from .auxiliary_classes import *
