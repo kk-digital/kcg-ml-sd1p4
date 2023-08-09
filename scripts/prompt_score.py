@@ -32,6 +32,7 @@ def parse_arguments():
 
     parser.add_argument('--input_path', type=str, default='./input/set_0000.zip', help='Path to input zip')
     parser.add_argument('--output_path', type=str, default='./output/', help='Path output folder')
+    parser.add_argument('--model_output_name', type=str, default='prompt_score.pth', help='Filename of the trained model')
     parser.add_argument('--num_epochs', type=int, default=1000, help='Number of epochs (default: 1000)')
     parser.add_argument('--epsilon_raw', type=float, default=10.0, help='Epsilon for raw data (default: 10.0)')
     parser.add_argument('--epsilon_scaled', type=float, default=0.2, help='Epsilon for scaled data (default: 0.2)')
@@ -54,7 +55,12 @@ def main():
     epsilon_raw = args.epsilon_raw
     epsilon_scaled = args.epsilon_scaled
     show_validation_loss = args.show_validation_loss
+    model_output_name = args.model_output_name
     output_path = args.output_path
+    models_dir = os.path.join(output_path, 'models')
+
+    os.makedirs(output_path, exist_ok=True)
+    os.makedirs(models_dir, exist_ok=True)
 
     util_histogram = UtilHistogram()
 
@@ -284,11 +290,14 @@ def main():
 
     print(train_report_string)
 
-    reports_path = output_path + '/report.txt'
+    reports_path = os.path.join(output_path, 'report.txt')
     with open(reports_path, "w", encoding="utf-8") as file:
         file.write(train_report_string)
     print("Reports saved at {}".format(reports_path))
 
+    model_filepath = os.path.join(models_dir, model_output_name)
+    print("Saving model ", model_filepath)
+    linear_regression_model.save(model_filepath)
 
 
 if __name__ == '__main__':
