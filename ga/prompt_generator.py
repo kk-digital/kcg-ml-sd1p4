@@ -7,10 +7,10 @@ class GeneratedPrompt():
     def __init__(self, prompt_dict: [], prompt_vector: []):
         self.prompt_dict = prompt_dict
         self.prompt_str = ', '.join([prompt.Phrase for prompt in prompt_dict])
-        self.num_of_topics = len([prompt.Phrase for prompt in prompt_dict if "topic" in prompt.Types])
-        self.num_of_modifiers = len([prompt.Phrase for prompt in prompt_dict if "modifier" in prompt.Types])
-        self.num_of_style = len([prompt.Phrase for prompt in prompt_dict if "style" in prompt.Types])
-        self.num_of_constraints = len([prompt.Phrase for prompt in prompt_dict if "constraint" in prompt.Types])
+        self.num_topics = len([prompt.Phrase for prompt in prompt_dict if "topic" in prompt.Types])
+        self.num_modifiers = len([prompt.Phrase for prompt in prompt_dict if "modifier" in prompt.Types])
+        self.num_styles = len([prompt.Phrase for prompt in prompt_dict if "style" in prompt.Types])
+        self.num_constraints = len([prompt.Phrase for prompt in prompt_dict if "constraint" in prompt.Types])
 
         # prompt_vector is a vector of 0 or 1, 1 if that index of prompt list is used
         self.prompt_vector = prompt_vector
@@ -186,10 +186,10 @@ def generate_prompts(num_prompts, num_phrases):
     print("prompt_list:")
     for i in range(0, len(prompt_list)):
         print("prompt ", i, ": prompt_str:", prompt_list[i].prompt_str)
-        print("prompt ", i, ": number of topics:", prompt_list[i].num_of_topics)
-        print("prompt ", i, ": number of modifiers:", prompt_list[i].num_of_modifiers)
-        print("prompt ", i, ": number of styles:", prompt_list[i].num_of_style)
-        print("prompt ", i, ": number of constraints:", prompt_list[i].num_of_constraints)
+        print("prompt ", i, ": number of topics:", prompt_list[i].num_topics)
+        print("prompt ", i, ": number of modifiers:", prompt_list[i].num_modifiers)
+        print("prompt ", i, ": number of styles:", prompt_list[i].num_styles)
+        print("prompt ", i, ": number of constraints:", prompt_list[i].num_constraints)
         print("prompt ", i, ": prompt_vector:", prompt_list[i].prompt_vector)
         print("-------------------------------------------------------------------------")
 
