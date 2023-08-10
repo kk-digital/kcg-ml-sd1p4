@@ -4,6 +4,10 @@ import sys
 import torch
 import configparser
 import random
+import clip
+import numpy as np
+from tabulate import tabulate
+from scipy.spatial.distance import cosine
 
 base_dir = os.getcwd()
 sys.path.insert(0, base_dir)
@@ -75,15 +79,14 @@ def parse_arguments():
 def store_image_from_embeddings(sd, i, prompt_embedding, null_prompt, cfg_strength=9):
     file_dir = os.path.join('output', 'gradient')
     os.makedirs(file_dir, exist_ok=True)
-    seed = random.randint(0, 2**24)
     if FIXED_SEED == True:
-        seed = 54846
+        SEED = 54846
     # prompt_embedding = torch.tensor(prompt_embedding, dtype=torch.float32).to(DEVICE)
     prompt_embedding = prompt_embedding.clone().detach().to(DEVICE)
     prompt_embedding = prompt_embedding.view(1, 77, 768)
 
     image = sd.generate_images_from_embeddings(
-            seed=seed,
+            seed=SEED,
             embedded_prompt=prompt_embedding,
             null_prompt=null_prompt,
             uncond_scale=cfg_strength
@@ -95,6 +98,54 @@ def store_image_from_embeddings(sd, i, prompt_embedding, null_prompt, cfg_streng
     pil_image = to_pil(image[0])
     filename = os.path.join(file_dir, f'{i}.png')
     pil_image.save(filename)
+    return pil_image
+
+# We're taking advantage of the fact that we already created the pil image in
+# store_image_from_embeddings
+def get_chad_score_from_pil_image(pil_image):
+    unsqueezed_image = preprocess(pil_image).unsqueeze(0).to(DEVICE)
+    # Get CLIP encoding of model
+    with torch.no_grad():
+        image_features = image_features_clip_model.encode_image(unsqueezed_image)
+        chad_score = chad_score_predictor.get_chad_score(image_features.type(torch.cuda.FloatTensor))
+        return chad_score
+
+def report_row(iteration,
+               starting_vector,
+               updated_vector,
+               pil_image,
+               starting_model_score,
+               model_score):
+
+    cosine_distance = cosine(starting_vector, updated_vector)
+    mse = np.mean((starting_vector - updated_vector)**2)
+    chad_score = get_chad_score_from_pil_image(pil_image)
+    residual = abs(model_score - chad_score)
+
+    row = [iteration,
+           "{:.4e}".format(cosine_distance),
+           "{:.4e}".format(mse),
+           "{:.4f}".format(chad_score),
+           "{:.4f}".format(model_score.item()),
+           "{:.4f}".format(residual.item())]
+    return row
+
+def report_table(rows):
+    table_headers = ['Iteration', 'Cosine', 'MSE', 'Chad Score', 'Model Score', 'Residual']
+
+    table = tabulate(rows, headers=table_headers, tablefmt="pretty")
+
+    return table
+
+def report(rows, iterations, learning_rate, starting_model_score, starting_chad_score):
+    data_before_table = ""
+    data_before_table += f"Seed: {SEED}\n"
+    data_before_table += f"Iterations: {iterations}\n"
+    data_before_table += f"Learning rate: {learning_rate}\n"
+    data_before_table += "\n"
+
+    report = data_before_table + report_table(rows) + "\n"
+    return report
 
 def main():
     args = parse_arguments()
