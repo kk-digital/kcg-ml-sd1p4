@@ -168,6 +168,7 @@ python3 ./scripts/generate_images_from_temperature_range.py -d 4 --params_range 
 **Command line arguments**
 
 - `-p, --prompt`: The prompt to generate images from. Defaults to `"A woman with flowers in her hair in a courtyard, in the style of Frank Frazetta"`.
+- `--negative-prompt`: The negative prompt. For things we dont want to see in generated image. Defaults to `''`.
 - `-od, --output_dir`: The output directory. Defaults to the `OUTPUT_DIR` constant, which is expected to be `"./output/noise-tests/temperature_range"`.
 - `-cp, --checkpoint_path`: The path to the checkpoint file to load from. Defaults to the `CHECKPOINT_PATH` constant, which is expected to be `"./input/model/v1-5-pruned-emaonly.safetensors"`.
 - `-F, --fully_initialize`: Whether to fully initialize or not. Defaults to `False`.
