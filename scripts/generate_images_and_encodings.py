@@ -12,6 +12,7 @@ sys.path.insert(0, base_directory)
 
 from stable_diffusion.stable_diffusion import StableDiffusion
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
+from utility.utils_argument_parsing import get_seed_array_from_string
 from cli_builder import CLI
 from stable_diffusion.utils_backend import get_device
 from stable_diffusion.utils_image import calculate_sha256
@@ -55,6 +56,7 @@ def generate_images(
         n_steps: int = 20,
         batch_size: int = 1,
         num_iterations: int = 10,
+        seed_array = [0],
         device=None,
 ):
     images_dir = os.path.join(output_base_dir, "images/")
@@ -79,6 +81,7 @@ def generate_images(
                 batch_size=batch_size,
                 prompt=prompt,
                 negative_prompt=negative_prompt,
+                seed=seed_array[image_counter % len(seed_array)]
             )
             # print(tensor_images.shape)
             # image_hash = calculate_sha256(images.squeeze())
@@ -140,14 +143,18 @@ def main():
         .batch_size()
         .num_iterations()
         .cuda_device()
+        .seed()
         .parse()
     )
+
+    seed_array = get_seed_array_from_string(seed, array_size=(args.num_iterations))
 
     generate_images(
         prompt=args.prompt,
         negative_prompt=args.negative_prompt,
         batch_size=args.batch_size,
         num_iterations=args.num_iterations,
+        seed_array=seed_array,
         device=args.cuda_device,
     )
 
