@@ -5,7 +5,7 @@ from typing import Optional
 
 import torch
 
-from stable_diffusion.utils_logger import logger
+from utility.utils_logger import logger
 
 sys.path.append(os.path.abspath(""))
 from stable_diffusion.utils_backend import get_device, get_autocast, set_seed

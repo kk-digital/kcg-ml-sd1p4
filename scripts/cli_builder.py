@@ -2,6 +2,8 @@ import argparse
 import sys
 from typing import Union, Callable
 
+from stable_diffusion import CHECKPOINT_PATH
+
 sys.path.append("./")
 from stable_diffusion_reference.cli import check_folder_existence, check_file_existence
 
@@ -80,7 +82,7 @@ class CLI:
         self.parser.add_argument(
             '--checkpoint_path',
             type=str,
-            default='./input/model/v1-5-pruned-emaonly.safetensors',
+            default=CHECKPOINT_PATH,
             help='Path to the checkpoint file (default: \'./input/model/v1-5-pruned-emaonly.safetensors\')'
         )
 

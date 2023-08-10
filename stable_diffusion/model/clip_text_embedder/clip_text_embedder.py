@@ -22,17 +22,14 @@ import torch
 from torch import nn
 from transformers import CLIPTokenizer, CLIPTextModel, CLIPTextConfig
 
-from stable_diffusion.utils_logger import logger
 from utility.labml.monit import section
+from utility.utils_logger import logger
 
 sys.path.insert(0, os.getcwd())
-from stable_diffusion.constants import TEXT_EMBEDDER_PATH, TOKENIZER_PATH, TEXT_MODEL_PATH
+from stable_diffusion.constants import TEXT_EMBEDDER_PATH, TOKENIZER_DIR_PATH, TEXT_MODEL_DIR_PATH
 from stable_diffusion.utils_backend import get_device
 
 
-# TEXT_EMBEDDER_PATH = os.path.abspath('./input/model/clip/clip_embedder.ckpt')
-# TOKENIZER_PATH = os.path.abspath('./input/model/clip/clip_tokenizer.ckpt')
-# TEXT_MODEL_PATH = os.path.abspath('./input/model/clip/clip_transformer.ckpt')
 class CLIPTextEmbedder(nn.Module):
     """
     ## CLIP Text Embedder
@@ -55,7 +52,7 @@ class CLIPTextEmbedder(nn.Module):
         self.max_length = max_length
         self.to(self.device)
 
-    def init_submodels(self, tokenizer_path: str = TOKENIZER_PATH, transformer_path: str = TEXT_MODEL_PATH):
+    def init_submodels(self, tokenizer_path: str = TOKENIZER_DIR_PATH, transformer_path: str = TEXT_MODEL_DIR_PATH):
 
         config = CLIPTextConfig.from_pretrained(transformer_path, local_files_only=True)
         self.transformer = CLIPTextModel(config).eval().to(self.device)
@@ -63,14 +60,14 @@ class CLIPTextEmbedder(nn.Module):
 
         return self
 
-    def save_submodels(self, tokenizer_path: str = TOKENIZER_PATH, transformer_path: str = TEXT_MODEL_PATH):
+    def save_submodels(self, tokenizer_path: str = TOKENIZER_DIR_PATH, transformer_path: str = TEXT_MODEL_DIR_PATH):
         # self.tokenizer.save_pretrained(tokenizer_path, safe_serialization=True)
         # print("tokenizer saved to: ", tokenizer_path)
         self.transformer.save_pretrained(transformer_path, safe_serialization=True)
         # safetensors.torch.save_model(self.transformer, os.path.join(transformer_path, '/model.safetensors'))
         print("transformer saved to: ", transformer_path)
 
-    def load_submodels(self, tokenizer_path=TOKENIZER_PATH, transformer_path=TEXT_MODEL_PATH):
+    def load_submodels(self, tokenizer_path=TOKENIZER_DIR_PATH, transformer_path=TEXT_MODEL_DIR_PATH):
 
         with section("Loading tokenizer and transformer"):
             self.tokenizer = CLIPTokenizer.from_pretrained(tokenizer_path, local_files_only=True)
