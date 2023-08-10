@@ -1,7 +1,6 @@
 import os
 import sys
 
-from configs.model_config import ModelConfig
 
 base_dir = os.getcwd()
 sys.path.insert(0, base_dir)
@@ -17,7 +16,7 @@ import argparse
 # import safetensors as st
 
 from chad_score.chad_score import ChadScorePredictor
-
+from configs.model_config import ModelConfig
 from stable_diffusion import StableDiffusion, SDconfigs
 # TODO: rename stable_diffusion.utils_backend to /utils/cuda.py
 from stable_diffusion.utils_backend import get_device
