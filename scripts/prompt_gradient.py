@@ -26,7 +26,9 @@ def prompt_embedding_vectors(sd, prompt_array):
 
 
 DEVICE = get_device()
-FIXED_SEED = False
+FIXED_SEED = True
+SEED = random.randint(0, 2**24)
+FIXED_IMAGE_IDX = True
 
 config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
 config.read(os.path.join(base_dir, "config.ini"))
