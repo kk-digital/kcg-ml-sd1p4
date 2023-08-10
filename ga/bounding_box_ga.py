@@ -81,7 +81,7 @@ NULL_PROMPT = None #assign later
 # DEVICE = input("Set device: 'cuda:i' or 'cpu'")
 config = ModelConfig()
 
-pt = IODirectoryTree(base_io_directory_prefix = config["BASE"].get('base_io_directory_prefix'), base_directory=base_dir)
+pt = IODirectoryTree(base_io_directory_prefix=config.BASE.base_io_directory_prefix, base_directory=base_dir)
 
 print(EMBEDDED_PROMPTS_DIR)
 print(OUTPUT_DIR)
@@ -249,7 +249,8 @@ NULL_PROMPT = prompt_embedding_vectors(sd,[""])[0]
 #print("NULL_PROMPT size= ", str(torch.Tensor.size(NULL_PROMPT)))
 
 #generate prompts and get embeddings
-prompts_array = ga.generate_prompts(population_size)
+prompt_phrase_length = 7
+prompts_array = ga.generate_prompts(population_size, prompt_phrase_length)
 embedded_prompts = prompt_embedding_vectors(sd, prompt_array=prompts_array)
 
 print("genetic_algorithm_loop: population_size= ", population_size)
