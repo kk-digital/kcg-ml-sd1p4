@@ -137,7 +137,7 @@ def generate_images(
 
 def main():
     args = (
-        CLI("Generate images from noise seeds.")
+        CLI("Generate images and encodings")
         .prompt()
         .negative_prompt()
         .batch_size()
@@ -145,7 +145,6 @@ def main():
         .cuda_device()
         .low_vram()
         .sampler()
-        .checkpoint_path()
         .cfg_scale()
         .seed()
         .parse()

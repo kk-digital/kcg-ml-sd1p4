@@ -190,11 +190,6 @@ python3 ./scripts/generate_images_from_temperature_range.py -d 4 --params_range 
 
 ### Images and encodings
 
-Try running:
-```bash
-python3 ./scripts/generate_images_and_encodings.py --prompt "An oil painting of a computer generated image of a geometric pattern" --num_iterations 10
-```
-
 **Command line arguments**
 
 - `--batch_size`: How many images to generate at once. Defaults to `1`.
@@ -202,6 +197,16 @@ python3 ./scripts/generate_images_and_encodings.py --prompt "An oil painting of 
 - `--prompt`: The prompt to render. It is an optional argument. Defaults to `"a painting of a cute monkey playing guitar"`.
 - `--negative-prompt`: The negative prompt. For things we dont want to see in generated image. Defaults to `''`.
 - `--cuda_device`: CUDA device to use for generation. Defaults to `"get_device()"`.
+- `--low_vram`: Flag for low vram gpus. Defaults to `False`.
+- `--sampler`: Sampler name. Defaults to `ddim`.
+- `--cfg_scale`: Unconditional guidance scale: eps = eps(x, empty) + scale * (eps(x, cond) - eps(x, empty)) . Defaults to `7`.
+- `--seed`: Array of seed values, one for each generated image. Defaults to ``.
+
+
+Try running:
+```bash
+python3 ./scripts/generate_images_and_encodings.py --prompt "An oil painting of a computer generated image of a geometric pattern" --num_iterations 10
+```
 
 ### Perturbations on prompts embeddings
 
