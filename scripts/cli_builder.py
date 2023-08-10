@@ -109,7 +109,7 @@ class CLI:
         self.parser.add_argument(
             '--steps',
             type=int,
-            default=50,
+            default=20,
             help='Number of steps to use (default: %(default)s)'
         )
 
