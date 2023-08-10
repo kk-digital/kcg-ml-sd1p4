@@ -143,6 +143,7 @@ python3 ./scripts/generate_images_from_distributions.py -d 4 --params_steps 4 --
 **Command line arguments**
 
 - `-p, --prompt`: The prompt to generate images from. Defaults to `"A woman with flowers in her hair in a courtyard, in the style of Frank Frazetta"`.
+- `--negative-prompt`: The negative prompt. For things we dont want to see in generated image. Defaults to `''`.
 - `-od, --output_dir`: The output directory. Defaults to the `OUTPUT_DIR` constant, which should be `"./output/noise-tests/from_distributions"`.
 - `-cp, --checkpoint_path`: The path to the checkpoint file to load from. Defaults to the `CHECKPOINT_PATH` constant, which should be `"./input/model/v1-5-pruned-emaonly.safetensors"`.
 - `-F, --fully_initialize`: Whether to fully initialize or not. Defaults to `False`.
