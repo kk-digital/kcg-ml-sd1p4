@@ -14,7 +14,7 @@ from stable_diffusion.utils_backend import get_device, get_memory_status
 #def embed_and_save_prompts(prompts: list):
 def clip_text_get_prompt_embedding(ModelConfig, prompts: list):
     #null_prompt = null_prompt
-    prompts = prompts
+    prompts = [prompt.prompt_str for prompt in prompts] 
 
     #load model from memory
     clip_text_embedder = CLIPTextEmbedder(device=get_device())
