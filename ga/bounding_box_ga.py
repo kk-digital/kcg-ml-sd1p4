@@ -101,6 +101,9 @@ def calculate_fitness_from_bbox(image):
 
     if not contours:
         return 0
+
+    # Sort contours by area (largest to smallest)
+    contours = sorted(contours, key=cv2.contourArea, reverse=True)
     
     # Get bounding box from the largest contour
     x, y, w, h = cv2.boundingRect(contours[0])
@@ -113,7 +116,6 @@ def calculate_fitness_from_bbox(image):
     fitness = 1 / (1 + center_diff + size_diff)
 
     return fitness
-
 
 
 # Function to calculate the chad score for batch of images
