@@ -143,11 +143,20 @@ def main():
         .batch_size()
         .num_iterations()
         .cuda_device()
+        .low_vram()
+        .sampler()
+        .checkpoint_path()
+        .cfg_scale()
         .seed()
         .parse()
     )
 
-    seed_array = get_seed_array_from_string(seed, array_size=(args.num_iterations))
+    # parse the seed string
+    seed_array = get_seed_array_from_string(args.seed, array_size=(args.num_iterations))
+
+    # if low vram flag is set, make sure the batch size is allways 1
+    if (args.low_vram):
+        args.batch_size = 1
 
     generate_images(
         prompt=args.prompt,
