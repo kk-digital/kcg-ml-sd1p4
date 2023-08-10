@@ -27,7 +27,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torchinfo import summary
 
-from stable_diffusion.utils_logger import logger
+from utility.utils_logger import logger
 
 sys.path.insert(0, os.getcwd())
 from .unet_attention import SpatialTransformer

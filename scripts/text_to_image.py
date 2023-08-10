@@ -12,6 +12,7 @@ import os
 import time
 from datetime import datetime
 from random import randrange
+
 import torch
 
 from cli_builder import CLI
@@ -89,7 +90,6 @@ class Txt2Img(StableDiffusionBaseScript):
         with autocast:
             un_cond, cond = self.get_text_conditioning(uncond_scale, prompts, batch_size)
 
-            start_time = time.time()
             # [Sample in the latent space](../sampler/index.html).
             # `x` will be of shape `[batch_size, c, h / f, w / f]`
             x = self.sampler.sample(cond=cond,
@@ -98,14 +98,6 @@ class Txt2Img(StableDiffusionBaseScript):
                                     uncond_cond=un_cond,
                                     noise_fn=noise_fn,
                                     temperature=temperature)
-
-            # Capture the ending time
-            end_time = time.time()
-
-            # Calculate the execution time
-            execution_time = end_time - start_time
-
-            print("Sampling Time:", execution_time, "seconds")
 
             return self.decode_image(x)
 
@@ -170,7 +162,6 @@ class Txt2Img(StableDiffusionBaseScript):
 
 def text_to_image(prompt, output, sampler, checkpoint_path, flash, steps, cfg_scale, low_vram, force_cpu, cuda_device,
                   num_images, seed):
-    # prompts = get_prompts(opt.prompt, opt.prompts_file)
     prompts = [prompt]
 
     # Split the numbers_string into a list of substrings using the comma as the delimiter
@@ -183,10 +174,6 @@ def text_to_image(prompt, output, sampler, checkpoint_path, flash, steps, cfg_sc
 
     # Convert the elements in the list to integers (optional, if needed)
     seed_array = [int(num) for num in seed_string_array]
-
-
-    # timestamp = datetime.now().strftime('%d-%m-%Y-%H-%M-%S')
-    # filename = os.path.join(opt.output, f'{timestamp}.jpg')
 
     # Set flash attention
     CrossAttention.use_flash_attention = flash
@@ -201,7 +188,7 @@ def text_to_image(prompt, output, sampler, checkpoint_path, flash, steps, cfg_sc
     txt2img.initialize_latent_diffusion(autoencoder=None, clip_text_embedder=None, unet_model=None,
                                         path=checkpoint_path, force_submodels_init=True)
 
-    with monit.section('Generate', total_steps=len(prompts)) as section:
+    with monit.section('Generate', total_steps=len(prompts)):
         for prompt in prompts:
             print(f'Generating images for prompt: "{prompt}"')
 

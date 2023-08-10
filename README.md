@@ -25,6 +25,7 @@
     - [Chad Sort](#chad-sort)
     - [Running GenerationTask](#running-generationtask)
     - [Prompt Score](#prompt-score)
+    - [Auto-ml](#auto-ml)
 
 ## Prerequisites
 
@@ -385,8 +386,12 @@ and outputs a chad score.
 
 ``` shell
 options:
---input_path INPUT_PATH
+  --input_path INPUT_PATH
                         Path to input zip
+  --output_path OUTPUT_PATH
+                        Path output folder
+  --model_output_name MODEL_OUTPUT_NAME
+                        Filename of the trained model
   --num_epochs NUM_EPOCHS
                         Number of epochs (default: 1000)
   --epsilon_raw EPSILON_RAW
@@ -394,10 +399,56 @@ options:
   --epsilon_scaled EPSILON_SCALED
                         Epsilon for scaled data (default: 0.2)
   --use_76th_embedding  If this option is set, only use the last entry in the embeddings tensor
-  --show_validation_loss  If this option is set, shows validation loss during training
+  --show_validation_loss
+                        whether to show validation loss
 ```
 
 Example Usage:
 ``` shell
-python scripts/prompt_score.py --input_path input/set_0000_v2.zip --use_76th_embedding --num_epochs 200 --epsilon_raw 10 --epsilon_scaled 0.2
+python scripts/prompt_score.py --input_path input/set_0000_v2.zip --use_76th_embedding --num_epochs 200 --epsilon_raw 10 --epsilon_scaled 0.2 --model_output_name prompt_score.pth
+```
+
+### Prompt Embeddings Gradient Optimization
+
+Optimizes an embedding vector using gradients.
+
+``` shell
+options:
+  --input_path INPUT_PATH
+                        Path to input zip
+  --model_path MODEL_PATH
+                        Path to the model
+  --iterations ITERATIONS
+                        How many iterations to perform
+  --learning_rate LEARNING_RATE
+                        Learning rate to use when optimizing
+```
+
+Example Usage:
+
+``` shell
+python scripts/prompt_gradient.py --input_path input/set_0000_v2.zip --model_path output/models/prompt_score.pth --iterations 10 --learning_rate 0.01
+```
+
+### Auto-ml
+_Note: Current only support dataset generated from Generate Images Random Prompt_
+```
+usage: auto_ml.py [-h] [--x-input X_INPUT] [--total-time TOTAL_TIME] [--per-run-time PER_RUN_TIME] [--dataset-zip-path DATASET_ZIP_PATH] [--output OUTPUT]
+
+Run automl on a dataset with embeddings or clip feature and chad score
+
+options:
+  -h, --help            show this help message and exit
+  --x-input X_INPUT     X-input will be either embedding or clip
+  --total-time TOTAL_TIME
+                        Time limit in seconds for the search of appropriate models
+  --per-run-time PER_RUN_TIME
+                        Time limit for a single call to the machine learning model
+  --dataset-zip-path DATASET_ZIP_PATH
+                        Path to the dataset to be used
+  --output OUTPUT       Output path where the plot image will be saved
+```
+Example Usage:
+``` shell
+python scripts/auto_ml.py --dataset-zip-path ./input/set_0002.zip --x-input "clip" --output "./output"
 ```

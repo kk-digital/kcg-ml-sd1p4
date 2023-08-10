@@ -26,21 +26,21 @@ class TestScripts(unittest.TestCase):
         # Assert that return code is 0
         self.assertEqual(process.returncode, 0, f"{command} failed with return code {process.returncode}")
 
-    def test_01_process_base_model(self):
-        self.run_script("./setup_directories_and_models", download_base_clip_model="True",
-                        download_base_sd_model="True")
+    def test_01_dowload_models(self):
+        self.run_script("./download_models.py")
+
+    def test_01_02_dowload_models(self):
+        self.run_script("./process_models.py")
 
     def test_02_text_to_image(self):
         self.run_script(f"{self.scripts_path}text_to_image",
                         prompt="'character, chibi, waifu, side scrolling, white background, centered'",
-                        seed=0,
-                        checkpoint_path="'./input/model/v1-5-pruned-emaonly.safetensors'", batch_size=1, num_images=1)
+                        seed=0, batch_size=1, num_images=1)
 
     #     python3 ./scripts/txt2img.py --num_images 2 --prompt 'A purple rainbow, filled with grass'
 
     def test_02_1_text_to_image(self):
-        self.run_script(f"{self.scripts_path}txt2img", prompt="'A purple rainbow, filled with grass'", num_images=1,
-                        seed=0)
+        self.run_script(f"{self.scripts_path}txt2img", prompt="'A purple rainbow, filled with grass'", num_images=1)
 
     def test_03_embed_prompts(self):
         self.run_script(f"{self.scripts_path}embed_prompts",
