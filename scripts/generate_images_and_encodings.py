@@ -164,6 +164,7 @@ def main():
         batch_size=args.batch_size,
         num_iterations=args.num_iterations,
         seed_array=seed_array,
+        sampler_name=args.sampler,
         device=args.cuda_device,
     )
 
