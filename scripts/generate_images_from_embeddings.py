@@ -36,7 +36,7 @@ def parse_arguments():
         default=OUTPUT_DIR,
         help="The output directory. defaults to OUTPUT_DIR constant, which should be './output/noise-tests/from_embeddings'",
     )
-    parser.add_argument("--num_seeds", type=int, default=3)
+    parser.add_argument("--num_images", type=int, default=1)
     parser.add_argument("-bs", "--batch_size", type=int, default=1)
     parser.add_argument("-t", "--temperature", type=float, default=1.0)
     parser.add_argument("--ddim_eta", type=float, default=0.0)
@@ -44,7 +44,7 @@ def parse_arguments():
     parser.add_argument("--cuda_device", type=str, default=None)
     parser.add_argument('--low_vram', action='store_true',
                         help='Low vram means the batch size will be allways 1')
-    parser.add_argument("--sampler_name", type=str, default="ddim")
+    parser.add_argument("--sampler", type=str, default="ddim")
     parser.add_argument("--cfg_scale", type=float, default=7.0)
 
     args = parser.parse_args()
@@ -72,7 +72,7 @@ def generate_images_from_embeddings(
         sampler_name: str = "ddim",
         n_steps: int = 20,
         batch_size: int = 1,
-        num_seeds : int = 1,
+        num_images : int = 1,
         noise_seeds: list = 0,
         clear_output_dir: bool = False,
         ddim_eta: float = 0,
@@ -149,7 +149,7 @@ def main():
 
     embedded_prompts_dir = args.embedded_prompts_dir
     output_dir = args.output_dir
-    num_seeds = args.num_seeds
+    num_images = args.num_images
     batch_size = args.batch_size
     temperature = args.temperature
     ddim_eta = args.ddim_eta
@@ -165,14 +165,14 @@ def main():
 
     # generate noise seeds int 0 to 0^24
     noise_seeds = []
-    for i in range(num_seeds):
+    for i in range(num_images):
         rand_seed = randrange(0, 2 ** 24)
         noise_seeds.append(rand_seed)
 
     generate_images_from_embeddings(
         embeddings_dir=embedded_prompts_dir,
         output_dir=output_dir,
-        num_seeds= num_seeds,
+        num_images= num_images,
         temperature=temperature,
         batch_size=batch_size,
         noise_seeds=noise_seeds,
