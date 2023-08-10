@@ -17,7 +17,7 @@ from stable_diffusion.utils_image import to_pil
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
 from stable_diffusion import StableDiffusion
-from stable_diffusion.constants import IODirectoryTree
+from stable_diffusion.model_paths import IODirectoryTree
 
 EMBEDDED_PROMPTS_DIR = os.path.abspath("./input/embedded_prompts/")
 OUTPUT_DIR = "./output/data/"

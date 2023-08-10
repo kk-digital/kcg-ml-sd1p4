@@ -11,13 +11,16 @@ class DefaultPaths:
     MODELS_DIRECTORY = 'model/'
 
     MODELS = {
-        'clip': {'vit-large-patch14', 'tokenizer', 'text_model', 'vision_model', 'image_encoder', 'text_embedder',
-                 'image_processor'},
-        'sd': {'v1-5-pruned-emaonly', 'checkpoint', 'unet', 'latent_diffusion', 'autoencoder', 'decoder', 'encoder'}
+        'clip': {'vit-large-patch14',
+                 'txt_emb', 'txt_emb_tokenizer', 'txt_emb_model',
+                 'img_enc', 'img_enc_processor', 'img_enc_vision'},
+        'sd': {'v1-5-pruned-emaonly', 'latent_diffusion'},
+        'unet': {'unet'},
+        'vae': {'vae', 'vae_decoder', 'vae_encoder'}
     }
 
 
-class ModelConfig:
+class ModelPathConfig:
     DEFAULT_EXTENSION = '.safetensors'
 
     def __init__(self, root_directory=DefaultPaths.ROOT_DIRECTORY, check_existence=True):

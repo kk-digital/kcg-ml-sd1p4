@@ -27,7 +27,7 @@ from .auxiliary_classes import *
 from .encoder import Encoder
 from .decoder import Decoder
 from stable_diffusion.utils_backend import get_device
-from stable_diffusion.constants import ENCODER_PATH, DECODER_PATH, AUTOENCODER_PATH
+from stable_diffusion.model_paths import ENCODER_PATH, DECODER_PATH, AUTOENCODER_PATH
 
 
 class Autoencoder(nn.Module):

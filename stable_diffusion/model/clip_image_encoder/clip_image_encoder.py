@@ -13,7 +13,7 @@ from torchvision.transforms import Compose, Resize, CenterCrop, Normalize, Lambd
 
 sys.path.insert(0, os.getcwd())
 from utility.utils_logger import logger
-from stable_diffusion.constants import IMAGE_PROCESSOR_DIR_PATH, VISION_MODEL_DIR_PATH, IMAGE_ENCODER_PATH
+from stable_diffusion.model_paths import IMAGE_PROCESSOR_DIR_PATH, VISION_MODEL_DIR_PATH, IMAGE_ENCODER_PATH
 from stable_diffusion.utils_backend import get_device
 from transformers import CLIPImageProcessor, CLIPVisionModelWithProjection
 

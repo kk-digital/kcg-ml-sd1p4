@@ -12,7 +12,7 @@ sys.path.insert(0, os.getcwd())
 from stable_diffusion.utils_backend import get_device
 from auxiliary_functions import get_torch_distribution_from_name
 from stable_diffusion.utils_image import save_image_grid, save_images
-from stable_diffusion.constants import CHECKPOINT_PATH
+from stable_diffusion.model_paths import CHECKPOINT_PATH
 from labml.monit import section
 from stable_diffusion import StableDiffusion
 from utility.labml.monit import section

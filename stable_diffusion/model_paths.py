@@ -1,24 +1,26 @@
-from configs.model_config import ModelConfig
+from configs.model_config import ModelPathConfig
 
-config = ModelConfig(check_existence=False)
+config = ModelPathConfig(check_existence=False)
 
 
 class CLIPconfigs:
-    TEXT_EMBEDDER = 'clip/text_embedder'
-    TOKENIZER = 'clip/tokenizer'
-    TEXT_MODEL = 'clip/text_model'
-    IMAGE_PROCESSOR = 'clip/image_processor'
-    VISION_MODEL = 'clip/vision_model'
-    IMAGE_ENCODER = 'clip/image_encoder'
+    TEXT_EMBEDDER = 'clip/clip_txt_emb'
+    TEXT_MODEL = 'clip/clip_txt_emb_model'
+    TOKENIZER = 'clip/clip_txt_emb_tokenizer'
+
+    IMAGE_ENCODER = 'clip/clip_img_enc'
+    IMAGE_PROCESSOR = 'clip/clip_img_enc_processor'
+    VISION_MODEL = 'clip/clip_img_enc_vision'
 
 
 class SDconfigs:
     CHECKPOINT = 'sd/v1-5-pruned-emaonly'
-    UNET = 'sd/unet'
-    AUTOENCODER = 'sd/autoencoder'
-    ENCODER = 'sd/encoder'
-    DECODER = 'sd/decoder'
-    LATENT_DIFFUSION = 'sd/latent_diffusion'
+    UNET = 'unet/unet'
+    LATENT_DIFFUSION = 'sd/sd_latent_diffusion'
+
+    AUTOENCODER = 'vae/vae'
+    ENCODER = 'vae/vae_encoder'
+    DECODER = 'vae/vae_decoder'
 
 
 TEXT_EMBEDDER_PATH = config.get_model(CLIPconfigs.TEXT_EMBEDDER)
@@ -40,7 +42,7 @@ class IODirectoryTree:
     """returns dicts to be used as kwargs for loading submodels.
     the keys are the same as the kwargs used for the load methods."""
 
-    def __init__(self, config_parm: ModelConfig):
+    def __init__(self, config_parm: ModelPathConfig):
         self.config = config_parm or config
 
     @property

@@ -24,7 +24,7 @@ from utility.utils_logger import logger
 
 sys.path.insert(0, os.getcwd())
 from .auxiliary_classes import *
-from stable_diffusion.constants import DECODER_PATH
+from stable_diffusion.model_paths import DECODER_PATH
 from stable_diffusion.utils_backend import get_device
 
 

@@ -2,9 +2,9 @@ import argparse
 import sys
 from typing import Union, Callable
 
-from stable_diffusion import CHECKPOINT_PATH
-
 sys.path.append("./")
+
+from stable_diffusion import CHECKPOINT_PATH
 from stable_diffusion_reference.cli import check_folder_existence, check_file_existence
 
 

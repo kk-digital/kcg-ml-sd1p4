@@ -28,7 +28,7 @@ import torch
 import torch.nn as nn
 
 from utility.labml.monit import section
-from .constants import (
+from .model_paths import (
     AUTOENCODER_PATH,
     UNET_PATH,
     LATENT_DIFFUSION_PATH,

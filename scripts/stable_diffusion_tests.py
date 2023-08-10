@@ -6,7 +6,7 @@ import torch
 from tqdm import tqdm
 
 from auxiliary_functions import get_torch_distribution_from_name
-from stable_diffusion.constants import CHECKPOINT_PATH, AUTOENCODER_PATH, UNET_PATH, TEXT_EMBEDDER_PATH, \
+from stable_diffusion.model_paths import CHECKPOINT_PATH, AUTOENCODER_PATH, UNET_PATH, TEXT_EMBEDDER_PATH, \
     LATENT_DIFFUSION_PATH
 from stable_diffusion.latent_diffusion import LatentDiffusion
 from stable_diffusion.utils_backend import get_device

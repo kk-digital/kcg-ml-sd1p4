@@ -15,10 +15,10 @@ import safetensors
 import torch
 from transformers import CLIPTokenizer, CLIPTextModel
 
-from stable_diffusion.constants import AUTOENCODER_PATH, ENCODER_PATH, DECODER_PATH
-from stable_diffusion.constants import LATENT_DIFFUSION_PATH
-from stable_diffusion.constants import TEXT_EMBEDDER_PATH, TOKENIZER_DIR_PATH, TEXT_MODEL_DIR_PATH
-from stable_diffusion.constants import UNET_PATH
+from stable_diffusion.model_paths import AUTOENCODER_PATH, ENCODER_PATH, DECODER_PATH
+from stable_diffusion.model_paths import LATENT_DIFFUSION_PATH
+from stable_diffusion.model_paths import TEXT_EMBEDDER_PATH, TOKENIZER_DIR_PATH, TEXT_MODEL_DIR_PATH
+from stable_diffusion.model_paths import UNET_PATH
 from stable_diffusion.latent_diffusion import LatentDiffusion
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion.model.unet import UNetModel

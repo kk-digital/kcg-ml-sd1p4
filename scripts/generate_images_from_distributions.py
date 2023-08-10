@@ -11,7 +11,7 @@ sys.path.insert(0, base_directory)
 
 from auxiliary_functions import get_torch_distribution_from_name
 from stable_diffusion.stable_diffusion import StableDiffusion
-from stable_diffusion.constants import CHECKPOINT_PATH
+from stable_diffusion.model_paths import CHECKPOINT_PATH
 from stable_diffusion.utils_backend import get_device
 from stable_diffusion.utils_image import save_images, save_image_grid
 

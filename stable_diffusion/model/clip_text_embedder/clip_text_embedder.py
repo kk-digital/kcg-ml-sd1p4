@@ -26,7 +26,7 @@ from utility.labml.monit import section
 from utility.utils_logger import logger
 
 sys.path.insert(0, os.getcwd())
-from stable_diffusion.constants import TEXT_EMBEDDER_PATH, TOKENIZER_DIR_PATH, TEXT_MODEL_DIR_PATH
+from stable_diffusion.model_paths import TEXT_EMBEDDER_PATH, TOKENIZER_DIR_PATH, TEXT_MODEL_DIR_PATH
 from stable_diffusion.utils_backend import get_device
 
 
@@ -61,11 +61,8 @@ class CLIPTextEmbedder(nn.Module):
         return self
 
     def save_submodels(self, tokenizer_path: str = TOKENIZER_DIR_PATH, transformer_path: str = TEXT_MODEL_DIR_PATH):
-        # self.tokenizer.save_pretrained(tokenizer_path, safe_serialization=True)
-        # print("tokenizer saved to: ", tokenizer_path)
         self.transformer.save_pretrained(transformer_path, safe_serialization=True)
-        # safetensors.torch.save_model(self.transformer, os.path.join(transformer_path, '/model.safetensors'))
-        print("transformer saved to: ", transformer_path)
+        logger.debug(f"transformer saved to: {transformer_path}")
 
     def load_submodels(self, tokenizer_path=TOKENIZER_DIR_PATH, transformer_path=TEXT_MODEL_DIR_PATH):
 
@@ -74,8 +71,6 @@ class CLIPTextEmbedder(nn.Module):
             logger.debug(f"Tokenizer successfully loaded from : {tokenizer_path}")
             self.transformer = CLIPTextModel.from_pretrained(transformer_path, local_files_only=True,
                                                              use_safetensors=True).eval().to(self.device)
-            # self.init_submodels(tokenizer_path = tokenizer_path, transformer_path = transformer_path)
-            # safetensors.torch.load_model(self.transformer, os.path.join(transformer_path, '/model.safetensors'))
             logger.debug(f"CLIP text model successfully loaded from : {transformer_path}")
             return self
 
@@ -105,7 +100,7 @@ class CLIPTextEmbedder(nn.Module):
 
     def load(self, embedder_path: str = TEXT_EMBEDDER_PATH):
         try:
-            safetensors.torch.load_model(self, embedder_path, strict=True)
+            safetensors.torch.load_model(sezlf, embedder_path, strict=True)
             logger.debug(f"CLIPTextEmbedder loaded from: {embedder_path}")
             return self
         except Exception as e:
@@ -123,32 +118,3 @@ class CLIPTextEmbedder(nn.Module):
 
         # Get CLIP embeddings
         return self.transformer(input_ids=tokens).last_hidden_state
-# %%
-
-# if __name__ == "__main__":
-#     prompts = ["", "A painting of a computer virus", "A photo of a computer virus"]
-
-#     clip = CLIPTextEmbedder()
-
-#     embeddings1 = clip(prompts)
-
-#     summary(clip.transformer)
-#     print("embeddings: ", embeddings1)
-#     print("embeddings.shape: ", embeddings1.shape)
-
-#     clip.save()
-
-#     clip.unload_submodels()
-
-#     clip.load_submodels()
-
-#     embeddings2 = clip(prompts)
-
-#     assert torch.allclose(embeddings1, embeddings2)
-
-#     clip = torch.load(TEXT_EMBEDDER_PATH, map_location="cuda:0")
-#     print(clip)
-#     embeddings3 = clip(prompts)
-#     assert torch.allclose(embeddings1, embeddings3), "embeddings1 != embeddings3"
-#     assert torch.allclose(embeddings2, embeddings3), "embeddings2 != embeddings3"
-#     print(os.getcwd())

@@ -93,7 +93,7 @@ options:
 
 Example Usage:
 ``` shell
-python3 ./scripts/text_to_image.py --prompt "character, chibi, waifu, side scrolling, white background, centered" --checkpoint_path "./input/model/v1-5-pruned-emaonly.safetensors" --batch_size 1 --num_images 6
+python3 ./scripts/text_to_image.py --prompt "character, chibi, waifu, side scrolling, white background, centered" --checkpoint_path "./input/model/sd/v1-5-pruned-emaonly.safetensors" --batch_size 1 --num_images 6
 ```
 
 ### Embed prompts

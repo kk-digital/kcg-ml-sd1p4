@@ -1,11 +1,11 @@
 from torchinfo import summary
 
-from configs.model_config import ModelConfig
+from configs.model_config import ModelPathConfig
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
 from stable_diffusion.utils_model import initialize_latent_diffusion
 from utility.labml.monit import section
 
-config = ModelConfig()
+config = ModelPathConfig()
 
 if __name__ == "__main__":
     # CLIP
@@ -13,8 +13,8 @@ if __name__ == "__main__":
             "Initialize CLIP image encoder and load submodels from lib"
     ):
         img_encoder = CLIPImageEncoder()
-        img_encoder.load_submodels(image_processor_path=config.get_model_path('clip/image_processor'),
-                                   vision_model_path=config.get_model_path('clip/vision_model'))
+        img_encoder.load_submodels(image_processor_path=config.get_model_path('clip/img_enc_processor'),
+                                   vision_model_path=config.get_model_path('clip/img_enc_vision'))
     with section("CLIP: Saving image encoder submodels"):
         img_encoder.save_submodels()
         img_encoder.unload_submodels()
