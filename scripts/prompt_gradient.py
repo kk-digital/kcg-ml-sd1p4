@@ -11,12 +11,12 @@ sys.path.insert(0, base_dir)
 from ga.model_clip_text import clip_text_get_prompt_embedding
 from model.linear_regression import LinearRegressionModel
 from model.util_data_loader import ZipDataLoader
-from model.util_histogram import UtilHistogram
 
 from stable_diffusion import StableDiffusion
 from stable_diffusion.utils_backend import get_device
 from stable_diffusion.utils_image import to_pil
 from stable_diffusion.constants import (IODirectoryTree)
+from chad_score.chad_score import ChadScorePredictor
 
 
 def prompt_embedding_vectors(sd, prompt_array):
@@ -38,9 +38,18 @@ config["BASE"].get('base_io_directory')
 pt = IODirectoryTree(base_io_directory_prefix = config["BASE"].get('base_io_directory_prefix'), base_directory=base_dir)
 pt.create_directory_tree_folders()
 
+# Get CLIP preprocessor
+image_features_clip_model, preprocess = clip.load("ViT-L/14", device=DEVICE)
+
+# Load stable diffusion
 sd = StableDiffusion(device=DEVICE, n_steps=20)
 sd.quick_initialize().load_autoencoder(**pt.autoencoder).load_decoder(**pt.decoder)
 sd.model.load_unet(**pt.unet)
+
+# Load chad score
+chad_score_model_path = os.path.join('input', 'model', 'chad_score', 'chad-score-v1.pth')
+chad_score_predictor = ChadScorePredictor(device=DEVICE)
+chad_score_predictor.load_model(chad_score_model_path)
 
 NULL_PROMPT = prompt_embedding_vectors(sd, [""])[0]
 
