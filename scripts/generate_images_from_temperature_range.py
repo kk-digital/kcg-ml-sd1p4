@@ -13,7 +13,6 @@ from stable_diffusion.utils_backend import get_device
 from auxiliary_functions import get_torch_distribution_from_name
 from stable_diffusion.utils_image import save_image_grid, save_images
 from stable_diffusion.constants import CHECKPOINT_PATH
-from labml.monit import section
 from stable_diffusion import StableDiffusion
 from utility.labml.monit import section
 
@@ -28,6 +27,14 @@ parser.add_argument(
     default="A woman with flowers in her hair in a courtyard, in the style of Frank Frazetta",
     help="The prompt to generate images from. Defaults to 'A woman with flowers in her hair in a courtyard, in the style of Frank Frazetta'",
 )
+
+parser.add_argument(
+    "--negative-prompt",
+    type=str,
+    default="",
+    help="The negative prompt. For things we dont want to see in generated image",
+)
+
 parser.add_argument(
     "--output_dir",
     type=str,
@@ -61,6 +68,7 @@ parser.add_argument("--cuda_device", type=str, default=None)
 args = parser.parse_args()
 
 PROMPT = args.prompt
+NEGATIVE_PROMPT = args.negative_prompt
 OUTPUT_DIR = args.output_dir
 CHECKPOINT_PATH = args.checkpoint_path
 FULLY_INIT = args.fully_initialize
@@ -162,6 +170,7 @@ def generate_images_from_temp_range(
         output_dir: str = OUTPUT_DIR,
         clear_output_dir: bool = CLEAR_OUTPUT_DIR,
         prompt: str = PROMPT,
+        negative_prompt: str = NEGATIVE_PROMPT,
         noise_seed: int = NOISE_SEED,
         batch_size: int = BATCH_SIZE,
         temperature_range=TEMP_RANGE,
@@ -195,6 +204,7 @@ def generate_images_from_temp_range(
             images = txt2img.generate_images(
                 batch_size=batch_size,
                 prompt=prompt,
+                negative_prompt=negative_prompt,
                 seed=noise_seed,
                 noise_fn=noise_fn,
                 temperature=temperature.item(),
@@ -228,6 +238,7 @@ def main():
         output_dir=OUTPUT_DIR,
         clear_output_dir=CLEAR_OUTPUT_DIR,
         prompt=PROMPT,
+        negative_prompt=NEGATIVE_PROMPT,
         noise_seed=NOISE_SEED,
         batch_size=BATCH_SIZE,
         temperature_range=TEMP_RANGE,
