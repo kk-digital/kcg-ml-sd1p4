@@ -278,7 +278,7 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
 
             # Save the data to a JSON file
             with open(json_filename, 'w') as json_file:
-                json.dump(generation_task_result, json_file)
+                json.dump(generation_task_result.to_dict(), json_file)
 
             generation_task_result_list.append({
                 'image_filename': filename,
