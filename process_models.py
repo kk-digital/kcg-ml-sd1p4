@@ -13,8 +13,7 @@ if __name__ == "__main__":
             "Initialize CLIP image encoder and load submodels from lib"
     ):
         img_encoder = CLIPImageEncoder()
-        img_encoder.load_submodels(image_processor_path=config.get_model_path('clip/image_processor'),
-                                   vision_model_path=config.get_model_path('clip/vision_model'))
+        img_encoder.load_submodels_from_transformer()
     with section("CLIP: Saving image encoder submodels"):
         img_encoder.save_submodels()
         img_encoder.unload_submodels()
