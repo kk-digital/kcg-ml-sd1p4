@@ -17,7 +17,7 @@ from cli_builder import CLI
 from stable_diffusion.utils_backend import get_device
 from stable_diffusion.utils_image import calculate_sha256
 
-OUTPUT_DIR = "./output/stable_diffusion/"
+OUTPUT_DIR = "/output/stable_diffusion/"
 FEATURES_DIR = join(OUTPUT_DIR, "features/")
 IMAGES_DIR = join(OUTPUT_DIR, "images/")
 
