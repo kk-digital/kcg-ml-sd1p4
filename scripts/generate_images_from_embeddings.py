@@ -140,7 +140,7 @@ def generate_images_from_embeddings(
             save_image_grid(
                 torch.cat(img_grid, dim=0),
                 join(output_dir, f"grid_t{temperature:.3f}_eta{ddim_eta:.3f}.jpg"),
-                nrow=num_seeds,
+                nrow=num_images,
             )
 
 
