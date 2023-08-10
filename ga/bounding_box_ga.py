@@ -81,7 +81,7 @@ NULL_PROMPT = None #assign later
 # DEVICE = input("Set device: 'cuda:i' or 'cpu'")
 config = ModelConfig()
 
-pt = IODirectoryTree(base_io_directory_prefix = config["BASE"].get('base_io_directory_prefix'), base_directory=base_dir)
+pt = IODirectoryTree(base_io_directory_prefix=config.root_directory, base_directory=base_dir)
 
 print(EMBEDDED_PROMPTS_DIR)
 print(OUTPUT_DIR)
