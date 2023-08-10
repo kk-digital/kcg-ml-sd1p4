@@ -42,7 +42,8 @@ def parse_arguments():
     parser.add_argument("--ddim_eta", type=float, default=0.0)
     parser.add_argument("--clear_output_dir", type=bool, default=False)
     parser.add_argument("--cuda_device", type=str, default=None)
-
+    parser.add_argument('--low_vram', action='store_true',
+                        help='Low vram means the batch size will be allways 1')
     args = parser.parse_args()
     return args;
 
@@ -151,6 +152,11 @@ def main():
     ddim_eta = args.ddim_eta
     clear_output_dir = args.clear_output_dir
     cuda_device = get_device(args.cuda_device)
+    low_vram = args.low_vram
+
+    # override the batch_size if low_vram flag is set
+    if low_vram:
+        batch_size = 1
 
     # generate noise seeds int 0 to 0^24
     noise_seeds = []
