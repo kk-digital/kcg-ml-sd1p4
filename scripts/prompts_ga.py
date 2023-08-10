@@ -54,7 +54,6 @@ Objective:
 
 import os, sys
 
-from configs.model_config import ModelConfig
 
 base_dir = os.getcwd()
 sys.path.insert(0, base_dir)
@@ -69,7 +68,7 @@ import argparse
 #import safetensors as st
 
 from chad_score.chad_score import ChadScorePredictor
-
+from configs.model_config import ModelConfig
 from stable_diffusion import StableDiffusion
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
 from stable_diffusion.utils_model import *
