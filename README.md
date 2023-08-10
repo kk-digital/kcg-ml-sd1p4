@@ -196,6 +196,7 @@ python3 ./scripts/generate_images_and_encodings.py --prompt "An oil painting of 
 - `--batch_size`: How many images to generate at once. Defaults to `1`.
 - `--num_iterations`: How many times to iterate the generation of a batch of images. Defaults to `10`.
 - `--prompt`: The prompt to render. It is an optional argument. Defaults to `"a painting of a cute monkey playing guitar"`.
+- `--negative-prompt`: The negative prompt. For things we dont want to see in generated image. Defaults to `''`.
 - `--cuda_device`: CUDA device to use for generation. Defaults to `"get_device()"`.
 
 ### Perturbations on prompts embeddings
