@@ -93,15 +93,15 @@ def calculate_fitness_from_bbox(image):
     # Convert image to grayscale
     gray = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2GRAY)
 
-    # Threshold the image
-    _, thresh = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY)
+    # Threshold the image to detect objects on a white background
+    _, thresh = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY_INV)
 
     # Find contours
     contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     if not contours:
         return 0
-
+    
     # Get bounding box from the largest contour
     x, y, w, h = cv2.boundingRect(contours[0])
 
@@ -113,6 +113,7 @@ def calculate_fitness_from_bbox(image):
     fitness = 1 / (1 + center_diff + size_diff)
 
     return fitness
+
 
 
 # Function to calculate the chad score for batch of images
