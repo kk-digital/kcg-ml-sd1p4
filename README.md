@@ -25,7 +25,11 @@
     - [Chad Sort](#chad-sort)
     - [Running GenerationTask](#running-generationtask)
     - [Prompt Score](#prompt-score)
+    - [Prompt Embeddings Gradient Optimization](#prompt-embeddings-gradient-optimization)
     - [Auto-ml](#auto-ml)
+  - [Tests](#tests)
+    - [To run all scripts](#to-run-all-scripts)
+    - [To run all kcg-ml-sd1p4 tests](#to-run-all-kcg-ml-sd1p4-tests)
 
 ## Prerequisites
 
@@ -452,3 +456,32 @@ Example Usage:
 ``` shell
 python scripts/auto_ml.py --dataset-zip-path ./input/set_0002.zip --x-input "clip" --output "./output"
 ```
+
+## Tests
+### To run all scripts
+1. Make an env
+
+    `python3 -m venv env`
+2. Activate env
+
+    `source env/bin/activate`
+3. Install requirements
+
+    `pip install -r requirements.txt`
+4. run pytest
+
+    `python -m unittest test_main_scripts.py `
+
+### To run all kcg-ml-sd1p4 tests
+1. Make an env
+
+    `python3 -m venv env`
+2. Activate env
+
+    `source env/bin/activate`
+3. Install requirements
+
+    `pip install -r requirements.txt`
+4. run pytest
+
+    `pytest ./test/test_scripts"`
