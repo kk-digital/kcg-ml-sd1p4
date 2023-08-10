@@ -44,6 +44,8 @@ def parse_arguments():
     parser.add_argument("--cuda_device", type=str, default=None)
     parser.add_argument('--low_vram', action='store_true',
                         help='Low vram means the batch size will be allways 1')
+    parser.add_argument("--sampler_name", type=str, default="ddim")
+
     args = parser.parse_args()
     return args;
 
@@ -153,6 +155,7 @@ def main():
     clear_output_dir = args.clear_output_dir
     cuda_device = get_device(args.cuda_device)
     low_vram = args.low_vram
+    sampler = args.sampler
 
     # override the batch_size if low_vram flag is set
     if low_vram:
@@ -174,6 +177,7 @@ def main():
         clear_output_dir=clear_output_dir,
         ddim_eta=ddim_eta,
         cuda_device=cuda_device,
+        sampler_name=sampler
     )
 
 
