@@ -86,7 +86,7 @@ def split_and_process_dataset(data_list, X_input):
 def run_auto_ml(X_train, y_train, X_test, y_test, automl_total_time, automl_per_run_time, output_path):
     automl = autosklearn.regression.AutoSklearnRegressor(
         time_left_for_this_task=automl_total_time,
-        memory_limit = 3400,
+        memory_limit=102400,
         per_run_time_limit=automl_per_run_time,
         tmp_folder="./tmp/autosklearn_regression_example_tmp",
     )
