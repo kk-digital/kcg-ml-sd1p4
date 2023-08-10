@@ -129,15 +129,58 @@ def main():
     linear_regression_model = LinearRegressionModel(len(inputs[0]), DEVICE)
     linear_regression_model.load(model_path)
 
-    rand_idx = random.randint(0, len(inputs))
-    input = torch.tensor(inputs[rand_idx], dtype=torch.float32, device=DEVICE)
-    output = torch.tensor([expected_outputs[rand_idx]], dtype=torch.float32, device=DEVICE)
+    image_idx = random.randint(0, len(inputs))
+    if FIXED_IMAGE_IDX:
+        image_idx = 33
+    starting_vector = torch.tensor(inputs[image_idx], dtype=torch.float32, device=DEVICE)
+    starting_vector_cpu = starting_vector.cpu()
+    starting_vector_np = starting_vector_cpu.numpy()
+    starting_model_score = linear_regression_model.model(starting_vector)
+    input = starting_vector.clone().detach().to(DEVICE)
+    input_cpu = input.cpu()
+    input_np = input_cpu.numpy()
+    output = torch.tensor([expected_outputs[image_idx]], dtype=torch.float32, device=DEVICE)
     gradients = linear_regression_model.compute_gradient(input, output)
+    # Storing original image
+    pil_image = store_image_from_embeddings(sd, 0, starting_vector, NULL_PROMPT)
+    starting_chad_score = get_chad_score_from_pil_image(pil_image)
+    starting_report_row = report_row(0,  # First iteration
+                                     starting_vector_np,
+                                     input_np,
+                                     pil_image,
+                                     starting_model_score,
+                                     starting_model_score)
 
-    for i in range(iterations):
+    print(report_table([starting_report_row]))
+
+    table_rows = [starting_report_row]
+    for i in range(1, iterations + 1):
         input += learning_rate * gradients
-        store_image_from_embeddings(sd, i, input, NULL_PROMPT)
+        input_cpu = input.cpu()
+        input_np = input_cpu.numpy()
+        pil_image = store_image_from_embeddings(sd, i, input, NULL_PROMPT)
+        model_score = linear_regression_model.model(input)
+        row = report_row(i,
+                         starting_vector_np,
+                         input_np,
+                         pil_image,
+                         starting_model_score,
+                         model_score)
+        print(report_table([row]))
+        table_rows.append(row)
+    report_str = report(table_rows,
+                        iterations,
+                        learning_rate,
+                        starting_model_score,
+                        starting_chad_score)
+    report_dir = os.path.join('output', 'gradient')
+    report_file_path = os.path.join(report_dir, 'report.txt')
+    print(report_str)
+    with open(report_file_path, "w", encoding="utf-8") as file:
+        file.write(report_str)
+    print("Report saved at {}".format(report_file_path))
 
 
 if __name__ == '__main__':
     main()
+    del preprocess, image_features_clip_model, sd
