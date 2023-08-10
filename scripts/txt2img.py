@@ -45,6 +45,7 @@ def get_prompts(prompt, prompts_file):
 def main():
     opt = CLI('Generate images using stable diffusion with a prompt') \
         .prompt() \
+        .negative_prompt() \
         .prompts_file(check_exists=True, required=False) \
         .batch_size() \
         .output() \
@@ -98,6 +99,7 @@ def main():
                 images = sd.generate_images(
                     batch_size=opt.batch_size,
                     prompt=opt.prompt,
+                    negative_prompt=opt.negative_prompt,
                     uncond_scale=opt.cfg_scale,
                     low_vram=opt.low_vram,
                     seed=seed_array[i % len(seed_array)]

@@ -67,37 +67,34 @@ These are the available CLI arguments:
 
 ```
 options:
-  --prompt        PROMPT
-                        An array of strings to help guide the generation process
-  --batch_size   BATCH_SIZE
-                        How many images to generate at once
-  --output        OUTPUT
-                        Number of folders to
-  --sampler       SAMPLER
-                        Name of the sampler to use
-  --checkpoint_path     CHECKPOINT_PATH
-                        Path to the checkpoint file
-  --flash         FLASH
-                        Whether to use flash attention
-  --steps         STEPS
-                        Number of steps to use
-  --cgf_scale         SCALE
-                        Unconditional guidance scale: eps = eps(x, empty) + scale * (eps(x, cond) - eps(x, empty))
-  --seed      SEED
-                        Array of seed for the image generation: example '0, 1, 0, 7', Its better if the size of the array is the same as the number of generated images
-  --low-vram      LOW_VRAM
-                        Limit vram usage
-  --force_cpu     FORCE_CPU
-                        Force cpu usage
-  --cuda_device   CUDA_DEVICE
-                        Cuda device to use for generation process
-  --num_images    NUM_IMAGES
-                        Number of images to output
+  -h, --help            show this help message and exit
+  --prompt [PROMPT]     The prompt to render
+  --negative-prompt [NEGATIVE_PROMPT]
+                        The negative prompt. For things we dont want to see in generated image
+  --prompts_file PROMPTS_FILE
+                        Path to the file containing the prompts, each on a line (default: './input/prompts.txt')
+  --batch_size BATCH_SIZE
+                        How many images to generate at once (default: 1)
+  --output OUTPUT       Path to the output directory (default: ./output)
+  --sampler SAMPLER     Name of the sampler to use (default: ddim)
+  --checkpoint_path CHECKPOINT_PATH
+                        Path to the checkpoint file (default: './input/model/v1-5-pruned-emaonly.safetensors')
+  --flash               whether to use flash attention
+  --steps STEPS         Number of steps to use (default: 50)
+  --cfg_scale CFG_SCALE
+                        unconditional guidance scale: eps = eps(x, empty) + scale * (eps(x, cond) - eps(x, empty))
+  --low_vram            limit VRAM usage
+  --force_cpu           force CPU usage
+  --cuda_device CUDA_DEVICE
+                        cuda device to use for generation
+  --num_images NUM_IMAGES
+                        How many images to generate (default: 1)
+  --seed SEED           Seed for the image generation (default: )
 ```
 
 Example Usage:
 ``` shell
-python3 ./scripts/text_to_image.py --prompt "character, chibi, waifu, side scrolling, white background, centered" --checkpoint_path "./input/model/v1-5-pruned-emaonly.safetensors" --batch_size 1 --num_images 6
+python3 ./scripts/text_to_image.py --prompt "character, chibi, waifu, side scrolling, white background, centered" --negative-prompt "white" --checkpoint_path "./input/model/v1-5-pruned-emaonly.safetensors" --batch_size 1 --num_images 1
 ```
 
 ### Embed prompts
