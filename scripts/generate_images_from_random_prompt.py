@@ -219,6 +219,11 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
             with torch.no_grad():
                 embedded_vector = cond.cpu().numpy()
 
+            # free cond memory
+            cond.detach()
+            del cond
+            torch.cuda.empty_cache()
+
             # image latent
             latent = []
 
@@ -269,6 +274,11 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
             # get numpy list from image_features
             with torch.no_grad():
                 image_features_numpy = image_features.cpu().numpy()
+
+            # free image_features memory
+            image_features.detach()
+            del image_features;
+            torch.cuda.empty_cache()
 
             # save embedding vector to its own file
             np.savez_compressed(embedding_vector_filepath, data=embedded_vector)
