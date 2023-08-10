@@ -49,6 +49,7 @@ def show_summary(total_time, partial_time, total_images, output_dir):
 # main function, called when the script is run
 def generate_images(
         prompt: str = "An oil painting of a computer generated image of a geometric pattern",
+        negative_prompt: str = '',
         output_base_dir: str = OUTPUT_DIR,
         sampler_name: str = "ddim",
         n_steps: int = 20,
@@ -77,6 +78,7 @@ def generate_images(
             tensor_images = stable_diffusion.generate_images(
                 batch_size=batch_size,
                 prompt=prompt,
+                negative_prompt=negative_prompt,
             )
             # print(tensor_images.shape)
             # image_hash = calculate_sha256(images.squeeze())
@@ -134,6 +136,7 @@ def main():
     args = (
         CLI("Generate images from noise seeds.")
         .prompt()
+        .negative_prompt()
         .batch_size()
         .num_iterations()
         .cuda_device()
@@ -142,6 +145,7 @@ def main():
 
     generate_images(
         prompt=args.prompt,
+        negative_prompt=args.negative_prompt,
         batch_size=args.batch_size,
         num_iterations=args.num_iterations,
         device=args.cuda_device,

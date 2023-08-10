@@ -109,7 +109,9 @@ def generate_images_from_prompt_generator(num_images, num_phrases, image_width, 
             # Capture the starting time
             tmp_start_time = time.time()
 
-            un_cond, cond = txt2img.get_text_conditioning(cfg_strength, this_prompt, batch_size)
+            # no negative prompts for now
+            negative_prompts = []
+            un_cond, cond = txt2img.get_text_conditioning(cfg_strength, this_prompt, negative_prompts, batch_size)
 
             # Capture the ending time
             tmp_end_time = time.time()
