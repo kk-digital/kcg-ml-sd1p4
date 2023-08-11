@@ -32,6 +32,7 @@ from stable_diffusion.utils_backend import get_autocast, set_seed
 from stable_diffusion.utils_image import save_images
 from stable_diffusion_base_script import StableDiffusionBaseScript
 from stable_diffusion.model.unet.unet_attention import CrossAttention
+from utility.utils_argument_parsing import get_seed_array_from_string
 from cli_builder import CLI
 
 
@@ -103,20 +104,9 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
                  r" abstract realism, andrew salgado, alla prima technique, alla prima, expressionist alla prima, expressionist alla prima technique"
 
     prompt = arg_prompt
-
     model_name = os.path.basename(checkpoint_path)
-    # Split the numbers_string into a list of substrings using the comma as the delimiter
-    seed_string_array = []
-    if seed != '':
-        seed_string_array = seed.split(',')
 
-    # default seed value is random int from 0 to 2^24
-    if seed == '':
-        # Generate an array of random integers in the range [0, 2^24)
-        seed_string_array = [random.randint(0, 2 ** 24 - 1) for _ in range(num_images * num_datasets)]
-
-    # Convert the elements in the list to integers
-    seed_array = seed_string_array
+    seed_array = get_seed_array_from_string(seed, array_size=(num_images * num_datasets))
 
     # Set flash attention
     CrossAttention.use_flash_attention = flash
@@ -219,6 +209,11 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
             with torch.no_grad():
                 embedded_vector = cond.cpu().numpy()
 
+            # free cond memory
+            cond.detach()
+            del cond
+            torch.cuda.empty_cache()
+
             # image latent
             latent = []
 
@@ -269,6 +264,11 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
             # get numpy list from image_features
             with torch.no_grad():
                 image_features_numpy = image_features.cpu().numpy()
+
+            # free image_features memory
+            image_features.detach()
+            del image_features;
+            torch.cuda.empty_cache()
 
             # save embedding vector to its own file
             np.savez_compressed(embedding_vector_filepath, data=embedded_vector)

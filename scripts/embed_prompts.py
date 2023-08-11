@@ -12,29 +12,35 @@ from stable_diffusion.utils_backend import get_device
 
 EMBEDDED_PROMPTS_DIR = os.path.abspath("./input/embedded_prompts/")
 
-parser = argparse.ArgumentParser("Embed prompts using CLIP")
-parser.add_argument(
-    "-p",
-    "--prompts",
-    nargs="+",
-    type=str,
-    default=["A painting of a computer virus", "An old photo of a computer scientist"],
-    help="The prompts to embed. Defaults to ['A painting of a computer virus', 'An old photo of a computer scientist']",
-)
-parser.add_argument(
-    "--embedded_prompts_dir",
-    type=str,
-    default=EMBEDDED_PROMPTS_DIR,
-    help="The path to the directory containing the embedded prompts tensors. Defaults to a constant EMBEDDED_PROMPTS_DIR, which is expected to be './input/embedded_prompts/'",
-)
-args = parser.parse_args()
+def parse_arguments():
 
-NULL_PROMPT = ""
-PROMPTS = args.prompts
+    parser = argparse.ArgumentParser("Embed prompts using CLIP")
+    parser.add_argument(
+        "-p",
+        "--prompts",
+        nargs="+",
+        type=str,
+        default=["A painting of a computer virus", "An old photo of a computer scientist"],
+        help="The prompts to embed. Defaults to ['A painting of a computer virus', 'An old photo of a computer scientist']",
+    )
+    parser.add_argument(
+        "--embedded_prompts_dir",
+        type=str,
+        default=EMBEDDED_PROMPTS_DIR,
+        help="The path to the directory containing the embedded prompts tensors. Defaults to a constant EMBEDDED_PROMPTS_DIR, which is expected to be './input/embedded_prompts/'",
+    )
+    args = parser.parse_args()
 
-os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
+    return args
 
-if __name__ == "__main__":
+def main():
+    args = parse_arguments()
+
+    NULL_PROMPT = ""
+    PROMPTS = args.prompts
+
+    os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
+
     null_prompt = NULL_PROMPT
     prompts = PROMPTS
 
@@ -55,3 +61,6 @@ if __name__ == "__main__":
         "Prompts embeddings saved at: ",
         f"{join(EMBEDDED_PROMPTS_DIR, 'embedded_prompts.pt')}",
     )
+
+if __name__ == "__main__":
+   main()

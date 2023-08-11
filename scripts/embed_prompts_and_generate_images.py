@@ -20,6 +20,7 @@ from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
 from stable_diffusion import StableDiffusion
 from stable_diffusion.constants import IODirectoryTree
+from configs.model_config import ModelConfig
 
 EMBEDDED_PROMPTS_DIR = os.path.abspath("./input/embedded_prompts/")
 OUTPUT_DIR = "./output/disturbing_embeddings/"
@@ -113,7 +114,8 @@ CLEAR_OUTPUT_DIR = args.clear_output_dir
 RANDOM_WALK = args.random_walk
 os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
 
-pt = IODirectoryTree(base_directory=base_dir)
+model_config = ModelConfig()
+pt = IODirectoryTree(model_config)
 
 try:
     shutil.rmtree(OUTPUT_DIR)
@@ -136,8 +138,9 @@ def init_stable_diffusion(device, path_tree: IODirectoryTree, sampler_name="ddim
     )
 
     stable_diffusion.quick_initialize()
-    stable_diffusion.model.load_unet(**path_tree.unet)
-    stable_diffusion.model.load_autoencoder(**path_tree.autoencoder).load_decoder(**path_tree.decoder)
+    stable_diffusion.model.load_unet(path_tree.unet['unet'])
+    autoencoder = stable_diffusion.model.load_autoencoder(path_tree.autoencoder['autoencoder'])
+    autoencoder.load_decoder(path_tree.decoder['decoder'])
 
     return stable_diffusion
 
@@ -274,13 +277,14 @@ def get_image_features(
 
 
 def main():
-    pt = IODirectoryTree(base_directory=base_dir)
+    model_config = ModelConfig()
+    pt = IODirectoryTree(model_config)
     embedded_prompts, null_prompt = embed_and_save_prompts(PROMPT)
     sd = init_stable_diffusion(DEVICE, pt, n_steps=20, sampler_name="ddim", ddim_eta=0.0)
 
     images = generate_images_from_disturbed_embeddings(sd, embedded_prompts, null_prompt, batch_size=1)
     image_encoder = CLIPImageEncoder(device=DEVICE)
-    image_encoder.load_clip_model(**pt.clip_model)
+    image_encoder.load_clip_model(pt.vision_model['vision_model'])
     image_encoder.initialize_preprocessor()
     # clip_model, clip_preprocess = clip.load("ViT-L/14", device=DEVICE)
 
