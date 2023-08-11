@@ -20,7 +20,7 @@ def parse_arguments():
 
 def text_to_image_handler(generation_task):
     text_to_image(generation_task.prompt, generation_task.output_path, 'ddim',
-                  "./input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors", True, 50,
+                  "./input/model/v1-5-pruned-emaonly.safetensors", True, 50,
                   generation_task.cfg_strength, False, False, None, generation_task.num_images, generation_task.seed)
 
 

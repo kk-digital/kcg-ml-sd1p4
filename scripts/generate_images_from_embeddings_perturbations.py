@@ -20,8 +20,8 @@ from stable_diffusion.utils_image import to_pil
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
 from stable_diffusion import StableDiffusion
-from stable_diffusion.model_paths import IODirectoryTree
-from configs.model_config import ModelPathConfig
+from stable_diffusion.constants import IODirectoryTree
+from configs.model_config import ModelConfig
 
 EMBEDDED_PROMPTS_DIR = os.path.abspath("./input/embedded_prompts/")
 OUTPUT_DIR = "./output/data/"
@@ -133,7 +133,7 @@ MAX_NOISE_STEPS = args.max_noise_steps
 DDIM_STEPS = args.ddim_steps
 os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
 
-model_config = ModelPathConfig()
+model_config = ModelConfig()
 pt = IODirectoryTree(model_config)
 
 try:
@@ -289,7 +289,7 @@ def calculate_sha256(tensor):
 
 
 if __name__ == "__main__":
-    model_config = ModelPathConfig()
+    model_config = ModelConfig()
     pt = IODirectoryTree(model_config)
 
     clip_text_embedder = CLIPTextEmbedder(device=get_device(DEVICE))

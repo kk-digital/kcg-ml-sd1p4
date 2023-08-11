@@ -7,11 +7,8 @@ import shutil
 import sys
 from os.path import join
 from random import randrange
-
 import torch
 from torch.mps import empty_cache as mps_empty_cache
-
-from configs.model_config import ModelPathConfig
 
 base_dir = "./"
 sys.path.insert(0, base_dir)
@@ -22,8 +19,8 @@ from stable_diffusion.utils_image import to_pil, save_image_grid
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
 from stable_diffusion import StableDiffusion
-from stable_diffusion.model_paths import IODirectoryTree, SDconfigs
-from configs.model_config import ModelPathConfig
+from stable_diffusion.constants import IODirectoryTree
+from configs.model_config import ModelConfig
 
 EMBEDDED_PROMPTS_DIR = os.path.abspath("./input/embedded_prompts/")
 OUTPUT_DIR = "./output/disturbing_embeddings/"
@@ -117,7 +114,7 @@ CLEAR_OUTPUT_DIR = args.clear_output_dir
 RANDOM_WALK = args.random_walk
 os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
 
-model_config = ModelPathConfig()
+model_config = ModelConfig()
 pt = IODirectoryTree(model_config)
 
 try:
@@ -133,7 +130,7 @@ else:
     os.makedirs(IMAGES_DIR, exist_ok=True)
 
 
-def init_stable_diffusion(device, path_tree: ModelPathConfig, sampler_name="ddim", n_steps=20, ddim_eta=0.0):
+def init_stable_diffusion(device, path_tree: IODirectoryTree, sampler_name="ddim", n_steps=20, ddim_eta=0.0):
     device = get_device(device)
 
     stable_diffusion = StableDiffusion(
@@ -141,9 +138,9 @@ def init_stable_diffusion(device, path_tree: ModelPathConfig, sampler_name="ddim
     )
 
     stable_diffusion.quick_initialize()
-    stable_diffusion.model.load_unet(path_tree.get_model(SDconfigs.UNET))
-    autoencoder = stable_diffusion.model.load_autoencoder(path_tree.get_model(SDconfigs.VAE))
-    autoencoder.load_decoder(path_tree.get_model(SDconfigs.VAE_DECODER))
+    stable_diffusion.model.load_unet(path_tree.unet['unet'])
+    autoencoder = stable_diffusion.model.load_autoencoder(path_tree.autoencoder['autoencoder'])
+    autoencoder.load_decoder(path_tree.decoder['decoder'])
 
     return stable_diffusion
 
@@ -280,14 +277,14 @@ def get_image_features(
 
 
 def main():
-    config = ModelPathConfig()
+    model_config = ModelConfig()
+    pt = IODirectoryTree(model_config)
     embedded_prompts, null_prompt = embed_and_save_prompts(PROMPT)
-    sd = init_stable_diffusion(DEVICE, config, n_steps=20, sampler_name="ddim", ddim_eta=0.0)
+    sd = init_stable_diffusion(DEVICE, pt, n_steps=20, sampler_name="ddim", ddim_eta=0.0)
 
     images = generate_images_from_disturbed_embeddings(sd, embedded_prompts, null_prompt, batch_size=1)
     image_encoder = CLIPImageEncoder(device=DEVICE)
-    image_encoder.load_submodels()
-    # image_encoder.load_clip_model(pt.vision_model['vision_model'])
+    image_encoder.load_clip_model(pt.vision_model['vision_model'])
     image_encoder.initialize_preprocessor()
     # clip_model, clip_preprocess = clip.load("ViT-L/14", device=DEVICE)
 
