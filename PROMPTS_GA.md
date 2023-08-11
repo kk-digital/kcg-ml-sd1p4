@@ -19,6 +19,7 @@ python scripts/prompts_ga.py \
 ```
 
 If you encounter an error like this: "ImportError: libGL.so.1: cannot open shared object file: No such file or directory" 
+
 you can resolve it by executing the following command:
 
     apt-get install libgl1-mesa-glx
