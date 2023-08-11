@@ -1,5 +1,5 @@
 {
-  "_name_or_path": "./input/model/clip/vision_model",
+  "_name_or_path": "./input/model/clip\\vision_model",
   "architectures": [
     "CLIPVisionModelWithProjection"
   ],

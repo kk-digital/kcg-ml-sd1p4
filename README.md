@@ -116,22 +116,26 @@ python3 ./scripts/embed_prompts.py --prompts 'A painting of a computer virus', '
 
 Only run this _after_ generating the embedded prompts with the [above script](#embed-prompts).
 
-Try running:
-
-```bash
-python3 ./scripts/generate_images_from_embeddings.py --num_seeds 4 --temperature 1.2 --ddim_eta 0.2
-```
 
 **Command line arguments**
 
 - `-p, --embedded_prompts_dir`: The path to the directory containing the embedded prompts tensors. Defaults to the `EMBEDDED_PROMPTS_DIR` constant, which is expected to be `'./input/embedded_prompts/'`.
 - `-od, --output_dir`: The output directory. Defaults to the `OUTPUT_DIR` constant, which is expected to be `'./output/noise-tests/from_embeddings'`.
-- `--num_seeds`: Number of random seeds to use. Defaults to `3`. Ranges from `1` to `7`.
+- `--num_images`: Number of images to generate. Defaults to `1`.
 - `-bs, --batch_size`: Batch size to use. Defaults to `1`.
 - `-t, --temperature`: Sampling temperature. Defaults to `1.0`.
 - `--ddim_eta`: Amount of noise to readd during the sampling process. Defaults to `0.0`.
 - `--clear_output_dir`: Either to clear or not the output directory before running. Defaults to `False`.
 - `--cuda_device`: CUDA device to use. Defaults to `get_device()`.
+- `--low_vram`: Only use this if the gpu you have is old`.
+- `--sampler`: Default value is `DDIM`.
+- `--cfg_scale`: unconditional guidance scale: eps = eps(x, empty) + scale * (eps(x, cond) - eps(x, empty)) . Defaults to `7`.
+- 
+Try running:
+
+```bash
+python3 ./scripts/generate_images_from_embeddings.py --num_images 4 --temperature 1.2 --ddim_eta 0.2
+```
 
 ### Images from distributions
 
@@ -186,11 +190,6 @@ python3 ./scripts/generate_images_from_temperature_range.py -d 4 --params_range 
 
 ### Images and encodings
 
-Try running:
-```bash
-python3 ./scripts/generate_images_and_encodings.py --prompt "An oil painting of a computer generated image of a geometric pattern" --num_iterations 10
-```
-
 **Command line arguments**
 
 - `--batch_size`: How many images to generate at once. Defaults to `1`.
@@ -198,6 +197,16 @@ python3 ./scripts/generate_images_and_encodings.py --prompt "An oil painting of 
 - `--prompt`: The prompt to render. It is an optional argument. Defaults to `"a painting of a cute monkey playing guitar"`.
 - `--negative-prompt`: The negative prompt. For things we dont want to see in generated image. Defaults to `''`.
 - `--cuda_device`: CUDA device to use for generation. Defaults to `"get_device()"`.
+- `--low_vram`: Flag for low vram gpus. Defaults to `False`.
+- `--sampler`: Sampler name. Defaults to `ddim`.
+- `--cfg_scale`: Unconditional guidance scale: eps = eps(x, empty) + scale * (eps(x, cond) - eps(x, empty)) . Defaults to `7`.
+- `--seed`: Array of seed values, one for each generated image. Defaults to ``.
+
+
+Try running:
+```bash
+python3 ./scripts/generate_images_and_encodings.py --prompt "An oil painting of a computer generated image of a geometric pattern" --num_iterations 10
+```
 
 ### Perturbations on prompts embeddings
 

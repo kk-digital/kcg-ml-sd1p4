@@ -93,6 +93,11 @@ def main():
         with torch.no_grad():
             flat_vector = flat_embedded_prompts.cpu().numpy()
 
+        # free residual memory
+        flat_embedded_prompts.detach()
+        del flat_embedded_prompts
+        torch.cuda.empty_cache()
+
         chad_score = image_meta_data.chad_score
 
         inputs.append(flat_vector)
@@ -170,10 +175,21 @@ def main():
                 training_residuals.append(residual.cpu())
                 if (residual < epsilon_scaled):
                     training_corrects_scaled += 1
+
+                # free residual memory
+                residual.detach()
+                del residual;
+                torch.cuda.empty_cache()
+
             for index, prediction in enumerate(model_outputs_raw):
                 residual = abs(model_outputs_raw[index][0] - target_outputs_raw[index][0])
                 if (residual < epsilon_raw):
                     training_corrects_raw += 1
+
+                # free residual memory
+                residual.detach()
+                del residual;
+                torch.cuda.empty_cache()
             min_training_output_raw = min(model_outputs_raw)
             max_training_output_raw = max(model_outputs_raw)
             min_training_output_scaled = min(model_outputs_scaled)
