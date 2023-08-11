@@ -67,7 +67,7 @@ import argparse
 #import safetensors as st
 
 from chad_score.chad_score import ChadScorePredictor
-from configs.model_config import ModelConfig
+from configs.model_config import ModelPathConfig
 from stable_diffusion import StableDiffusion
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
 from stable_diffusion.utils_model import *

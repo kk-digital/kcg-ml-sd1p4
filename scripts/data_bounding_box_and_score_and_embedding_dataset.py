@@ -1,19 +1,19 @@
 import argparse
 import hashlib
 import json
-import time
+import os
 import random
 import shutil
 import sys
+import time
 import warnings
 from os.path import join
-from typing import List
 from random import randrange
+from typing import List
+
 import cv2
 import numpy as np
-import os
 import torch
-
 
 base_dir = "./"
 sys.path.insert(0, base_dir)
@@ -26,8 +26,8 @@ warnings.filterwarnings("ignore", category=UserWarning)
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
 from stable_diffusion import StableDiffusion
-from stable_diffusion.constants import IODirectoryTree
-from configs.model_config import ModelConfig
+from stable_diffusion.model_paths import IODirectoryTree, SDconfigs
+from configs.model_config import ModelPathConfig
 
 EMBEDDED_PROMPTS_DIR = os.path.abspath("./input/embedded_prompts/")
 OUTPUT_DIR = "./output/disturbing_embeddings/"
@@ -113,14 +113,14 @@ if args.seed == '':
     SEED = randrange(0, 2 ** 24)
 else:
     SEED = int(args.seed)
-    
+
 NOISE_MULTIPLIER = args.noise_multiplier
 DEVICE = args.cuda_device
 BATCH_SIZE = args.batch_size
 CLEAR_OUTPUT_DIR = args.clear_output_dir
 os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
 
-config = ModelConfig()
+config = ModelPathConfig()
 pt = IODirectoryTree(config)
 
 try:
@@ -136,7 +136,7 @@ else:
     os.makedirs(IMAGES_DIR, exist_ok=True)
 
 
-def init_stable_diffusion(device, path_tree: IODirectoryTree, sampler_name="ddim", n_steps=20, ddim_eta=0.0):
+def init_stable_diffusion(device, path_tree: ModelPathConfig, sampler_name="ddim", n_steps=20, ddim_eta=0.0):
     device = get_device(device)
 
     stable_diffusion = StableDiffusion(
@@ -144,9 +144,9 @@ def init_stable_diffusion(device, path_tree: IODirectoryTree, sampler_name="ddim
     )
 
     stable_diffusion.quick_initialize()
-    stable_diffusion.model.load_unet(path_tree.unet['unet'])
-    autoencoder = stable_diffusion.model.load_autoencoder(path_tree.autoencoder['autoencoder'])
-    autoencoder.load_decoder(path_tree.decoder['decoder'])
+    stable_diffusion.model.load_unet(path_tree.get_model(SDconfigs.UNET))
+    autoencoder = stable_diffusion.model.load_autoencoder(path_tree.get_model(SDconfigs.VAE))
+    autoencoder.load_decoder(path_tree.get_model(SDconfigs.VAE_DECODER))
 
     return stable_diffusion
 
@@ -164,7 +164,7 @@ def generate_prompt():
 
     # Join all selected prompts and mandatory prompts into a single string, separated by commas
     prompt = ', '.join(mandatory_prompts + random_prompts)
-    
+
     print(f"Generated prompt: {prompt}")
     return prompt
 
@@ -224,7 +224,7 @@ def generate_images_from_disturbed_embeddings(
             dist.sample(sample_shape=torch.Size([768])).permute(1, 0, 2).permute(0, 2, 1)
         ).to(device)
         embedding_e = embedded_prompt + ((i * noise_multiplier) * noise_i + (j * noise_multiplier) * noise_j) / (
-                    2 * num_iterations)
+                2 * num_iterations)
 
         image_e = sd.generate_images_from_embeddings(
             seed=seed,
@@ -280,13 +280,12 @@ def get_image_features(
     image_features = image_features.cpu().detach().numpy()
     return image_features
 
-def main():
 
+def main():
     start_time = time.time()  # Save the start time
 
-    config = ModelConfig()
-    pt = IODirectoryTree(config)
-    sd = init_stable_diffusion(DEVICE, pt, n_steps=20, sampler_name="ddim", ddim_eta=0.0)
+    config = ModelPathConfig()
+    sd = init_stable_diffusion(DEVICE, config, n_steps=20, sampler_name="ddim", ddim_eta=0.0)
     clip_text_embedder = CLIPTextEmbedder(device=DEVICE)
     clip_text_embedder.load_submodels()
     images = []
@@ -297,12 +296,11 @@ def main():
         prompt = generate_prompt()
         prompts.append(prompt)  # Store each prompt for later use
         embedded_prompt, null_prompt = embed_and_save_prompts(clip_text_embedder, prompt, i)
-        torch.save(embedded_prompt, f'{EMBEDDED_PROMPTS_DIR}/embedded_prompt_{i}.pt')    
+        torch.save(embedded_prompt, f'{EMBEDDED_PROMPTS_DIR}/embedded_prompt_{i}.pt')
         torch.cuda.empty_cache()
 
     images_generator = generate_images_from_disturbed_embeddings(sd, clip_text_embedder, prompts,
                                                                  batch_size=1)  # Use the corresponding prompt for each iteration
-
 
     image_encoder = CLIPImageEncoder(device=DEVICE)
     image_encoder.load_submodels()
@@ -370,7 +368,6 @@ def main():
 
         json_output.append(json_output_i)
 
-
     json.dump(json_output, open(json_output_path, "w"), indent=4)
     json.dump(scores, open(scores_path, "w"), indent=4)
     json.dump(manifest, open(manifest_path, "w"), indent=4)
@@ -378,6 +375,7 @@ def main():
     end_time = time.time()  # Save the end time
 
     print(f"Execution time: {end_time - start_time} seconds")
+
 
 if __name__ == "__main__":
     main()

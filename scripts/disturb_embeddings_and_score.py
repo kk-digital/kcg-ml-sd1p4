@@ -17,8 +17,8 @@ from stable_diffusion.utils_image import to_pil
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
 from stable_diffusion import StableDiffusion
-from stable_diffusion.constants import IODirectoryTree
-from configs.model_config import ModelConfig
+from stable_diffusion.model_paths import IODirectoryTree
+from configs.model_config import ModelPathConfig
 
 EMBEDDED_PROMPTS_DIR = os.path.abspath("./input/embedded_prompts/")
 OUTPUT_DIR = "./output/data/"
@@ -114,7 +114,7 @@ CLEAR_OUTPUT_DIR = args.clear_output_dir
 RANDOM_WALK = args.random_walk
 os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
 
-model_config = ModelConfig()
+model_config = ModelPathConfig()
 pt = IODirectoryTree(model_config)
 
 try:
@@ -256,7 +256,7 @@ def get_image_features(
 
 
 def main():
-    model_config = ModelConfig()
+    model_config = ModelPathConfig()
     pt = IODirectoryTree(model_config)
 
     embedded_prompts, null_prompt = embed_and_save_prompts(PROMPT)
