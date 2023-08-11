@@ -48,7 +48,7 @@ class TestScripts(unittest.TestCase):
 
     # Add other test cases similarly...
     def test_06_generate_images_from_embeddings(self):
-        self.run_script(f"{self.scripts_path}generate_images_from_embeddings", num_seeds=4, temperature=1.2,
+        self.run_script(f"{self.scripts_path}generate_images_from_embeddings", temperature=1.2,
                         ddim_eta=0.2)
 
     def test_07_generate_images_from_distributions(self):
