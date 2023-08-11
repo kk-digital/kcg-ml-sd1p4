@@ -18,9 +18,7 @@ python scripts/prompts_ga.py \
   --mutation_percent_genes 0.05
 ```
 
-If you get error like this: ImportError: Libgl.so.1: cannot open shared object file: no such file or directory.
-
-Run this:
+If you encounter an error like this: "ImportError: libGL.so.1: cannot open shared object file: No such file or directory," you can resolve it by executing the following command:
 
     apt-get install libgl1-mesa-glx
 
