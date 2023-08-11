@@ -89,17 +89,6 @@ if __name__ == "__main__":
         else:
             download_file(clip_url, clip_path, "CLIP model")
 
-    with section("Downloading Text model"):
-        # DOWNLOAD_TEXT_MODEL
-        model_path = config.get_model('clip/txt_emb_model', extension='.bin', check_existence=False)
-        model_url = r'https://huggingface.co/openai/clip-vit-large-patch14/resolve/main/pytorch_model.bin'
-        if is_minio_accessible:
-            bucket_name = "clip-vit-large-patch14"
-            object_name = "pytorch_model.bin"
-            download_from_minio(minio_client, bucket_name, object_name, model_path)
-        else:
-            download_file(model_url, model_path, "Pytorch Model Bin")
-
     with section("Downloading Base Diffusion model"):
         # DOWNLOAD_BASE_SD_MODEL
 
