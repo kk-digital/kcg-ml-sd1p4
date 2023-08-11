@@ -36,7 +36,7 @@ class CLI:
 
         return self
 
-    def output(self, default='./output', check_exists: Union[bool, Callable] = True):
+    def output(self, default='/output', check_exists: Union[bool, Callable] = True):
         self.parser.add_argument('--output',
                                  help='Path to the output directory (default: %(default)s)',
                                  default=default
@@ -109,7 +109,7 @@ class CLI:
         self.parser.add_argument(
             '--steps',
             type=int,
-            default=50,
+            default=20,
             help='Number of steps to use (default: %(default)s)'
         )
 
@@ -228,6 +228,17 @@ class CLI:
             nargs="?",
             help='The prompt to render',
             default="a painting of a cute monkey playing guitar"
+        )
+
+        return self
+
+    def negative_prompt(self):
+        self.parser.add_argument(
+            '--negative-prompt',
+            type=str,
+            nargs="?",
+            help='The negative prompt. For things we dont want to see in generated image',
+            default=""
         )
 
         return self

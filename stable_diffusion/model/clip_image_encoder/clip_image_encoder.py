@@ -10,10 +10,12 @@ from PIL import Image
 from torch import nn
 from torchvision.transforms import Compose, Resize, CenterCrop, Normalize, Lambda
 
+from configs.model_config import ModelConfig
 
 sys.path.insert(0, os.getcwd())
 from utility.utils_logger import logger
-from stable_diffusion.model_paths import IMAGE_PROCESSOR_DIR_PATH, VISION_MODEL_DIR_PATH, IMAGE_ENCODER_PATH
+from stable_diffusion.model_paths import IMAGE_PROCESSOR_DIR_PATH, VISION_MODEL_DIR_PATH, IMAGE_ENCODER_PATH, \
+    CLIPconfigs
 from stable_diffusion.utils_backend import get_device
 from transformers import CLIPImageProcessor, CLIPVisionModelWithProjection
 
@@ -23,6 +25,7 @@ class CLIPImageEncoder(nn.Module):
     def __init__(self, device=None, image_processor=None, vision_model=None):  # , input_mode = PIL.Image.Image):
 
         super().__init__()
+        self.config = ModelConfig()
 
         self.device = get_device(device)
 
@@ -45,8 +48,8 @@ class CLIPImageEncoder(nn.Module):
 
     def load_submodels(self, image_processor_path=IMAGE_PROCESSOR_DIR_PATH, vision_model_path=VISION_MODEL_DIR_PATH):
         try:
-            print("Loading image_processor from: ", vision_model_path)
-            self.vision_model = (CLIPVisionModelWithProjection.from_pretrained(vision_model_path, local_files_only=True,
+            self.vision_model = (CLIPVisionModelWithProjection.from_pretrained(vision_model_path,
+                                                                               local_files_only=True,
                                                                                use_safetensors=True)
                                  .eval()
                                  .to(self.device))
@@ -54,6 +57,20 @@ class CLIPImageEncoder(nn.Module):
             self.image_processor = CLIPImageProcessor.from_pretrained(image_processor_path, local_files_only=True)
 
             logger.info(f"CLIP ImageProcessor successfully loaded from : {image_processor_path}\n")
+            return self
+        except Exception as e:
+            logger.error('Error loading submodels: ', e)
+
+    def load_submodels_from_transformer(self, clip_transformer=CLIPconfigs.CLIP_MODEL):
+        model = self.config.get_model(clip_transformer)
+        try:
+            self.vision_model = (CLIPVisionModelWithProjection.from_pretrained(model,
+                                                                               config=self.config.get_model_path('clip/vision_model'),
+                                                                               local_files_only=True,
+                                                                               use_safetensors=True)
+                                 .eval()
+                                 .to(self.device))
+            self.image_processor = CLIPImageProcessor.from_pretrained(self.config.get_model_path('clip/image_processor'), local_files_only=True)
             return self
         except Exception as e:
             logger.error('Error loading submodels: ', e)

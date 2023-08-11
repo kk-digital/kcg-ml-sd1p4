@@ -19,6 +19,7 @@ import numpy as np
 import torch
 import random
 import shutil
+import json
 
 base_directory = "./"
 sys.path.insert(0, base_directory)
@@ -31,6 +32,7 @@ from stable_diffusion.utils_backend import get_autocast, set_seed
 from stable_diffusion.utils_image import save_images
 from stable_diffusion_base_script import StableDiffusionBaseScript
 from stable_diffusion.model.unet.unet_attention import CrossAttention
+from utility.utils_argument_parsing import get_seed_array_from_string
 from cli_builder import CLI
 
 
@@ -102,20 +104,9 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
                  r" abstract realism, andrew salgado, alla prima technique, alla prima, expressionist alla prima, expressionist alla prima technique"
 
     prompt = arg_prompt
-
     model_name = os.path.basename(checkpoint_path)
-    # Split the numbers_string into a list of substrings using the comma as the delimiter
-    seed_string_array = []
-    if seed != '':
-        seed_string_array = seed.split(',')
 
-    # default seed value is random int from 0 to 2^24
-    if seed == '':
-        # Generate an array of random integers in the range [0, 2^24)
-        seed_string_array = [random.randint(0, 2 ** 24 - 1) for _ in range(num_images * num_datasets)]
-
-    # Convert the elements in the list to integers
-    seed_array = seed_string_array
+    seed_array = get_seed_array_from_string(seed, array_size=(num_images * num_datasets))
 
     # Set flash attention
     CrossAttention.use_flash_attention = flash
@@ -160,26 +151,28 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
             print("Seed : ", this_seed)
             start_time = time.time()
             timestamp = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+            set_folder_name = f'set_{current_task_index:04}'
+            feature_dir = os.path.join(output, set_folder_name, 'feature')
+            image_dir = os.path.join(output, set_folder_name, 'images')
+
+            os.makedirs(feature_dir, exist_ok=True)
+            os.makedirs(image_dir, exist_ok=True)
+
 
             total_digits = 4
-
             base_file_name = f'{i:0{total_digits}d}-{timestamp}'
             image_name = base_file_name + '.jpg'
 
-            # Define the images sub-directory
-            image_dir = output + '/image'
-
-            # Create this directory if it does not exist
-            os.makedirs(image_dir, exist_ok=True)
-
-            # Specify the filename with the path to the images directory
-            filename = image_dir + '/' + image_name
+            # Specify the filename with the path to the images directory under the respective set folder
+            filename = os.path.join(image_dir, image_name)
 
 
             # Capture the starting time
             tmp_start_time = time.time()
 
-            un_cond, cond = txt2img.get_text_conditioning(cfg_strength, this_prompt, batch_size)
+            # no negative prompts for now
+            negative_prompts = []
+            un_cond, cond = txt2img.get_text_conditioning(cfg_strength, this_prompt, negative_prompts, batch_size)
 
             # Capture the ending time
             tmp_end_time = time.time()
@@ -216,6 +209,11 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
             with torch.no_grad():
                 embedded_vector = cond.cpu().numpy()
 
+            # free cond memory
+            cond.detach()
+            del cond
+            torch.cuda.empty_cache()
+
             # image latent
             latent = []
 
@@ -249,19 +247,15 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
             min_chad_score = min(min_chad_score, chad_score)
             max_chad_score = max(max_chad_score, chad_score)
 
-            embedding_dir = os.path.join(output, 'embedding')
-            clip_dir = os.path.join(output, 'feature')
-            latent_dir = os.path.join(output, 'latent')
-            json_dir = os.path.join(output, 'json')
-
-            os.makedirs(embedding_dir, exist_ok=True)
-            os.makedirs(clip_dir, exist_ok=True)
-            os.makedirs(latent_dir, exist_ok=True)
-            os.makedirs(json_dir, exist_ok=True)
-
             embedding_vector_filename = base_file_name + '.embedding.npz'
             clip_features_filename = base_file_name + '.clip.npz'
             latent_filename = base_file_name + '.latent.npz'
+
+            embedding_vector_filepath = os.path.join(feature_dir, embedding_vector_filename)
+            clip_features_filepath = os.path.join(feature_dir, clip_features_filename)
+            latent_filepath = os.path.join(feature_dir, latent_filename)
+            json_filename = os.path.join(image_dir, base_file_name + '.json')
+
 
             generation_task_result = GenerationTaskResult(this_prompt, model_name, image_name, embedding_vector_filename,
                                                           clip_features_filename, latent_filename,
@@ -271,20 +265,22 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
             with torch.no_grad():
                 image_features_numpy = image_features.cpu().numpy()
 
-            # save embedding vector to its own file
-            embedding_vector_filepath = embedding_dir + '/' + embedding_vector_filename
-            np.savez_compressed(embedding_vector_filepath, data=embedded_vector)
+            # free image_features memory
+            image_features.detach()
+            del image_features;
+            torch.cuda.empty_cache()
 
+            # save embedding vector to its own file
+            np.savez_compressed(embedding_vector_filepath, data=embedded_vector)
             # save image features to its own file
-            clip_features_filepath = clip_dir + '/' + clip_features_filename
             np.savez_compressed(clip_features_filepath, data=image_features_numpy)
 
             # save image latent to its own file
-            latent_filepath = latent_dir + '/' + latent_filename
             np.savez_compressed(latent_filepath, data=latent)
 
             # Save the data to a JSON file
-            json_filename = json_dir + '/' + base_file_name + '.json'
+            with open(json_filename, 'w') as json_file:
+                json.dump(generation_task_result.to_dict(), json_file)
 
             generation_task_result_list.append({
                 'image_filename': filename,
@@ -315,43 +311,19 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
             # save to json file
             generation_task_result.save_to_json(json_filename)
 
-        total_digits = 4
 
-        zip_filename = output + '/' + 'set_' + f'{current_task_index:0{total_digits}d}' + '.zip'
 
-        # create zip for generated images
-        with ZipFile(zip_filename, 'w', compression=zipfile.ZIP_DEFLATED) as file:
-            print('Created zip file ' + zip_filename)
-            zip_task_index = 1
-            for generation_task_result_item in generation_task_result_list:
-                print('Zipping task ' + str(zip_task_index) + ' out of ' + str(len(generation_task_result_list)))
-                generation_task_result = generation_task_result_item['generation_task_result']
+        # Zip the entire set folder
+        set_directory_path = os.path.join(output, set_folder_name)
+        zip_filename = os.path.join(output, f'{set_folder_name}.zip')
+        shutil.make_archive(zip_filename[:-4], 'zip', set_directory_path)  # The slice [:-4] removes ".zip" from the filename since make_archive appends it by default
 
-                json_filename = generation_task_result_item['json_filename']
-                image_filename = generation_task_result_item['image_filename']
-                embedding_vector_filename = generation_task_result.embedding_name
-                clip_features_filename = generation_task_result.clip_name
-                latent_filename = generation_task_result.latent_name
+        print(f'Created zip file: {zip_filename}')
 
-                embedding_vector_filepath = generation_task_result_item['embedding_vector_filepath']
-                clip_features_filepath = generation_task_result_item['clip_features_filepath']
-                latent_filepath = generation_task_result_item['latent_filepath']
-
-                # Now, when writing files to the zip, you should specify the folder name in the arcname
-                file.write(json_filename, arcname='image/' + os.path.basename(json_filename))
-                file.write(image_filename, arcname='image/' + os.path.basename(image_filename))
-                file.write(embedding_vector_filepath, arcname='feature/' + embedding_vector_filename)
-                file.write(clip_features_filepath, arcname='feature/' + clip_features_filename)
-                file.write(latent_filepath, arcname='feature/' + latent_filename)
-                
-                zip_task_index += 1
-
-        directories_to_delete = ["image", "embedding", "feature", "json", "latent"]  # Adjust if you have different folder names
-        for dir_name in directories_to_delete:
-            dir_path = os.path.join(output, dir_name)
-            if os.path.exists(dir_path):
-                shutil.rmtree(dir_path)
-                print(f"Deleted folder: {dir_name}")
+        # Delete the entire set_000x folder after zipping
+        if os.path.exists(set_directory_path):
+            shutil.rmtree(set_directory_path)
+            print(f"Deleted folder: {set_folder_name}")
 
 
 

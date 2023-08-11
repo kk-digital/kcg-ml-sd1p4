@@ -11,6 +11,7 @@ class CLIPconfigs:
     IMAGE_ENCODER = 'clip/clip_img_enc'
     IMAGE_PROCESSOR = 'clip/clip_img_enc_processor'
     VISION_MODEL = 'clip/clip_img_enc_vision'
+    CLIP_MODEL = 'clip/vit-large-patch14'
 
 
 class SDconfigs:
@@ -26,6 +27,7 @@ class SDconfigs:
 TEXT_EMBEDDER_PATH = config.get_model(CLIPconfigs.TEXT_EMBEDDER)
 TOKENIZER_DIR_PATH = config.get_model_path(CLIPconfigs.TOKENIZER)
 TEXT_MODEL_DIR_PATH = config.get_model_path(CLIPconfigs.TEXT_MODEL)
+
 IMAGE_PROCESSOR_DIR_PATH = config.get_model_path(CLIPconfigs.IMAGE_PROCESSOR)
 VISION_MODEL_DIR_PATH = config.get_model_path(CLIPconfigs.VISION_MODEL)
 IMAGE_ENCODER_PATH = config.get_model(CLIPconfigs.IMAGE_ENCODER)

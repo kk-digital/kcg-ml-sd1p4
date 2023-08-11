@@ -25,7 +25,11 @@
     - [Chad Sort](#chad-sort)
     - [Running GenerationTask](#running-generationtask)
     - [Prompt Score](#prompt-score)
+    - [Prompt Embeddings Gradient Optimization](#prompt-embeddings-gradient-optimization)
     - [Auto-ml](#auto-ml)
+  - [Tests](#tests)
+    - [To run all scripts](#to-run-all-scripts)
+    - [To run all kcg-ml-sd1p4 tests](#to-run-all-kcg-ml-sd1p4-tests)
 
 ## Prerequisites
 
@@ -63,37 +67,34 @@ These are the available CLI arguments:
 
 ```
 options:
-  --prompt        PROMPT
-                        An array of strings to help guide the generation process
-  --batch_size   BATCH_SIZE
-                        How many images to generate at once
-  --output        OUTPUT
-                        Number of folders to
-  --sampler       SAMPLER
-                        Name of the sampler to use
-  --checkpoint_path     CHECKPOINT_PATH
-                        Path to the checkpoint file
-  --flash         FLASH
-                        Whether to use flash attention
-  --steps         STEPS
-                        Number of steps to use
-  --cgf_scale         SCALE
-                        Unconditional guidance scale: eps = eps(x, empty) + scale * (eps(x, cond) - eps(x, empty))
-  --seed      SEED
-                        Array of seed for the image generation: example '0, 1, 0, 7', Its better if the size of the array is the same as the number of generated images
-  --low-vram      LOW_VRAM
-                        Limit vram usage
-  --force_cpu     FORCE_CPU
-                        Force cpu usage
-  --cuda_device   CUDA_DEVICE
-                        Cuda device to use for generation process
-  --num_images    NUM_IMAGES
-                        Number of images to output
+  -h, --help            show this help message and exit
+  --prompt [PROMPT]     The prompt to render
+  --negative-prompt [NEGATIVE_PROMPT]
+                        The negative prompt. For things we dont want to see in generated image
+  --prompts_file PROMPTS_FILE
+                        Path to the file containing the prompts, each on a line (default: './input/prompts.txt')
+  --batch_size BATCH_SIZE
+                        How many images to generate at once (default: 1)
+  --output OUTPUT       Path to the output directory (default: ./output)
+  --sampler SAMPLER     Name of the sampler to use (default: ddim)
+  --checkpoint_path CHECKPOINT_PATH
+                        Path to the checkpoint file (default: './input/model/v1-5-pruned-emaonly.safetensors')
+  --flash               whether to use flash attention
+  --steps STEPS         Number of steps to use (default: 50)
+  --cfg_scale CFG_SCALE
+                        unconditional guidance scale: eps = eps(x, empty) + scale * (eps(x, cond) - eps(x, empty))
+  --low_vram            limit VRAM usage
+  --force_cpu           force CPU usage
+  --cuda_device CUDA_DEVICE
+                        cuda device to use for generation
+  --num_images NUM_IMAGES
+                        How many images to generate (default: 1)
+  --seed SEED           Seed for the image generation (default: )
 ```
 
 Example Usage:
 ``` shell
-python3 ./scripts/text_to_image.py --prompt "character, chibi, waifu, side scrolling, white background, centered" --checkpoint_path "./input/model/sd/v1-5-pruned-emaonly.safetensors" --batch_size 1 --num_images 6
+python3 ./scripts/text_to_image.py --prompt "character, chibi, waifu, side scrolling, white background, centered" --negative-prompt "white" --checkpoint_path "./input/model/sd/v1-5-pruned-emaonly.safetensors" --batch_size 1 --num_images 1
 ```
 
 ### Embed prompts
@@ -115,22 +116,26 @@ python3 ./scripts/embed_prompts.py --prompts 'A painting of a computer virus', '
 
 Only run this _after_ generating the embedded prompts with the [above script](#embed-prompts).
 
-Try running:
-
-```bash
-python3 ./scripts/generate_images_from_embeddings.py --num_seeds 4 --temperature 1.2 --ddim_eta 0.2
-```
 
 **Command line arguments**
 
 - `-p, --embedded_prompts_dir`: The path to the directory containing the embedded prompts tensors. Defaults to the `EMBEDDED_PROMPTS_DIR` constant, which is expected to be `'./input/embedded_prompts/'`.
 - `-od, --output_dir`: The output directory. Defaults to the `OUTPUT_DIR` constant, which is expected to be `'./output/noise-tests/from_embeddings'`.
-- `--num_seeds`: Number of random seeds to use. Defaults to `3`. Ranges from `1` to `7`.
+- `--num_images`: Number of images to generate. Defaults to `1`.
 - `-bs, --batch_size`: Batch size to use. Defaults to `1`.
 - `-t, --temperature`: Sampling temperature. Defaults to `1.0`.
 - `--ddim_eta`: Amount of noise to readd during the sampling process. Defaults to `0.0`.
 - `--clear_output_dir`: Either to clear or not the output directory before running. Defaults to `False`.
 - `--cuda_device`: CUDA device to use. Defaults to `get_device()`.
+- `--low_vram`: Only use this if the gpu you have is old`.
+- `--sampler`: Default value is `DDIM`.
+- `--cfg_scale`: unconditional guidance scale: eps = eps(x, empty) + scale * (eps(x, cond) - eps(x, empty)) . Defaults to `7`.
+- 
+Try running:
+
+```bash
+python3 ./scripts/generate_images_from_embeddings.py --num_images 4 --temperature 1.2 --ddim_eta 0.2
+```
 
 ### Images from distributions
 
@@ -142,6 +147,7 @@ python3 ./scripts/generate_images_from_distributions.py -d 4 --params_steps 4 --
 **Command line arguments**
 
 - `-p, --prompt`: The prompt to generate images from. Defaults to `"A woman with flowers in her hair in a courtyard, in the style of Frank Frazetta"`.
+- `--negative-prompt`: The negative prompt. For things we dont want to see in generated image. Defaults to `''`.
 - `-od, --output_dir`: The output directory. Defaults to the `OUTPUT_DIR` constant, which should be `"./output/noise-tests/from_distributions"`.
 - `-cp, --checkpoint_path`: The path to the checkpoint file to load from. Defaults to the `CHECKPOINT_PATH` constant, which should be `"./input/model/v1-5-pruned-emaonly.safetensors"`.
 - `-F, --fully_initialize`: Whether to fully initialize or not. Defaults to `False`.
@@ -166,6 +172,7 @@ python3 ./scripts/generate_images_from_temperature_range.py -d 4 --params_range 
 **Command line arguments**
 
 - `-p, --prompt`: The prompt to generate images from. Defaults to `"A woman with flowers in her hair in a courtyard, in the style of Frank Frazetta"`.
+- `--negative-prompt`: The negative prompt. For things we dont want to see in generated image. Defaults to `''`.
 - `-od, --output_dir`: The output directory. Defaults to the `OUTPUT_DIR` constant, which is expected to be `"./output/noise-tests/temperature_range"`.
 - `-cp, --checkpoint_path`: The path to the checkpoint file to load from. Defaults to the `CHECKPOINT_PATH` constant, which is expected to be `"./input/model/v1-5-pruned-emaonly.safetensors"`.
 - `-F, --fully_initialize`: Whether to fully initialize or not. Defaults to `False`.
@@ -183,17 +190,23 @@ python3 ./scripts/generate_images_from_temperature_range.py -d 4 --params_range 
 
 ### Images and encodings
 
-Try running:
-```bash
-python3 ./scripts/generate_images_and_encodings.py --prompt "An oil painting of a computer generated image of a geometric pattern" --num_iterations 10
-```
-
 **Command line arguments**
 
 - `--batch_size`: How many images to generate at once. Defaults to `1`.
 - `--num_iterations`: How many times to iterate the generation of a batch of images. Defaults to `10`.
 - `--prompt`: The prompt to render. It is an optional argument. Defaults to `"a painting of a cute monkey playing guitar"`.
+- `--negative-prompt`: The negative prompt. For things we dont want to see in generated image. Defaults to `''`.
 - `--cuda_device`: CUDA device to use for generation. Defaults to `"get_device()"`.
+- `--low_vram`: Flag for low vram gpus. Defaults to `False`.
+- `--sampler`: Sampler name. Defaults to `ddim`.
+- `--cfg_scale`: Unconditional guidance scale: eps = eps(x, empty) + scale * (eps(x, cond) - eps(x, empty)) . Defaults to `7`.
+- `--seed`: Array of seed values, one for each generated image. Defaults to ``.
+
+
+Try running:
+```bash
+python3 ./scripts/generate_images_and_encodings.py --prompt "An oil painting of a computer generated image of a geometric pattern" --num_iterations 10
+```
 
 ### Perturbations on prompts embeddings
 
@@ -452,3 +465,32 @@ Example Usage:
 ``` shell
 python scripts/auto_ml.py --dataset-zip-path ./input/set_0002.zip --x-input "clip" --output "./output"
 ```
+
+## Tests
+### To run all scripts
+1. Make an env
+
+    `python3 -m venv env`
+2. Activate env
+
+    `source env/bin/activate`
+3. Install requirements
+
+    `pip install -r requirements.txt`
+4. run pytest
+
+    `python -m unittest test_main_scripts.py `
+
+### To run all kcg-ml-sd1p4 tests
+1. Make an env
+
+    `python3 -m venv env`
+2. Activate env
+
+    `source env/bin/activate`
+3. Install requirements
+
+    `pip install -r requirements.txt`
+4. run pytest
+
+    `pytest ./test/test_scripts"`
