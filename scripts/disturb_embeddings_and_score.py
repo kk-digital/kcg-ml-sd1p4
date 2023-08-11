@@ -17,7 +17,8 @@ from stable_diffusion.utils_image import to_pil
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
 from stable_diffusion import StableDiffusion
-from stable_diffusion.constants import IODirectoryTree
+from stable_diffusion.model_paths import IODirectoryTree
+from configs.model_config import ModelPathConfig
 
 EMBEDDED_PROMPTS_DIR = os.path.abspath("./input/embedded_prompts/")
 OUTPUT_DIR = "./output/data/"
@@ -113,7 +114,8 @@ CLEAR_OUTPUT_DIR = args.clear_output_dir
 RANDOM_WALK = args.random_walk
 os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
 
-pt = IODirectoryTree(base_directory=base_dir)
+model_config = ModelPathConfig()
+pt = IODirectoryTree(model_config)
 
 try:
     shutil.rmtree(OUTPUT_DIR)
@@ -136,8 +138,9 @@ def init_stable_diffusion(device, path_tree: IODirectoryTree, sampler_name="ddim
     )
 
     stable_diffusion.quick_initialize()
-    stable_diffusion.model.load_unet(**path_tree.unet)
-    stable_diffusion.model.load_autoencoder(**path_tree.autoencoder).load_decoder(**path_tree.decoder)
+    stable_diffusion.model.load_unet(path_tree.unet['unet'])
+    autoencoder = stable_diffusion.model.load_autoencoder(path_tree.autoencoder['autoencoder'])
+    autoencoder.load_decoder(path_tree.decoder['decoder'])
 
     return stable_diffusion
 
@@ -248,12 +251,20 @@ def get_image_features(
         image_features = model.encode_image(image)
         # l2 normalize
         image_features /= image_features.norm(dim=-1, keepdim=True)
-    image_features = image_features.cpu().detach().numpy()
-    return image_features
+
+    image_features_cpu = image_features.cpu()
+
+    # free gpu memory
+    image_features = image_features.detach()
+    del image_features
+    torch.cuda.empty_cache()
+
+    return image_features_cpu.numpy()
 
 
 def main():
-    pt = IODirectoryTree(base_directory=base_dir)
+    model_config = ModelPathConfig()
+    pt = IODirectoryTree(model_config)
 
     embedded_prompts, null_prompt = embed_and_save_prompts(PROMPT)
     sd = init_stable_diffusion(DEVICE, pt)
@@ -261,7 +272,7 @@ def main():
     images = generate_images_from_disturbed_embeddings(sd, embedded_prompts, null_prompt, batch_size=BATCH_SIZE)
 
     image_encoder = CLIPImageEncoder(device=DEVICE)
-    image_encoder.load_submodels(image_processor_path=pt.image_processor_path, vision_model_path=pt.vision_model_path)
+    image_encoder.load_submodels(image_processor_path=pt.image_processor, vision_model_path=pt.vision_model)
 
     loaded_model = torch.load(SCORER_CHECKPOINT_PATH)
     predictor = ChadScoreModel(768, device=DEVICE)

@@ -11,7 +11,7 @@ sys.path.insert(0, base_directory)
 
 from auxiliary_functions import get_torch_distribution_from_name
 from stable_diffusion.stable_diffusion import StableDiffusion
-from stable_diffusion.constants import CHECKPOINT_PATH
+from stable_diffusion.model_paths import SD_CHECKPOINT_PATH
 from stable_diffusion.utils_backend import get_device
 from stable_diffusion.utils_image import save_images, save_image_grid
 
@@ -25,6 +25,13 @@ parser.add_argument(
     default="A woman with flowers in her hair in a courtyard, in the style of Frank Frazetta",
     help="The prompt to generate images from. Defaults to 'A woman with flowers in her hair in a courtyard, in the style of Frank Frazetta'",
 )
+
+parser.add_argument(
+    "--negative-prompt",
+    type=str,
+    default="",
+    help="The negative prompt. For things we dont want to see in generated image",
+)
 parser.add_argument(
     "--output_dir",
     type=str,
@@ -34,7 +41,7 @@ parser.add_argument(
 parser.add_argument(
     "--checkpoint_path",
     type=str,
-    default=CHECKPOINT_PATH,
+    default=SD_CHECKPOINT_PATH,
     help="The path to the checkpoint file to load from. Defaults to CHECKPOINT_PATH constant, which should be './input/model/v1-5-pruned-emaonly.ckpt'",
 )
 
@@ -60,6 +67,7 @@ parser.add_argument("--cuda_device", type=str, default=None)
 args = parser.parse_args()
 
 PROMPT = args.prompt
+NEGATIVE_PROMPT = args.negative_prompt
 OUTPUT_DIR = args.output_dir
 CHECKPOINT_PATH = args.checkpoint_path
 FULLY_INIT = args.fully_initialize
@@ -122,7 +130,7 @@ def init_stable_diffusion(device, sampler_name="ddim", n_steps=20, ddim_eta=0.0)
 
     else:
         stable_diffusion.initialize_latent_diffusion(
-            path=CHECKPOINT_PATH, force_submodels_init=True
+            path=SD_CHECKPOINT_PATH, force_submodels_init=True
         )
         return stable_diffusion
 
@@ -146,6 +154,7 @@ def generate_images_from_dist_dict(
         output_dir: str = OUTPUT_DIR,
         clear_output_dir: bool = CLEAR_OUTPUT_DIR,
         prompt: str = PROMPT,
+        negative_prompt: str = NEGATIVE_PROMPT,
         batch_size: int = BATCH_SIZE,
         temperature: float = TEMPERATURE,
 ):
@@ -197,6 +206,7 @@ def generate_images_from_dist_dict(
                     images = stable_diffusion.generate_images(
                         batch_size=batch_size,
                         prompt=prompt,
+                        negative_prompt=negative_prompt,
                         seed=noise_seed,
                         noise_fn=noise_fn,
                         temperature=temperature,
@@ -231,6 +241,7 @@ def main():
         output_dir=OUTPUT_DIR,
         clear_output_dir=CLEAR_OUTPUT_DIR,
         prompt=PROMPT,
+        negative_prompt=NEGATIVE_PROMPT,
         batch_size=BATCH_SIZE,
         temperature=TEMPERATURE,
     )

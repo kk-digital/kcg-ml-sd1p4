@@ -20,7 +20,8 @@ from stable_diffusion.utils_image import to_pil
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
 from stable_diffusion import StableDiffusion
-from stable_diffusion.constants import IODirectoryTree
+from stable_diffusion.model_paths import IODirectoryTree
+from configs.model_config import ModelPathConfig
 
 EMBEDDED_PROMPTS_DIR = os.path.abspath("./input/embedded_prompts/")
 OUTPUT_DIR = "./output/data/"
@@ -132,7 +133,8 @@ MAX_NOISE_STEPS = args.max_noise_steps
 DDIM_STEPS = args.ddim_steps
 os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
 
-pt = IODirectoryTree(base_directory=base_dir)
+model_config = ModelPathConfig()
+pt = IODirectoryTree(model_config)
 
 try:
     shutil.rmtree(OUTPUT_DIR)
@@ -155,8 +157,9 @@ def init_stable_diffusion(device, path_tree: IODirectoryTree, sampler_name="ddim
     )
 
     stable_diffusion.quick_initialize()
-    stable_diffusion.model.load_unet(**path_tree.unet)
-    stable_diffusion.model.load_autoencoder(**path_tree.autoencoder).load_decoder(**path_tree.decoder)
+    stable_diffusion.model.load_unet(path_tree.unet)
+    autoencoder = stable_diffusion.model.load_autoencoder(path_tree.autoencoder)
+    autoencoder.load_decoder(path_tree.decoder)
 
     return stable_diffusion
 
@@ -286,8 +289,8 @@ def calculate_sha256(tensor):
 
 
 if __name__ == "__main__":
-
-    pt = IODirectoryTree(base_directory=base_dir)
+    model_config = ModelPathConfig()
+    pt = IODirectoryTree(model_config)
 
     clip_text_embedder = CLIPTextEmbedder(device=get_device(DEVICE))
     clip_text_embedder.load_submodels()
@@ -301,7 +304,7 @@ if __name__ == "__main__":
     sd = init_stable_diffusion(DEVICE, pt, n_steps=DDIM_STEPS)
 
     image_encoder = CLIPImageEncoder(device=DEVICE)
-    image_encoder.load_submodels(image_processor_path=pt.image_processor_path, vision_model_path=pt.vision_model_path)
+    image_encoder.load_submodels(image_processor_path=pt.image_processor, vision_model_path=pt.vision_model)
     # image_encoder.initialize_preprocessor()
 
     loaded_model = torch.load(SCORER_CHECKPOINT_PATH)

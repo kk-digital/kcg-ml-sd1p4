@@ -2,7 +2,7 @@ import numpy as np
 import torch
 from torch.mps import current_allocated_memory as mps_current_allocated_memory
 
-from stable_diffusion.utils_logger import logger
+from utility.utils_logger import logger
 
 
 def get_device(device=None):

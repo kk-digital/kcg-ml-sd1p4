@@ -43,7 +43,7 @@ class ChadScorePredictor:
         self.device = get_device(device)
         self.model = ChadScoreModel(input_size, self.device)
 
-    def load_model(self, model_path="input/model/chad_score/chad-score-v1.pth"):
+    def load_model(self, model_path="./input/model/chad_score/chad-score-v1.pth"):
         state = torch.load(model_path, map_location=self.device)
         self.model.load_state_dict(state)
         self.model.eval()

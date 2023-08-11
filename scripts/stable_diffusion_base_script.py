@@ -14,7 +14,7 @@ from stable_diffusion.sampler.ddpm import DDPMSampler
 from stable_diffusion.utils_model import initialize_latent_diffusion
 from stable_diffusion.latent_diffusion import LatentDiffusion
 from stable_diffusion.sampler.diffusion import DiffusionSampler
-from stable_diffusion.constants import LATENT_DIFFUSION_PATH
+from stable_diffusion.model_paths import LATENT_DIFFUSION_PATH
 from utility.labml.monit import section
 
 
@@ -31,7 +31,7 @@ class StableDiffusionBaseScript:
                  ddim_eta: float = 0.0,
                  force_cpu: bool = False,
                  sampler_name: str = 'ddim',
-                 n_steps: int = 50,
+                 n_steps: int = 20,
                  cuda_device: str = 'cuda:0',
                  ):
         """
@@ -80,10 +80,12 @@ class StableDiffusionBaseScript:
 
         return t_index
 
-    def get_text_conditioning(self, uncond_scale: float, prompts: list, batch_size: int = 1):
+    def get_text_conditioning(self, uncond_scale: float, prompts: list, negative_prompts: list, batch_size: int = 1):
         # In unconditional scaling is not $1$ get the embeddings for empty prompts (no conditioning).
-        if uncond_scale != 1.0:
+        if uncond_scale != 1. and len(negative_prompts) == 0:
             un_cond = self.model.get_text_conditioning(batch_size * [""])
+        elif len(negative_prompts) != 0:
+            un_cond = self.model.get_text_conditioning(negative_prompts)
         else:
             un_cond = None
 

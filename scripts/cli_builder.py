@@ -3,6 +3,8 @@ import sys
 from typing import Union, Callable
 
 sys.path.append("./")
+
+from stable_diffusion import SD_CHECKPOINT_PATH
 from stable_diffusion_reference.cli import check_folder_existence, check_file_existence
 
 
@@ -80,7 +82,7 @@ class CLI:
         self.parser.add_argument(
             '--checkpoint_path',
             type=str,
-            default='./input/model/v1-5-pruned-emaonly.safetensors',
+            default=SD_CHECKPOINT_PATH,
             help='Path to the checkpoint file (default: \'./input/model/v1-5-pruned-emaonly.safetensors\')'
         )
 
@@ -107,7 +109,7 @@ class CLI:
         self.parser.add_argument(
             '--steps',
             type=int,
-            default=50,
+            default=20,
             help='Number of steps to use (default: %(default)s)'
         )
 
@@ -226,6 +228,17 @@ class CLI:
             nargs="?",
             help='The prompt to render',
             default="a painting of a cute monkey playing guitar"
+        )
+
+        return self
+
+    def negative_prompt(self):
+        self.parser.add_argument(
+            '--negative-prompt',
+            type=str,
+            nargs="?",
+            help='The negative prompt. For things we dont want to see in generated image',
+            default=""
         )
 
         return self

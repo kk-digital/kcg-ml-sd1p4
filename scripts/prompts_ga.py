@@ -53,16 +53,10 @@ Objective:
 '''
 
 import os, sys
+
 base_dir = os.getcwd()
 sys.path.insert(0, base_dir)
 
-import torch
-from typing import List
-import configparser
-import hashlib
-import json
-import math
-import numpy as np
 import random
 from os.path import join
 
@@ -73,20 +67,13 @@ import argparse
 #import safetensors as st
 
 from chad_score.chad_score import ChadScorePredictor
-
+from configs.model_config import ModelPathConfig
 from stable_diffusion import StableDiffusion
-from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
-from stable_diffusion.utils_model import *
 #TODO: rename stable_diffusion.utils_backend to /utils/cuda.py
-from stable_diffusion.utils_backend import *
 from stable_diffusion.utils_backend import get_device, get_memory_status
-from stable_diffusion.utils_model import initialize_latent_diffusion
 from stable_diffusion.utils_image import *
-from stable_diffusion.constants import IODirectoryTree, create_directory_tree_folders
-from stable_diffusion.constants import TOKENIZER_PATH, TEXT_MODEL_PATH
-#from transformers import CLIPTextModel, CLIPTokenizer
+from stable_diffusion.model_paths import IODirectoryTree
 from ga.utils import get_next_ga_dir
-#from ga import generate_prompts
 import ga
 
 random.seed()
@@ -141,13 +128,9 @@ fitness_cache = {}
 NULL_PROMPT = None #assign later
 
 # DEVICE = input("Set device: 'cuda:i' or 'cpu'")
-config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
-config.read(os.path.join(base_dir, "config.ini"))
-config['BASE']['BASE_DIRECTORY'] = base_dir
-config["BASE"].get('base_io_directory')
+config = ModelPathConfig()
 
 pt = IODirectoryTree(base_io_directory_prefix = config["BASE"].get('base_io_directory_prefix'), base_directory=base_dir)
-pt.create_directory_tree_folders()
 
 print(EMBEDDED_PROMPTS_DIR)
 print(OUTPUT_DIR)
@@ -258,8 +241,6 @@ def store_generation_images(ga_instance):
         prompt_embedding = torch.tensor(ind, dtype=torch.float32).to(DEVICE)
         prompt_embedding = prompt_embedding.view(1, 77, 768)
 
-        #print("prompt_embedding device= " + str(prompt_embedding.get_device()))
-        #print("null_prompt device= " + str(NULL_PROMPT.get_device()))
         print("prompt_embedding, tensor size= ",str(torch.Tensor.size(prompt_embedding)) )
         print("NULL_PROMPT, tensor size= ",str(torch.Tensor.size(NULL_PROMPT)) ) 
 

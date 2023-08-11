@@ -7,27 +7,30 @@ import shutil
 import sys
 from os.path import join
 from random import randrange
+
 import torch
 from torch.mps import empty_cache as mps_empty_cache
 
 base_dir = "./"
 sys.path.insert(0, base_dir)
 
-from chad_score.chad_score import ChadScoreModel
+from chad_score.chad_score import ChadScoreModel, ChadScorePredictor
 from stable_diffusion.utils_backend import get_device, get_memory_status
 from stable_diffusion.utils_image import to_pil, save_image_grid
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
 from stable_diffusion import StableDiffusion
-from stable_diffusion.constants import IODirectoryTree
+from stable_diffusion.model_paths import IODirectoryTree, SDconfigs
+from configs.model_config import ModelPathConfig
 
-EMBEDDED_PROMPTS_DIR = os.path.abspath("./input/embedded_prompts/")
-OUTPUT_DIR = "./output/disturbing_embeddings/"
+config = ModelPathConfig()
+
+EMBEDDED_PROMPTS_DIR = os.path.join(config.get_input_path(), "embedded_prompts/")
+OUTPUT_DIR = os.path.join(config.get_output_path(), "disturbing_embeddings/")
 FEATURES_DIR = join(OUTPUT_DIR, "features/")
 IMAGES_DIR = join(OUTPUT_DIR, "images/")
-# SCORER_CHECKPOINT_PATH = os.path.abspath("./input/model/aesthetic_scorer/sac+logos+ava1-l14-linearMSE.pth")
-SCORER_CHECKPOINT_PATH = os.path.abspath("./input/model/aesthetic_scorer/chadscorer.pth")
-
+SCORER_CHECKPOINT_PATH = os.path.join(config.get_model_path(), "aesthetic_scorer", "sac+logos+ava1-l14-linearMSE.pth")
+print(SCORER_CHECKPOINT_PATH)
 # DEVICE = input("Set device: 'cuda:i' or 'cpu'")
 
 parser = argparse.ArgumentParser("Embed prompts using CLIP")
@@ -113,7 +116,8 @@ CLEAR_OUTPUT_DIR = args.clear_output_dir
 RANDOM_WALK = args.random_walk
 os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
 
-pt = IODirectoryTree(base_directory=base_dir)
+model_config = ModelPathConfig()
+pt = IODirectoryTree(model_config)
 
 try:
     shutil.rmtree(OUTPUT_DIR)
@@ -128,7 +132,7 @@ else:
     os.makedirs(IMAGES_DIR, exist_ok=True)
 
 
-def init_stable_diffusion(device, path_tree: IODirectoryTree, sampler_name="ddim", n_steps=20, ddim_eta=0.0):
+def init_stable_diffusion(device, path_tree: ModelPathConfig, sampler_name="ddim", n_steps=20, ddim_eta=0.0):
     device = get_device(device)
 
     stable_diffusion = StableDiffusion(
@@ -136,8 +140,9 @@ def init_stable_diffusion(device, path_tree: IODirectoryTree, sampler_name="ddim
     )
 
     stable_diffusion.quick_initialize()
-    stable_diffusion.model.load_unet(**path_tree.unet)
-    stable_diffusion.model.load_autoencoder(**path_tree.autoencoder).load_decoder(**path_tree.decoder)
+    stable_diffusion.model.load_unet(path_tree.get_model(SDconfigs.UNET))
+    autoencoder = stable_diffusion.model.load_autoencoder(path_tree.get_model(SDconfigs.VAE))
+    autoencoder.load_decoder(path_tree.get_model(SDconfigs.VAE_DECODER))
 
     return stable_diffusion
 
@@ -269,23 +274,30 @@ def get_image_features(
         image_features = model.encode_image(image)
         # l2 normalize
         image_features /= image_features.norm(dim=-1, keepdim=True)
-    image_features = image_features.cpu().detach().numpy()
-    return image_features
+
+    image_features_cpu = image_features.cpu()
+
+    # free gpu memory
+    image_features = image_features.detach()
+    del image_features
+    torch.cuda.empty_cache()
+
+    return image_features_cpu.numpy()
 
 
 def main():
-    pt = IODirectoryTree(base_directory=base_dir)
     embedded_prompts, null_prompt = embed_and_save_prompts(PROMPT)
-    sd = init_stable_diffusion(DEVICE, pt, n_steps=20, sampler_name="ddim", ddim_eta=0.0)
+    sd = init_stable_diffusion(DEVICE, config, n_steps=20, sampler_name="ddim", ddim_eta=0.0)
 
     images = generate_images_from_disturbed_embeddings(sd, embedded_prompts, null_prompt, batch_size=1)
     image_encoder = CLIPImageEncoder(device=DEVICE)
-    image_encoder.load_clip_model(**pt.clip_model)
+    image_encoder.load_submodels()
+    # image_encoder.load_clip_model(pt.vision_model['vision_model'])
     image_encoder.initialize_preprocessor()
     # clip_model, clip_preprocess = clip.load("ViT-L/14", device=DEVICE)
 
-    predictor = ChadScoreModel(768, device=DEVICE)
-    predictor.load(SCORER_CHECKPOINT_PATH)
+    predictor = ChadScorePredictor(768, device=DEVICE)
+    predictor.load_model(SCORER_CHECKPOINT_PATH)
 
     json_output = []
     manifest = []

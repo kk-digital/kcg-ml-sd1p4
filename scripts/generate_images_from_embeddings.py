@@ -13,51 +13,45 @@ sys.path.insert(0, base_directory)
 from stable_diffusion.stable_diffusion import StableDiffusion
 from stable_diffusion.utils_backend import get_device
 from stable_diffusion.utils_image import save_images, save_image_grid
+from utility.utils_argument_parsing import get_seed_array_from_string
 
 # CHECKPOINT_PATH = os.path.abspath('./input/model/v1-5-pruned-emaonly.ckpt')
 
 OUTPUT_DIR = os.path.abspath("./output/noise-tests/from_embeddings")
 EMBEDDED_PROMPTS_DIR = os.path.abspath("./input/embedded_prompts/")
 
-parser = argparse.ArgumentParser(description="")
+def parse_arguments():
+    parser = argparse.ArgumentParser(description="")
 
-parser.add_argument(
-    "-p",
-    "--embedded_prompts_dir",
-    type=str,
-    default=EMBEDDED_PROMPTS_DIR,
-    help="The path to the directory containing the embedded prompts tensors. Defaults to EMBEDDED_PROMPTS_DIR constant, which should be './input/embedded_prompts/'",
-)
-parser.add_argument(
-    "-od",
-    "--output_dir",
-    type=str,
-    default=OUTPUT_DIR,
-    help="The output directory. defaults to OUTPUT_DIR constant, which should be './output/noise-tests/from_embeddings'",
-)
-parser.add_argument("--num_seeds", type=int, default=3)
-parser.add_argument("-bs", "--batch_size", type=int, default=1)
-parser.add_argument("-t", "--temperature", type=float, default=1.0)
-parser.add_argument("--ddim_eta", type=float, default=0.0)
-parser.add_argument("--clear_output_dir", type=bool, default=False)
-parser.add_argument("--cuda_device", type=str, default=None)
+    parser.add_argument(
+        "-p",
+        "--embedded_prompts_dir",
+        type=str,
+        default=EMBEDDED_PROMPTS_DIR,
+        help="The path to the directory containing the embedded prompts tensors. Defaults to EMBEDDED_PROMPTS_DIR constant, which should be './input/embedded_prompts/'",
+    )
+    parser.add_argument(
+        "-od",
+        "--output_dir",
+        type=str,
+        default=OUTPUT_DIR,
+        help="The output directory. defaults to OUTPUT_DIR constant, which should be './output/noise-tests/from_embeddings'",
+    )
+    parser.add_argument("--num_images", type=int, default=1)
+    parser.add_argument("-bs", "--batch_size", type=int, default=1)
+    parser.add_argument("-t", "--temperature", type=float, default=1.0)
+    parser.add_argument("--ddim_eta", type=float, default=0.0)
+    parser.add_argument("--clear_output_dir", type=bool, default=False)
+    parser.add_argument("--cuda_device", type=str, default=None)
+    parser.add_argument('--low_vram', action='store_true',
+                        help='Low vram means the batch size will be allways 1')
+    parser.add_argument("--sampler", type=str, default="ddim")
+    parser.add_argument("--cfg_scale", type=float, default=7.0)
+    parser.add_argument("--seed", type=str, default="")
 
-args = parser.parse_args()
+    args = parser.parse_args()
+    return args;
 
-EMBEDDED_PROMPTS_DIR = args.embedded_prompts_dir
-OUTPUT_DIR = args.output_dir
-NUM_SEEDS = args.num_seeds
-BATCH_SIZE = args.batch_size
-TEMPERATURE = args.temperature
-DDIM_ETA = args.ddim_eta
-CLEAR_OUTPUT_DIR = args.clear_output_dir
-DEVICE = get_device(args.cuda_device)
-
-# generate noise seeds int 0 to 0^24
-NOISE_SEEDS = []
-for i in range(NUM_SEEDS):
-    rand_seed = randrange(0, 2**24)
-    NOISE_SEEDS.append(rand_seed)
 
 
 def init_stable_diffusion(device, sampler_name="ddim", n_steps=20, ddim_eta=0.0):
@@ -79,17 +73,19 @@ def generate_images_from_embeddings(
         output_dir: str = OUTPUT_DIR,
         sampler_name: str = "ddim",
         n_steps: int = 20,
-        batch_size: int = BATCH_SIZE,
-        noise_seeds: list = NOISE_SEEDS,
-        clear_output_dir: bool = CLEAR_OUTPUT_DIR,
-        ddim_eta: float = DDIM_ETA,
+        batch_size: int = 1,
+        num_images : int = 1,
+        seed_array: list = 0,
+        clear_output_dir: bool = False,
+        ddim_eta: float = 0,
         cfg_scale: float = 7.5,
-        cuda_device: str = DEVICE,
+        temperature : float = 1.0,
+        cuda_device: str = "cuda",
 ):
-    null_cond = torch.load(join(embeddings_dir, "null_cond.pt"), map_location=DEVICE)
+    null_cond = torch.load(join(embeddings_dir, "null_cond.pt"), map_location=cuda_device)
     # print(null_cond.shape)
     embeddings = torch.load(
-        join(embeddings_dir, "embedded_prompts.pt"), map_location=DEVICE
+        join(embeddings_dir, "embedded_prompts.pt"), map_location=cuda_device
     )
 
     # for embedding in embeddings:
@@ -109,7 +105,7 @@ def generate_images_from_embeddings(
 
     os.makedirs(output_dir, exist_ok=True)
 
-    total_images = len(noise_seeds) * len(embeddings)
+    total_images = len(seed_array) * len(embeddings)
 
     with torch.no_grad():
         with tqdm(
@@ -120,7 +116,7 @@ def generate_images_from_embeddings(
             img_grid = []
             for prompt_index, prompt in enumerate(embeddings):
                 img_row = []
-                for seed_index, noise_seed in enumerate(noise_seeds):
+                for seed_index, noise_seed in enumerate(seed_array):
                     p_bar_description = (
                         f"Generating image {img_count + 1} of {total_images}"
                     )
@@ -134,7 +130,7 @@ def generate_images_from_embeddings(
                         embedded_prompt=prompt.unsqueeze(0),
                         null_prompt=null_cond,
                         seed=noise_seed,
-                        temperature=TEMPERATURE,
+                        temperature=temperature,
                         uncond_scale=cfg_scale
                     )
                     # print(images.shape)
@@ -145,42 +141,45 @@ def generate_images_from_embeddings(
                 img_grid.append(torch.cat(img_row, dim=0))
             save_image_grid(
                 torch.cat(img_grid, dim=0),
-                join(output_dir, f"grid_t{TEMPERATURE:.3f}_eta{DDIM_ETA:.3f}.jpg"),
-                nrow=NUM_SEEDS,
+                join(output_dir, f"grid_t{temperature:.3f}_eta{ddim_eta:.3f}.jpg"),
+                nrow=num_images,
             )
 
 
 def main():
-    # args = CLI('Generate images from noise seeds.') \
-    #     .prompt_prefix() \
-    #     .artist_file() \
-    #     .output() \
-    #     .checkpoint_path() \
-    #     .sampler() \
-    #     .steps() \
-    #     .batch_size() \
-    #     .parse()
+    args = parse_arguments()
 
-    # generate_images(
-    #     prompt_prefix=args.prompt_prefix,
-    #     artist_file=args.artist_file,
-    #     output_dir=args.output,
-    #     checkpoint_path=args.checkpoint_path,
-    #     sampler_name=args.sampler,
-    #     n_steps=args.steps,
-    # )
-    # artists_file = os.path.abspath('./input/artists.txt')
-    # generate_images(artist_file=artists_file)
+    embedded_prompts_dir = args.embedded_prompts_dir
+    output_dir = args.output_dir
+    num_images = args.num_images
+    batch_size = args.batch_size
+    temperature = args.temperature
+    ddim_eta = args.ddim_eta
+    clear_output_dir = args.clear_output_dir
+    cuda_device = get_device(args.cuda_device)
+    low_vram = args.low_vram
+    seed = args.seed
+    sampler = args.sampler
+    cfg_scale = args.cfg_scale
+
+    # override the batch_size if low_vram flag is set
+    if low_vram:
+        batch_size = 1
+
+    seed_array = get_seed_array_from_string(seed, array_size=(num_images))
+
     generate_images_from_embeddings(
-        embeddings_dir=EMBEDDED_PROMPTS_DIR,
-        output_dir=OUTPUT_DIR,
-        # sampler_name="ddim",
-        # n_steps=20,
-        batch_size=BATCH_SIZE,
-        noise_seeds=NOISE_SEEDS,
-        clear_output_dir=CLEAR_OUTPUT_DIR,
-        ddim_eta=DDIM_ETA,
-        cuda_device=DEVICE,
+        embeddings_dir=embedded_prompts_dir,
+        output_dir=output_dir,
+        num_images= num_images,
+        temperature=temperature,
+        batch_size=batch_size,
+        seed_array=seed_array,
+        clear_output_dir=clear_output_dir,
+        ddim_eta=ddim_eta,
+        cuda_device=cuda_device,
+        sampler_name=sampler,
+        cfg_scale=cfg_scale
     )
 
 

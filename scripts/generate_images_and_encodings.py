@@ -12,6 +12,7 @@ sys.path.insert(0, base_directory)
 
 from stable_diffusion.stable_diffusion import StableDiffusion
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
+from utility.utils_argument_parsing import get_seed_array_from_string
 from cli_builder import CLI
 from stable_diffusion.utils_backend import get_device
 from stable_diffusion.utils_image import calculate_sha256
@@ -49,11 +50,13 @@ def show_summary(total_time, partial_time, total_images, output_dir):
 # main function, called when the script is run
 def generate_images(
         prompt: str = "An oil painting of a computer generated image of a geometric pattern",
+        negative_prompt: str = '',
         output_base_dir: str = OUTPUT_DIR,
         sampler_name: str = "ddim",
         n_steps: int = 20,
         batch_size: int = 1,
         num_iterations: int = 10,
+        seed_array = [0],
         device=None,
 ):
     images_dir = os.path.join(output_base_dir, "images/")
@@ -77,13 +80,20 @@ def generate_images(
             tensor_images = stable_diffusion.generate_images(
                 batch_size=batch_size,
                 prompt=prompt,
+                negative_prompt=negative_prompt,
+                seed=seed_array[image_counter % len(seed_array)]
             )
             # print(tensor_images.shape)
             # image_hash = calculate_sha256(images.squeeze())
             # print(f"{images.mean(), images.std()}")
-            images = torch.clamp((tensor_images + 1.0) / 2.0, min=0.0, max=1.0)
+            images_gpu = torch.clamp((tensor_images + 1.0) / 2.0, min=0.0, max=1.0)
             # Transpose to `[batch_size, height, width, channels]` and convert to numpy
-            images = images.cpu()
+            images = images_gpu.cpu()
+
+            images_gpu = images_gpu.detach()
+            del images_gpu
+            torch.cuda.empty_cache()
+
             images = images.permute(0, 2, 3, 1)
             images = images.float().numpy()
             # Save images
@@ -132,18 +142,33 @@ def generate_images(
 
 def main():
     args = (
-        CLI("Generate images from noise seeds.")
+        CLI("Generate images and encodings")
         .prompt()
+        .negative_prompt()
         .batch_size()
         .num_iterations()
         .cuda_device()
+        .low_vram()
+        .sampler()
+        .cfg_scale()
+        .seed()
         .parse()
     )
 
+    # parse the seed string
+    seed_array = get_seed_array_from_string(args.seed, array_size=(args.num_iterations))
+
+    # if low vram flag is set, make sure the batch size is allways 1
+    if (args.low_vram):
+        args.batch_size = 1
+
     generate_images(
         prompt=args.prompt,
+        negative_prompt=args.negative_prompt,
         batch_size=args.batch_size,
         num_iterations=args.num_iterations,
+        seed_array=seed_array,
+        sampler_name=args.sampler,
         device=args.cuda_device,
     )
 
