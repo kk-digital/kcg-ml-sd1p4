@@ -212,8 +212,16 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
             del cond
             torch.cuda.empty_cache()
 
+            # Encode the image in the latent space and make `batch_size` copies of it
+            latent = txt2img.model.autoencoder_encode(images).repeat(batch_size, 1, 1, 1)
+
+            print(latent.shape)
+
             # image latent
-            latent = []
+            with torch.no_grad():
+                latent = latent.cpu().numpy()
+
+            print(latent)
 
             # Capture the starting time
             tmp_start_time = time.time()
