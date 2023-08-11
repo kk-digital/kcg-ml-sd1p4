@@ -54,6 +54,8 @@ Objective:
 import os
 import sys
 
+from configs.model_config import ModelPathConfig
+
 base_dir = os.getcwd()
 sys.path.insert(0, base_dir)
 
