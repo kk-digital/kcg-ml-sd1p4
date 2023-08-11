@@ -40,12 +40,21 @@ pip3 install -r requirements.txt
 ```
 
 ### Downloading Models
+
+This script will download these models:
+
+    CLIP - ./input/model/clip/vit-large-patch14/model.safetensors
+    CLIP Text model - ./input/model/clip/text_model/pytorch_model.bin
+    Stable Diffusion - ./input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors
+
 Run: 
 ```bash
 python3 ./download_models.py
 ```
 
 ### Processing Models
+_Note: This script takes in a stable diffusion model and cuts it up into sub-models_
+
 Run: 
 ```bash
 python3 ./process_models.py
