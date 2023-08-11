@@ -81,5 +81,4 @@ def main():
 
 
 if __name__ == '__main__':
-    cmd.MINIO_ADDRESS = "localhost:9000"
     main()

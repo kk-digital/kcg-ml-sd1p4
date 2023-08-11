@@ -4,7 +4,6 @@
 # sys.path.insert(0, base_directory)
 # from utility.minio import cmd
 #
-# cmd.MINIO_ADDRESS = "localhost:9000"
 #
 # ACCESS_KEY = ""
 # SECRET_KEY = ""
