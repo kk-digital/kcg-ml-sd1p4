@@ -86,37 +86,77 @@ To generate images from random prompt, these are the available CLI arguments:
 
 ```
 options:
-  --batch_size   BATCH_SIZE
-                        How many images to generate at once
-  --output        OUTPUT
-                        Number of folders to
-  --sampler       SAMPLER
-                        Name of the sampler to use
-  --checkpoint_path     CHECKPOINT_PATH
-                        Path to the checkpoint file
-  --flash         FLASH
-                        Whether to use flash attention
-  --steps         STEPS
-                        Number of steps to use
-  --cgf_scale         SCALE
-                        Unconditional guidance scale: eps = eps(x, empty) + scale * (eps(x, cond) - eps(x, empty))
-  --seed      SEED
-                        Array of seed for the image generation: example '0, 1, 0, 7', Its better if the size of the array is the same as the number of generated images
-  --low-vram      LOW_VRAM
-                        Limit vram usage
-  --force_cpu     FORCE_CPU
-                        Force cpu usage
-  --cuda_device   CUDA_DEVICE
-                        Cuda device to use for generation process
-  --num_images    NUM_IMAGES
-                        Number of images to output
+  -h, --help            show this help message and exit
+  --prompts_file PROMPTS_FILE
+                        Path to the file containing the prompts, each on a line (default: './input/prompts.txt')
+  --batch_size BATCH_SIZE
+                        How many images to generate at once (default: 1)
+  --output OUTPUT       Path to the output directory (default: /output)
+  --sampler SAMPLER     Name of the sampler to use (default: ddim)
+  --checkpoint_path CHECKPOINT_PATH
+                        Path to the checkpoint file (default: './input/model/v1-5-pruned-emaonly.safetensors')
+  --flash               whether to use flash attention
+  --steps STEPS         Number of steps to use (default: 20)
+  --cfg_scale CFG_SCALE
+                        unconditional guidance scale: eps = eps(x, empty) + scale * (eps(x, cond) - eps(x, empty))
+  --low_vram            limit VRAM usage
+  --force_cpu           force CPU usage
+  --cuda_device CUDA_DEVICE
+                        cuda device to use for generation
+  --num_images NUM_IMAGES
+                        How many images to generate (default: 1)
+  --seed SEED           Seed for the image generation (default: )
+  --output_metadata     outputs the metadata
   --image_width IMAGE_WIDTH
-                        Generated image width, default is 512
+                        Generate image width (default: 512)
   --image_height IMAGE_HEIGHT
-                        Generated image width, default is 512
+                        Generate image height (default: 512)
+  --num_datasets NUM_DATASETS
+                        Number of datasets to generate (default: 1)
 ```
 
 ``` shell
 python3 ./scripts/generate_images_from_random_prompt.py --checkpoint_path "./input/model/v1-5-pruned-emaonly.safetensors" --cfg_scale 7 --num_images 10 --output "/output/"
+```
+
+### Generate Images From Prompt Generator
+
+To generate images from random prompt, these are the available CLI arguments:
+
+```
+options:
+  -h, --help            show this help message and exit
+  --prompts_file PROMPTS_FILE
+                        Path to the file containing the prompts, each on a line (default: './input/prompts.txt')
+  --batch_size BATCH_SIZE
+                        How many images to generate at once (default: 1)
+  --output OUTPUT       Path to the output directory (default: /output)
+  --sampler SAMPLER     Name of the sampler to use (default: ddim)
+  --checkpoint_path CHECKPOINT_PATH
+                        Path to the checkpoint file (default: './input/model/v1-5-pruned-emaonly.safetensors')
+  --flash               whether to use flash attention
+  --steps STEPS         Number of steps to use (default: 20)
+  --cfg_scale CFG_SCALE
+                        unconditional guidance scale: eps = eps(x, empty) + scale * (eps(x, cond) - eps(x, empty))
+  --low_vram            limit VRAM usage
+  --force_cpu           force CPU usage
+  --cuda_device CUDA_DEVICE
+                        cuda device to use for generation
+  --num_images NUM_IMAGES
+                        How many images to generate (default: 1)
+  --seed SEED           Seed for the image generation (default: )
+  --output_metadata     outputs the metadata
+  --image_width IMAGE_WIDTH
+                        Generate image width (default: 512)
+  --image_height IMAGE_HEIGHT
+                        Generate image height (default: 512)
+  --num_datasets NUM_DATASETS
+                        Number of datasets to generate (default: 1)
+  --num-phrases [NUM_PHRASES]
+                        The number of phrases for the prompt to generate
+```
+
+``` shell
+python3 ./scripts/generate_images_from_prompt_generator.py --checkpoint_path "./input/model/v1-5-pruned-emaonly.safetensors" --cfg_scale 7 --num_images 10 --num-phrases 12 --output "./output/"
 ```
 
