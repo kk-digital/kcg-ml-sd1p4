@@ -31,11 +31,8 @@ from utility.utils_logger import logger
 
 sys.path.insert(0, os.getcwd())
 from .unet_attention import SpatialTransformer
-from stable_diffusion.constants import UNET_PATH
+from stable_diffusion.model_paths import UNET_PATH
 from stable_diffusion.utils_backend import get_device
-
-
-# UNET_PATH = os.path.abspath('./input/model/unet/unet.ckpt')
 
 
 class UNetModel(nn.Module):

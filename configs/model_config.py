@@ -16,7 +16,8 @@ class DefaultPaths:
                  'img_enc', 'img_enc_processor', 'img_enc_vision'},
         'sd': {'v1-5-pruned-emaonly', 'latent_diffusion'},
         'unet': {'unet'},
-        'vae': {'vae', 'decoder', 'encoder'}
+        'vae': {'vae', 'decoder', 'encoder'},
+        'aesthetic_scorer': {'aesthetic_scorer'}
     }
 
 
@@ -112,13 +113,16 @@ class ModelPathConfig:
         results = self._get_paths(*paths, extension=extension, raise_error=raise_error, check_existence=check_existence)
         return self._format_results(results, to_dict)
 
-    def get_model_path(self, *paths, to_dict=False, raise_error=False, check_existence=None):
+    def get_model_folder_path(self, *paths, to_dict=False, raise_error=False, check_existence=None):
         """
         :return: the path to the model without the model name and extension
         """
         results = self._get_paths(*paths, raise_error=raise_error, check_existence=check_existence,
                                   include_extension=False)
         return self._format_results(results, to_dict)
+
+    def get_model_path(self):
+        return self.models_directory
 
     def get_input_path(self):
         return self.input_directory
@@ -152,7 +156,7 @@ class ModelPathConfig:
         return all_paths_exist
 
     def create_paths(self):
-        #Create input, output and models directories
+        # Create input, output and models directories
         os.makedirs(self.input_directory, exist_ok=True)
         os.makedirs(self.output_directory, exist_ok=True)
         os.makedirs(self.models_directory, exist_ok=True)

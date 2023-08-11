@@ -26,11 +26,11 @@ class SDconfigs:
 
 
 CLIP_TEXT_EMBEDDER_PATH = config.get_model(CLIPconfigs.TXT_EMB)
-CLIP_TOKENIZER_DIR_PATH = config.get_model_path(CLIPconfigs.TXT_EMB_TOKENIZER)
-CLIP_TEXT_MODEL_DIR_PATH = config.get_model_path(CLIPconfigs.TXT_EMB_TEXT_MODEL)
+CLIP_TOKENIZER_DIR_PATH = config.get_model_folder_path(CLIPconfigs.TXT_EMB_TOKENIZER)
+CLIP_TEXT_MODEL_DIR_PATH = config.get_model_folder_path(CLIPconfigs.TXT_EMB_TEXT_MODEL)
 
-CLIP_IMAGE_PROCESSOR_DIR_PATH = config.get_model_path(CLIPconfigs.IMG_ENC_PROCESSOR)
-CLIP_VISION_MODEL_DIR_PATH = config.get_model_path(CLIPconfigs.IMG_ENC_VISION)
+CLIP_IMAGE_PROCESSOR_DIR_PATH = config.get_model_folder_path(CLIPconfigs.IMG_ENC_PROCESSOR)
+CLIP_VISION_MODEL_DIR_PATH = config.get_model_folder_path(CLIPconfigs.IMG_ENC_VISION)
 CLIP_IMAGE_ENCODER_PATH = config.get_model(CLIPconfigs.IMG_ENC)
 
 SD_CHECKPOINT_PATH = config.get_model(SDconfigs.CHECKPOINT)
@@ -45,7 +45,7 @@ class IODirectoryTree:
     """returns dicts to be used as kwargs for loading submodels.
     the keys are the same as the kwargs used for the load methods."""
 
-    def __init__(self, config_parm: ModelConfig):
+    def __init__(self, config_parm: ModelPathConfig):
         self.config = config_parm or config
 
     @property

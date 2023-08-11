@@ -9,6 +9,8 @@ import numpy as np
 from tabulate import tabulate
 from scipy.spatial.distance import cosine
 
+from configs.model_config import ModelPathConfig
+
 base_dir = os.getcwd()
 sys.path.insert(0, base_dir)
 
@@ -19,12 +21,12 @@ from model.util_data_loader import ZipDataLoader
 from stable_diffusion import StableDiffusion
 from stable_diffusion.utils_backend import get_device
 from stable_diffusion.utils_image import to_pil
-from stable_diffusion.constants import (IODirectoryTree)
+from stable_diffusion.model_paths import (IODirectoryTree, SDconfigs)
 from chad_score.chad_score import ChadScorePredictor
 
 
 def prompt_embedding_vectors(sd, prompt_array):
-    embedded_prompts = clip_text_get_prompt_embedding(ModelConfig=pt, prompts=prompt_array)
+    embedded_prompts = clip_text_get_prompt_embedding(config, prompts=prompt_array)
     embedded_prompts.to("cpu")
     return embedded_prompts
 
@@ -34,21 +36,15 @@ FIXED_SEED = True
 SEED = random.randint(0, 2**24)
 FIXED_IMAGE_IDX = True
 
-config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
-config.read(os.path.join(base_dir, "config.ini"))
-config['BASE']['BASE_DIRECTORY'] = base_dir
-config["BASE"].get('base_io_directory')
-
-pt = IODirectoryTree(base_io_directory_prefix = config["BASE"].get('base_io_directory_prefix'), base_directory=base_dir)
-pt.create_directory_tree_folders()
+config = ModelPathConfig()
 
 # Get CLIP preprocessor
 image_features_clip_model, preprocess = clip.load("ViT-L/14", device=DEVICE)
 
 # Load stable diffusion
 sd = StableDiffusion(device=DEVICE, n_steps=20)
-sd.quick_initialize().load_autoencoder(**pt.autoencoder).load_decoder(**pt.decoder)
-sd.model.load_unet(**pt.unet)
+sd.quick_initialize().load_autoencoder(config.get_model(SDconfigs.VAE)).load_decoder(config.get_model(SDconfigs.VAE_DECODER))
+sd.model.load_unet(config.get_model(SDconfigs.UNET_MODEL))
 
 # Load chad score
 chad_score_model_path = os.path.join('input', 'model', 'chad_score', 'chad-score-v1.pth')

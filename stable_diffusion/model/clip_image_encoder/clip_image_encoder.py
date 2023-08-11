@@ -68,14 +68,14 @@ class CLIPImageEncoder(nn.Module):
         model = self.config.get_model(clip_transformer)
         try:
             self.vision_model = (CLIPVisionModelWithProjection.from_pretrained(model,
-                                                                               config=self.config.get_model_path(
+                                                                               config=self.config.get_model_folder_path(
                                                                                    CLIPconfigs.IMG_ENC_VISION),
                                                                                local_files_only=True,
                                                                                use_safetensors=True)
                                  .eval()
                                  .to(self.device))
             self.image_processor = CLIPImageProcessor.from_pretrained(
-                self.config.get_model_path(CLIPconfigs.IMG_ENC_PROCESSOR), local_files_only=True)
+                self.config.get_model_folder_path(CLIPconfigs.IMG_ENC_PROCESSOR), local_files_only=True)
             return self
         except Exception as e:
             logger.error('Error loading submodels: ', e)

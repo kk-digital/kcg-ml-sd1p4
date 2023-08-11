@@ -11,12 +11,10 @@ from random import randrange
 import torch
 from torch.mps import empty_cache as mps_empty_cache
 
-from configs.model_config import ModelPathConfig
-
 base_dir = "./"
 sys.path.insert(0, base_dir)
 
-from chad_score.chad_score import ChadScoreModel
+from chad_score.chad_score import ChadScoreModel, ChadScorePredictor
 from stable_diffusion.utils_backend import get_device, get_memory_status
 from stable_diffusion.utils_image import to_pil, save_image_grid
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
@@ -25,13 +23,14 @@ from stable_diffusion import StableDiffusion
 from stable_diffusion.model_paths import IODirectoryTree, SDconfigs
 from configs.model_config import ModelPathConfig
 
-EMBEDDED_PROMPTS_DIR = os.path.abspath("./input/embedded_prompts/")
-OUTPUT_DIR = "./output/disturbing_embeddings/"
+config = ModelPathConfig()
+
+EMBEDDED_PROMPTS_DIR = os.path.join(config.get_input_path(), "embedded_prompts/")
+OUTPUT_DIR = os.path.join(config.get_output_path(), "disturbing_embeddings/")
 FEATURES_DIR = join(OUTPUT_DIR, "features/")
 IMAGES_DIR = join(OUTPUT_DIR, "images/")
-# SCORER_CHECKPOINT_PATH = os.path.abspath("./input/model/aesthetic_scorer/sac+logos+ava1-l14-linearMSE.pth")
-SCORER_CHECKPOINT_PATH = os.path.abspath("./input/model/aesthetic_scorer/chadscorer.pth")
-
+SCORER_CHECKPOINT_PATH = os.path.join(config.get_model_path(), "aesthetic_scorer", "sac+logos+ava1-l14-linearMSE.pth")
+print(SCORER_CHECKPOINT_PATH)
 # DEVICE = input("Set device: 'cuda:i' or 'cpu'")
 
 parser = argparse.ArgumentParser("Embed prompts using CLIP")
@@ -280,7 +279,6 @@ def get_image_features(
 
 
 def main():
-    config = ModelPathConfig
     embedded_prompts, null_prompt = embed_and_save_prompts(PROMPT)
     sd = init_stable_diffusion(DEVICE, config, n_steps=20, sampler_name="ddim", ddim_eta=0.0)
 
@@ -291,8 +289,8 @@ def main():
     image_encoder.initialize_preprocessor()
     # clip_model, clip_preprocess = clip.load("ViT-L/14", device=DEVICE)
 
-    predictor = ChadScoreModel(768, device=DEVICE)
-    predictor.load(SCORER_CHECKPOINT_PATH)
+    predictor = ChadScorePredictor(768, device=DEVICE)
+    predictor.load_model(SCORER_CHECKPOINT_PATH)
 
     json_output = []
     manifest = []
