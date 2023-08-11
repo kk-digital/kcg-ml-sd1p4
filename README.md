@@ -138,6 +138,7 @@ Only run this _after_ generating the embedded prompts with the [above script](#e
 - `--cuda_device`: CUDA device to use. Defaults to `get_device()`.
 - `--low_vram`: Only use this if the gpu you have is old`.
 - `--sampler`: Default value is `DDIM`.
+- `--seed`: Default value is `empty string`.
 - `--cfg_scale`: unconditional guidance scale: eps = eps(x, empty) + scale * (eps(x, cond) - eps(x, empty)) . Defaults to `7`.
 - 
 Try running:
