@@ -274,8 +274,15 @@ def get_image_features(
         image_features = model.encode_image(image)
         # l2 normalize
         image_features /= image_features.norm(dim=-1, keepdim=True)
-    image_features = image_features.cpu().detach().numpy()
-    return image_features
+
+    image_features_cpu = image_features.cpu()
+
+    # free gpu memory
+    image_features = image_features.detach()
+    del image_features
+    torch.cuda.empty_cache()
+
+    return image_features_cpu.numpy()
 
 
 def main():

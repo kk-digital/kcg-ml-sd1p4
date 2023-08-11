@@ -31,7 +31,7 @@ class StableDiffusionBaseScript:
                  ddim_eta: float = 0.0,
                  force_cpu: bool = False,
                  sampler_name: str = 'ddim',
-                 n_steps: int = 50,
+                 n_steps: int = 20,
                  cuda_device: str = 'cuda:0',
                  ):
         """
