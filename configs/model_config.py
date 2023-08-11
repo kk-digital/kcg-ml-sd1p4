@@ -78,11 +78,11 @@ class ModelPathConfig:
             model_dir, model_name = os.path.split(path)
 
             if model_dir not in DefaultPaths.MODELS.keys():
-                self._warning_or_error(f"Model directory {model_dir} is not valid.", raise_error)
+                logger.debug(f"Model directory {model_dir} is not valid.", raise_error)
                 continue
 
             if model_name not in DefaultPaths.MODELS.get(model_dir, {}):
-                self._warning_or_error(f"Model {model_name} wasn't set up in the config for {model_dir}.")
+                logger.debug(f"Model {model_name} wasn't set up in the config for {model_dir}.")
                 continue
 
             full_path = os.path.join(self.models_directory, model_dir, model_name)
