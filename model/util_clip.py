@@ -25,4 +25,5 @@ class UtilClip():
             image_features = self.model.encode_image(image_input)
 
         image_features = image_features.to(torch.float32)
+
         return image_features

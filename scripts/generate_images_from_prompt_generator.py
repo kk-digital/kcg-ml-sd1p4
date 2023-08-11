@@ -152,7 +152,13 @@ def generate_images_from_prompt_generator(num_images, num_phrases, image_width, 
 
             # convert tensor to numpy array
             with torch.no_grad():
-                embedded_vector = cond.cpu().numpy()
+                cond_cpu = cond.cpu()
+
+                cond = cond.detach()
+                del cond
+                torch.cuda.empty_cache()
+
+                embedded_vector = cond_cpu.numpy()
 
             # image latent
             latent = []
@@ -194,7 +200,13 @@ def generate_images_from_prompt_generator(num_images, num_phrases, image_width, 
                                                           cfg_strength)
             # get numpy list from image_features
             with torch.no_grad():
-                image_features_numpy = image_features.cpu().numpy()
+                image_features_cpu = image_features.cpu()
+
+                image_features = image_features.detach()
+                del image_features
+                torch.cuda.empty_cache()
+
+                image_features_numpy = image_features_cpu.numpy()
 
             # save embedding vector to its own file
             embedding_vector_filepath = os.path.join(features_dir, embedding_vector_filename)
