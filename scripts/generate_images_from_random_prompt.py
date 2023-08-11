@@ -135,8 +135,6 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
     for current_task_index in range(num_datasets):
         print("Generating Dataset : " +  str(current_task_index))
         generation_task_result_list = []
-        min_chad_score = 999999.0
-        max_chad_score = -999999.0
 
         prompt_list = prompt.split(',');
         prompt_generator = PromptGenerator(prompt_list)
@@ -152,7 +150,7 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
             start_time = time.time()
             timestamp = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
             set_folder_name = f'set_{current_task_index:04}'
-            feature_dir = os.path.join(output, set_folder_name, 'feature')
+            feature_dir = os.path.join(output, set_folder_name, 'features')
             image_dir = os.path.join(output, set_folder_name, 'images')
 
             os.makedirs(feature_dir, exist_ok=True)
@@ -243,10 +241,6 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
 
             print("Chad Score Time:", tmp_execution_time, "seconds")
 
-            # update the min, max for chad_score
-            min_chad_score = min(min_chad_score, chad_score)
-            max_chad_score = max(max_chad_score, chad_score)
-
             embedding_vector_filename = base_file_name + '.embedding.npz'
             clip_features_filename = base_file_name + '.clip.npz'
             latent_filename = base_file_name + '.latent.npz'
@@ -303,10 +297,6 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
         for generation_task_result_item in generation_task_result_list:
             generation_task_result = generation_task_result_item['generation_task_result']
             json_filename = generation_task_result_item['json_filename']
-
-            # chad score value should be between [0, 1]
-            # normalized_chad_score = (generation_task_result.chad_score - min_chad_score) / (max_chad_score - min_chad_score)
-            # generation_task_result.chad_score = normalized_chad_score
 
             # save to json file
             generation_task_result.save_to_json(json_filename)

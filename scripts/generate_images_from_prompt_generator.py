@@ -34,6 +34,11 @@ from stable_diffusion.model.unet.unet_attention import CrossAttention
 from cli_builder import CLI
 
 
+def create_if_doesnt_exist(path: str):
+    # create folder if doesn't exist
+    if not os.path.exists(path):
+        os.mkdir(path)
+
 def generate_images_from_prompt_generator(num_images, num_phrases, image_width, image_height, cfg_strength, batch_size,
                                           checkpoint_path, output, seed, flash, device, sampler, steps, force_cpu,
                                           num_datasets):
@@ -82,14 +87,15 @@ def generate_images_from_prompt_generator(num_images, num_phrases, image_width, 
         print("Generating Dataset : " + str(current_task_index))
         folder_name = 'set_' + f'{current_task_index:04d}'
         output_path = os.path.join(output, folder_name)
+        features_dir = os.path.join(output_path, 'features')
+        image_dir = os.path.join(output_path, 'images')
+
         # create folder if doesn't exist
-        if not os.path.exists(output_path):
-            os.mkdir(output_path)
+        create_if_doesnt_exist(output_path)
+        create_if_doesnt_exist(features_dir)
+        create_if_doesnt_exist(image_dir)
 
         generation_task_result_list = []
-        min_chad_score = 999999.0
-        max_chad_score = -999999.0
-
         for i in range(num_images):
             prompt_dict = generated_prompt_list[i]
             this_prompt = prompt_dict.prompt_str
@@ -104,7 +110,7 @@ def generate_images_from_prompt_generator(num_images, num_phrases, image_width, 
             base_file_name = f'{i:04d}-{timestamp}'
             image_name = base_file_name + '.jpg'
 
-            filename = os.path.join(output_path, image_name)
+            filename = os.path.join(image_dir, image_name)
 
             # Capture the starting time
             tmp_start_time = time.time()
@@ -177,10 +183,6 @@ def generate_images_from_prompt_generator(num_images, num_phrases, image_width, 
 
             print("Chad Score Time:", tmp_execution_time, "seconds")
 
-            # update the min, max for chad_score
-            min_chad_score = min(min_chad_score, chad_score)
-            max_chad_score = max(max_chad_score, chad_score)
-
             embedding_vector_filename = base_file_name + '.embedding.npz'
             clip_features_filename = base_file_name + '.clip.npz'
             latent_filename = base_file_name + '.latent.npz'
@@ -195,20 +197,20 @@ def generate_images_from_prompt_generator(num_images, num_phrases, image_width, 
                 image_features_numpy = image_features.cpu().numpy()
 
             # save embedding vector to its own file
-            embedding_vector_filepath = output_path + '/' + embedding_vector_filename
+            embedding_vector_filepath = os.path.join(features_dir, embedding_vector_filename)
             np.savez_compressed(embedding_vector_filepath, data=embedded_vector)
 
             # save image features to its own file
-            clip_features_filepath = output_path + '/' + clip_features_filename
+            clip_features_filepath = os.path.join(features_dir, clip_features_filename)
             np.savez_compressed(clip_features_filepath, data=image_features_numpy)
 
             # save image latent to its own file
-            latent_filepath = output_path + '/' + latent_filename
+            latent_filepath = os.path.join(features_dir, latent_filename)
             np.savez_compressed(latent_filepath, data=latent)
 
             # save prompt dict to its own file
             prompt_dict_filename = base_file_name + '.prompt_dict.npz'
-            prompt_dict_filepath = output_path + '/' + prompt_dict_filename
+            prompt_dict_filepath = os.path.join(features_dir, prompt_dict_filename)
             np.savez_compressed(prompt_dict_filepath, prompt_dict=prompt_dict.prompt_dict,
                                 prompt_str=prompt_dict.prompt_str, prompt_vector=prompt_dict.prompt_vector,
                                 num_topics=prompt_dict.num_topics, num_modifiers=prompt_dict.num_modifiers,
@@ -216,7 +218,7 @@ def generate_images_from_prompt_generator(num_images, num_phrases, image_width, 
                                 num_constraints=prompt_dict.num_constraints)
 
             # Save the data to a JSON file
-            json_filename = output_path + '/' + base_file_name + '.json'
+            json_filename = os.path.join(image_dir, base_file_name + '.json')
 
             generation_task_result_list.append({
                 'image_filename': filename,
@@ -241,6 +243,12 @@ def generate_images_from_prompt_generator(num_images, num_phrases, image_width, 
 
         # create zip for generated images
         shutil.make_archive(output_path, 'zip', output_path)
+        print(f'Created zip file: {output_path}.zip')
+
+        # Delete the entire set_000x folder after zipping
+        if os.path.exists(output_path):
+            shutil.rmtree(output_path)
+            print(f"Deleted folder: {output_path}")
 
 
 def main():
