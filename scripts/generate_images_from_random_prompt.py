@@ -212,8 +212,10 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
             del cond
             torch.cuda.empty_cache()
 
+            images = images.squeeze()
             # Encode the image in the latent space and make `batch_size` copies of it
-            latent = txt2img.model.autoencoder_encode(images).repeat(batch_size, 1, 1, 1)
+            latent = txt2img.model.autoencoder_encode(images)
+            latent = latent.repeat(batch_size, 1, 1, 1)
 
             print(latent.shape)
 
