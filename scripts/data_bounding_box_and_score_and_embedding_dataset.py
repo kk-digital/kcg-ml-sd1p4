@@ -181,7 +181,13 @@ def embed_and_save_prompts(clip_text_embedder, prompt: str, i: int, null_prompt=
         f"{join(EMBEDDED_PROMPTS_DIR, f'null_cond.pt')}",
     )
 
-    embedded_prompt = clip_text_embedder(prompt).cpu()
+    embedded_prompt_tensor = clip_text_embedder(prompt)
+    embedded_prompt = embedded_prompt_tensor.cpu()
+
+    embedded_prompt_tensor.detach()
+    del embedded_prompt_tensor
+    torch.cuda.empty_cache()
+
     torch.save(embedded_prompt, join(EMBEDDED_PROMPTS_DIR, f"embedded_prompt_{i}.pt"))
 
     print(
@@ -232,9 +238,14 @@ def generate_images_from_disturbed_embeddings(
             null_prompt=null_prompt,
             batch_size=batch_size
         )
-        embedding_e = embedding_e.cpu()
+
+        embedding_e_cpu = embedding_e.cpu()
+
+        embedding_e.detach()
+        del embedding_e
         torch.cuda.empty_cache()
-        yield (image_e, embedding_e, i)
+
+        yield (image_e, embedding_e_cpu, i)
 
 
 def get_bounding_box_details(img):
@@ -264,7 +275,15 @@ def calculate_sha256(tensor):
     if tensor.device == "cpu":
         tensor_bytes = tensor.numpy().tobytes()  # Convert tensor to a byte array
     else:
-        tensor_bytes = tensor.cpu().numpy().tobytes()  # Convert tensor to a byte array
+        tensor_cpu = tensor.cpu()
+
+        tensor = tensor.detach()
+        del tensor
+        torch.cuda.empty_cache()
+
+        tensor_bytes = tensor_cpu.tobytes()  # Convert tensor to a byte array
+
+
     sha256_hash = hashlib.sha256(tensor_bytes)
     return sha256_hash.hexdigest()
 
@@ -277,8 +296,15 @@ def get_image_features(
         image_features = model.encode_image(image)
         # l2 normalize
         image_features /= image_features.norm(dim=-1, keepdim=True)
-    image_features = image_features.cpu().detach().numpy()
-    return image_features
+
+    image_features_cpu = image_features.cpu()
+
+    # free gpu memory
+    image_features = image_features.detach()
+    del image_features
+    torch.cuda.empty_cache()
+
+    return image_features_cpu.numpy()
 
 def main():
 

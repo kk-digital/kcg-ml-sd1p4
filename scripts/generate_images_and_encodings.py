@@ -86,9 +86,14 @@ def generate_images(
             # print(tensor_images.shape)
             # image_hash = calculate_sha256(images.squeeze())
             # print(f"{images.mean(), images.std()}")
-            images = torch.clamp((tensor_images + 1.0) / 2.0, min=0.0, max=1.0)
+            images_gpu = torch.clamp((tensor_images + 1.0) / 2.0, min=0.0, max=1.0)
             # Transpose to `[batch_size, height, width, channels]` and convert to numpy
-            images = images.cpu()
+            images = images_gpu.cpu()
+
+            images_gpu = images_gpu.detach()
+            del images_gpu
+            torch.cuda.empty_cache()
+
             images = images.permute(0, 2, 3, 1)
             images = images.float().numpy()
             # Save images

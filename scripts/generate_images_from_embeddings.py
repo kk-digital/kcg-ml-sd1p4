@@ -13,6 +13,7 @@ sys.path.insert(0, base_directory)
 from stable_diffusion.stable_diffusion import StableDiffusion
 from stable_diffusion.utils_backend import get_device
 from stable_diffusion.utils_image import save_images, save_image_grid
+from utility.utils_argument_parsing import get_seed_array_from_string
 
 # CHECKPOINT_PATH = os.path.abspath('./input/model/v1-5-pruned-emaonly.ckpt')
 
@@ -46,6 +47,7 @@ def parse_arguments():
                         help='Low vram means the batch size will be allways 1')
     parser.add_argument("--sampler", type=str, default="ddim")
     parser.add_argument("--cfg_scale", type=float, default=7.0)
+    parser.add_argument("--seed", type=str, default="")
 
     args = parser.parse_args()
     return args;
@@ -73,7 +75,7 @@ def generate_images_from_embeddings(
         n_steps: int = 20,
         batch_size: int = 1,
         num_images : int = 1,
-        noise_seeds: list = 0,
+        seed_array: list = 0,
         clear_output_dir: bool = False,
         ddim_eta: float = 0,
         cfg_scale: float = 7.5,
@@ -103,7 +105,7 @@ def generate_images_from_embeddings(
 
     os.makedirs(output_dir, exist_ok=True)
 
-    total_images = len(noise_seeds) * len(embeddings)
+    total_images = len(seed_array) * len(embeddings)
 
     with torch.no_grad():
         with tqdm(
@@ -114,7 +116,7 @@ def generate_images_from_embeddings(
             img_grid = []
             for prompt_index, prompt in enumerate(embeddings):
                 img_row = []
-                for seed_index, noise_seed in enumerate(noise_seeds):
+                for seed_index, noise_seed in enumerate(seed_array):
                     p_bar_description = (
                         f"Generating image {img_count + 1} of {total_images}"
                     )
@@ -156,6 +158,7 @@ def main():
     clear_output_dir = args.clear_output_dir
     cuda_device = get_device(args.cuda_device)
     low_vram = args.low_vram
+    seed = args.seed
     sampler = args.sampler
     cfg_scale = args.cfg_scale
 
@@ -163,11 +166,7 @@ def main():
     if low_vram:
         batch_size = 1
 
-    # generate noise seeds int 0 to 0^24
-    noise_seeds = []
-    for i in range(num_images):
-        rand_seed = randrange(0, 2 ** 24)
-        noise_seeds.append(rand_seed)
+    seed_array = get_seed_array_from_string(seed, array_size=(num_images))
 
     generate_images_from_embeddings(
         embeddings_dir=embedded_prompts_dir,
@@ -175,7 +174,7 @@ def main():
         num_images= num_images,
         temperature=temperature,
         batch_size=batch_size,
-        noise_seeds=noise_seeds,
+        seed_array=seed_array,
         clear_output_dir=clear_output_dir,
         ddim_eta=ddim_eta,
         cuda_device=cuda_device,
