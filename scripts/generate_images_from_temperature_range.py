@@ -12,7 +12,7 @@ sys.path.insert(0, os.getcwd())
 from stable_diffusion.utils_backend import get_device
 from auxiliary_functions import get_torch_distribution_from_name
 from stable_diffusion.utils_image import save_image_grid, save_images
-from stable_diffusion.model_paths import CHECKPOINT_PATH
+from stable_diffusion.model_paths import SD_CHECKPOINT_PATH
 from stable_diffusion import StableDiffusion
 from utility.labml.monit import section
 
@@ -44,7 +44,7 @@ parser.add_argument(
 parser.add_argument(
     "--checkpoint_path",
     type=str,
-    default=CHECKPOINT_PATH,
+    default=SD_CHECKPOINT_PATH,
     help="The path to the checkpoint file to load from. Defaults to CHECKPOINT_PATH constant, which should be './input/model/v1-5-pruned-emaonly.ckpt'",
 )
 parser.add_argument("-F", "--fully_initialize", type=bool, default=False)

@@ -20,8 +20,8 @@ def clip_text_get_prompt_embedding(config, prompts: list):
     #load model from memory
     clip_text_embedder = CLIPTextEmbedder(device=get_device())
     clip_text_embedder.load_submodels(
-        tokenizer_path=config.get_model(CLIPconfigs.TOKENIZER),
-        transformer_path=config.get_model(CLIPconfigs.TEXT_MODEL)
+        tokenizer_path=config.get_model(CLIPconfigs.TXT_EMB_TOKENIZER),
+        transformer_path=config.get_model(CLIPconfigs.TXT_EMB_TEXT_MODEL)
     )
 
     prompt_embedding_list = []

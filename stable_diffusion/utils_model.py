@@ -15,9 +15,9 @@ import safetensors
 import torch
 from transformers import CLIPTokenizer, CLIPTextModel
 
-from stable_diffusion.model_paths import AUTOENCODER_PATH, ENCODER_PATH, DECODER_PATH
+from stable_diffusion.model_paths import VAE_PATH, VAE_ENCODER_PATH, VAE_DECODER_PATH
 from stable_diffusion.model_paths import LATENT_DIFFUSION_PATH
-from stable_diffusion.model_paths import TEXT_EMBEDDER_PATH, TOKENIZER_DIR_PATH, TEXT_MODEL_DIR_PATH
+from stable_diffusion.model_paths import CLIP_TEXT_EMBEDDER_PATH, CLIP_TOKENIZER_DIR_PATH, CLIP_TEXT_MODEL_DIR_PATH
 from stable_diffusion.model_paths import UNET_PATH
 from stable_diffusion.latent_diffusion import LatentDiffusion
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
@@ -80,7 +80,7 @@ def initialize_autoencoder(device=None, encoder=None, decoder=None, emb_channels
     return autoencoder
 
 
-def load_autoencoder(path: Union[str, Path] = AUTOENCODER_PATH, device=None) -> Autoencoder:
+def load_autoencoder(path: Union[str, Path] = VAE_PATH, device=None) -> Autoencoder:
     """
     ### Load [`Autoencoder` model](autoencoder.html)
     """
@@ -96,7 +96,7 @@ def load_autoencoder(path: Union[str, Path] = AUTOENCODER_PATH, device=None) -> 
     return autoencoder
 
 
-def load_encoder(path: Union[str, Path] = ENCODER_PATH, device=None) -> Encoder:
+def load_encoder(path: Union[str, Path] = VAE_ENCODER_PATH, device=None) -> Encoder:
     with section(f"encoder model loading, from {path}"):
         device = get_device(device)
         encoder = torch.load(path, map_location=device).eval()
@@ -107,7 +107,7 @@ def load_encoder(path: Union[str, Path] = ENCODER_PATH, device=None) -> Encoder:
     return encoder
 
 
-def load_decoder(path: Union[str, Path] = DECODER_PATH, device=None) -> Decoder:
+def load_decoder(path: Union[str, Path] = VAE_DECODER_PATH, device=None) -> Decoder:
     with section(f"decoder model loading, from {path}"):
         device = get_device(device)
         decoder = torch.load(path, map_location=device).eval()
@@ -124,7 +124,7 @@ def initialize_tokenizer(device=None, version="openai/clip-vit-large-patch14") -
     return tokenizer
 
 
-def load_tokenizer(path: Union[str, Path] = TOKENIZER_DIR_PATH, device=None) -> CLIPTokenizer:
+def load_tokenizer(path: Union[str, Path] = CLIP_TOKENIZER_DIR_PATH, device=None) -> CLIPTokenizer:
     with section(f"CLIP tokenizer loading, from {path}"):
         device = get_device(device)
         tokenizer = torch.load(path, map_location=device).eval()
@@ -137,7 +137,7 @@ def initialize_transformer(device=None, version="openai/clip-vit-large-patch14")
     return transformer
 
 
-def load_transformer(path: Union[str, Path] = TEXT_MODEL_DIR_PATH, device=None) -> CLIPTextModel:
+def load_transformer(path: Union[str, Path] = CLIP_TEXT_MODEL_DIR_PATH, device=None) -> CLIPTextModel:
     with section(f"CLIP transformer loading, from {path}"):
         device = get_device(device)
         transformer = torch.load(path, map_location=device).eval()
@@ -155,7 +155,7 @@ def initialize_clip_embedder(device=None, init_transformer=False) -> CLIPTextEmb
         )
 
         if init_transformer:
-            initialize_transformer().save_pretrained(TEXT_MODEL_DIR_PATH)
+            initialize_transformer().save_pretrained(CLIP_TEXT_MODEL_DIR_PATH)
 
         # This is temporary, we should call load_submodels instead
         clip_text_embedder.load_submodels_auto()
@@ -165,7 +165,7 @@ def initialize_clip_embedder(device=None, init_transformer=False) -> CLIPTextEmb
     return clip_text_embedder
 
 
-def load_clip_embedder(path: Union[str, Path] = TEXT_EMBEDDER_PATH, device=None) -> CLIPTextEmbedder:
+def load_clip_embedder(path: Union[str, Path] = CLIP_TEXT_EMBEDDER_PATH, device=None) -> CLIPTextEmbedder:
     with section(f"CLIP embedder loading, from {path}"):
         device = get_device(device)
         clip_text_embedder = torch.load(path, map_location=device).eval()

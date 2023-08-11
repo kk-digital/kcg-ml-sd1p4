@@ -16,7 +16,7 @@ class DefaultPaths:
                  'img_enc', 'img_enc_processor', 'img_enc_vision'},
         'sd': {'v1-5-pruned-emaonly', 'latent_diffusion'},
         'unet': {'unet'},
-        'vae': {'vae', 'vae_decoder', 'vae_encoder'}
+        'vae': {'vae', 'decoder', 'encoder'}
     }
 
 
@@ -152,6 +152,10 @@ class ModelPathConfig:
         return all_paths_exist
 
     def create_paths(self):
+        #Create input, output and models directories
+        os.makedirs(self.input_directory, exist_ok=True)
+        os.makedirs(self.output_directory, exist_ok=True)
+        os.makedirs(self.models_directory, exist_ok=True)
         for model_type, models in DefaultPaths.MODELS.items():
             for model_name in models:
                 full_path = os.path.join(self.models_directory, model_type, model_name)

@@ -68,7 +68,7 @@ import argparse
 # import safetensors as st
 
 from chad_score.chad_score import ChadScorePredictor
-from configs.model_config import ModelConfig
+from configs.model_config import ModelPathConfig
 from stable_diffusion import StableDiffusion
 # TODO: rename stable_diffusion.utils_backend to /utils/cuda.py
 from stable_diffusion.utils_backend import get_device

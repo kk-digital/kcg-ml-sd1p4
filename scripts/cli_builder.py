@@ -4,7 +4,7 @@ from typing import Union, Callable
 
 sys.path.append("./")
 
-from stable_diffusion import CHECKPOINT_PATH
+from stable_diffusion import SD_CHECKPOINT_PATH
 from stable_diffusion_reference.cli import check_folder_existence, check_file_existence
 
 
@@ -36,7 +36,7 @@ class CLI:
 
         return self
 
-    def output(self, default='/output', check_exists: Union[bool, Callable] = True):
+    def output(self, default='./output', check_exists: Union[bool, Callable] = True):
         self.parser.add_argument('--output',
                                  help='Path to the output directory (default: %(default)s)',
                                  default=default
@@ -82,7 +82,7 @@ class CLI:
         self.parser.add_argument(
             '--checkpoint_path',
             type=str,
-            default=CHECKPOINT_PATH,
+            default=SD_CHECKPOINT_PATH,
             help='Path to the checkpoint file (default: \'./input/model/v1-5-pruned-emaonly.safetensors\')'
         )
 
