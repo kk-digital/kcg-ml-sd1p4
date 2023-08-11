@@ -6,7 +6,7 @@ import torch
 from tqdm import tqdm
 
 from auxiliary_functions import get_torch_distribution_from_name
-from stable_diffusion.constants import CHECKPOINT_PATH, AUTOENCODER_PATH, UNET_PATH, TEXT_EMBEDDER_PATH, \
+from stable_diffusion.model_paths import SD_CHECKPOINT_PATH, VAE_PATH, UNET_PATH, CLIP_TEXT_EMBEDDER_PATH, \
     LATENT_DIFFUSION_PATH
 from stable_diffusion.latent_diffusion import LatentDiffusion
 from stable_diffusion.utils_backend import get_device
@@ -142,7 +142,7 @@ def init_text_embedder_from_mode(mode):
 def init_latent_diffusion_from_mode(mode):
     if mode == 0:
         with section("to initialize latent diffusion, then load submodels from disk"):
-            latent_diffusion_model = initialize_latent_diffusion(path=CHECKPOINT_PATH, force_submodels_init=False)
+            latent_diffusion_model = initialize_latent_diffusion(path=SD_CHECKPOINT_PATH, force_submodels_init=False)
             latent_diffusion_model.load_submodels()
             return latent_diffusion_model
     if mode == 1:
@@ -150,13 +150,13 @@ def init_latent_diffusion_from_mode(mode):
             autoencoder = init_vae_from_mode(VAE_INIT_MODE)
             clip_text_embedder = init_text_embedder_from_mode(CLIP_INIT_MODE)
             unet_model = initialize_unet()
-            latent_diffusion_model = initialize_latent_diffusion(path=CHECKPOINT_PATH, autoencoder=autoencoder,
+            latent_diffusion_model = initialize_latent_diffusion(path=SD_CHECKPOINT_PATH, autoencoder=autoencoder,
                                                                  clip_text_embedder=clip_text_embedder,
                                                                  unet_model=unet_model)
             return latent_diffusion_model
     if mode == 2:
         with section("to initialize latent diffusion forcing submodels initialization"):
-            latent_diffusion_model = initialize_latent_diffusion(path=CHECKPOINT_PATH, force_submodels_init=True)
+            latent_diffusion_model = initialize_latent_diffusion(path=SD_CHECKPOINT_PATH, force_submodels_init=True)
             return latent_diffusion_model
     if mode == 3:
         with section("to load latent diffusion from disk, then load its submodels from disk"):
@@ -191,10 +191,10 @@ def init_latent_diffusion_from_mode(mode):
             return latent_diffusion_model
     if mode == 6:
         with section("to load latent diffusion saved model"):
-            autoencoder = torch.load(AUTOENCODER_PATH)
+            autoencoder = torch.load(VAE_PATH)
             autoencoder.eval()
             autoencoder.load_submodels()
-            clip_text_embedder = torch.load(TEXT_EMBEDDER_PATH)
+            clip_text_embedder = torch.load(CLIP_TEXT_EMBEDDER_PATH)
             clip_text_embedder.eval()
             clip_text_embedder.load_submodels()
             unet_model = torch.load(UNET_PATH)
@@ -208,10 +208,10 @@ def init_latent_diffusion_from_mode(mode):
     if mode == 7:
         with section(
                 "to load each submodel, initialize latent diffusion without them, then assigning them to latent diffusion fields"):
-            autoencoder = torch.load(AUTOENCODER_PATH)
+            autoencoder = torch.load(VAE_PATH)
             autoencoder.eval()
             autoencoder.load_submodels()
-            clip_text_embedder = torch.load(TEXT_EMBEDDER_PATH)
+            clip_text_embedder = torch.load(CLIP_TEXT_EMBEDDER_PATH)
             clip_text_embedder.eval()
             clip_text_embedder.load_submodels()
             unet_model = torch.load(UNET_PATH)

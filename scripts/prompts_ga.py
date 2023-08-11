@@ -67,15 +67,12 @@ import argparse
 #import safetensors as st
 
 from chad_score.chad_score import ChadScorePredictor
-from configs.model_config import ModelConfig
+from configs.model_config import ModelPathConfig
 from stable_diffusion import StableDiffusion
-from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
-from stable_diffusion.utils_model import *
 #TODO: rename stable_diffusion.utils_backend to /utils/cuda.py
 from stable_diffusion.utils_backend import get_device, get_memory_status
 from stable_diffusion.utils_image import *
-from stable_diffusion.constants import IODirectoryTree
-#from transformers import CLIPTextModel, CLIPTokenizer
+from stable_diffusion.model_paths import IODirectoryTree
 from ga.utils import get_next_ga_dir
 import ga
 
@@ -131,7 +128,7 @@ fitness_cache = {}
 NULL_PROMPT = None #assign later
 
 # DEVICE = input("Set device: 'cuda:i' or 'cpu'")
-config = ModelConfig()
+config = ModelPathConfig()
 
 pt = IODirectoryTree(base_io_directory_prefix = config["BASE"].get('base_io_directory_prefix'), base_directory=base_dir)
 

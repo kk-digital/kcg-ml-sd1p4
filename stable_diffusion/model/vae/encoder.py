@@ -26,7 +26,7 @@ from utility.utils_logger import logger
 sys.path.insert(0, os.getcwd())
 from .auxiliary_classes import *
 from stable_diffusion.utils_backend import get_device
-from stable_diffusion.constants import ENCODER_PATH
+from stable_diffusion.model_paths import VAE_ENCODER_PATH
 
 
 class Encoder(nn.Module):
@@ -94,14 +94,14 @@ class Encoder(nn.Module):
         self.conv_out = nn.Conv2d(channels, 2 * z_channels, 3, stride=1, padding=1)
         self.to(self.device)
 
-    def save(self, encoder_path: str = ENCODER_PATH):
+    def save(self, encoder_path: str = VAE_ENCODER_PATH):
         try:
             safetensors.torch.save_model(self, encoder_path)
             logger.debug(f"Encoder saved to {encoder_path}")
         except Exception as e:
             logger.error(f"Failed to save encoder to {encoder_path}. Error: {e}")
 
-    def load(self, encoder_path: str = ENCODER_PATH):
+    def load(self, encoder_path: str = VAE_ENCODER_PATH):
         try:
             safetensors.torch.load_model(self, encoder_path)
             logger.debug(f"Encoder loaded from {encoder_path}")

@@ -197,7 +197,6 @@ def text_to_image(prompt, negative_prompt, output, sampler, checkpoint_path, fla
 
             for i in range(num_images):
                 print("Generating image " + str(i) + " out of " + str(num_images));
-                start_time = time.time()
                 timestamp = datetime.now().strftime('%d-%m-%Y-%H-%M-%S')
                 filename = os.path.join(output, f'{timestamp}-{i}.jpg')
 
@@ -210,17 +209,7 @@ def text_to_image(prompt, negative_prompt, output, sampler, checkpoint_path, fla
                     seed=seed_array[i % len(seed_array)]
                 )
 
-                print(images.shape)
                 save_images(images, filename)
-
-                # Capture the ending time
-                end_time = time.time()
-
-                # Calculate the execution time
-                execution_time = end_time - start_time
-
-                print("Execution Time:", execution_time, "seconds")
-
 
 def main():
     opt = CLI('Generate images using stable diffusion with a prompt') \
