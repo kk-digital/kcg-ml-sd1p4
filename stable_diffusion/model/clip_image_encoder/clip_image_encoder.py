@@ -10,12 +10,11 @@ from PIL import Image
 from torch import nn
 from torchvision.transforms import Compose, Resize, CenterCrop, Normalize, Lambda
 
-from configs.model_config import ModelPathConfig
+from configs.model_config import ModelConfig
 
 sys.path.insert(0, os.getcwd())
 from utility.utils_logger import logger
-from stable_diffusion.model_paths import CLIP_IMAGE_PROCESSOR_DIR_PATH, CLIP_VISION_MODEL_DIR_PATH, \
-    CLIP_IMAGE_ENCODER_PATH, \
+from stable_diffusion.constants import IMAGE_PROCESSOR_DIR_PATH, VISION_MODEL_DIR_PATH, IMAGE_ENCODER_PATH, \
     CLIPconfigs
 from stable_diffusion.utils_backend import get_device
 from transformers import CLIPImageProcessor, CLIPVisionModelWithProjection
@@ -26,7 +25,7 @@ class CLIPImageEncoder(nn.Module):
     def __init__(self, device=None, image_processor=None, vision_model=None):  # , input_mode = PIL.Image.Image):
 
         super().__init__()
-        self.config = ModelPathConfig()
+        self.config = ModelConfig()
 
         self.device = get_device(device)
 
@@ -40,16 +39,14 @@ class CLIPImageEncoder(nn.Module):
 
         self.to(self.device)
 
-    def save_submodels(self, image_processor_path=CLIP_IMAGE_PROCESSOR_DIR_PATH,
-                       vision_model_path=CLIP_VISION_MODEL_DIR_PATH):
+    def save_submodels(self, image_processor_path=IMAGE_PROCESSOR_DIR_PATH, vision_model_path=VISION_MODEL_DIR_PATH):
         # Save the model to the specified folder
         self.image_processor.save_pretrained(image_processor_path)
         print("image_processor saved to: ", image_processor_path)
         self.vision_model.save_pretrained(vision_model_path, safe_serialization=True)
         print("vision_model saved to: ", vision_model_path)
 
-    def load_submodels(self, image_processor_path=CLIP_IMAGE_PROCESSOR_DIR_PATH,
-                       vision_model_path=CLIP_VISION_MODEL_DIR_PATH):
+    def load_submodels(self, image_processor_path=IMAGE_PROCESSOR_DIR_PATH, vision_model_path=VISION_MODEL_DIR_PATH):
         try:
             self.vision_model = (CLIPVisionModelWithProjection.from_pretrained(vision_model_path,
                                                                                local_files_only=True,
@@ -68,14 +65,12 @@ class CLIPImageEncoder(nn.Module):
         model = self.config.get_model(clip_transformer)
         try:
             self.vision_model = (CLIPVisionModelWithProjection.from_pretrained(model,
-                                                                               config=self.config.get_model_path(
-                                                                                   CLIPconfigs.IMG_ENC_VISION),
+                                                                               config=self.config.get_model_path('clip/vision_model'),
                                                                                local_files_only=True,
                                                                                use_safetensors=True)
                                  .eval()
                                  .to(self.device))
-            self.image_processor = CLIPImageProcessor.from_pretrained(
-                self.config.get_model_path(CLIPconfigs.IMG_ENC_PROCESSOR), local_files_only=True)
+            self.image_processor = CLIPImageProcessor.from_pretrained(self.config.get_model_path('clip/image_processor'), local_files_only=True)
             return self
         except Exception as e:
             logger.error('Error loading submodels: ', e)
@@ -92,14 +87,14 @@ class CLIPImageEncoder(nn.Module):
             torch.cuda.empty_cache()
             self.image_processor = None
 
-    def save(self, image_encoder_path=CLIP_IMAGE_ENCODER_PATH):
+    def save(self, image_encoder_path=IMAGE_ENCODER_PATH):
         try:
             safetensors.torch.save_model(self, image_encoder_path)
             print(f"CLIP ImageEncoder saved to: {image_encoder_path}")
         except Exception as e:
             print(f"CLIP ImageEncoder not saved. Error: {e}")
 
-    def load(self, image_encoder_path: str = CLIP_IMAGE_ENCODER_PATH):
+    def load(self, image_encoder_path: str = IMAGE_ENCODER_PATH):
         try:
             safetensors.torch.load_model(self, image_encoder_path, strict=True)
             print(f"CLIP TextEmbedder loaded from: {image_encoder_path}")

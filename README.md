@@ -40,12 +40,21 @@ pip3 install -r requirements.txt
 ```
 
 ### Downloading Models
+
+This script will download these models:
+
+    CLIP - ./input/model/clip/vit-large-patch14/model.safetensors
+    CLIP Text model - ./input/model/clip/text_model/pytorch_model.bin
+    Stable Diffusion - ./input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors
+
 Run: 
 ```bash
 python3 ./download_models.py
 ```
 
 ### Processing Models
+_Note: This script takes in a stable diffusion model and cuts it up into sub-models_
+
 Run: 
 ```bash
 python3 ./process_models.py
@@ -94,7 +103,7 @@ options:
 
 Example Usage:
 ``` shell
-python3 ./scripts/text_to_image.py --prompt "character, chibi, waifu, side scrolling, white background, centered" --negative-prompt "white" --checkpoint_path "./input/model/sd/v1-5-pruned-emaonly.safetensors" --batch_size 1 --num_images 1
+python3 ./scripts/text_to_image.py --prompt "character, chibi, waifu, side scrolling, white background, centered" --negative-prompt "white" --checkpoint_path "./input/model/v1-5-pruned-emaonly.safetensors" --batch_size 1 --num_images 1
 ```
 
 ### Embed prompts

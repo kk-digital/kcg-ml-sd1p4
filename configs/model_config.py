@@ -11,16 +11,13 @@ class DefaultPaths:
     MODELS_DIRECTORY = 'model/'
 
     MODELS = {
-        'clip': {'vit-large-patch14',
-                 'txt_emb', 'txt_emb_tokenizer', 'txt_emb_model',
-                 'img_enc', 'img_enc_processor', 'img_enc_vision'},
-        'sd': {'v1-5-pruned-emaonly', 'latent_diffusion'},
-        'unet': {'unet'},
-        'vae': {'vae', 'decoder', 'encoder'}
+        'clip': {'vit-large-patch14', 'tokenizer', 'text_model', 'vision_model', 'image_encoder', 'text_embedder',
+                 'image_processor'},
+        'sd': {'v1-5-pruned-emaonly', 'checkpoint', 'unet', 'latent_diffusion', 'autoencoder', 'decoder', 'encoder'}
     }
 
 
-class ModelPathConfig:
+class ModelConfig:
     DEFAULT_EXTENSION = '.safetensors'
 
     def __init__(self, root_directory=DefaultPaths.ROOT_DIRECTORY, check_existence=True):
@@ -152,10 +149,6 @@ class ModelPathConfig:
         return all_paths_exist
 
     def create_paths(self):
-        #Create input, output and models directories
-        os.makedirs(self.input_directory, exist_ok=True)
-        os.makedirs(self.output_directory, exist_ok=True)
-        os.makedirs(self.models_directory, exist_ok=True)
         for model_type, models in DefaultPaths.MODELS.items():
             for model_name in models:
                 full_path = os.path.join(self.models_directory, model_type, model_name)

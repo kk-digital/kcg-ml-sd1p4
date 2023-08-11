@@ -52,12 +52,12 @@ def download_file(url, file_path, description, update_interval=500, chunk_size=4
                         counter += 1
                         bar.update(len(data))
                         if counter % update_interval == 0:
-                            ellapsed = time.time() - now_time
+                            elapsed = time.time() - now_time
                             runtime_downloaded = downloaded - now_size
                             now_time, now_size = time.time(), downloaded
 
                             cur_size = memory2str(downloaded)
-                            speed_size = memory2str(runtime_downloaded / ellapsed)
+                            speed_size = memory2str(runtime_downloaded / elapsed)
                             bar.set_description(f'{cur_size}/{total_size}')
                             bar.set_postfix_str(f'{speed_size}/s')
 
