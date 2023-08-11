@@ -18,6 +18,12 @@ python scripts/prompts_ga.py \
   --mutation_percent_genes 0.05
 ```
 
+If you get error like this: ImportError: Libgl.so.1: cannot open shared object file: no such file or directory.
+
+Run this:
+
+    apt-get install libgl1-mesa-glx
+
 CLI args:
 
 ```
