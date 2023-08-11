@@ -44,7 +44,7 @@ pip3 install -r requirements.txt
 This script will download these models:
 
     CLIP - ./input/model/clip/vit-large-patch14/model.safetensors
-    CLIP Text model - ./input/model/clip/text_model/pytorch_model.bin
+    CLIP Text model - ./input/model/clip/txt_emb_model/pytorch_model.bin
     Stable Diffusion - ./input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors
 
 Run: 
