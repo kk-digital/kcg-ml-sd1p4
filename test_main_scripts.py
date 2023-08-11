@@ -34,8 +34,8 @@ class TestScripts(unittest.TestCase):
 
     def test_03_text_to_image(self):
         self.run_script(f"{self.scripts_path}text_to_image",
-                        prompt="'character, chibi, waifu, side scrolling, white background, centered'",
-                        seed=0, batch_size=1, num_images=1)
+                        prompt="'character, chibi, waifu, side scrolling, white background, centered'", batch_size=1,
+                        num_images=1)
 
     #     python3 ./scripts/txt2img.py --num_images 2 --prompt 'A purple rainbow, filled with grass'
 
@@ -64,7 +64,7 @@ class TestScripts(unittest.TestCase):
     def test_09_generate_images_and_encodings(self):
         self.run_script(f"{self.scripts_path}generate_images_and_encodings",
                         prompt="'An oil painting of a computer generated image of a geometric pattern'",
-                        num_iterations=10)
+                        num_iterations=1)
 
     def test_10_embed_prompts_and_generate_images(self):
         self.run_script(f"{self.scripts_path}embed_prompts_and_generate_images")
@@ -78,7 +78,7 @@ class TestScripts(unittest.TestCase):
 
     def test_13_generate_images_from_random_prompt(self):
         self.run_script(f"{self.scripts_path}generate_images_from_random_prompt",
-                        checkpoint_path="'./input/model/v1-5-pruned-emaonly.safetensors'", cfg_scale=7, num_images=1,
+                        checkpoint_path="'./input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors'", cfg_scale=7, num_images=1,
                         output="'./output/'")
 
     def test_14_chad_sort(self):

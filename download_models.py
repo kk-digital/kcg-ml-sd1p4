@@ -5,12 +5,12 @@ import time
 import requests
 from tqdm import tqdm
 
-from configs.model_config import ModelConfig
+from configs.model_config import ModelPathConfig
 from utility.utils_logger import logger
 from utility.labml.monit import section
 from utility.minio.cmd import is_minio_server_accesssible, connect_to_minio_client, download_from_minio
 
-config = ModelConfig()
+config = ModelPathConfig()
 
 
 def create_directory_tree_folders(config):
@@ -91,7 +91,7 @@ if __name__ == "__main__":
 
     with section("Downloading Text model"):
         # DOWNLOAD_TEXT_MODEL
-        model_path = config.get_model('clip/text_model', extension='.bin', check_existence=False)
+        model_path = config.get_model('clip/txt_emb_model', extension='.bin', check_existence=False)
         model_url = r'https://huggingface.co/openai/clip-vit-large-patch14/resolve/main/pytorch_model.bin'
         if is_minio_accessible:
             bucket_name = "clip-vit-large-patch14"
