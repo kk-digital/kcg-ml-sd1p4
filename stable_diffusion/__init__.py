@@ -53,6 +53,6 @@ Here are the image generation scripts:
 [`util.py`](util.html) defines the utility functions.
 """
 
-from .model_paths import *
+from .constants import *
 from .latent_diffusion import LatentDiffusion
 from .stable_diffusion import StableDiffusion
