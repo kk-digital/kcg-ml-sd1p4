@@ -1,11 +1,11 @@
 from torchinfo import summary
 
-from configs.model_config import ModelConfig
+from configs.model_config import ModelPathConfig
 from stable_diffusion.model.clip_image_encoder import CLIPImageEncoder
 from stable_diffusion.utils_model import initialize_latent_diffusion
 from utility.labml.monit import section
 
-config = ModelConfig()
+config = ModelPathConfig()
 
 if __name__ == "__main__":
     # CLIP
