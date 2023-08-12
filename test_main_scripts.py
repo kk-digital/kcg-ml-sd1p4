@@ -91,7 +91,10 @@ class TestScripts(unittest.TestCase):
 
     def test_16_run_generation_task(self):
         self.run_script(f"{self.scripts_path}run_generation_task",
-                        task_path="'./test/test_generation_task/text_to_image_v1.json'")
+                        task_path="'./test/test_generation_task/generate_images_from_random_prompt_v1.json'")
+
+    def test_17_run_prompts_ga(self):
+        self.run_script(f"{self.scripts_path}prompts_ga")
 
 
 if __name__ == "__main__":

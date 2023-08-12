@@ -14,7 +14,7 @@ from torch.mps import empty_cache as mps_empty_cache
 base_dir = "./"
 sys.path.insert(0, base_dir)
 
-from chad_score.chad_score import ChadScoreModel, ChadScorePredictor
+from chad_score.chad_score import ChadScorePredictor
 from stable_diffusion.utils_backend import get_device, get_memory_status
 from stable_diffusion.utils_image import to_pil, save_image_grid
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
