@@ -157,9 +157,9 @@ def init_stable_diffusion(device, path_tree: IODirectoryTree, sampler_name="ddim
     )
 
     stable_diffusion.quick_initialize()
-    stable_diffusion.model.load_unet(path_tree.unet)
-    autoencoder = stable_diffusion.model.load_autoencoder(path_tree.autoencoder)
-    autoencoder.load_decoder(path_tree.decoder)
+    stable_diffusion.model.load_unet(**path_tree.unet)
+    autoencoder = stable_diffusion.model.load_autoencoder(**path_tree.autoencoder)
+    autoencoder.load_decoder(**path_tree.decoder)
 
     return stable_diffusion
 

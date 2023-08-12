@@ -283,7 +283,6 @@ def calculate_sha256(tensor):
 
         tensor_bytes = tensor_cpu.tobytes()  # Convert tensor to a byte array
 
-
     sha256_hash = hashlib.sha256(tensor_bytes)
     return sha256_hash.hexdigest()
 

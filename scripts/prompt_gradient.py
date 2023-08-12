@@ -1,13 +1,13 @@
 import argparse
 import os
-import sys
-import torch
-import configparser
 import random
+import sys
+
 import clip
 import numpy as np
-from tabulate import tabulate
+import torch
 from scipy.spatial.distance import cosine
+from tabulate import tabulate
 
 base_dir = os.getcwd()
 sys.path.insert(0, base_dir)
@@ -21,7 +21,7 @@ from model.util_data_loader import ZipDataLoader
 from stable_diffusion import StableDiffusion
 from stable_diffusion.utils_backend import get_device
 from stable_diffusion.utils_image import to_pil
-from stable_diffusion.model_paths import (IODirectoryTree, SDconfigs)
+from stable_diffusion.model_paths import (SDconfigs)
 from chad_score.chad_score import ChadScorePredictor
 
 
@@ -33,7 +33,7 @@ def prompt_embedding_vectors(sd, prompt_array):
 
 DEVICE = get_device()
 FIXED_SEED = True
-SEED = random.randint(0, 2**24)
+SEED = random.randint(0, 2 ** 24)
 FIXED_IMAGE_IDX = True
 
 config = ModelPathConfig()
@@ -52,6 +52,7 @@ chad_score_predictor = ChadScorePredictor(device=DEVICE)
 chad_score_predictor.load_model(chad_score_model_path)
 
 NULL_PROMPT = prompt_embedding_vectors(sd, [""])[0]
+
 
 def parse_arguments():
     """Command-line arguments for 'classify' command."""
@@ -72,6 +73,7 @@ def parse_arguments():
 
     return parser.parse_args()
 
+
 def store_image_from_embeddings(sd, i, prompt_embedding, null_prompt, cfg_strength=9):
     file_dir = os.path.join('output', 'gradient')
     os.makedirs(file_dir, exist_ok=True)
@@ -82,10 +84,10 @@ def store_image_from_embeddings(sd, i, prompt_embedding, null_prompt, cfg_streng
     prompt_embedding = prompt_embedding.view(1, 77, 768)
 
     image = sd.generate_images_from_embeddings(
-            seed=SEED,
-            embedded_prompt=prompt_embedding,
-            null_prompt=null_prompt,
-            uncond_scale=cfg_strength
+        seed=SEED,
+        embedded_prompt=prompt_embedding,
+        null_prompt=null_prompt,
+        uncond_scale=cfg_strength
     )
 
     prompt_embedding.to("cpu")
@@ -95,6 +97,7 @@ def store_image_from_embeddings(sd, i, prompt_embedding, null_prompt, cfg_streng
     filename = os.path.join(file_dir, f'{i}.png')
     pil_image.save(filename)
     return pil_image
+
 
 # We're taking advantage of the fact that we already created the pil image in
 # store_image_from_embeddings
@@ -106,15 +109,15 @@ def get_chad_score_from_pil_image(pil_image):
         chad_score = chad_score_predictor.get_chad_score(image_features.type(torch.cuda.FloatTensor))
         return chad_score
 
+
 def report_row(iteration,
                starting_vector,
                updated_vector,
                pil_image,
                starting_model_score,
                model_score):
-
     cosine_distance = cosine(starting_vector, updated_vector)
-    mse = np.mean((starting_vector - updated_vector)**2)
+    mse = np.mean((starting_vector - updated_vector) ** 2)
     chad_score = get_chad_score_from_pil_image(pil_image)
     residual = abs(model_score - chad_score)
 
@@ -126,12 +129,14 @@ def report_row(iteration,
            "{:.4f}".format(residual.item())]
     return row
 
+
 def report_table(rows):
     table_headers = ['Iteration', 'Cosine', 'MSE', 'Chad Score', 'Predicted Chad Score', 'Residual']
 
     table = tabulate(rows, headers=table_headers, tablefmt="pretty")
 
     return table
+
 
 def report(rows, iterations, learning_rate, starting_model_score, starting_chad_score):
     data_before_table = ""
@@ -143,6 +148,7 @@ def report(rows, iterations, learning_rate, starting_model_score, starting_chad_
     report = data_before_table + report_table(rows) + "\n"
     return report
 
+<<<<<<< HEAD
 def add_gradient_and_normalize(input_vector, gradient_vector):
     # Getting L2 norm of input vector
     original_norm = torch.norm(input_vector, p=2)
@@ -153,6 +159,8 @@ def add_gradient_and_normalize(input_vector, gradient_vector):
     # Normalize back to previous length
     normalized_vector = updated_vector * (original_norm / updated_norm)
     return normalized_vector
+=======
+>>>>>>> origin/main
 
 def main():
     args = parse_arguments()
