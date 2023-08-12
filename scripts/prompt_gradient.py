@@ -148,7 +148,6 @@ def report(rows, iterations, learning_rate, starting_model_score, starting_chad_
     report = data_before_table + report_table(rows) + "\n"
     return report
 
-<<<<<<< HEAD
 def add_gradient_and_normalize(input_vector, gradient_vector):
     # Getting L2 norm of input vector
     original_norm = torch.norm(input_vector, p=2)
@@ -159,8 +158,6 @@ def add_gradient_and_normalize(input_vector, gradient_vector):
     # Normalize back to previous length
     normalized_vector = updated_vector * (original_norm / updated_norm)
     return normalized_vector
-=======
->>>>>>> origin/main
 
 def main():
     args = parse_arguments()
