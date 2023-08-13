@@ -34,10 +34,10 @@ def centered_fitness(image_path):
     
     # Using sigmoid function
     raw_score = 1 - (distance / max_distance)
-    f_centered = 1 / (1 + np.exp(-raw_score))
+    fitness_score = 1 / (1 + np.exp(-raw_score))
     
-    assert 0.0 <= f_centered <= 1.0, "Centered fitness value out of bounds!"
-    return f_centered
+    assert 0.0 <= fitness_score <= 1.0, "Centered fitness value out of bounds!"
+    return fitness_score
 
 
 

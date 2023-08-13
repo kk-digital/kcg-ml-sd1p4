@@ -31,7 +31,7 @@ def size_fitness(image_path):
     
     # Using sigmoid function
     raw_score = 4 - 4 * (area_b / area_i)
-    f_size = 1 / (1 + np.exp(-raw_score))
+    fitness_score = 1 / (1 + np.exp(-raw_score))
     
-    assert 0.0 <= f_size <= 1.0, "Size fitness value out of bounds!"
-    return f_size
+    assert 0.0 <= fitness_score <= 1.0, "Size fitness value out of bounds!"
+    return fitness_score
