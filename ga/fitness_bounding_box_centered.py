@@ -44,25 +44,24 @@ def centered_fitness(pil_image):
     # Assuming the largest contour corresponds to the object of interest
     if contours:
         largest_contour = max(contours, key=cv2.contourArea)
-        x_b, y_b, width_b, height_b = cv2.boundingRect(largest_contour)
+        x_top_left, y_top_left, bounding_box_width, bounding_box_height = cv2.boundingRect(largest_contour)
     else:
         return 0.0
 
-    h, w, c = image.shape
-    print('Image_width:  ', w)
-    print('Image_height: ', h)
-    print('Image_channels:', c)
+    Image_height, Image_width, Image_channels = image.shape
 
-    x_center_b = x_b + width_b / 2
-    y_center_b = y_b + height_b / 2
-    x_i, y_i = w / 2, h / 2
+    x_center_bounding_box = x_top_left + bounding_box_width / 2
+    y_center_bounding_box = y_top_left + bounding_box_height / 2
+    x_center_image, y_center_image = Image_width / 2, Image_height / 2
 
-    distance = np.sqrt((x_center_b - x_i)**2 + (y_center_b - y_i)**2)
-    max_distance = np.sqrt((0 - x_i)**2 + (0 - y_i)**2)
+    distance = np.sqrt((x_center_bounding_box - x_center_image)**2 + (y_center_bounding_box - y_center_image)**2)
+    max_distance = np.sqrt((0 - x_center_image)**2 + (0 - y_center_image)**2)
 
-    # Using sigmoid function
-    raw_score = 1 - (distance / max_distance)
-    fitness_score = 1 / (1 + np.exp(-raw_score))
+    # Linearly map the raw centered score to a value between 0.0 and 1.0
+    fitness_score = 1 - (distance / max_distance)
+
 
     assert 0.0 <= fitness_score <= 1.0, "Centered fitness value out of bounds!"
     return fitness_score
+
+

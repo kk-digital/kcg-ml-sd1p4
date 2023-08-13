@@ -2,6 +2,13 @@ import cv2
 import numpy as np
 from PIL import Image
 
+def LinearRectified(min_value, max_value, input_value):
+    if input_value < min_value:
+        return 0.0
+    elif input_value > max_value:
+        return 1.0
+    return (input_value - min_value) / (max_value - min_value)
+
 def size_fitness(pil_image):
     """
     This function calculates the 'fitness' score of an object in an image based on its size in relation to the entire image.
@@ -44,21 +51,21 @@ def size_fitness(pil_image):
     # Assuming the largest contour corresponds to the object of interest
     if contours:
         largest_contour = max(contours, key=cv2.contourArea)
-        _, _, width_b, height_b = cv2.boundingRect(largest_contour)
+        _, _, bounding_box_width, bounding_box_height = cv2.boundingRect(largest_contour)
     else:
         return 0.0
 
-    h, w, c = image.shape
-    print('Image_width:  ', w)
-    print('Image_height: ', h)
-    print('Image_channels:', c)
+    image_height, image_width, image_channels = image.shape
+
     
-    area_b = width_b * height_b
-    area_i = w * h
+    bounding_box_area = bounding_box_width * bounding_box_height
+    image_area = image_width * image_height
     
-    # Using sigmoid function
-    raw_score = 4 - 4 * (area_b / area_i)
-    fitness_score = 1 / (1 + np.exp(-raw_score))
-    
+    # Calculate area ratio
+    area_ratio = bounding_box_area / image_area
+
+    # Calculate fitness score using LinearRectified function
+    fitness_score = LinearRectified(0.25, 1.0, area_ratio)
+
     assert 0.0 <= fitness_score <= 1.0, "Size fitness value out of bounds!"
     return fitness_score
