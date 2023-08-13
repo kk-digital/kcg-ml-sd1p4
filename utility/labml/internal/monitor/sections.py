@@ -2,7 +2,6 @@ import io
 import math
 import sys
 import time
-import shutil
 from typing import TYPE_CHECKING, List
 
 sys.path.append("./")
@@ -183,33 +182,23 @@ class OuterSection(Section):
         if self._state == 'none':
             return
 
-        terminal_width, _ = shutil.get_terminal_size((80, 20))  # Get terminal width
-
         parts = [("  " * self._level + f"{self._name}", Text.title if self._state == 'entered' else None)]
 
         if self._state == 'entered':
             if self._progress == 0.:
                 parts.append("\n")
             else:
-                parts.append((f" {math.floor(self._progress * 100):4.0f}%", Text.meta2))
+                parts.append((f" {math.floor(self._progress * 100) :4.0f}%", Text.meta2))
         else:
             if self.is_successful:
-                if terminal_width < 30:  # Check terminal width
-                    parts.append(("\t[", Text.success))
-                    animation_frames = ["\\", "|", "/", "-"]  # Animation frames
-                    for _ in range(20):  # Rotate animation frames
-                        for frame in animation_frames:
-                            parts.append((frame, Text.success))
-                            time.sleep(0.1)
-                            parts.pop()  # Remove the frame to update
-                else:
-                    parts.append(("...[DONE]", Text.success))
+                parts.append(("...[DONE]", Text.success))
             else:
                 parts.append(("...[FAIL]", Text.danger))
 
         if self._is_timed and self._progress > 0.:
             duration_ms = 1000 * self.get_estimated_time()
-            parts.append((f"\t{duration_ms:,.2f}ms", Text.meta))
+            parts.append((f"\t{duration_ms :,.2f}ms",
+                          Text.meta))
 
         if self.message is not None:
             parts.append((f"\t{self.message}", Text.value))
@@ -218,7 +207,6 @@ class OuterSection(Section):
             parts.append(("\n", None))
 
         return parts
-
 
 class LoopingSection(Section):
     def __init__(self, *,
