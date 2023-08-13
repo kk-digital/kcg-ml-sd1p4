@@ -316,8 +316,9 @@ NULL_PROMPT = prompt_embedding_vectors(sd, [""])[0]
 # print("NULL_PROMPT size= ", str(torch.Tensor.size(NULL_PROMPT)))
 
 # generate prompts and get embeddings
-prompt_phrase_length = 10 # number of words in prompt
-prompts_array = ga.generate_prompts(population_size,prompt_phrase_length)
+from ga.prompt_generator_old import generate_prompts_old
+
+prompts_array = generate_prompts_old(population_size)
 embedded_prompts = prompt_embedding_vectors(sd, prompt_array=prompts_array)
 
 print("genetic_algorithm_loop: population_size= ", population_size)
