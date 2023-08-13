@@ -129,28 +129,27 @@ class DDIMSampler(DiffusionSampler):
         time_steps = np.flip(self.time_steps)[skip_steps:]
 
         # Sampling loop for normal width
-        if(terminal_width > 30):
-            for step in monit.iterate('Sample', time_steps):
-                # Time step $t$
+        if(terminal_width > 55):
+            for i, step in monit.enum('Sample', time_steps):
+                # Index $i$ in the list $[\tau_1, \tau_2, \dots, \tau_S]$
+                index = len(time_steps) - i - 1
+                # Time step $\tau_i$
                 ts = x.new_full((bs,), step, dtype=torch.long)
 
-                # Sample $x_{t-1}$
-                x, pred_x0, e_t = self.p_sample(x, cond, ts, step,
+                # Sample $x_{\tau_{i-1}}$
+                x, pred_x0, e_t = self.p_sample(x, cond, ts, step, index=index,
                                                 repeat_noise=repeat_noise,
                                                 temperature=temperature,
                                                 uncond_scale=uncond_scale,
                                                 uncond_cond=uncond_cond,
                                                 noise_fn=noise_fn)
         else:
+            sys.stdout.write("Sampling... \n")
             for i, step in enumerate(time_steps):
                 # Index $i$ in the list $[\tau_1, \tau_2, \dots, \tau_S]$
                 index = len(time_steps) - i - 1
                 # Time step $\tau_i$
                 ts = x.new_full((bs,), step, dtype=torch.long)
-
-                # Determine whether to use monit or loading animation
-                sys.stdout.write("Sampling... ")
-                sys.stdout.flush()
 
                 # Sample $x_{\tau_{i-1}}$
                 x, pred_x0, e_t = self.p_sample(x, cond, ts, step, index=index,
@@ -161,7 +160,7 @@ class DDIMSampler(DiffusionSampler):
                                                 noise_fn=noise_fn)
 
                 # Update loading animation
-                sys.stdout.write('\b' + '/-'[i % 2])
+                sys.stdout.write('\b' + '-\\|/'[i % 4])
                 sys.stdout.flush()
 
                 # Add a delay for visibility of the loading animation
