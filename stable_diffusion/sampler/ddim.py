@@ -128,36 +128,44 @@ class DDIMSampler(DiffusionSampler):
         # Time steps to sample at $\tau_{S - i'}, \tau_{S - i' - 1}, \dots, \tau_1$
         time_steps = np.flip(self.time_steps)[skip_steps:]
 
-        for i, step in enumerate(time_steps):
-            # Index $i$ in the list $[\tau_1, \tau_2, \dots, \tau_S]$
-            index = len(time_steps) - i - 1
-            # Time step $\tau_i$
-            ts = x.new_full((bs,), step, dtype=torch.long)
+        # Sampling loop for normal width
+        if(terminal_width > 30):
+            for step in monit.iterate('Sample', time_steps):
+                # Time step $t$
+                ts = x.new_full((bs,), step, dtype=torch.long)
 
-            # Determine whether to use monit or loading animation
-            if terminal_width < 30:
+                # Sample $x_{t-1}$
+                x, pred_x0, e_t = self.p_sample(x, cond, ts, step,
+                                                repeat_noise=repeat_noise,
+                                                temperature=temperature,
+                                                uncond_scale=uncond_scale,
+                                                uncond_cond=uncond_cond,
+                                                noise_fn=noise_fn)
+        else:
+            for i, step in enumerate(time_steps):
+                # Index $i$ in the list $[\tau_1, \tau_2, \dots, \tau_S]$
+                index = len(time_steps) - i - 1
+                # Time step $\tau_i$
+                ts = x.new_full((bs,), step, dtype=torch.long)
+
+                # Determine whether to use monit or loading animation
                 sys.stdout.write("Sampling... ")
                 sys.stdout.flush()
-            else:
-                monit.text(f"Sample {i}/{len(time_steps)}")
 
-            # Sample $x_{\tau_{i-1}}$
-            x, pred_x0, e_t = self.p_sample(x, cond, ts, step, index=index,
-                                            repeat_noise=repeat_noise,
-                                            temperature=temperature,
-                                            uncond_scale=uncond_scale,
-                                            uncond_cond=uncond_cond,
-                                            noise_fn=noise_fn)
+                # Sample $x_{\tau_{i-1}}$
+                x, pred_x0, e_t = self.p_sample(x, cond, ts, step, index=index,
+                                                repeat_noise=repeat_noise,
+                                                temperature=temperature,
+                                                uncond_scale=uncond_scale,
+                                                uncond_cond=uncond_cond,
+                                                noise_fn=noise_fn)
 
-            # Update loading animation
-            if terminal_width < 30:
+                # Update loading animation
                 sys.stdout.write('\b' + '/-'[i % 2])
                 sys.stdout.flush()
-            else:
-                monit.print('[DONE]', same_line=True)
 
-            # Add a delay for visibility of the loading animation
-            time.sleep(0.1)
+                # Add a delay for visibility of the loading animation
+                time.sleep(0.1)
 
         # Return $x_0$
         return x
