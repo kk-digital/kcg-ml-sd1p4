@@ -53,6 +53,7 @@ Objective:
 
 import os
 import sys
+import time
 
 base_dir = os.getcwd()
 sys.path.insert(0, base_dir)
@@ -159,6 +160,14 @@ def generate_images_from_embeddings(embedded_prompts_array, null_prompt):
         seed=SEED, embedded_prompt=embedded_prompt, null_prompt=null_prompt)
 '''
 
+# Initialize logger
+def log_to_file(message):
+    
+    log_path = os.path.join(OUTPUT_DIR, "log.txt")
+
+    with open(log_path, "a") as log_file:
+        log_file.write(message + "\n")
+
 
 # Function to calculate the chad score for batch of images
 def calculate_chad_score(ga_instance, solution, solution_idx):
@@ -225,15 +234,26 @@ def on_fitness(ga_instance, population_fitness):
     print("Fitness (best): ", np.max(population_fitness_np))
     print("fitness array= ", str(population_fitness_np))
 
+    log_to_file(f"Generation #{ga_instance.generations_completed}")
+    log_to_file(f"Population Size= {len(population_fitness_np)}")
+    log_to_file(f"Fitness (mean): {np.mean(population_fitness_np)}")
+    log_to_file(f"Fitness (variance): {np.var(population_fitness_np)}")
+    log_to_file(f"Fitness (best): {np.max(population_fitness_np)}")
+    log_to_file(f"fitness array= {str(population_fitness_np)}")
+
 
 def on_mutation(ga_instance, offspring_mutation):
     print("Performing mutation at generation: ", ga_instance.generations_completed)
+    log_to_file(f"Performing mutation at generation: {ga_instance.generations_completed}")
 
 
 def store_generation_images(ga_instance):
+    start_time = time.time()
     generation = ga_instance.generations_completed
     print("Generation #", generation)
     print("Population size: ", len(ga_instance.population))
+    log_to_file(f"Generation #{generation}")
+    log_to_file(f"Population size: {len(ga_instance.population)}")
     file_dir = os.path.join(IMAGES_DIR, str(generation))
     os.makedirs(file_dir)
     for i, ind in enumerate(ga_instance.population):
@@ -261,6 +281,18 @@ def store_generation_images(ga_instance):
         pil_image = to_pil(image[0])
         filename = os.path.join(file_dir, f'g{generation:04}_{i:03}.png')
         pil_image.save(filename)
+
+    end_time = time.time()  # End timing for generation
+    total_time = end_time - start_time
+    log_to_file(f"Total time taken for Generation #{generation}: {total_time} seconds")
+    
+    # Log images per generation
+    num_images = len(ga_instance.population)
+    log_to_file(f"Images generated in Generation #{generation}: {num_images}")
+    
+    # Log images/sec
+    images_per_second = num_images / total_time
+    log_to_file(f"Images per second in Generation #{generation}: {images_per_second}")
 
 
 def prompt_embedding_vectors(sd, prompt_array):
@@ -366,6 +398,11 @@ ga_instance = pygad.GA(initial_population=embedded_prompts_list,
                        # on_crossover=on_crossover,
                        on_start=store_generation_images,
                        )
+
+log_to_file(f"Batch Size: {population_size}")
+log_to_file(f"Mutation Type: {mutation_type}")
+log_to_file(f"Mutation Rate: {mutation_rate}")
+log_to_file(f"Generations: {generations}")
 
 ga_instance.run()
 
