@@ -6,7 +6,10 @@ import random
 def get_seed_array_from_string(seed, array_size = 1, min_value = 0, max_value = 2 ** 24 - 1):
     seed_string_array = []
     if seed != '':
-        seed_string_array = seed.split(',')
+        string_array = seed.split(',')
+        for string in string_array:
+            integer = int(string)
+            seed_string_array.append(integer)
 
     # default seed value is random int from 0 to 2^24
     if seed == '':

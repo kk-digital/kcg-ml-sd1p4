@@ -9,10 +9,10 @@ import torch
 from scipy.spatial.distance import cosine
 from tabulate import tabulate
 
-from configs.model_config import ModelPathConfig
-
 base_dir = os.getcwd()
 sys.path.insert(0, base_dir)
+
+from configs.model_config import ModelPathConfig
 
 from ga.model_clip_text import clip_text_get_prompt_embedding
 from model.linear_regression import LinearRegressionModel
@@ -131,7 +131,7 @@ def report_row(iteration,
 
 
 def report_table(rows):
-    table_headers = ['Iteration', 'Cosine', 'MSE', 'Chad Score', 'Model Score', 'Residual']
+    table_headers = ['Iteration', 'Cosine', 'MSE', 'Chad Score', 'Predicted Chad Score', 'Residual']
 
     table = tabulate(rows, headers=table_headers, tablefmt="pretty")
 
@@ -148,6 +148,16 @@ def report(rows, iterations, learning_rate, starting_model_score, starting_chad_
     report = data_before_table + report_table(rows) + "\n"
     return report
 
+def add_gradient_and_normalize(input_vector, gradient_vector):
+    # Getting L2 norm of input vector
+    original_norm = torch.norm(input_vector, p=2)
+    # Adding gradients
+    updated_vector = input_vector + gradient_vector
+    # Getting L2 norm of updated vector
+    updated_norm = torch.norm(updated_vector, p=2)
+    # Normalize back to previous length
+    normalized_vector = updated_vector * (original_norm / updated_norm)
+    return normalized_vector
 
 def main():
     args = parse_arguments()
@@ -184,7 +194,7 @@ def main():
 
     image_idx = random.randint(0, len(inputs))
     if FIXED_IMAGE_IDX:
-        image_idx = 33
+        image_idx = 0
     starting_vector = torch.tensor(inputs[image_idx], dtype=torch.float32, device=DEVICE)
     starting_vector_cpu = starting_vector.cpu()
     starting_vector_np = starting_vector_cpu.numpy()
@@ -194,6 +204,7 @@ def main():
     input_np = input_cpu.numpy()
     output = torch.tensor([expected_outputs[image_idx]], dtype=torch.float32, device=DEVICE)
     gradients = linear_regression_model.compute_gradient(input, output)
+
     # Storing original image
     pil_image = store_image_from_embeddings(sd, 0, starting_vector, NULL_PROMPT)
     starting_chad_score = get_chad_score_from_pil_image(pil_image)
@@ -206,9 +217,11 @@ def main():
 
     print(report_table([starting_report_row]))
 
+    gradients = learning_rate * gradients
+
     table_rows = [starting_report_row]
     for i in range(1, iterations + 1):
-        input += learning_rate * gradients
+        input = add_gradient_and_normalize(input, gradients)
         input_cpu = input.cpu()
         input_np = input_cpu.numpy()
         pil_image = store_image_from_embeddings(sd, i, input, NULL_PROMPT)

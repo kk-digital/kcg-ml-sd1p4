@@ -62,7 +62,7 @@ def get_autocast(force_cpu: bool = False):
     return torch.autocast(device_type='cpu')
 
 
-def set_seed(seed: int):
+def set_seed(seed):
     """
     ### Set random seeds
     """

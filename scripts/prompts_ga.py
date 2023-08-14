@@ -75,6 +75,8 @@ from stable_diffusion.utils_backend import get_device
 from stable_diffusion.utils_image import *
 from ga.utils import get_next_ga_dir
 import ga
+from ga.prompt_generator_old import generate_prompts_old
+
 
 random.seed()
 
@@ -346,8 +348,6 @@ NULL_PROMPT = prompt_embedding_vectors(sd, [""])[0]
 # print("NULL_PROMPT size= ", str(torch.Tensor.size(NULL_PROMPT)))
 
 # generate prompts and get embeddings
-from ga.prompt_generator_old import generate_prompts_old
-
 prompts_array = generate_prompts_old(population_size)
 embedded_prompts = prompt_embedding_vectors(sd, prompt_array=prompts_array)
 
