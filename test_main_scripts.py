@@ -96,6 +96,10 @@ class TestScripts(unittest.TestCase):
     def test_17_run_prompts_ga(self):
         self.run_script(f"{self.scripts_path}prompts_ga")
 
+    def test_18_generate_images_from_prompt_generator(self):
+        self.run_script(f"{self.scripts_path}generate_images_from_prompt_generator",
+                        checkpoint_path="\"./input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors\"", cfg_scale=7, num_images=1, num_phrases=12,
+                        output="\"./output/\"")
 
 if __name__ == "__main__":
     unittest.main()

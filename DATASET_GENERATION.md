@@ -152,11 +152,11 @@ options:
                         Generate image height (default: 512)
   --num_datasets NUM_DATASETS
                         Number of datasets to generate (default: 1)
-  --num-phrases [NUM_PHRASES]
+  --num_phrases [NUM_PHRASES]
                         The number of phrases for the prompt to generate
 ```
 
 ``` shell
-python3 ./scripts/generate_images_from_prompt_generator.py --checkpoint_path "./input/model/v1-5-pruned-emaonly.safetensors" --cfg_scale 7 --num_images 10 --num-phrases 12 --output "./output/"
+python3 ./scripts/generate_images_from_prompt_generator.py --checkpoint_path "./input/model/v1-5-pruned-emaonly.safetensors" --cfg_scale 7 --num_images 10 --num_phrases 12 --output "./output/"
 ```
 
