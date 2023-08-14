@@ -252,8 +252,6 @@ def store_generation_images(ga_instance):
     generation = ga_instance.generations_completed
     print("Generation #", generation)
     print("Population size: ", len(ga_instance.population))
-    log_to_file(f"Generation #{generation}")
-    log_to_file(f"Population size: {len(ga_instance.population)}")
     file_dir = os.path.join(IMAGES_DIR, str(generation))
     os.makedirs(file_dir)
     for i, ind in enumerate(ga_instance.population):
