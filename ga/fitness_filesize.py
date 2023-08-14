@@ -13,6 +13,13 @@ def filesize_fitness(pil_image, lower_file_size=32*1024, max_file_size=600*1024)
     Returns:
         float: The computed fitness score, ranging from 0.00 to 1.00.
     """
+    # Check if image is None
+    if pil_image is None:
+        raise ValueError("Image etc is None")
+    
+    # Check that the image size is 512x512
+    if pil_image.size != (512, 512):
+        raise ValueError("The image size should be 512x512")
     
     # Convert PIL image to bytes and get its size
     image_bytes = BytesIO()
