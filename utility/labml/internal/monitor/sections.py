@@ -208,7 +208,6 @@ class OuterSection(Section):
 
         return parts
 
-
 class LoopingSection(Section):
     def __init__(self, *,
                  monitor: 'Monitor',
