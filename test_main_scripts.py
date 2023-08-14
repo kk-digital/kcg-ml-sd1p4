@@ -35,7 +35,7 @@ class TestScripts(unittest.TestCase):
     def test_03_text_to_image(self):
         self.run_script(f"{self.scripts_path}text_to_image",
                         prompt="\"character, chibi, waifu, side scrolling, white background, centered\"",
-                        snum_images=1)
+                        num_images=1)
 
     #     python3 ./scripts/txt2img.py --num_images 2 --prompt 'A purple rainbow, filled with grass'
 
