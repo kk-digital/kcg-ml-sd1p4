@@ -27,7 +27,7 @@ def filesize_fitness(pil_image, lower_file_size=32*1024, max_file_size=600*1024)
     actual_size = image_bytes.tell()  # Tells the size of the image in bytes
 
     # If within bounds
-    if lower_file_size <= actual_size <= max_file_size:
+    if (lower_file_size <= actual_size) and (actual_size <= max_file_size):
         # Linear ramp formula
         fitness_score = 1 - (actual_size - lower_file_size) / (max_file_size - lower_file_size)
     # If outside bounds
@@ -35,8 +35,9 @@ def filesize_fitness(pil_image, lower_file_size=32*1024, max_file_size=600*1024)
         fitness_score = 1.0
     else:
         fitness_score = 0.0
-    
+
     # Ensure the fitness score is between 0.00 and 1.00
     assert 0.0 <= fitness_score <= 1.0, "Fitness score out of range"
 
     return fitness_score
+
