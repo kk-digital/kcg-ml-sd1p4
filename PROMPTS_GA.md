@@ -9,13 +9,7 @@ chad score.
 Example Usage:
 
 ``` shell
-python scripts/prompts_ga.py \
-  --generations 100 \
-  --mutation_probability 0.05 \
-  --crossover_type single_point \
-  --keep_elitism 0 \
-  --mutation_type random \
-  --mutation_percent_genes 0.05
+python scripts/prompts_ga.py --generations 100 --mutation_probability 0.05 --crossover_type single_point --keep_elitism 0 --mutation_type random --mutation_percent_genes 0.05
 ```
 
 If you encounter an error like this: "ImportError: libGL.so.1: cannot open shared object file: No such file or directory" 
