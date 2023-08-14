@@ -210,8 +210,12 @@ def calculate_chad_score(ga_instance, solution, solution_idx):
         pil_image = pil_image.convert("L")
         pil_image = pil_image.convert("RGB")
 
-    chad_score = size_fitness(pil_image)
-    return chad_score
+    unsqueezed_image = preprocess(pil_image).unsqueeze(0).to(DEVICE)
+    # get clip encoding of model
+    with torch.no_grad():
+        image_features = image_features_clip_model.encode_image(unsqueezed_image)
+        chad_score = chad_score_predictor.get_chad_score(image_features.type(torch.cuda.FloatTensor))
+        return chad_score
 
 
 def cached_fitness_func(ga_instance, solution, solution_idx):
@@ -393,7 +397,7 @@ ga_instance = pygad.GA(initial_population=embedded_prompts_list,
                        # fitness_func=calculate_chad_score,
                        # on_parents=on_parents,
                        # on_crossover=on_crossover,
-                       on_start=store_generation_images,
+                       #on_start=store_generation_images,
                        )
 
 log_to_file(f"Batch Size: {population_size}")
