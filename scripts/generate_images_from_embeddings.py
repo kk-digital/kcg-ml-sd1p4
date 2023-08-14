@@ -107,6 +107,7 @@ def generate_images_from_embeddings(
 
     total_images = len(seed_array) * len(embeddings)
 
+    print("seed array ", seed_array);
     with torch.no_grad():
         with tqdm(
                 total=total_images,
@@ -117,12 +118,13 @@ def generate_images_from_embeddings(
             for prompt_index, prompt in enumerate(embeddings):
                 img_row = []
                 for seed_index, noise_seed in enumerate(seed_array):
+                    print("noise_seed ", type(noise_seed), str(noise_seed))
                     p_bar_description = (
                         f"Generating image {img_count + 1} of {total_images}"
                     )
                     pbar.set_description(p_bar_description)
 
-                    image_name = f"n{noise_seed:04d}_a{prompt_index + 1:04d}.jpg"
+                    image_name = f"{prompt_index }.jpg"
                     dest_path = join(output_dir, image_name)
 
                     images = stable_diffusion.generate_images_from_embeddings(
