@@ -11,13 +11,17 @@ class DefaultPaths:
     MODELS_DIRECTORY = 'model/'
 
     MODELS = {
-        'clip': {'vit-large-patch14', 'tokenizer', 'text_model', 'vision_model', 'image_encoder', 'text_embedder',
-                 'image_processor'},
-        'sd': {'v1-5-pruned-emaonly', 'checkpoint', 'unet', 'latent_diffusion', 'autoencoder', 'decoder', 'encoder'}
+        'clip': {'vit-large-patch14',
+                 'txt_emb', 'txt_emb_tokenizer', 'txt_emb_model',
+                 'img_enc', 'img_enc_processor', 'img_enc_vision'},
+        'sd': {'v1-5-pruned-emaonly', 'latent_diffusion'},
+        'unet': {'unet'},
+        'vae': {'vae', 'decoder', 'encoder'},
+        'aesthetic_scorer': {'aesthetic_scorer'}
     }
 
 
-class ModelConfig:
+class ModelPathConfig:
     DEFAULT_EXTENSION = '.safetensors'
 
     def __init__(self, root_directory=DefaultPaths.ROOT_DIRECTORY, check_existence=True):
@@ -74,11 +78,11 @@ class ModelConfig:
             model_dir, model_name = os.path.split(path)
 
             if model_dir not in DefaultPaths.MODELS.keys():
-                self._warning_or_error(f"Model directory {model_dir} is not valid.", raise_error)
+                logger.debug(f"Model directory {model_dir} is not valid.", raise_error)
                 continue
 
             if model_name not in DefaultPaths.MODELS.get(model_dir, {}):
-                self._warning_or_error(f"Model {model_name} wasn't set up in the config for {model_dir}.")
+                logger.debug(f"Model {model_name} wasn't set up in the config for {model_dir}.")
                 continue
 
             full_path = os.path.join(self.models_directory, model_dir, model_name)
@@ -109,13 +113,16 @@ class ModelConfig:
         results = self._get_paths(*paths, extension=extension, raise_error=raise_error, check_existence=check_existence)
         return self._format_results(results, to_dict)
 
-    def get_model_path(self, *paths, to_dict=False, raise_error=False, check_existence=None):
+    def get_model_folder_path(self, *paths, to_dict=False, raise_error=False, check_existence=None):
         """
         :return: the path to the model without the model name and extension
         """
         results = self._get_paths(*paths, raise_error=raise_error, check_existence=check_existence,
                                   include_extension=False)
         return self._format_results(results, to_dict)
+
+    def get_model_path(self):
+        return self.models_directory
 
     def get_input_path(self):
         return self.input_directory
@@ -149,6 +156,12 @@ class ModelConfig:
         return all_paths_exist
 
     def create_paths(self):
+        # Create input, output and models directories
+        os.makedirs(self.input_directory, exist_ok=True)
+        os.makedirs(self.output_directory, exist_ok=True)
+        os.makedirs(self.models_directory, exist_ok=True)
+
+        # Create models tree folders
         for model_type, models in DefaultPaths.MODELS.items():
             for model_name in models:
                 full_path = os.path.join(self.models_directory, model_type, model_name)

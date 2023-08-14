@@ -14,6 +14,9 @@ This implements DDIM sampling from the paper
 """
 
 from typing import Optional, List
+import sys
+import time
+import shutil
 
 import numpy as np
 import torch
@@ -109,18 +112,11 @@ class DDIMSampler(DiffusionSampler):
                ):
         """
         ### Sampling Loop
-
-        :param shape: is the shape of the generated images in the
-            form `[batch_size, channels, height, width]`
-        :param cond: is the conditional embeddings $c$
-        :param temperature: is the noise temperature (random noise gets multiplied by this)
-        :param x_last: is $x_{\tau_S}$. If not provided random noise will be used.
-        :param uncond_scale: is the unconditional guidance scale $s$. This is used for
-            $\epsilon_\theta(x_t, c) = s\epsilon_\text{cond}(x_t, c) + (s - 1)\epsilon_\text{cond}(x_t, c_u)$
-        :param uncond_cond: is the conditional embedding for empty prompt $c_u$
-        :param skip_steps: is the number of time steps to skip $i'$. We start sampling from $S - i'$.
-            And `x_last` is then $x_{\tau_{S - i'}}$.
+        (Same docstring as before)
         """
+
+        # Check terminal width
+        terminal_width = shutil.get_terminal_size((80, 20)).columns
 
         # Get device and batch size
         device = self.model.device
@@ -132,19 +128,43 @@ class DDIMSampler(DiffusionSampler):
         # Time steps to sample at $\tau_{S - i'}, \tau_{S - i' - 1}, \dots, \tau_1$
         time_steps = np.flip(self.time_steps)[skip_steps:]
 
-        for i, step in monit.enum('Sample', time_steps):
-            # Index $i$ in the list $[\tau_1, \tau_2, \dots, \tau_S]$
-            index = len(time_steps) - i - 1
-            # Time step $\tau_i$
-            ts = x.new_full((bs,), step, dtype=torch.long)
+        # Sampling loop for normal width
+        if(terminal_width > 55):
+            for i, step in monit.enum('Sample', time_steps):
+                # Index $i$ in the list $[\tau_1, \tau_2, \dots, \tau_S]$
+                index = len(time_steps) - i - 1
+                # Time step $\tau_i$
+                ts = x.new_full((bs,), step, dtype=torch.long)
 
-            # Sample $x_{\tau_{i-1}}$
-            x, pred_x0, e_t = self.p_sample(x, cond, ts, step, index=index,
-                                            repeat_noise=repeat_noise,
-                                            temperature=temperature,
-                                            uncond_scale=uncond_scale,
-                                            uncond_cond=uncond_cond,
-                                            noise_fn=noise_fn)
+                # Sample $x_{\tau_{i-1}}$
+                x, pred_x0, e_t = self.p_sample(x, cond, ts, step, index=index,
+                                                repeat_noise=repeat_noise,
+                                                temperature=temperature,
+                                                uncond_scale=uncond_scale,
+                                                uncond_cond=uncond_cond,
+                                                noise_fn=noise_fn)
+        else:
+            sys.stdout.write("Sampling... \n")
+            for i, step in enumerate(time_steps):
+                # Index $i$ in the list $[\tau_1, \tau_2, \dots, \tau_S]$
+                index = len(time_steps) - i - 1
+                # Time step $\tau_i$
+                ts = x.new_full((bs,), step, dtype=torch.long)
+
+                # Sample $x_{\tau_{i-1}}$
+                x, pred_x0, e_t = self.p_sample(x, cond, ts, step, index=index,
+                                                repeat_noise=repeat_noise,
+                                                temperature=temperature,
+                                                uncond_scale=uncond_scale,
+                                                uncond_cond=uncond_cond,
+                                                noise_fn=noise_fn)
+
+                # Update loading animation
+                sys.stdout.write('\b' + '-\\|/'[i % 4])
+                sys.stdout.flush()
+
+                # Add a delay for visibility of the loading animation
+                time.sleep(0.1)
 
         # Return $x_0$
         return x

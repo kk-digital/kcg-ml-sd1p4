@@ -3,6 +3,7 @@
 import torch
 from os.path import join
 
+from stable_diffusion import CLIPconfigs
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion.utils_backend import get_device, get_memory_status
 
@@ -12,13 +13,16 @@ from stable_diffusion.utils_backend import get_device, get_memory_status
 
 #def embed_and_save_prompts(prompts: list, null_prompt=NULL_PROMPT):
 #def embed_and_save_prompts(prompts: list):
-def clip_text_get_prompt_embedding(ModelConfig, prompts: list):
+def clip_text_get_prompt_embedding(config, prompts: list):
     #null_prompt = null_prompt
     prompts = prompts
 
     #load model from memory
     clip_text_embedder = CLIPTextEmbedder(device=get_device())
-    clip_text_embedder.load_submodels(**ModelConfig.embedder_submodels)
+    clip_text_embedder.load_submodels(
+        tokenizer_path=config.get_model_folder_path(CLIPconfigs.TXT_EMB_TOKENIZER),
+        transformer_path=config.get_model_folder_path(CLIPconfigs.TXT_EMB_TEXT_MODEL)
+    )
 
     prompt_embedding_list = []
     for prompt in prompts:
