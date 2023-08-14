@@ -3,6 +3,7 @@ import random
 import tiktoken
 import time
 
+
 class GeneratedPrompt():
     def __init__(self, prompt_dict: [], prompt_vector: []):
         self.prompt_dict = prompt_dict
@@ -14,6 +15,10 @@ class GeneratedPrompt():
 
         # prompt_vector is a vector of 0 or 1, 1 if that index of prompt list is used
         self.prompt_vector = prompt_vector
+
+    def get_prompt_str(self):
+        return self.prompt_str
+
 
 class PromptData():
     def __init__(self, index: int, phrase: str):
