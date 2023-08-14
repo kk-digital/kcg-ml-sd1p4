@@ -34,17 +34,17 @@ class TestScripts(unittest.TestCase):
 
     def test_03_text_to_image(self):
         self.run_script(f"{self.scripts_path}text_to_image",
-                        prompt="'character, chibi, waifu, side scrolling, white background, centered'",
+                        prompt="\"character, chibi, waifu, side scrolling, white background, centered\"",
                         seed=0, batch_size=1, num_images=1)
 
     #     python3 ./scripts/txt2img.py --num_images 2 --prompt 'A purple rainbow, filled with grass'
 
     def test_04_1_text_to_image(self):
-        self.run_script(f"{self.scripts_path}txt2img", prompt="'A purple rainbow, filled with grass'", num_images=1)
+        self.run_script(f"{self.scripts_path}txt2img", prompt="\"A purple rainbow, filled with grass\"", num_images=1)
 
     def test_05_embed_prompts(self):
         self.run_script(f"{self.scripts_path}embed_prompts",
-                        prompts="'A painting of a computer virus, An old photo of a computer scientist, A computer drawing a computer'")
+                        prompts="\"A painting of a computer virus, An old photo of a computer scientist, A computer drawing a computer\"")
 
     # Add other test cases similarly...
     def test_06_generate_images_from_embeddings(self):
@@ -63,7 +63,7 @@ class TestScripts(unittest.TestCase):
 
     def test_09_generate_images_and_encodings(self):
         self.run_script(f"{self.scripts_path}generate_images_and_encodings",
-                        prompt="'An oil painting of a computer generated image of a geometric pattern'",
+                        prompt="\"An oil painting of a computer generated image of a geometric pattern\"",
                         num_iterations=10)
 
     def test_10_embed_prompts_and_generate_images(self):
@@ -78,20 +78,20 @@ class TestScripts(unittest.TestCase):
 
     def test_13_generate_images_from_random_prompt(self):
         self.run_script(f"{self.scripts_path}generate_images_from_random_prompt",
-                        checkpoint_path="'./input/model/v1-5-pruned-emaonly.safetensors'", cfg_scale=7, num_images=1,
-                        output="'./output/'")
+                        checkpoint_path="\"./input/model/v1-5-pruned-emaonly.safetensors\"", cfg_scale=7, num_images=1,
+                        output="\"./output/\"")
 
     def test_14_chad_sort(self):
         self.run_script(f"{self.scripts_path}chad_score",
-                        direct="--model-path='input/model/chad_score/chad-score-v1.pth' --image-path='./test/test_images/test_img.jpg'")
+                        direct="--model-path=\"input/model/chad_score/chad-score-v1.pth\" --image-path=\"./test/test_images/test_img.jpg\"")
 
     def test_15_chad_sort(self):
         self.run_script(f"{self.scripts_path}chad_sort",
-                        direct="--dataset-path='test/test_zip_files/test-dataset-correct-format.zip' --output-path='./output/chad_sort/'")
+                        direct="--dataset-path=\"test/test_zip_files/test-dataset-correct-format.zip\" --output-path=\"./output/chad_sort/\"")
 
     def test_16_run_generation_task(self):
         self.run_script(f"{self.scripts_path}run_generation_task",
-                        task_path="'./test/test_generation_task/text_to_image_v1.json'")
+                        task_path="\"./test/test_generation_task/text_to_image_v1.json\"")
 
 
 if __name__ == "__main__":
