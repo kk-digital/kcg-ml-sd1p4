@@ -397,7 +397,7 @@ ga_instance = pygad.GA(initial_population=embedded_prompts_list,
                        # fitness_func=calculate_chad_score,
                        # on_parents=on_parents,
                        # on_crossover=on_crossover,
-                       #on_start=store_generation_images,
+                       on_start=store_generation_images,
                        )
 
 log_to_file(f"Batch Size: {population_size}")
