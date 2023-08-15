@@ -150,6 +150,8 @@ def sort_dataset_by_chad_score(dataset_path: str, device: str, num_classes: int,
         normalized_chad_score = (image['json_content']['chad_score'] - min_chad_score) / (max_chad_score - min_chad_score)
         class_index = (int)(normalized_chad_score * num_classes)
 
+        image_basename = os.path.basename(image_filename)
+
         # output folders
         class_directory = output_path + str(class_index)
         images_directory = class_directory + '/images'
@@ -166,7 +168,22 @@ def sort_dataset_by_chad_score(dataset_path: str, device: str, num_classes: int,
             json.dump(image['json_content'], json_file, indent=2)
             print("Saved json " + json_path)
 
+        embedding_name = image['json_content']['embedding_name']
+        clip_name = image['json_content']['clip_name']
+        latent_name = image['json_content']['latent_name']
 
+        embeddings_file_path = features_directory + '/' + embedding_name
+        clip_file_path = features_directory + '/' + clip_name
+        latent_file_path = features_directory + '/' + latent_name
+
+        # Write embeddings
+        np.save(embeddings_file_path, image['embedding_data'])
+
+        # Write latent vector
+        np.save(clip_file_path, image['latent_data'])
+
+        # Write clip vector
+        np.save(latent_file_path, image['clip_data'])
 
         # Open the zip file in read mode
         with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
@@ -174,7 +191,7 @@ def sort_dataset_by_chad_score(dataset_path: str, device: str, num_classes: int,
             for item in zip_ref.namelist():
                 if (item.endswith(image_filename)):
                     source = zip_ref.open(item)
-                    image_path = class_directory + '/' + image_filename
+                    image_path = images_directory + '/' + image_filename
                     target = open(image_path, "wb")
                     with source, target:
                         shutil.copyfileobj(source, target)
