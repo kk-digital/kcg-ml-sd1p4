@@ -176,7 +176,7 @@ def log_to_file(message):
 def calculate_chad_score(ga_instance, solution, solution_idx):
     # set seed
     SEED = random.randint(0, 2 ** 24)
-    if FIXED_SEED == True:
+    if FIXED_SEED == False:
         SEED = 54846
 
     # Convert the numpy array to a PyTorch tensor
