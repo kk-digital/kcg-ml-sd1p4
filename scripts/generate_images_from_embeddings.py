@@ -127,7 +127,7 @@ def generate_images_from_embeddings(
                     image_name = f"{prompt_index }.jpg"
                     dest_path = join(output_dir, image_name)
 
-                    images = stable_diffusion.generate_images_from_embeddings(
+                    latent = stable_diffusion.generate_images_latent_from_embeddings(
                         batch_size=batch_size,
                         embedded_prompt=prompt.unsqueeze(0),
                         null_prompt=null_cond,
@@ -135,6 +135,7 @@ def generate_images_from_embeddings(
                         temperature=temperature,
                         uncond_scale=cfg_scale
                     )
+                    images = stable_diffusion.get_image_from_latent(latent)
                     # print(images.shape)
                     save_images(images, dest_path=dest_path)
                     img_row.append(images)

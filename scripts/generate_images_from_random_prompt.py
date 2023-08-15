@@ -42,7 +42,7 @@ class Txt2Img(StableDiffusionBaseScript):
     """
 
     @torch.no_grad()
-    def generate_images_from_embeddings(self, *,
+    def generate_images_latent_from_embeddings(self, *,
                                         seed: int = 0,
                                         batch_size: int = 1,
                                         embedded_prompt: torch.Tensor,
@@ -90,7 +90,7 @@ class Txt2Img(StableDiffusionBaseScript):
                                     noise_fn=noise_fn,
                                     temperature=temperature)
 
-            return self.decode_image(x), x
+            return x
 
 
 def generate_images_from_random_prompt(num_images, image_width, image_height, cfg_strength, batch_size,
@@ -182,7 +182,7 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
             # Capture the starting time
             tmp_start_time = time.time()
 
-            images, latent = txt2img.generate_images_from_embeddings(
+            latent = txt2img.generate_images_latent_from_embeddings(
                 batch_size=batch_size,
                 embedded_prompt=cond,
                 null_prompt=un_cond,
@@ -191,6 +191,8 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
                 w=image_width,
                 h=image_height
             )
+
+            images = txt2img.get_image_from_latent(latent)
 
             # Capture the ending time
             tmp_end_time = time.time()

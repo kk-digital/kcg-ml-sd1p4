@@ -135,7 +135,7 @@ class StableDiffusion:
         with autocast:
             return self.model.autoencoder_encode(image.to(self.device))
 
-    def decode_image(self, x: torch.Tensor):
+    def get_image_from_latent(self, x: torch.Tensor):
         return self.model.autoencoder_decode(x)
 
     @torch.no_grad()
@@ -144,7 +144,7 @@ class StableDiffusion:
         autocast = get_autocast()
 
         with autocast:
-            return self.decode_image(x.to(self.device))
+            return self.get_image_from_latent(x.to(self.device))
 
     def prepare_mask(self, mask: Optional[torch.Tensor], orig: torch.Tensor):
         # If `mask` is not provided,
@@ -323,7 +323,7 @@ class StableDiffusion:
             return self.decode_image(x)
 
     @torch.no_grad()
-    def generate_images_from_embeddings(
+    def generate_images_latent_from_embeddings(
             self,
             *,
             seed: int = 0,
@@ -381,4 +381,4 @@ class StableDiffusion:
                 temperature=temperature,
             )
 
-            return self.decode_image(x)
+            return x

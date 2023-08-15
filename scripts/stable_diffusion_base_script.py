@@ -94,7 +94,7 @@ class StableDiffusionBaseScript:
 
         return un_cond, cond
 
-    def decode_image(self, x: torch.Tensor):
+    def get_image_from_latent(self, x: torch.Tensor):
         return self.model.autoencoder_decode(x)
 
     def paint(self,

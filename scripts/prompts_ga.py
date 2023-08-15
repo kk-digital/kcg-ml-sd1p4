@@ -181,12 +181,15 @@ def calculate_chad_score(ga_instance, solution, solution_idx):
 
     # NOTE: Is using NoGrad internally
     # NOTE: Is using autocast internally
-    image = sd.generate_images_from_embeddings(
+    latent = sd.generate_images_latent_from_embeddings(
         seed=SEED,
         embedded_prompt=prompt_embedding,
         null_prompt=NULL_PROMPT,
         uncond_scale=CFG_STRENGTH
     )
+
+    image = sd.get_image_from_latent(latent)
+
     # move back to cpu
     prompt_embedding.to("cpu")
     del prompt_embedding
@@ -247,12 +250,14 @@ def store_generation_images(ga_instance):
         print("NULL_PROMPT, tensor size= ", str(torch.Tensor.size(NULL_PROMPT)))
 
         # WARNING: Is using autocast internally
-        image = sd.generate_images_from_embeddings(
+        latent = sd.generate_images_latent_from_embeddings(
             seed=SEED,
             embedded_prompt=prompt_embedding,
             null_prompt=NULL_PROMPT,
             uncond_scale=CFG_STRENGTH
         )
+
+        image = sd.get_image_from_latent(latent)
 
         # move to gpu and cleanup
         prompt_embedding.to("cpu")

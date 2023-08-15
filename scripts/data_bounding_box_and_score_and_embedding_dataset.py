@@ -232,12 +232,14 @@ def generate_images_from_disturbed_embeddings(
         embedding_e = embedded_prompt + ((i * noise_multiplier) * noise_i + (j * noise_multiplier) * noise_j) / (
                 2 * num_iterations)
 
-        image_e = sd.generate_images_from_embeddings(
+        latent = sd.generate_images_latent_from_embeddings(
             seed=seed,
             embedded_prompt=embedding_e,
             null_prompt=null_prompt,
             batch_size=batch_size
         )
+
+        image_e = sd.get_image_from_latent(latent)
 
         embedding_e_cpu = embedding_e.cpu()
 

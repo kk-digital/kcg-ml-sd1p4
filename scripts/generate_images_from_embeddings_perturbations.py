@@ -269,12 +269,14 @@ def generate_image_from_disturbed_embeddings(
         noise_t = noise_t + (noise_multiplier * noise_i)
 
     embedding_e = embedded_prompt + noise_t
-    image_e = sd.generate_images_from_embeddings(
+    latent = sd.generate_images_latent_from_embeddings(
         seed=seed,
         embedded_prompt=embedding_e,
         null_prompt=null_prompt,
         batch_size=batch_size
     )
+
+    image_e = sd.get_image_from_latent(latent)
 
     return (image_e, embedding_e, prompt_index, num_noise_steps)
 
@@ -352,12 +354,15 @@ if __name__ == "__main__":
 
         embedding = embedded_prompt + noise_t
 
-        image = sd.generate_images_from_embeddings(
+        latent = sd.generate_images_latent_from_embeddings(
             seed=SEED,
             embedded_prompt=embedding,
             null_prompt=null_prompt,
             batch_size=BATCH_SIZE
         )
+
+        image = sd.get_image_from_latent(latent)
+
         # embedded_prompt.cpu()
         # del embedded_prompt
         get_memory_status()
