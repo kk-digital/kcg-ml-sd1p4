@@ -246,7 +246,7 @@ def on_fitness(ga_instance, population_fitness):
 
 def on_mutation(ga_instance, offspring_mutation):
     print("Performing mutation at generation: ", ga_instance.generations_completed)
-    log_to_file(f"Performing mutation at generation: {ga_instance.generations_completed - 1}")
+    log_to_file(f"Performing mutation at generation: {ga_instance.generations_completed}")
 
 
 def store_generation_images(ga_instance):
@@ -389,7 +389,7 @@ ga_instance = pygad.GA(initial_population=embedded_prompts_list,
                        on_fitness=on_fitness,
                        on_mutation=on_mutation,
                        on_generation=store_generation_images,
-                       #on_stop=on_fitness,
+                       on_stop=on_fitness,
                        parent_selection_type=parent_selection_type,
                        keep_parents=0,
                        mutation_by_replacement=True,
