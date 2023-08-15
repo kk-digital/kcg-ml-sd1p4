@@ -246,7 +246,7 @@ def on_fitness(ga_instance, population_fitness):
 
 def on_mutation(ga_instance, offspring_mutation):
     print("Performing mutation at generation: ", ga_instance.generations_completed)
-    log_to_file(f"Performing mutation at generation: {ga_instance.generations_completed}")
+    log_to_file(f"Performing mutation at generation: {ga_instance.generations_completed - 1}")
 
 
 def store_generation_images(ga_instance):
