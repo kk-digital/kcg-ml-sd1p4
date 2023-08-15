@@ -26,7 +26,7 @@ def generate_prompts_old(num_prompts):
         ]
 
     prompt_list = []
-    prompt_base = "side scrolling, chibi, no background"
+    prompt_base = "white background, side scrolling, chibi, no background"
     prompt_topic_count = 2
     prompt_modifiers_count = 8
 
