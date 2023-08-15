@@ -5,6 +5,8 @@ import zipfile
 import torch
 import sys
 import json
+import numpy as np
+
 base_directory = os.getcwd()
 sys.path.insert(0, base_directory)
 sys.path.insert(0, os.path.join(base_directory, 'utils', 'dataset'))
@@ -81,9 +83,10 @@ def sort_dataset_by_chad_score(dataset_path: str, device: str, num_classes: int,
     # Tracking time
     start_time = time.time()
 
+    data_list = []
+
     # Load the image dataset
     with zipfile.ZipFile(dataset_path, 'r') as zip_ref:
-        data_list = []
         file_paths = zip_ref.namelist()
         for file_path in file_paths:
             file_extension = os.path.splitext(file_path)[1]
@@ -158,10 +161,10 @@ def sort_dataset_by_chad_score(dataset_path: str, device: str, num_classes: int,
     chad_score_predictor = ChadScorePredictor(device=device)
     chad_score_predictor.load_model()
 
-    for item in image_dataset.dataset:
-        feature_vector_tensor = torch.tensor(item.feature_vector, device=device)
-        chad_score = chad_score_predictor.get_chad_score(feature_vector_tensor)
-        chad_image = ChadImage(os.path.basename(item.file_path), chad_score)
+    for item in data_list:
+        chad_score = item['chad_score']
+        image_name = item['image_name']
+        chad_image = ChadImage('images/' + image_name, chad_score)
         chad_images.append(chad_image)
 
         min_chad_score = min(min_chad_score, chad_score)
