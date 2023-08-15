@@ -154,6 +154,17 @@ class CLI:
         )
 
         return self
+
+    def image_batch_size(self):
+        self.parser.add_argument(
+            '--image_batch_size',
+            type=int,
+            default=1,
+            help='Number of batches (default: %(default)s)'
+        )
+
+        return self
+
     def num_images(self):
         self.parser.add_argument(
             '--num_images',

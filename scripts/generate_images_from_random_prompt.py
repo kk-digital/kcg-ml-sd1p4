@@ -94,7 +94,7 @@ class Txt2Img(StableDiffusionBaseScript):
 
 
 def generate_images_from_random_prompt(num_images, image_width, image_height, cfg_strength, batch_size,
-                                       checkpoint_path, output, seed, flash, device, sampler, steps, force_cpu, num_datasets):
+                                       checkpoint_path, output, seed, flash, device, sampler, steps, force_cpu, num_datasets, image_batch_size):
     # Hard coded prompts
     arg_prompt = r"chibi, waifu, scifi, side scrolling, character, side scrolling, white background, centered," \
                  r" full character, no background, not centered, line drawing, sketch, black and white," \
@@ -132,8 +132,6 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
     )
     txt2img.initialize_latent_diffusion(autoencoder=None, clip_text_embedder=None, unet_model=None,
                                         path=checkpoint_path, force_submodels_init=True)
-
-    image_batch_size = 4
 
     for current_task_index in range(num_datasets):
         print("Generating Dataset : " +  str(current_task_index))
@@ -404,12 +402,13 @@ def main():
         .image_width() \
         .image_height() \
         .num_datasets() \
+        .image_batch_size() \
         .parse()
 
     generate_images_from_random_prompt(opt.num_images, opt.image_width, opt.image_height, opt.cfg_scale,
                                        opt.batch_size, opt.checkpoint_path, opt.output, opt.seed, opt.flash,
                                        opt.cuda_device,
-                                       opt.sampler, opt.steps, opt.force_cpu, opt.num_datasets)
+                                       opt.sampler, opt.steps, opt.force_cpu, opt.num_datasets, opt.image_batch_size)
 
 
 if __name__ == "__main__":
