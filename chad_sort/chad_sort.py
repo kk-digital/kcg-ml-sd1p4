@@ -97,11 +97,8 @@ def sort_dataset_by_chad_score(dataset_path: str, device: str, num_classes: int,
                 with zip_ref.open(file_path_json) as file:
                     json_content = json.load(file)
 
-                print(features_dir_path)
-                print(file_base_name)
                 # get embedding
                 file_path_embedding = features_dir_path + '/' + file_base_name + ".embedding.npz"
-                print(file_path_embedding)
                 with zip_ref.open(file_path_embedding) as file:
                     embedding = np.load(file)
                     embedding_data = embedding['data']
@@ -118,34 +115,12 @@ def sort_dataset_by_chad_score(dataset_path: str, device: str, num_classes: int,
                     latent = np.load(file)
                     latent_data = latent['data']
 
-                prompt_dict_data = {}
-                try:
-                    # get prompt_dict
-                    file_path_prompt_dict = os.path.join(features_dir_path, file_base_name + ".prompt_dict.npz")
-                    with zip_ref.open(file_path_prompt_dict) as file:
-                        prompt_dict = np.load(file, allow_pickle=True)
-                        prompt_dict_data = {"prompt_str": prompt_dict["prompt_str"],
-                                            "num_topics": prompt_dict["num_topics"],
-                                            "num_modifiers": prompt_dict["num_modifiers"],
-                                            "num_styles": prompt_dict["num_styles"],
-                                            "num_constraints": prompt_dict["num_constraints"],
-                                            "prompt_vector": prompt_dict["prompt_vector"].tolist()}
-                except Exception as e:
-                    print("No prompt dict found: {0}".format(e))
-
                 image_features = {
-                    "prompt" : json_content["prompt"],
-                    "model" : json_content["model"],
-                    "image_name" : json_content["image_name"],
-                    "image_hash" : json_content["image_hash"],
-                    "chad_score_model" : json_content["chad_score_model"],
-                    "chad_score" : json_content["chad_score"],
-                    "seed" : json_content["seed"],
-                    "cfg_strength" : json_content["cfg_strength"],
+                    "file_path_json" : file_path_json,
+                    "json_content" : json_content,
                     "embedding_data" : embedding_data,
                     "clip_data" : clip_data,
                     "latent_data" : latent_data,
-                    "prompt_dict_data" : prompt_dict_data
                 }
 
                 # add image features to dataset
@@ -159,7 +134,7 @@ def sort_dataset_by_chad_score(dataset_path: str, device: str, num_classes: int,
     chad_score_predictor.load_model()
 
     for item in data_list:
-        chad_score = item['chad_score']
+        chad_score = item['json_content']['chad_score']
         images.append(item)
 
         min_chad_score = min(min_chad_score, chad_score)
@@ -170,9 +145,28 @@ def sort_dataset_by_chad_score(dataset_path: str, device: str, num_classes: int,
 
     for image in images:
         zip_file_path = dataset_path
-        image_filename = os.path.basename(image['image_name'])
-        normalized_chad_score = (image['chad_score'] - min_chad_score) / (max_chad_score - min_chad_score)
+        image_filename = image['json_content']['image_name']
+        file_path_json = image['file_path_json']
+        normalized_chad_score = (image['json_content']['chad_score'] - min_chad_score) / (max_chad_score - min_chad_score)
         class_index = (int)(normalized_chad_score * num_classes)
+
+        # output folders
+        class_directory = output_path + str(class_index)
+        images_directory = class_directory + '/images'
+        features_directory = class_directory + '/features'
+
+        # make sure the folders exist else create them
+        create_folder_if_not_exist(class_directory)
+        create_folder_if_not_exist(images_directory)
+        create_folder_if_not_exist(features_directory)
+
+        json_path = class_directory + '/' + file_path_json
+        # Write JSON data to the file
+        with open(json_path, "w") as json_file:
+            json.dump(image['json_content'], json_file, indent=2)
+            print("Saved json " + json_path)
+
+
 
         # Open the zip file in read mode
         with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
@@ -180,9 +174,7 @@ def sort_dataset_by_chad_score(dataset_path: str, device: str, num_classes: int,
             for item in zip_ref.namelist():
                 if (item.endswith(image_filename)):
                     source = zip_ref.open(item)
-                    image_directory = output_path + str(class_index) + '/images'
-                    create_folder_if_not_exist(image_directory)
-                    image_path = image_directory + '/' + image_filename
+                    image_path = class_directory + '/' + image_filename
                     target = open(image_path, "wb")
                     with source, target:
                         shutil.copyfileobj(source, target)
