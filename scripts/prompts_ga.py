@@ -261,8 +261,8 @@ def store_generation_images(ga_instance):
     os.makedirs(file_dir)
     for i, ind in enumerate(ga_instance.population):
         SEED = random.randint(0, 2 ** 24)
-        if FIXED_SEED == True:
-            SEED = 9
+        if FIXED_SEED == False:
+            SEED = 54846
         prompt_embedding = torch.tensor(ind, dtype=torch.float32).to(DEVICE)
         prompt_embedding = prompt_embedding.view(1, 77, 768)
 
