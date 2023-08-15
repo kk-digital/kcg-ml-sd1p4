@@ -53,6 +53,7 @@ Objective:
 
 import os
 import sys
+import time
 
 base_dir = os.getcwd()
 sys.path.insert(0, base_dir)
@@ -74,6 +75,8 @@ from stable_diffusion.utils_backend import get_device
 from stable_diffusion.utils_image import *
 from ga.utils import get_next_ga_dir
 import ga
+from ga.prompt_generator_old import generate_prompts_old
+
 
 random.seed()
 
@@ -159,6 +162,14 @@ def generate_images_from_embeddings(embedded_prompts_array, null_prompt):
         seed=SEED, embedded_prompt=embedded_prompt, null_prompt=null_prompt)
 '''
 
+# Initialize logger
+def log_to_file(message):
+    
+    log_path = os.path.join(OUTPUT_DIR, "log.txt")
+
+    with open(log_path, "a") as log_file:
+        log_file.write(message + "\n")
+
 
 # Function to calculate the chad score for batch of images
 def calculate_chad_score(ga_instance, solution, solution_idx):
@@ -228,12 +239,21 @@ def on_fitness(ga_instance, population_fitness):
     print("Fitness (best): ", np.max(population_fitness_np))
     print("fitness array= ", str(population_fitness_np))
 
+    log_to_file(f"Generation #{ga_instance.generations_completed}")
+    log_to_file(f"Population Size= {len(population_fitness_np)}")
+    log_to_file(f"Fitness (mean): {np.mean(population_fitness_np)}")
+    log_to_file(f"Fitness (variance): {np.var(population_fitness_np)}")
+    log_to_file(f"Fitness (best): {np.max(population_fitness_np)}")
+    log_to_file(f"fitness array= {str(population_fitness_np)}")
+
 
 def on_mutation(ga_instance, offspring_mutation):
     print("Performing mutation at generation: ", ga_instance.generations_completed)
+    log_to_file(f"Performing mutation at generation: {ga_instance.generations_completed}")
 
 
 def store_generation_images(ga_instance):
+    start_time = time.time()
     generation = ga_instance.generations_completed
     print("Generation #", generation)
     print("Population size: ", len(ga_instance.population))
@@ -267,6 +287,18 @@ def store_generation_images(ga_instance):
         filename = os.path.join(file_dir, f'g{generation:04}_{i:03}.png')
         pil_image.save(filename)
 
+    end_time = time.time()  # End timing for generation
+    total_time = end_time - start_time
+    log_to_file(f"Total time taken for Generation #{generation}: {total_time} seconds")
+    
+    # Log images per generation
+    num_images = len(ga_instance.population)
+    log_to_file(f"Images generated in Generation #{generation}: {num_images}")
+    
+    # Log images/sec
+    images_per_second = num_images / total_time
+    log_to_file(f"Images per second in Generation #{generation}: {images_per_second}")
+
 
 def prompt_embedding_vectors(sd, prompt_array):
     # Generate embeddings for each prompt
@@ -293,7 +325,7 @@ mutation_rate = 0.001
 parent_selection_type = "tournament"  # "sss", rws, sus, rank, tournament
 
 # num_parents_mating = int(population_size *.80)
-num_parents_mating = int(population_size * .25)
+num_parents_mating = int(population_size * .60)
 keep_elitism = 0  # int(population_size*0.20)
 mutation_probability = 0.10
 # mutation_type = "adaptive" #try adaptive mutation
@@ -321,16 +353,8 @@ NULL_PROMPT = prompt_embedding_vectors(sd, [""])[0]
 # print("NULL_PROMPT size= ", str(torch.Tensor.size(NULL_PROMPT)))
 
 # generate prompts and get embeddings
-prompt_phrase_length = 10  # number of words in prompt
-prompts_array = ga.generate_prompts(population_size, prompt_phrase_length)
-
-# get prompt_str array
-prompts_str_array = []
-for prompt in prompts_array:
-    prompt_str = prompt.get_prompt_str()
-    prompts_str_array.append(prompt_str)
-
-embedded_prompts = prompt_embedding_vectors(sd, prompt_array=prompts_str_array)
+prompts_array = generate_prompts_old(population_size)
+embedded_prompts = prompt_embedding_vectors(sd, prompt_array=prompts_array)
 
 print("genetic_algorithm_loop: population_size= ", population_size)
 
@@ -377,6 +401,11 @@ ga_instance = pygad.GA(initial_population=embedded_prompts_list,
                        # on_crossover=on_crossover,
                        on_start=store_generation_images,
                        )
+
+log_to_file(f"Batch Size: {population_size}")
+log_to_file(f"Mutation Type: {mutation_type}")
+log_to_file(f"Mutation Rate: {mutation_rate}")
+log_to_file(f"Generations: {generations}")
 
 ga_instance.run()
 
