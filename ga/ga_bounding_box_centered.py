@@ -22,7 +22,7 @@ from stable_diffusion.utils_image import *
 from ga.utils import get_next_ga_dir
 import ga
 from ga.prompt_generator_old import generate_prompts_old
-from ga.fitness_filesize import filesize_fitness
+from ga.fitness_bounding_box_centered import centered_fitness
 
 
 random.seed()
@@ -100,17 +100,7 @@ def calculate_fitness_score(ga_instance, solution, solution_idx):
     # Convert the numpy array to a PyTorch tensor
     prompt_embedding = torch.tensor(solution, dtype=torch.float32)
     prompt_embedding = prompt_embedding.view(1, 77, 768).to(DEVICE)
-    # print("embedded_prompt, tensor size, after= ",str(torch.Tensor.size(embedded_prompt)) )
 
-    # print("Calculation Chad Score: sd.generate_images_from_embeddings")
-    # print("prompt_embedded_prompt= " + str(prompt_embedding.get_device()))
-    # print("null_prompt device= " + str(NULL_PROMPT.get_device()))
-    # print("embedded_prompt, tensor size= ",str(torch.Tensor.size(prompt_embedding)) )
-    # print("NULL_PROMPT, tensor size= ",str(torch.Tensor.size(NULL_PROMPT)) )
-    # TODO: why are we regenerating the image?
-
-    # NOTE: Is using NoGrad internally
-    # NOTE: Is using autocast internally
     image = sd.generate_images_from_embeddings(
         seed=SEED,
         embedded_prompt=prompt_embedding,
@@ -128,7 +118,7 @@ def calculate_fitness_score(ga_instance, solution, solution_idx):
         pil_image = pil_image.convert("L")
         pil_image = pil_image.convert("RGB")
 
-    fitness_score = filesize_fitness(pil_image)
+    fitness_score = centered_fitness(pil_image)
     return fitness_score
 
 
@@ -268,16 +258,12 @@ embedded_prompts = prompt_embedding_vectors(sd, prompt_array=prompts_array)
 
 print("genetic_algorithm_loop: population_size= ", population_size)
 
-# ERROR: REVIEW
-# TODO: What is this doing?
+
 # Move the 'embedded_prompts' tensor to CPU memory
 embedded_prompts_cpu = embedded_prompts.to("cpu")
 embedded_prompts_array = embedded_prompts_cpu.detach().numpy()
 embedded_prompts_list = embedded_prompts_array.reshape(population_size, 77 * 768).tolist()
 
-# random_mutation_min_val=5,
-# random_mutation_max_val=10,
-# mutation_by_replacement=True,
 
 # note: uniform is good, two_points"
 crossover_type = "uniform"
