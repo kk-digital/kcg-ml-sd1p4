@@ -139,7 +139,7 @@ def generate_images_from_prompt_generator(num_images, num_phrases, image_width, 
                 h=image_height
             )
 
-            images =txt2img.get_image_from_latent(latent)
+            images = txt2img.get_image_from_latent(latent)
 
             # Capture the ending time
             tmp_end_time = time.time()

@@ -106,6 +106,7 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
     prompt = arg_prompt
     model_name = os.path.basename(checkpoint_path)
 
+
     seed_array = get_seed_array_from_string(seed, array_size=(num_images * num_datasets))
 
     # Set flash attention
@@ -132,171 +133,232 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
     txt2img.initialize_latent_diffusion(autoencoder=None, clip_text_embedder=None, unet_model=None,
                                         path=checkpoint_path, force_submodels_init=True)
 
+    image_batch_size = 4
+
     for current_task_index in range(num_datasets):
         print("Generating Dataset : " +  str(current_task_index))
+        start_time = time.time()
         generation_task_result_list = []
+
+        set_folder_name = f'set_{current_task_index:04}'
+        feature_dir = os.path.join(output, set_folder_name, 'features')
+        image_dir = os.path.join(output, set_folder_name, 'images')
+
+        # make sure the directories are created
+        os.makedirs(feature_dir, exist_ok=True)
+        os.makedirs(image_dir, exist_ok=True)
 
         prompt_list = prompt.split(',');
         prompt_generator = PromptGenerator(prompt_list)
 
+        batch_list = []
+        current_batch = []
+        current_batch_index = 0
+        current_batch_image_index = 0
+        # Loop through images and generate the prompt, seed for each one
         for i in range(num_images):
+            print("Generating batches : image " + str(i) + " out of " + str(num_images));
+
             num_prompts_per_image = 12
             this_prompt = prompt_generator.random_prompt(num_prompts_per_image)
             this_seed = seed_array[(i + current_task_index * num_images) % len(seed_array)]
-
-            print("Generating image " + str(i) + " out of " + str(num_images));
-            print("Prompt : ", this_prompt)
-            print("Seed : ", this_seed)
-            start_time = time.time()
             timestamp = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
-            set_folder_name = f'set_{current_task_index:04}'
-            feature_dir = os.path.join(output, set_folder_name, 'features')
-            image_dir = os.path.join(output, set_folder_name, 'images')
-
-            os.makedirs(feature_dir, exist_ok=True)
-            os.makedirs(image_dir, exist_ok=True)
-
-
             total_digits = 4
             base_file_name = f'{i:0{total_digits}d}-{timestamp}'
             image_name = base_file_name + '.jpg'
-
             # Specify the filename with the path to the images directory under the respective set folder
             filename = os.path.join(image_dir, image_name)
 
-
-            # Capture the starting time
-            tmp_start_time = time.time()
-
-            # no negative prompts for now
-            negative_prompts = []
-            un_cond, cond = txt2img.get_text_conditioning(cfg_strength, this_prompt, negative_prompts, batch_size)
-
-            # Capture the ending time
-            tmp_end_time = time.time()
-            # Calculate the execution time
-            tmp_execution_time = tmp_end_time - tmp_start_time
-
-            print("Embedding vector Time:", tmp_execution_time, "seconds")
-
-            # Capture the starting time
-            tmp_start_time = time.time()
-
-            latent = txt2img.generate_images_latent_from_embeddings(
-                batch_size=batch_size,
-                embedded_prompt=cond,
-                null_prompt=un_cond,
-                uncond_scale=cfg_strength,
-                seed=this_seed,
-                w=image_width,
-                h=image_height
-            )
-
-            images = txt2img.get_image_from_latent(latent)
-
-            # Capture the ending time
-            tmp_end_time = time.time()
-            # Calculate the execution time
-            tmp_execution_time = tmp_end_time - tmp_start_time
-
-            print("Image generation Time:", tmp_execution_time, "seconds")
-
-            image_list, image_hash_list = save_images(images, filename)
-            image_hash = image_hash_list[0]
-            image = image_list[0]
-
-            # convert tensor to numpy array
-            with torch.no_grad():
-                embedded_vector = cond.cpu().numpy()
-
-            # free cond memory
-            cond.detach()
-            del cond
-            torch.cuda.empty_cache()
-
-            print(latent.shape)
-
-            # image latent
-            with torch.no_grad():
-                latent = latent.cpu().numpy()
-
-            # Capture the starting time
-            tmp_start_time = time.time()
-
-            # get image features
-            image_features = util_clip.get_image_features(image)
-
-            # Capture the ending time
-            tmp_end_time = time.time()
-            # Calculate the execution time
-            tmp_execution_time = tmp_end_time - tmp_start_time
-
-            print("Image features Time:", tmp_execution_time, "seconds")
-
-            # Capture the starting time
-            tmp_start_time = time.time()
-
-            # compute chad score
-            chad_score = chad_score_predictor.get_chad_score(image_features)
-
-            # Capture the ending time
-            tmp_end_time = time.time()
-            # Calculate the execution time
-            tmp_execution_time = tmp_end_time - tmp_start_time
-
-            print("Chad Score Time:", tmp_execution_time, "seconds")
-
-            embedding_vector_filename = base_file_name + '.embedding.npz'
-            clip_features_filename = base_file_name + '.clip.npz'
-            latent_filename = base_file_name + '.latent.npz'
-
-            embedding_vector_filepath = os.path.join(feature_dir, embedding_vector_filename)
-            clip_features_filepath = os.path.join(feature_dir, clip_features_filename)
-            latent_filepath = os.path.join(feature_dir, latent_filename)
-            json_filename = os.path.join(image_dir, base_file_name + '.json')
-
-
-            generation_task_result = GenerationTaskResult(this_prompt, model_name, image_name, embedding_vector_filename,
-                                                          clip_features_filename, latent_filename,
-                                                          image_hash, chad_score_model_name, chad_score, this_seed,
-                                                          cfg_strength)
-            # get numpy list from image_features
-            with torch.no_grad():
-                image_features_numpy = image_features.cpu().numpy()
-
-            # free image_features memory
-            image_features.detach()
-            del image_features;
-            torch.cuda.empty_cache()
-
-            # save embedding vector to its own file
-            np.savez_compressed(embedding_vector_filepath, data=embedded_vector)
-            # save image features to its own file
-            np.savez_compressed(clip_features_filepath, data=image_features_numpy)
-
-            # save image latent to its own file
-            np.savez_compressed(latent_filepath, data=latent)
-
-            # Save the data to a JSON file
-            with open(json_filename, 'w') as json_file:
-                json.dump(generation_task_result.to_dict(), json_file)
-
-            generation_task_result_list.append({
-                'image_filename': filename,
-                'json_filename': json_filename,
-                'embedding_vector_filepath': embedding_vector_filepath,
-                'clip_features_filepath': clip_features_filepath,
-                'latent_filepath': latent_filepath,
-                'generation_task_result': generation_task_result
+            current_batch.append({
+                'prompt' : this_prompt,
+                'seed' : this_seed,
+                "image_name" : image_name,
+                "filename" : filename,
+                "base_file_name" : base_file_name
             })
 
-            # Capture the ending time
-            end_time = time.time()
+            current_batch_image_index = current_batch_image_index + 1
+            if current_batch_image_index >= image_batch_size or (i == (num_images - 1)):
+                current_batch_image_index = 0
+                batch_list.append(current_batch)
+                current_batch = []
+                current_batch_index += 1
 
-            # Calculate the execution time
-            execution_time = end_time - start_time
 
-            print("Execution Time:", execution_time, "seconds")
+        current_batch_index = 0
+        for batch in batch_list:
+            print("------ Batch " + str(current_batch_index + 1) + " out of " + str(len(batch_list)) + " ----------")
+            # generate text embeddings in batches
+            processed_images = current_batch_index * image_batch_size
+            tmp_start_time = time.time()
+            for task in batch:
+                print("Generating text embeddings " + str(processed_images + 1) + " out of " + str(num_images))
+                processed_images = processed_images + 1
+
+                this_prompt = task['prompt']
+                # no negative prompts for now
+                negative_prompts = []
+                un_cond, cond = txt2img.get_text_conditioning(cfg_strength, this_prompt, negative_prompts, batch_size)
+                task['cond'] = cond
+                task['un_cond'] = un_cond
+
+            tmp_end_time = time.time()
+            tmp_execution_time = tmp_end_time - tmp_start_time
+            print("Text embedding generation completed Time:", tmp_execution_time, "seconds")
+
+            # generating latent vector for each image
+            processed_images = current_batch_index * image_batch_size
+            tmp_start_time = time.time()
+            for task in batch:
+                print("Generating image latent " + str(processed_images + 1) + " out of " + str(num_images))
+                processed_images = processed_images + 1
+
+                cond = task['cond']
+                un_cond = task['un_cond']
+                this_seed = task['seed']
+
+                latent = txt2img.generate_images_latent_from_embeddings(
+                    batch_size=batch_size,
+                    embedded_prompt=cond,
+                    null_prompt=un_cond,
+                    uncond_scale=cfg_strength,
+                    seed=this_seed,
+                    w=image_width,
+                    h=image_height
+                )
+
+                task['latent'] = latent
+
+            tmp_end_time = time.time()
+            tmp_execution_time = tmp_end_time - tmp_start_time
+            print("Image latent generation completed Time:", tmp_execution_time, "seconds")
+
+            # getting images from latent
+            processed_images = current_batch_index * image_batch_size
+            tmp_start_time = time.time()
+            for task in batch:
+                print("latent -> image " + str(processed_images + 1) + " out of " + str(num_images))
+                processed_images = processed_images + 1
+
+                latent = task['latent']
+                filename = task['filename']
+
+                images = txt2img.get_image_from_latent(latent)
+                image_list, image_hash_list = save_images(images, filename)
+                image_hash = image_hash_list[0]
+                image = image_list[0]
+
+                task['image'] = image
+                task['image_hash'] = image_hash
+
+            tmp_end_time = time.time()
+            tmp_execution_time = tmp_end_time - tmp_start_time
+            print("latent -> image completed Time:", tmp_execution_time, "seconds")
+
+            # compute image features
+            processed_images = current_batch_index * image_batch_size
+            tmp_start_time = time.time()
+            for task in batch:
+                print("Generating image features " + str(processed_images + 1) + " out of " + str(num_images))
+                processed_images = processed_images + 1
+
+                # get image features
+                image = task['image']
+                image_features = util_clip.get_image_features(image)
+                task['image_features'] = image_features
+
+            tmp_end_time = time.time()
+            tmp_execution_time = tmp_end_time - tmp_start_time
+            print("Image features generation completed Time:", tmp_execution_time, "seconds")
+
+            # compute image chad_score
+            processed_images = current_batch_index * image_batch_size
+            tmp_start_time = time.time()
+            for task in batch:
+                print("Generating image chad score " + str(processed_images + 1) + " out of " + str(num_images))
+                processed_images = processed_images + 1
+
+                image_features = task['image_features']
+                # compute chad_score
+                chad_score = chad_score_predictor.get_chad_score(image_features)
+                task['chad_score'] = chad_score
+
+            tmp_end_time = time.time()
+            tmp_execution_time = tmp_end_time - tmp_start_time
+            print("Image chad score completed Time:", tmp_execution_time, "seconds")
+
+            # compute image chad_score
+            processed_images = current_batch_index * image_batch_size
+            tmp_start_time = time.time()
+            for task in batch:
+                print("Image ready to be zipped " + str(processed_images + 1) + " out of " + str(num_images))
+                processed_images = processed_images + 1
+
+                cond = task['cond']
+                un_cond = task['un_cond']
+                latent = task['latent']
+                image_features = task['image_features']
+                base_file_name = task['base_file_name']
+
+                image_name = task["image_name"]
+                filename = task["filename"]
+                # convert tensor to numpy array
+                with torch.no_grad():
+                    embedded_vector = cond.cpu().numpy()
+                # free cond memory
+                cond.detach()
+                del cond
+                torch.cuda.empty_cache()
+                # image latent
+                with torch.no_grad():
+                    latent = latent.cpu().numpy()
+                embedding_vector_filename = base_file_name + '.embedding.npz'
+                clip_features_filename = base_file_name + '.clip.npz'
+                latent_filename = base_file_name + '.latent.npz'
+
+                embedding_vector_filepath = os.path.join(feature_dir, embedding_vector_filename)
+                clip_features_filepath = os.path.join(feature_dir, clip_features_filename)
+                latent_filepath = os.path.join(feature_dir, latent_filename)
+                json_filename = os.path.join(image_dir, base_file_name + '.json')
+
+                generation_task_result = GenerationTaskResult(this_prompt, model_name, image_name,
+                                                              embedding_vector_filename,
+                                                              clip_features_filename, latent_filename,
+                                                              image_hash, chad_score_model_name, chad_score, this_seed,
+                                                              cfg_strength)
+                # get numpy list from image_features
+                with torch.no_grad():
+                    image_features_numpy = image_features.cpu().numpy()
+
+                # free image_features memory
+                image_features.detach()
+                del image_features;
+                torch.cuda.empty_cache()
+
+                # save embedding vector to its own file
+                np.savez_compressed(embedding_vector_filepath, data=embedded_vector)
+                # save image features to its own file
+                np.savez_compressed(clip_features_filepath, data=image_features_numpy)
+                # save image latent to its own file
+                np.savez_compressed(latent_filepath, data=latent)
+
+                # Save the data to a JSON file
+                with open(json_filename, 'w') as json_file:
+                    json.dump(generation_task_result.to_dict(), json_file)
+
+                generation_task_result_list.append({
+                    'image_filename': filename,
+                    'json_filename': json_filename,
+                    'embedding_vector_filepath': embedding_vector_filepath,
+                    'clip_features_filepath': clip_features_filepath,
+                    'latent_filepath': latent_filepath,
+                    'generation_task_result': generation_task_result
+                })
+
+            tmp_end_time = time.time()
+            tmp_execution_time = tmp_end_time - tmp_start_time
+            current_batch_index = current_batch_index + 1
+
 
         # chad score value should be between [0, 1]
         for generation_task_result_item in generation_task_result_list:
