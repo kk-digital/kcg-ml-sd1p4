@@ -231,13 +231,12 @@ def cached_fitness_func(ga_instance, solution, solution_idx):
 def on_fitness(ga_instance, population_fitness):
     population_fitness_np = np.array(population_fitness)
     print("Generation #", ga_instance.generations_completed)
-    print("Population Size= ", len(population_fitness_np))
+    print("Population Size = ", len(population_fitness_np))
     print("Fitness (mean): ", np.mean(population_fitness_np))
     print("Fitness (variance): ", np.var(population_fitness_np))
     print("Fitness (best): ", np.max(population_fitness_np))
     print("fitness array= ", str(population_fitness_np))
 
-    log_to_file(f"Generation #{ga_instance.generations_completed}")
     log_to_file(f"Population Size= {len(population_fitness_np)}")
     log_to_file(f"Fitness (mean): {np.mean(population_fitness_np)}")
     log_to_file(f"Fitness (variance): {np.var(population_fitness_np)}")
@@ -287,10 +286,12 @@ def store_generation_images(ga_instance):
 
     end_time = time.time()  # End timing for generation
     total_time = end_time - start_time
+    log_to_file(f"Generation #{ga_instance.generations_completed}")
     log_to_file(f"Total time taken for Generation #{generation}: {total_time} seconds")
-    
+
     # Log images per generation
     num_images = len(ga_instance.population)
+    
     log_to_file(f"Images generated in Generation #{generation}: {num_images}")
     
     # Log images/sec
@@ -403,7 +404,6 @@ ga_instance = pygad.GA(initial_population=embedded_prompts_list,
 log_to_file(f"Batch Size: {population_size}")
 log_to_file(f"Mutation Type: {mutation_type}")
 log_to_file(f"Mutation Rate: {mutation_rate}")
-log_to_file(f"Generations: {generations}")
 
 ga_instance.run()
 
