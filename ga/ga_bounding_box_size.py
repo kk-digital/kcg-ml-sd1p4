@@ -84,7 +84,7 @@ random.seed()
 N_STEPS = 20  # 20, 12
 CFG_STRENGTH = 9
 
-FIXED_SEED = True
+FIXED_SEED = False
 CONVERT_GREY_SCALE_FOR_SCORING = False
 
 # Add argparse arguments
@@ -176,7 +176,7 @@ def log_to_file(message):
 def calculate_chad_score(ga_instance, solution, solution_idx):
     # set seed
     SEED = random.randint(0, 2 ** 24)
-    if FIXED_SEED == False:
+    if FIXED_SEED == True:
         SEED = 54846
 
     # Convert the numpy array to a PyTorch tensor
