@@ -54,8 +54,8 @@ def main():
     remove_all_files_and_folders(output_path)
 
     # sort by chad score
-    sort_by_chad_score(dataset_path, device, num_classes, output_path)
-
+    # sort_by_chad_score(dataset_path, device, num_classes, output_path)
+    sort_dataset_by_chad_score(dataset_path, device, num_classes, output_path)
 
 
 if __name__ == '__main__':
