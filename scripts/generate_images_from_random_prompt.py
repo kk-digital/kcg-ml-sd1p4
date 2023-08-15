@@ -90,7 +90,7 @@ class Txt2Img(StableDiffusionBaseScript):
                                     noise_fn=noise_fn,
                                     temperature=temperature)
 
-            return self.decode_image(x)
+            return self.decode_image(x), x
 
 
 def generate_images_from_random_prompt(num_images, image_width, image_height, cfg_strength, batch_size,
@@ -182,7 +182,7 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
             # Capture the starting time
             tmp_start_time = time.time()
 
-            images = txt2img.generate_images_from_embeddings(
+            images, latent = txt2img.generate_images_from_embeddings(
                 batch_size=batch_size,
                 embedded_prompt=cond,
                 null_prompt=un_cond,
@@ -212,11 +212,7 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
             del cond
             torch.cuda.empty_cache()
 
-            images = images.to(torch.float32)
-
-            # Encode the image in the latent space and make `batch_size` copies of it
-            latent = txt2img.model.autoencoder_encode(images)
-            latent = latent.repeat(batch_size, 1, 1, 1)
+            print(latent.shape)
 
             # image latent
             with torch.no_grad():

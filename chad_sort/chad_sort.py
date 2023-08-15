@@ -103,20 +103,23 @@ def sort_dataset_by_chad_score(dataset_path: str, device: str, num_classes: int,
                 with zip_ref.open(file_path_json) as file:
                     json_content = json.load(file)
 
+                print(features_dir_path)
+                print(file_base_name)
                 # get embedding
-                file_path_embedding = os.path.join(features_dir_path, file_base_name + ".embedding.npz")
+                file_path_embedding = features_dir_path + '/' + file_base_name + ".embedding.npz"
+                print(file_path_embedding)
                 with zip_ref.open(file_path_embedding) as file:
                     embedding = np.load(file)
                     embedding_data = embedding['data']
 
                 # get clip
-                file_path_clip = os.path.join(features_dir_path, file_base_name + ".clip.npz")
+                file_path_clip = features_dir_path + '/' + file_base_name + ".clip.npz"
                 with zip_ref.open(file_path_clip) as file:
                     clip = np.load(file)
                     clip_data = clip['data']
 
                 # get latent
-                file_path_latent = os.path.join(features_dir_path, file_base_name + ".latent.npz")
+                file_path_latent = features_dir_path + '/' + file_base_name + ".latent.npz";
                 with zip_ref.open(file_path_latent) as file:
                     latent = np.load(file)
                     latent_data = latent['data']
@@ -175,7 +178,7 @@ def sort_dataset_by_chad_score(dataset_path: str, device: str, num_classes: int,
 
     for chad_image in chad_images:
         zip_file_path = dataset_path
-        image_filename = chad_image.file_path
+        image_filename = os.path.basename(chad_image.file_path)
         normalized_chad_score = (chad_image.chad_score - min_chad_score) / (max_chad_score - min_chad_score)
         class_index = (int)(normalized_chad_score * num_classes)
 
