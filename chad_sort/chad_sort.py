@@ -15,12 +15,6 @@ from utility.dataset.image_dataset import ImageDataset
 from chad_score.chad_score import ChadScorePredictor
 from utility.utils_dirs import create_folder_if_not_exist
 
-class ChadImage:
-    def __init__(self, file_path, chad_score):
-        self.file_path = file_path  # path + file name
-        self.chad_score = chad_score
-
-
 def sort_by_chad_score(dataset_path: str, device: str, num_classes: int, output_path: str):
     # Tracking time
     start_time = time.time()
@@ -157,7 +151,7 @@ def sort_dataset_by_chad_score(dataset_path: str, device: str, num_classes: int,
                 # add image features to dataset
                 data_list.append(image_features)
 
-    chad_images = []
+    images = []
     min_chad_score = 999999.0
     max_chad_score = -999999.0
 
@@ -166,20 +160,18 @@ def sort_dataset_by_chad_score(dataset_path: str, device: str, num_classes: int,
 
     for item in data_list:
         chad_score = item['chad_score']
-        image_name = item['image_name']
-        chad_image = ChadImage('images/' + image_name, chad_score)
-        chad_images.append(chad_image)
+        images.append(item)
 
         min_chad_score = min(min_chad_score, chad_score)
         max_chad_score = max(max_chad_score, chad_score)
 
     current_image = 1
-    num_images = len(chad_images)
+    num_images = len(images)
 
-    for chad_image in chad_images:
+    for image in images:
         zip_file_path = dataset_path
-        image_filename = os.path.basename(chad_image.file_path)
-        normalized_chad_score = (chad_image.chad_score - min_chad_score) / (max_chad_score - min_chad_score)
+        image_filename = os.path.basename(image['image_name'])
+        normalized_chad_score = (image['chad_score'] - min_chad_score) / (max_chad_score - min_chad_score)
         class_index = (int)(normalized_chad_score * num_classes)
 
         # Open the zip file in read mode
@@ -188,9 +180,9 @@ def sort_dataset_by_chad_score(dataset_path: str, device: str, num_classes: int,
             for item in zip_ref.namelist():
                 if (item.endswith(image_filename)):
                     source = zip_ref.open(item)
-                    dir = output_path + str(class_index)
-                    create_folder_if_not_exist(dir)
-                    image_path = dir + '/' + image_filename
+                    image_directory = output_path + str(class_index) + '/images'
+                    create_folder_if_not_exist(image_directory)
+                    image_path = image_directory + '/' + image_filename
                     target = open(image_path, "wb")
                     with source, target:
                         shutil.copyfileobj(source, target)
