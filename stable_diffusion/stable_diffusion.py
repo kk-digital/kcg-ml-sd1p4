@@ -320,7 +320,7 @@ class StableDiffusion:
                 noise_fn=noise_fn,
                 temperature=temperature,
             )
-            return self.decode_image(x)
+            return self.get_image_from_latent(x)
 
     @torch.no_grad()
     def generate_images_latent_from_embeddings(
