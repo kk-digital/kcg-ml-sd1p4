@@ -82,7 +82,74 @@ def sort_dataset_by_chad_score(dataset_path: str, device: str, num_classes: int,
     start_time = time.time()
 
     # Load the image dataset
+    with zipfile.ZipFile(dataset_path, 'r') as zip_ref:
+        data_list = []
+        file_paths = zip_ref.namelist()
+        for file_path in file_paths:
+            file_extension = os.path.splitext(file_path)[1]
+            if file_extension == ".jpg":
+                # get filename
+                file_path_no_extension = os.path.splitext(file_path)[0]
+                image_dir_path = os.path.dirname(file_path)
+                root_path = os.path.dirname(image_dir_path)
+                features_dir_path = os.path.join(root_path, "features")
+                file_base_name = os.path.basename(file_path_no_extension)
 
+                # get json
+                file_path_json = file_path_no_extension + ".json"
+                with zip_ref.open(file_path_json) as file:
+                    json_content = json.load(file)
+
+                # get embedding
+                file_path_embedding = os.path.join(features_dir_path, file_base_name + ".embedding.npz")
+                with zip_ref.open(file_path_embedding) as file:
+                    embedding = np.load(file)
+                    embedding_data = embedding['data']
+
+                # get clip
+                file_path_clip = os.path.join(features_dir_path, file_base_name + ".clip.npz")
+                with zip_ref.open(file_path_clip) as file:
+                    clip = np.load(file)
+                    clip_data = clip['data']
+
+                # get latent
+                file_path_latent = os.path.join(features_dir_path, file_base_name + ".latent.npz")
+                with zip_ref.open(file_path_latent) as file:
+                    latent = np.load(file)
+                    latent_data = latent['data']
+
+                prompt_dict_data = {}
+                try:
+                    # get prompt_dict
+                    file_path_prompt_dict = os.path.join(features_dir_path, file_base_name + ".prompt_dict.npz")
+                    with zip_ref.open(file_path_prompt_dict) as file:
+                        prompt_dict = np.load(file, allow_pickle=True)
+                        prompt_dict_data = {"prompt_str": prompt_dict["prompt_str"],
+                                            "num_topics": prompt_dict["num_topics"],
+                                            "num_modifiers": prompt_dict["num_modifiers"],
+                                            "num_styles": prompt_dict["num_styles"],
+                                            "num_constraints": prompt_dict["num_constraints"],
+                                            "prompt_vector": prompt_dict["prompt_vector"].tolist()}
+                except Exception as e:
+                    print("No prompt dict found: {0}".format(e))
+
+                image_features = {
+                    "prompt" : json_content["prompt"],
+                    "model" : json_content["model"],
+                    "image_name" : json_content["image_name"],
+                    "image_hash" : json_content["image_hash"],
+                    "chad_score_model" : json_content["chad_score_model"],
+                    "chad_score" : json_content["chad_score"],
+                    "seed" : json_content["seed"],
+                    "cfg_strength" : json_content["cfg_strength"],
+                    "embedding_data" : embedding_data,
+                    "clip_data" : clip_data,
+                    "latent_data" : latent_data,
+                    "prompt_dict_data" : prompt_dict_data
+                }
+
+                # add image features to dataset
+                data_list.append(image_features)
 
     chad_images = []
     min_chad_score = 999999.0
