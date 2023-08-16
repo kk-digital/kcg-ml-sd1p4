@@ -102,7 +102,7 @@ class Txt2Img(StableDiffusionBaseScript):
                                     noise_fn=noise_fn,
                                     temperature=temperature)
 
-            return self.decode_image(x)
+            return self.get_image_from_latent(x)
 
     @torch.no_grad()
     def generate_images_from_embeddings(self, *,
@@ -160,7 +160,7 @@ class Txt2Img(StableDiffusionBaseScript):
                                     noise_fn=noise_fn,
                                     temperature=temperature)
 
-            return self.decode_image(x)
+            return self.get_image_from_latent(x)
 
 
 def text_to_image(prompt, negative_prompt, output, sampler, checkpoint_path, flash, steps, cfg_scale, low_vram, force_cpu, cuda_device,
