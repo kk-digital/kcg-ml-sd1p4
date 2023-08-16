@@ -129,7 +129,7 @@ def generate_images_from_prompt_generator(num_images, num_phrases, image_width, 
             # Capture the starting time
             tmp_start_time = time.time()
 
-            images = txt2img.generate_images_from_embeddings(
+            latent = txt2img.generate_images_latent_from_embeddings(
                 batch_size=batch_size,
                 embedded_prompt=cond,
                 null_prompt=un_cond,
@@ -138,6 +138,8 @@ def generate_images_from_prompt_generator(num_images, num_phrases, image_width, 
                 w=image_width,
                 h=image_height
             )
+
+            images = txt2img.get_image_from_latent(latent)
 
             # Capture the ending time
             tmp_end_time = time.time()

@@ -8,6 +8,7 @@ sys.path.insert(0, base_directory)
 sys.path.insert(0, os.path.join(base_directory, 'utils', 'dataset'))
 
 from chad_sort.chad_sort import sort_by_chad_score
+from chad_sort.chad_sort import sort_dataset_by_chad_score
 from stable_diffusion.utils_backend import get_device
 from utility.utils_dirs import remove_all_files_and_folders
 
@@ -54,8 +55,8 @@ def main():
     remove_all_files_and_folders(output_path)
 
     # sort by chad score
-    sort_by_chad_score(dataset_path, device, num_classes, output_path)
-
+    # sort_by_chad_score(dataset_path, device, num_classes, output_path)
+    sort_dataset_by_chad_score(dataset_path, device, num_classes, output_path)
 
 
 if __name__ == '__main__':

@@ -98,7 +98,7 @@ class Txt2Img(StableDiffusionBaseScript):
             return self.decode_image(x)
 
     @torch.no_grad()
-    def generate_images_from_embeddings(self, *,
+    def generate_images_latent_from_embeddings(self, *,
                                         seed: int = 0,
                                         batch_size: int = 1,
                                         embedded_prompt: torch.Tensor,
@@ -148,7 +148,7 @@ class Txt2Img(StableDiffusionBaseScript):
                                     uncond_scale=uncond_scale,
                                     uncond_cond=null_prompt)
 
-            return self.decode_image(x)
+            return x
 
 
 def main():

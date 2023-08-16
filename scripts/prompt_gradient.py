@@ -83,12 +83,14 @@ def store_image_from_embeddings(sd, i, prompt_embedding, null_prompt, cfg_streng
     prompt_embedding = prompt_embedding.clone().detach().to(DEVICE)
     prompt_embedding = prompt_embedding.view(1, 77, 768)
 
-    image = sd.generate_images_from_embeddings(
+    latent = sd.generate_images_latent_from_embeddings(
         seed=SEED,
         embedded_prompt=prompt_embedding,
         null_prompt=null_prompt,
         uncond_scale=cfg_strength
     )
+
+    image = sd.get_image_from_latent(latent)
 
     prompt_embedding.to("cpu")
     del prompt_embedding
