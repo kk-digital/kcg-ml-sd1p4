@@ -35,13 +35,6 @@ from stable_diffusion.model.unet.unet_attention import CrossAttention
 from utility.utils_argument_parsing import get_seed_array_from_string
 from cli_builder import CLI
 
-import subprocess as sp
-import os
-def get_gpu_memory():
-    command = "nvidia-smi --query-gpu=memory.free --format=csv"
-    memory_free_info = sp.check_output(command.split()).decode('ascii').split('\n')[:-1][1:]
-    memory_free_values = [int(x.split()[0]) for i, x in enumerate(memory_free_info)]
-    return sp.check_output(command).decode('ascii')
 
 class Txt2Img(StableDiffusionBaseScript):
     """
@@ -193,7 +186,7 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
         current_batch_index = 0
         for batch in batch_list:
             print("------ Batch " + str(current_batch_index + 1) + " out of " + str(len(batch_list)) + " ----------")
-            print("GOPU ; ", get_gpu_memory())
+
             # generate text embeddings in batches
             processed_images = current_batch_index * image_batch_size
             tmp_start_time = time.time()
@@ -310,7 +303,10 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
                 image_name = task["image_name"]
                 filename = task["filename"]
 
-
+                # delete image memory
+                image.detach()
+                del image
+                torch.cuda.empty_cache()
 
                 # convert tensor to numpy array
                 with torch.no_grad():
