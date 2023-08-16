@@ -76,7 +76,6 @@ from stable_diffusion.utils_image import *
 from ga.utils import get_next_ga_dir
 import ga
 from ga.prompt_generator_old import generate_prompts_old
-from ga.fitness_bounding_box_size import size_fitness
 
 
 random.seed()
@@ -84,7 +83,7 @@ random.seed()
 N_STEPS = 20  # 20, 12
 CFG_STRENGTH = 9
 
-FIXED_SEED = True
+FIXED_SEED = False
 CONVERT_GREY_SCALE_FOR_SCORING = False
 
 # Add argparse arguments
@@ -261,7 +260,7 @@ def store_generation_images(ga_instance):
     os.makedirs(file_dir)
     for i, ind in enumerate(ga_instance.population):
         SEED = random.randint(0, 2 ** 24)
-        if FIXED_SEED == False:
+        if FIXED_SEED == True:
             SEED = 54846
         prompt_embedding = torch.tensor(ind, dtype=torch.float32).to(DEVICE)
         prompt_embedding = prompt_embedding.view(1, 77, 768)
