@@ -186,7 +186,7 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
         current_batch_index = 0
         for batch in batch_list:
             print("------ Batch " + str(current_batch_index + 1) + " out of " + str(len(batch_list)) + " ----------")
-            print(torch.cuda.memory_allocated() / 1024.0 / 1024.0)
+            #print(torch.cuda.memory_allocated() / 1024.0 / 1024.0)
             # generate text embeddings in batches
             processed_images = current_batch_index * image_batch_size
             tmp_start_time = time.time()
