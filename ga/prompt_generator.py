@@ -2,7 +2,7 @@
 import random
 import tiktoken
 import time
-
+import json
 
 class GeneratedPrompt():
     def __init__(self, prompt_dict: [], prompt_vector: []):
@@ -18,6 +18,14 @@ class GeneratedPrompt():
 
     def get_prompt_str(self):
         return self.prompt_str
+
+    def to_json(self):
+        return {'prompt-str': self.prompt_str,
+                'prompt-vector': self.prompt_vector,
+                'num-topics': self.num_topics,
+                'num-modifiers': self.num_modifiers,
+                'num-styles': self.num_styles,
+                'num-constraints': self.num_constraints}
 
 
 class PromptData():
@@ -178,3 +186,15 @@ def generate_prompts(prompt_count, prompt_phrase_length):
         print("-------------------------------------------------------------------------")
 
     return prompt_list
+
+
+def generate_prompts_and_save_to_json(prompt_count, prompt_phrase_length, json_output):
+    prompt_list = generate_prompts(prompt_count, prompt_phrase_length)
+    prompt_list_dict = [prompt.to_json() for prompt in prompt_list]
+    prompts_list_json = json.dumps(prompt_list_dict)
+
+    # Save json
+    with open(json_output, "w") as outfile:
+        outfile.write(prompts_list_json)
+
+    print("Prompt list saved to {}".format(json_output))
