@@ -68,4 +68,4 @@ def size_fitness(pil_image):
     fitness_score = LinearRectified(0.25, 1.0, area_ratio)
 
     assert 0.0 <= fitness_score <= 1.0, "Size fitness value out of bounds!"
-    return fitness_score
+    return 1 - fitness_score
