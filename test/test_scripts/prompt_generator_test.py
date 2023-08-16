@@ -1,5 +1,7 @@
 import sys
 import os
+import time
+
 sys.path.insert(0, os.getcwd())
 from ga.prompt_generator import *
 
@@ -11,4 +13,8 @@ def test_initialize_prompt_list():
 
 
 def test_prompt_generator():
-    generate_prompts(5, 10)
+    num_prompts = 1000
+    num_phrases = 12
+    start_time = time.time()
+    generate_prompts(num_prompts, num_phrases)
+    print("Time elapsed: {0}s".format(format(time.time() - start_time, ".2f")))

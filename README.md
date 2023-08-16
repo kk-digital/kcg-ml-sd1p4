@@ -451,6 +451,23 @@ Example Usage:
 python scripts/prompt_gradient.py --input_path input/set_0000_v2.zip --model_path output/models/prompt_score.pth --iterations 10 --learning_rate 0.01
 ```
 
+### Prompt Generator
+Generates prompts and saves to a json file
+```
+usage: prompt_generator.py [-h] [--num-prompts NUM_PROMPTS] [--num-phrases NUM_PHRASES] [--output OUTPUT]
+
+Prompt Generator CLI tool
+
+options:
+  -h, --help            show this help message and exit
+  --num-prompts NUM_PROMPTS
+                        Number of prompts to generate
+  --num-phrases NUM_PHRASES
+                        Number of phrases per prompt
+  --output OUTPUT       Output path for prompt list json
+
+```
+
 ### Auto-ml
 _Note: Current only support dataset generated from Generate Images Random Prompt_
 ```
