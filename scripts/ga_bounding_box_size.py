@@ -29,14 +29,14 @@ random.seed()
 N_STEPS = 20  # 20, 12
 CFG_STRENGTH = 9
 
-FIXED_SEED = False
+FIXED_SEED = True
 CONVERT_GREY_SCALE_FOR_SCORING = False
 
 # Add argparse arguments
 parser = argparse.ArgumentParser(description="Run genetic algorithm with specified parameters.")
 parser.add_argument('--generations', type=int, default=2000, help="Number of generations to run.")
 parser.add_argument('--mutation_probability', type=float, default=0.05, help="Probability of mutation.")
-parser.add_argument('--keep_elitism', type=int, default=0, help="1 to keep best individual, 0 otherwise.")
+parser.add_argument('--keep_elitism', type=float, default=0, help="1 to keep best individual, 0 otherwise.")
 parser.add_argument('--crossover_type', type=str, default="single_point", help="Type of crossover operation.")
 parser.add_argument('--mutation_type', type=str, default="random", help="Type of mutation operation.")
 parser.add_argument('--mutation_percent_genes', type=float, default="0.001",
@@ -213,7 +213,7 @@ def prompt_embedding_vectors(sd, prompt_array):
 MUTATION_RATE = 0.01
 
 generations = args.generations
-population_size = 12
+population_size = 32
 mutation_percent_genes = args.mutation_percent_genes
 mutation_probability = args.mutation_probability
 keep_elitism = args.keep_elitism
@@ -222,14 +222,14 @@ crossover_type = args.crossover_type
 mutation_type = args.mutation_type
 mutation_rate = 0.001
 
-parent_selection_type = "tournament"  # "sss", rws, sus, rank, tournament
+parent_selection_type = "rank"  # "sss", rws, sus, rank, tournament
 
 # num_parents_mating = int(population_size *.80)
 num_parents_mating = int(population_size * .60)
 keep_elitism = 0  # int(population_size*0.20)
 mutation_probability = 0.10
 # mutation_type = "adaptive" #try adaptive mutation
-mutation_type = "swap"
+mutation_type = "random"
 
 
 # Load Stable Diffusion
@@ -282,7 +282,7 @@ ga_instance = pygad.GA(initial_population=embedded_prompts_list,
                        # Pygad uses 0-100 range for percentage
                        mutation_percent_genes=0.01,
                        # mutation_probability=mutation_probability,
-                       mutation_probability=0.30,
+                       mutation_probability=0.10,
                        keep_elitism=keep_elitism,
                        crossover_type=crossover_type,
                        mutation_type=mutation_type,
