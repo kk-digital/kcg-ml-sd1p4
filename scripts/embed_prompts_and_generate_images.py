@@ -265,7 +265,7 @@ def calculate_sha256(tensor):
     if tensor.device == "cpu":
         tensor_bytes = tensor.numpy().tobytes()  # Convert tensor to a byte array
     else:
-        tensor_bytes = tensor.cpu().numpy().tobytes()  # Convert tensor to a byte array
+        tensor_bytes = tensor.cpu().detach().numpy().tobytes()  # Convert tensor to a byte array
     sha256_hash = hashlib.sha256(tensor_bytes)
     return sha256_hash.hexdigest()
 
