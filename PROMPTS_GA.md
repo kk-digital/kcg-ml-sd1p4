@@ -18,6 +18,60 @@ python scripts/prompts_ga.py \
   --mutation_percent_genes 0.05
 ```
 
+Documentation for script at `./scripts/ga_bounding_box_size.py`.
+
+The script generates text prompt phrases, which are used to compute prompt
+embeddings to initialize a genetic algorithm population. The fitness function is located in ga/fitness_bounding_box_size.py. 
+The fitness score will be 1.0 when the object occupies one-fourth of the full image.
+
+Example Usage:
+
+``` shell
+python scripts/ga_bounding_box_size.py \
+  --generations 100 \
+  --mutation_probability 0.05 \
+  --crossover_type single_point \
+  --keep_elitism 0 \
+  --mutation_type random \
+  --mutation_percent_genes 0.05
+```
+
+Documentation for script at `./scripts/ga_bounding_box_centered.py`.
+
+The script generates text prompt phrases, which are used to compute prompt
+embeddings to initialize a genetic algorithm population. The fitness function is located in ga/fitness_bounding_box_centered.py. 
+The fitness score will be 1.0 when the object is centered within the image.
+
+Example Usage:
+
+``` shell
+python scripts/ga_bounding_box_centered.py \
+  --generations 100 \
+  --mutation_probability 0.05 \
+  --crossover_type single_point \
+  --keep_elitism 0 \
+  --mutation_type random \
+  --mutation_percent_genes 0.05
+```
+
+Documentation for script at `./scripts/ga_filesize.py`.
+
+The script generates text prompt phrases, which are used to compute prompt
+embeddings to initialize a genetic algorithm population. The fitness function is located in ga/fitness_filesize.py. 
+
+Example Usage:
+
+``` shell
+python scripts/ga_filesize.py \
+  --generations 100 \
+  --mutation_probability 0.05 \
+  --crossover_type single_point \
+  --keep_elitism 0 \
+  --mutation_type random \
+  --mutation_percent_genes 0.05
+```
+
+
 If you encounter an error like this: "ImportError: libGL.so.1: cannot open shared object file: No such file or directory" 
 
 you can resolve it by executing the following command:
