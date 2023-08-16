@@ -333,7 +333,7 @@ class CLI:
 
     def num_phrases(self):
         self.parser.add_argument(
-            '--num-phrases',
+            '--num_phrases',
             type=int,
             nargs="?",
             help='The number of phrases for the prompt to generate',

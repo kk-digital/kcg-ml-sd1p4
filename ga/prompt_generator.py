@@ -42,10 +42,20 @@ class PromptList():
     def __init__(self):
         self.Prompts = []
 
+    def is_phrase_exist(self, phrase: str):
+        for prompt in self.Prompts:
+            if prompt.Phrase == phrase:
+                return True
+
+        return False
+
     def add_phrase(self, phrase: str):
-        index = len(self.Prompts)
-        new_prompt = PromptData(index, phrase)
-        self.Prompts.append(new_prompt)
+        if not self.is_phrase_exist(phrase):
+            index = len(self.Prompts)
+            new_prompt = PromptData(index, phrase)
+            self.Prompts.append(new_prompt)
+        else:
+            print("Phrase: {} already exists".format(phrase))
 
     def add_phrases(self, phrases: []):
         for phrase in phrases:
@@ -59,7 +69,8 @@ class PromptList():
         if len(prompt_data) != 0:
             prompt_data = prompt_data[0]
             # check first if type is already in list
-            is_prompt_type_exists = len([prompt_type for prompt_type in prompt_data.Types if prompt_type == prompt_type]) > 0
+            is_prompt_type_exists = len(
+                [prompt_type for prompt_type in prompt_data.Types if prompt_type == prompt_type]) > 0
             if not is_prompt_type_exists:
                 prompt_data.Types.append(prompt_type)
             else:
@@ -73,75 +84,44 @@ class PromptList():
         for prompt_type in types:
             self.add_type_to_phrase(phrase, prompt_type)
 
+    def add_topic_phrases(self, phrases: []):
+        for phrase in phrases:
+            self.add_phrase(phrase)
+            self.add_type_to_phrase(phrase, prompt_type="topic")
+
+    def add_style_phrases(self, phrases: []):
+        for phrase in phrases:
+            self.add_phrase(phrase)
+            self.add_type_to_phrase(phrase, prompt_type="style")
+
+    def add_modifier_phrases(self, phrases: []):
+        for phrase in phrases:
+            self.add_phrase(phrase)
+            self.add_type_to_phrase(phrase, prompt_type="modifier")
+
+    def add_constraint_phrases(self, phrases: []):
+        for phrase in phrases:
+            self.add_phrase(phrase)
+            self.add_type_to_phrase(phrase, prompt_type="constraint")
+
 
 def initialize_prompt_list():
     prompt_list = PromptList()
 
-    prompt_list.add_phrases(
-        ["chibi", "waifu", "cyborg", "dragon", "android", "mecha", "companion", "furry", "robot", "mercenary", "wizard",
-         "pet", "wizard", "shapeshifter", "pilot", "time traveler", "engineer", "slaver", "samurai"])
+    prompt_list.add_topic_phrases(["chibi", "waifu", "cyborg", "dragon", "android", "mecha", "companion", "furry",
+                                  "robot", "mercenary", "wizard",
+                                  "pet", "shapeshifter", "pilot", "time traveler", "engineer", "slaver",
+                                  "samurai"])
 
-    prompt_list.add_phrases(
-        ["unreal", "masterpiece", "gorgeous", "stunning", "captivating", "breathtaking", "exquisite", "magnificent",
-         "majestic", "elegant", "sublime", "futuristic", "cyberpunk", "hi-tech", "advanced", "innovative", "modern",
-         "fantasy", "mythical", "scifi", "side scrolling", "character", "white background", "centered",
-         "full character", "no background", "not centered", "line drawing", "sketch", "black and white", "colored",
-         "video game"])
+    prompt_list.add_modifier_phrases(["beautiful", "unreal", "masterpiece", "gorgeous", "stunning", "captivating",
+                                     "breathtaking", "exquisite", "magnificent", "majestic", "elegant", "sublime",
+                                     "futuristic", "cyberpunk", "hi-tech", "advanced", "innovative", "modern",
+                                     "fantasy", "mythical", "scifi", "character", "full character", "black and white",
+                                     "colored", "video game"])
 
-    prompt_list.add_type_to_phrase("chibi", "topic")
-    prompt_list.add_type_to_phrase("waifu", "topic")
-    prompt_list.add_type_to_phrase("cyborg", "topic")
-    prompt_list.add_type_to_phrase("dragon", "topic")
-    prompt_list.add_type_to_phrase("android", "topic")
-    prompt_list.add_type_to_phrase("mecha", "topic")
-    prompt_list.add_type_to_phrase("companion", "topic")
-    prompt_list.add_type_to_phrase("furry", "topic")
-    prompt_list.add_type_to_phrase("robot", "topic")
-    prompt_list.add_type_to_phrase("mercenary", "topic")
-    prompt_list.add_type_to_phrase("wizard", "topic")
-    prompt_list.add_type_to_phrase("pet", "topic")
-    prompt_list.add_type_to_phrase("shapeshifter", "topic")
-    prompt_list.add_type_to_phrase("pilot", "topic")
-    prompt_list.add_type_to_phrase("time traveler", "topic")
-    prompt_list.add_type_to_phrase("engineer", "topic")
-    prompt_list.add_type_to_phrase("slaver", "topic")
-    prompt_list.add_type_to_phrase("samurai", "topic")
+    prompt_list.add_constraint_phrases(["white background", "no background", "not centered", "centered"])
 
-    prompt_list.add_type_to_phrase("beautiful", "modifier")
-    prompt_list.add_type_to_phrase("unreal", "modifier")
-    prompt_list.add_type_to_phrase("masterpiece", "modifier")
-    prompt_list.add_type_to_phrase("gorgeous", "modifier")
-    prompt_list.add_type_to_phrase("stunning", "modifier")
-    prompt_list.add_type_to_phrase("captivating", "modifier")
-    prompt_list.add_type_to_phrase("breathtaking", "modifier")
-    prompt_list.add_type_to_phrase("exquisite", "modifier")
-    prompt_list.add_type_to_phrase("magnificent", "modifier")
-    prompt_list.add_type_to_phrase("majestic", "modifier")
-    prompt_list.add_type_to_phrase("elegant", "modifier")
-    prompt_list.add_type_to_phrase("sublime", "modifier")
-    prompt_list.add_type_to_phrase("futuristic", "modifier")
-    prompt_list.add_type_to_phrase("cyberpunk", "modifier")
-    prompt_list.add_type_to_phrase("hi-tech", "modifier")
-    prompt_list.add_type_to_phrase("advanced", "modifier")
-    prompt_list.add_type_to_phrase("innovative", "modifier")
-    prompt_list.add_type_to_phrase("modern", "modifier")
-    prompt_list.add_type_to_phrase("fantasy", "modifier")
-    prompt_list.add_type_to_phrase("mythical", "modifier")
-    prompt_list.add_type_to_phrase("scifi", "modifier")
-    prompt_list.add_type_to_phrase("character", "modifier")
-    prompt_list.add_type_to_phrase("full character", "modifier")
-    prompt_list.add_type_to_phrase("black and white", "modifier")
-    prompt_list.add_type_to_phrase("colored", "modifier")
-    prompt_list.add_type_to_phrase("video game", "modifier")
-
-    prompt_list.add_type_to_phrase("white background", "constraint")
-    prompt_list.add_type_to_phrase("no background", "constraint")
-    prompt_list.add_type_to_phrase("not centered", "constraint")
-    prompt_list.add_type_to_phrase("centered", "constraint")
-
-    prompt_list.add_type_to_phrase("sketch", "style")
-    prompt_list.add_type_to_phrase("line drawing", "style")
-    prompt_list.add_type_to_phrase("side scrolling", "style")
+    prompt_list.add_style_phrases(["sketch", "line drawing", "side scrolling"])
 
     return prompt_list.Prompts
 
@@ -184,7 +164,6 @@ def generate_prompts(prompt_count, prompt_phrase_length):
             print("Number of tokens: {0}".format(num_tokens))
             print("Elapsed Time: {0}s".format(time.time() - start))
             print("-------------------------------------------------------------------------")
-
 
         prompt_list.append(GeneratedPrompt(prompt_dict, prompt_vector))
 
