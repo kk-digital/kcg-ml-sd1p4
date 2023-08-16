@@ -140,28 +140,6 @@ Sample command for untagged dataset:
 python3 ./scripts/process_dataset.py format-and-compute-manifest --image-dataset-path "./input/set_0000.zip" --output-path="./output"
 ```
 
-#### Compute Features Of Zip Dataset
-```
-usage: process_dataset.py compute-features-of-zip [-h] [--image-dataset-path IMAGE_DATASET_PATH] [--clip-model CLIP_MODEL] [--batch-size BATCH_SIZE] [--output-path OUTPUT_PATH] [--tmp-path TMP_PATH]
-
-CLI tool for computing features of dataset
-
-options:
-  -h, --help            show this help message and exit
-  --image-dataset-path IMAGE_DATASET_PATH
-                        The path of the image dataset to process
-  --clip-model CLIP_MODEL
-                        The CLIP model to use for computing features (default='ViT-L/14')
-  --batch-size BATCH_SIZE
-                        The batch size to use (default=8)
-```
-
-Sample command for tagged/untagged dataset: 
-
-``` shell
-python3 ./scripts/process_dataset.py compute-features-of-zip --image-dataset-path "./input/set_0000.zip" --clip-model="ViT-L/14"
-```
-
 ## Sort The dataset
 ### Chad Sort
 
