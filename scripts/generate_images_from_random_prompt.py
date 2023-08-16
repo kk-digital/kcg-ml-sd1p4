@@ -294,18 +294,29 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
 
                 cond = task['cond']
                 un_cond = task['un_cond']
+                image = task['image']
                 latent = task['latent']
                 image_features = task['image_features']
                 base_file_name = task['base_file_name']
 
                 image_name = task["image_name"]
                 filename = task["filename"]
+
+                # delete image memory
+                image.detach()
+                del image
+                torch.cuda.empty_cache()
+
                 # convert tensor to numpy array
                 with torch.no_grad():
                     embedded_vector = cond.cpu().numpy()
                 # free cond memory
                 cond.detach()
                 del cond
+                torch.cuda.empty_cache()
+                # free un_cond memory
+                un_cond.detach()
+                del un_cond
                 torch.cuda.empty_cache()
                 # image latent
                 with torch.no_grad():
