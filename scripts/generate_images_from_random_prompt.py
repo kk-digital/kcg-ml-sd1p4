@@ -303,11 +303,6 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
                 image_name = task["image_name"]
                 filename = task["filename"]
 
-                # delete image memory
-                image.detach()
-                del image
-                torch.cuda.empty_cache()
-
                 # convert tensor to numpy array
                 with torch.no_grad():
                     embedded_vector = cond.cpu().numpy()
