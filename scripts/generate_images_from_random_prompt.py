@@ -186,7 +186,7 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
         current_batch_index = 0
         for batch in batch_list:
             print("------ Batch " + str(current_batch_index + 1) + " out of " + str(len(batch_list)) + " ----------")
-
+            print(torch.cuda.memory_allocated() / 1024.0 / 1024.0)
             # generate text embeddings in batches
             processed_images = current_batch_index * image_batch_size
             tmp_start_time = time.time()
@@ -295,10 +295,10 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
 
                 cond = task['cond']
                 un_cond = task['un_cond']
-                image = task['image']
                 latent = task['latent']
                 image_features = task['image_features']
                 base_file_name = task['base_file_name']
+                chad_score = task['chad_score']
 
                 image_name = task["image_name"]
                 filename = task["filename"]
@@ -307,16 +307,20 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
                 with torch.no_grad():
                     embedded_vector = cond.cpu().numpy()
                 # free cond memory
-                cond.detach()
-                del cond
+
+                del task['cond']
                 torch.cuda.empty_cache()
                 # free un_cond memory
-                un_cond.detach()
-                del un_cond
+
+                del task['un_cond']
                 torch.cuda.empty_cache()
                 # image latent
                 with torch.no_grad():
                     latent = latent.cpu().numpy()
+
+                del task['latent']
+                torch.cuda.empty_cache()
+
                 embedding_vector_filename = base_file_name + '.embedding.npz'
                 clip_features_filename = base_file_name + '.clip.npz'
                 latent_filename = base_file_name + '.latent.npz'
@@ -336,8 +340,7 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
                     image_features_numpy = image_features.cpu().numpy()
 
                 # free image_features memory
-                image_features.detach()
-                del image_features;
+                del task['image_features']
                 torch.cuda.empty_cache()
 
                 # save embedding vector to its own file
@@ -360,10 +363,10 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
                     'generation_task_result': generation_task_result
                 })
 
+
             tmp_end_time = time.time()
             tmp_execution_time = tmp_end_time - tmp_start_time
             current_batch_index = current_batch_index + 1
-
 
         # chad score value should be between [0, 1]
         for generation_task_result_item in generation_task_result_list:
