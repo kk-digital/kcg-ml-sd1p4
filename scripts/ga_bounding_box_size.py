@@ -184,7 +184,7 @@ def store_generation_images(ga_instance):
         del prompt_embedding
 
         pil_image = to_pil(image[0])
-        filename = os.path.join(file_dir, f'g{generation:04}_{i:03}.png')
+        filename = os.path.join(file_dir, f'g{generation:04}_{i:03}.jpg')
         pil_image.save(filename)
 
     end_time = time.time()  # End timing for generation
@@ -249,7 +249,7 @@ prompts_array = ga.generate_prompts(population_size, prompt_phrase_length)
 
 # get prompt_str array
 prompts_str_array = []
-prefix_prompt = " centered, no background , white background, "
+prefix_prompt = " centered, no background , white background,black object, "
 for prompt in prompts_array:
     prompt_str = prefix_prompt + prompt.get_prompt_str()
     prompts_str_array.append(prompt_str)

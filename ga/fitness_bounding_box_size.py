@@ -40,28 +40,31 @@ def size_fitness(pil_image):
     if pil_image.mode != "RGB":
         raise ValueError("The provided image is not in RGB mode. Please provide an RGB image.")
 
-    # Convert the PIL image to an OpenCV image format
+        # Convert the PIL image to an OpenCV image format
     image = np.array(pil_image)[:, :, ::-1].copy()  # Convert RGB to BGR
     
     # Convert the image to grayscale
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     
     # Threshold the image to get a binary mask of the object
-    _, binary = cv2.threshold(gray, 50, 255, cv2.THRESH_BINARY_INV)
+    _, binary = cv2.threshold(gray, 240, 255, cv2.THRESH_BINARY_INV)
     
     # Find contours in the binary image
     contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     
-    # Assuming the largest contour corresponds to the object of interest
     if contours:
+        # Assuming the largest contour corresponds to the object of interest
         largest_contour = max(contours, key=cv2.contourArea)
-        _, _, bounding_box_width, bounding_box_height = cv2.boundingRect(largest_contour)
+        x, y, bounding_box_width, bounding_box_height = cv2.boundingRect(largest_contour)
+        
+        # Drawing rectangle on the image
+        color = (0, 255, 0) # Green color for the rectangle
+        thickness = 2
+        cv2.rectangle(image, (x, y), (x+bounding_box_width, y+bounding_box_height), color, thickness)
     else:
         return 0.0
 
     image_height, image_width, image_channels = image.shape
-
-    
     bounding_box_area = bounding_box_width * bounding_box_height
     image_area = image_width * image_height
     
@@ -70,6 +73,7 @@ def size_fitness(pil_image):
 
     # Calculate fitness score using LinearRectified function
     fitness_score = LinearRectified(0.25, 1.0, area_ratio)
-
+    
     assert 0.0 <= fitness_score <= 1.0, "Size fitness value out of bounds!"
+    
     return 1 - fitness_score
