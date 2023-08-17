@@ -111,7 +111,7 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
     # hard coded for now
     chad_score_model_path = "input/model/chad_score/chad-score-v1.pth"
     chad_score_model_name = os.path.basename(chad_score_model_path)
-    chad_score_predictor = ChadScorePredictor()
+    chad_score_predictor = ChadScorePredictor(device=device)
     chad_score_predictor.load_model(chad_score_model_path)
 
     # Starts the text2img
