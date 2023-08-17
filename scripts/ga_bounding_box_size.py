@@ -213,7 +213,7 @@ def prompt_embedding_vectors(sd, prompt_array):
 MUTATION_RATE = 0.01
 
 generations = args.generations
-population_size = 32
+population_size = 12
 mutation_percent_genes = args.mutation_percent_genes
 mutation_probability = args.mutation_probability
 keep_elitism = args.keep_elitism
@@ -249,8 +249,9 @@ prompts_array = ga.generate_prompts(population_size, prompt_phrase_length)
 
 # get prompt_str array
 prompts_str_array = []
+prefix_prompt = " 'centered', 'no background' , 'white background' "
 for prompt in prompts_array:
-    prompt_str = prompt.get_prompt_str()
+    prompt_str = prefix_prompt + prompt.get_prompt_str()
     prompts_str_array.append(prompt_str)
 
 embedded_prompts = prompt_embedding_vectors(sd, prompt_array=prompts_str_array)
