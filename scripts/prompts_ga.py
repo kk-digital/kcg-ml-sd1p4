@@ -75,6 +75,7 @@ from stable_diffusion.utils_backend import get_device
 from stable_diffusion.utils_image import *
 from ga.utils import get_next_ga_dir
 import ga
+from ga.fitness_chad_score import compute_chad_score_from_pil
 
 
 random.seed()
@@ -208,12 +209,9 @@ def calculate_chad_score(ga_instance, solution, solution_idx):
         pil_image = pil_image.convert("L")
         pil_image = pil_image.convert("RGB")
 
-    unsqueezed_image = preprocess(pil_image).unsqueeze(0).to(DEVICE)
-    # get clip encoding of model
-    with torch.no_grad():
-        image_features = image_features_clip_model.encode_image(unsqueezed_image)
-        chad_score = chad_score_predictor.get_chad_score(image_features.type(torch.cuda.FloatTensor))
-        return chad_score
+    chad_score = compute_chad_score_from_pil(pil_image)
+    
+    return chad_score
 
 
 def cached_fitness_func(ga_instance, solution, solution_idx):
