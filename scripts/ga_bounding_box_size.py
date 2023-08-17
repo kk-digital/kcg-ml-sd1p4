@@ -29,7 +29,7 @@ random.seed()
 N_STEPS = 20  # 20, 12
 CFG_STRENGTH = 9
 
-FIXED_SEED = False
+FIXED_SEED = True
 CONVERT_GREY_SCALE_FOR_SCORING = False
 
 # Add argparse arguments
@@ -83,7 +83,7 @@ print(FEATURES_DIR)
 # Initialize logger
 def log_to_file(message):
     
-    log_path = os.path.join(OUTPUT_DIR, "log.txt")
+    log_path = os.path.join(IMAGES_DIR, "log.txt")
 
     with open(log_path, "a") as log_file:
         log_file.write(message + "\n")
@@ -184,7 +184,7 @@ def store_generation_images(ga_instance):
         del prompt_embedding
 
         pil_image = to_pil(image[0])
-        filename = os.path.join(file_dir, f'g{generation:04}_{i:03}.png')
+        filename = os.path.join(file_dir, f'g{generation:04}_{i:03}.jpg')
         pil_image.save(filename)
 
     end_time = time.time()  # End timing for generation
@@ -249,10 +249,12 @@ prompts_array = ga.generate_prompts(population_size, prompt_phrase_length)
 
 # get prompt_str array
 prompts_str_array = []
+prefix_prompt = " centered , forth of image, black character, white background, black object, black and white, no background,"
 for prompt in prompts_array:
-    prompt_str = prompt.get_prompt_str()
+    prompt_str = prefix_prompt + prompt.get_prompt_str()
     prompts_str_array.append(prompt_str)
 
+print(prompt_str)
 embedded_prompts = prompt_embedding_vectors(sd, prompt_array=prompts_str_array)
 
 print("genetic_algorithm_loop: population_size= ", population_size)
