@@ -253,7 +253,8 @@ prefix_prompt = " centered, no background , white background "
 for prompt in prompts_array:
     prompt_str = prefix_prompt + prompt.get_prompt_str()
     prompts_str_array.append(prompt_str)
-
+    
+print(prompt_str)
 embedded_prompts = prompt_embedding_vectors(sd, prompt_array=prompts_str_array)
 
 print("genetic_algorithm_loop: population_size= ", population_size)
