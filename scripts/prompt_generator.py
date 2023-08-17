@@ -20,10 +20,12 @@ def parse_arguments():
 def main():
     # Parser the parameters
     args = parse_arguments()
+    start_time = time.time()
 
     # generate and save
     generate_prompts_and_save_to_json(args.num_prompts, args.num_phrases, args.output)
 
+    print("Total Elapsed Time: {0}s".format(time.time() - start_time))
 
 if __name__ == '__main__':
     main()

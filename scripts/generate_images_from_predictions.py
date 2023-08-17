@@ -4,6 +4,7 @@ import os
 import sys
 import random
 from datetime import datetime
+import time
 
 base_directory = os.getcwd()
 sys.path.insert(0, base_directory)
@@ -192,10 +193,12 @@ def parse_arguments():
 def main():
     # Parser the parameters
     args = parse_arguments()
+    start_time = time.time()
 
     # generate and save
     generate_image_based_on_classes(args.dataset_path, args.output_path, args.num_class, args.limit_per_class)
 
+    print("Total Elapsed Time: {0}s".format(time.time() - start_time))
 
 if __name__ == '__main__':
     main()
