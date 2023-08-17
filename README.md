@@ -491,6 +491,29 @@ Example Usage:
 python scripts/auto_ml.py --dataset-zip-path ./input/set_0002.zip --x-input "clip" --output "./output"
 ```
 
+### Generate Images From Model Predictions
+_Note: Currently only supports prediction output from kcg-ml/elm-regression_
+```
+usage: generate_images_from_predictions.py [-h] [--dataset-path DATASET_PATH] [--output-path OUTPUT_PATH] [--num-class NUM_CLASS] [--limit-per-class LIMIT_PER_CLASS]
+
+Generate Image For Each Range Of Predicted Chad Score
+
+options:
+  -h, --help            show this help message and exit
+  --dataset-path DATASET_PATH
+                        Predictions json path
+  --output-path OUTPUT_PATH
+                        Output path for the generated images
+  --num-class NUM_CLASS
+                        Number of classes to sort the images
+  --limit-per-class LIMIT_PER_CLASS
+                        Number of images to generate per class
+```
+
+Example Usage:
+```
+python ./scripts/generate_images_from_predictions.py --dataset-path "./output/chad-score-prediction.json" --output-path "./output/sort-generate-test" --num-class 10 --limit-per-class 1 
+```
 ## Tests
 ### To run all scripts
 1. Make an env
