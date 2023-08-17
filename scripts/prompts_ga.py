@@ -249,8 +249,6 @@ def on_mutation(ga_instance, offspring_mutation):
 def store_generation_images(ga_instance):
     start_time = time.time()
     generation = ga_instance.generations_completed
-    if generation > 1: 
-        return
     print("Generation #", generation)
     print("Population size: ", len(ga_instance.population))
     file_dir = os.path.join(IMAGES_DIR, str(generation))
