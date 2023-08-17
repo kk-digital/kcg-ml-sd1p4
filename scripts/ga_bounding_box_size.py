@@ -222,14 +222,14 @@ crossover_type = args.crossover_type
 mutation_type = args.mutation_type
 mutation_rate = 0.001
 
-parent_selection_type = "rank"  # "sss", rws, sus, rank, tournament
+parent_selection_type = "tournament"  # "sss", rws, sus, rank, tournament
 
 # num_parents_mating = int(population_size *.80)
 num_parents_mating = int(population_size * .60)
 keep_elitism = 0  # int(population_size*0.20)
 mutation_probability = 0.10
 # mutation_type = "adaptive" #try adaptive mutation
-mutation_type = "random"
+mutation_type = "swap"
 
 
 # Load Stable Diffusion
@@ -284,7 +284,7 @@ ga_instance = pygad.GA(initial_population=embedded_prompts_list,
                        # Pygad uses 0-100 range for percentage
                        mutation_percent_genes=0.01,
                        # mutation_probability=mutation_probability,
-                       mutation_probability=0.10,
+                       mutation_probability=0.30,
                        keep_elitism=keep_elitism,
                        crossover_type=crossover_type,
                        mutation_type=mutation_type,
