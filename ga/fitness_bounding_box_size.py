@@ -47,7 +47,7 @@ def size_fitness(pil_image):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     
     # Threshold the image to get a binary mask of the object
-    _, binary = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY_INV)
+    _, binary = cv2.threshold(gray, 80, 255, cv2.THRESH_BINARY_INV)
     
     # Find contours in the binary image
     contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)

@@ -83,7 +83,7 @@ print(FEATURES_DIR)
 # Initialize logger
 def log_to_file(message):
     
-    log_path = os.path.join(OUTPUT_DIR, "log.txt")
+    log_path = os.path.join(IMAGES_DIR, "log.txt")
 
     with open(log_path, "a") as log_file:
         log_file.write(message + "\n")
