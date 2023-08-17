@@ -26,7 +26,9 @@
     - [Running GenerationTask](#running-generationtask)
     - [Prompt Score](#prompt-score)
     - [Prompt Embeddings Gradient Optimization](#prompt-embeddings-gradient-optimization)
+    - [Prompt Generator](#prompt-generator)
     - [Auto-ml](#auto-ml)
+    - [Generate Images From Model Predictions](#generate-images-from-model-predictions)
   - [Tests](#tests)
     - [To run all scripts](#to-run-all-scripts)
     - [To run all kcg-ml-sd1p4 tests](#to-run-all-kcg-ml-sd1p4-tests)
@@ -466,6 +468,11 @@ options:
                         Number of phrases per prompt
   --output OUTPUT       Output path for prompt list json
 
+```
+
+Example Usage:
+```
+python ./scripts/prompt_generator.py --num-prompts 1000 --num-phrases 12 --output "./output/prompt_list_1000.json" 
 ```
 
 ### Auto-ml
