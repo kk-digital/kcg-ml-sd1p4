@@ -124,12 +124,11 @@ def generate_image(txt2img, prompt, negative_prompt, filename,
                 save_images(images, filename)
 
 
-def generate_image_using_prompt(predictions, classes, class_dict, limit_per_class):
+def generate_image_using_prompt(predictions, classes, class_dict, limit_per_class, checkpoint_path):
     # default values
     negative_prompt = ""
     cfg_scale = 7
     sampler = 'ddim'
-    checkpoint_path = "./input/model/v1-5-pruned-emaonly.safetensors"
     flash = False
     steps = 20
     low_vram = False
@@ -172,10 +171,11 @@ def generate_image_using_prompt(predictions, classes, class_dict, limit_per_clas
         # update limit dict
         class_limit_dict[class_index] = class_limit_dict[class_index] + 1
 
-def generate_image_based_on_classes(dataset_path, output_path, num_class=10, limit_per_class=128):
+
+def generate_image_based_on_classes(dataset_path, output_path, checkpoint_path, num_class=10, limit_per_class=128):
     predictions = load_json(dataset_path)
     classes, class_dict = create_folders_by_chad_score_range(predictions, output_path, num_class)
-    generate_image_using_prompt(predictions, classes, class_dict, limit_per_class)
+    generate_image_using_prompt(predictions, classes, class_dict, limit_per_class, checkpoint_path)
 
 
 def parse_arguments():
@@ -184,6 +184,8 @@ def parse_arguments():
 
     parser.add_argument('--dataset-path', type=str, help='Predictions json path')
     parser.add_argument('--output-path', type=str, default="./output", help='Output path for the generated images')
+    parser.add_argument('--checkpoint-path', type=str, default="./input/model/v1-5-pruned-emaonly.safetensors",
+                        help='Path to the checkpoint file')
     parser.add_argument('--num-class', type=int, default=10, help='Number of classes to sort the images')
     parser.add_argument('--limit-per-class', type=int, default=128, help='Number of images to generate per class')
 
@@ -196,9 +198,11 @@ def main():
     start_time = time.time()
 
     # generate and save
-    generate_image_based_on_classes(args.dataset_path, args.output_path, args.num_class, args.limit_per_class)
+    generate_image_based_on_classes(args.dataset_path, args.output_path, args.checkpoint_path, args.num_class,
+                                    args.limit_per_class)
 
     print("Total Elapsed Time: {0}s".format(time.time() - start_time))
+
 
 if __name__ == '__main__':
     main()
