@@ -26,7 +26,7 @@ sys.path.insert(0, base_directory)
 
 from chad_score.chad_score import ChadScorePredictor
 from model.util_clip import UtilClip
-from prompt_generator import PromptGenerator
+from ga.prompt_generator import generate_prompts
 from generation_task_result import GenerationTaskResult
 from stable_diffusion.utils_backend import get_autocast, set_seed
 from stable_diffusion.utils_image import save_images
@@ -146,8 +146,7 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
         os.makedirs(feature_dir, exist_ok=True)
         os.makedirs(image_dir, exist_ok=True)
 
-        prompt_list = prompt.split(',');
-        prompt_generator = PromptGenerator(prompt_list)
+        prompt_list = generate_prompts(num_images, 12)
 
         batch_list = []
         current_batch = []
@@ -157,8 +156,7 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
         for i in range(num_images):
             print("Generating batches : image " + str(i) + " out of " + str(num_images));
 
-            num_prompts_per_image = 12
-            this_prompt = prompt_generator.random_prompt(num_prompts_per_image)
+            this_prompt = prompt_list[i].prompt_str
             this_seed = seed_array[(i + current_task_index * num_images) % len(seed_array)]
             timestamp = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
             total_digits = 4

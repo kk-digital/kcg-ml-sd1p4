@@ -139,8 +139,6 @@ prompts = initialize_prompt_list()
 
 # Function to generate prompts
 def generate_prompts(prompt_count, prompt_phrase_length):
-    print("generate_prompts: Generating prompts")
-
     prompt_list = []
     enc = tiktoken.get_encoding("cl100k_base")
 
@@ -161,7 +159,6 @@ def generate_prompts(prompt_count, prompt_phrase_length):
             prompt_str = ', '.join([prompt.Phrase for prompt in prompt_dict])
 
             start = time.time()
-            print("Calculating number of tokens for prompt: {0}".format(prompt_str))
 
             # check the length of prompt embedding.
             # if it's more than 77, then regenerate/reroll
@@ -169,21 +166,8 @@ def generate_prompts(prompt_count, prompt_phrase_length):
             prompt_tokens = enc.encode(prompt_str)
             num_tokens = len(prompt_tokens)
 
-            print("Number of tokens: {0}".format(num_tokens))
-            print("Elapsed Time: {0}s".format(time.time() - start))
-            print("-------------------------------------------------------------------------")
-
         prompt_list.append(GeneratedPrompt(prompt_dict, prompt_vector))
 
-    print("prompt_list:")
-    for i in range(0, len(prompt_list)):
-        print("prompt ", i, ": prompt_str:", prompt_list[i].prompt_str)
-        print("prompt ", i, ": number of topics:", prompt_list[i].num_topics)
-        print("prompt ", i, ": number of modifiers:", prompt_list[i].num_modifiers)
-        print("prompt ", i, ": number of styles:", prompt_list[i].num_styles)
-        print("prompt ", i, ": number of constraints:", prompt_list[i].num_constraints)
-        print("prompt ", i, ": prompt_vector:", prompt_list[i].prompt_vector)
-        print("-------------------------------------------------------------------------")
 
     return prompt_list
 
