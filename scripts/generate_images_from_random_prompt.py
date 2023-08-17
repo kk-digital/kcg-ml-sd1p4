@@ -157,6 +157,7 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
             print("Generating batches : image " + str(i) + " out of " + str(num_images));
 
             this_prompt = prompt_list[i].prompt_str
+            prompt_dict = prompt_list[i]
             this_seed = seed_array[(i + current_task_index * num_images) % len(seed_array)]
             timestamp = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
             total_digits = 4
@@ -167,6 +168,7 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
 
             current_batch.append({
                 'prompt' : this_prompt,
+                'prompt_dict' : prompt_dict,
                 'seed' : this_seed,
                 "image_name" : image_name,
                 "filename" : filename,
@@ -297,6 +299,7 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
                 image_features = task['image_features']
                 base_file_name = task['base_file_name']
                 chad_score = task['chad_score']
+                prompt_dict = task['prompt_dict']
 
                 image_name = task["image_name"]
                 filename = task["filename"]
@@ -322,10 +325,12 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
                 embedding_vector_filename = base_file_name + '.embedding.npz'
                 clip_features_filename = base_file_name + '.clip.npz'
                 latent_filename = base_file_name + '.latent.npz'
+                prompt_dict_filename = base_file_name + '.prompt_dict.npz'
 
-                embedding_vector_filepath = os.path.join(feature_dir, embedding_vector_filename)
-                clip_features_filepath = os.path.join(feature_dir, clip_features_filename)
-                latent_filepath = os.path.join(feature_dir, latent_filename)
+                embedding_vector_filepath = feature_dir + '/' + embedding_vector_filename
+                clip_features_filepath = feature_dir + '/' + clip_features_filename
+                latent_filepath = feature_dir + '/' + latent_filename
+                prompt_dict_filepath = feature_dir + '/' + prompt_dict_filename
                 json_filename = os.path.join(image_dir, base_file_name + '.json')
 
                 generation_task_result = GenerationTaskResult(this_prompt, model_name, image_name,
@@ -347,6 +352,12 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
                 np.savez_compressed(clip_features_filepath, data=image_features_numpy)
                 # save image latent to its own file
                 np.savez_compressed(latent_filepath, data=latent)
+                # save prompt dictionary to its own file
+                np.savez_compressed(prompt_dict_filepath, prompt_dict=prompt_dict.prompt_dict,
+                                    prompt_str=prompt_dict.prompt_str, prompt_vector=prompt_dict.prompt_vector,
+                                    num_topics=prompt_dict.num_topics, num_modifiers=prompt_dict.num_modifiers,
+                                    num_styles=prompt_dict.num_styles,
+                                    num_constraints=prompt_dict.num_constraints)
 
                 # Save the data to a JSON file
                 with open(json_filename, 'w') as json_file:
