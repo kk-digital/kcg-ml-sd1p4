@@ -28,7 +28,6 @@ class ChadScoreModel(pl.LightningModule):
 
             nn.Linear(16, 1)
         )
-        self.to(get_device(device))
 
     def forward(self, x):
         return self.layers(x)
@@ -41,7 +40,7 @@ class ChadScoreModel(pl.LightningModule):
 class ChadScorePredictor:
     def __init__(self, input_size=768, device=None):
         self.device = get_device(device)
-        self.model = ChadScoreModel(input_size, self.device)
+        self.model = ChadScoreModel(input_size, device=self.device).to(self.device)
 
     def load_model(self, model_path="./input/model/chad_score/chad-score-v1.pth"):
         state = torch.load(model_path, map_location=self.device)
