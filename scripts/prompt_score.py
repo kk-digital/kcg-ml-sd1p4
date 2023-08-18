@@ -14,6 +14,7 @@ sys.path.insert(0, os.getcwd())
 from model.linear_regression import LinearRegressionModel
 from model.util_data_loader import ZipDataLoader
 from model.util_histogram import UtilHistogram
+from utils.dataset.image_dataset_storage_format.generated_image_dataset import GeneratedImageDataset
 
 
 def split_data(input_list, validation_ratio=0.2):
@@ -67,21 +68,11 @@ def main():
     inputs = []
     expected_outputs = []
 
-    zip_data_loader = ZipDataLoader()
+    generated_image_dataset = GeneratedImageDataset()
+    generated_image_dataset.load_dataset(zip_file_path)
 
-    loaded_data = []
-    if os.path.isdir(zip_file_path):
-        file_list = os.listdir(zip_file_path)
-        zip_files = [file for file in file_list if file.endswith('.zip')]
-        for zip_file_name in zip_files:
-            final_path = os.path.join(zip_file_path, zip_file_name)
-            loaded_data = loaded_data + zip_data_loader.load(final_path)
-    else:
-        loaded_data = zip_data_loader.load(zip_file_path)
-
-    for element in loaded_data:
-        image_meta_data = element['image_meta_data']
-        embedding_vector = element['embedding_vector']
+    for element in generated_image_dataset.dataset:
+        embedding_vector = element.embedding
 
         if use_76th_embedding:
             embedding_vector = embedding_vector[:, 76]
@@ -98,7 +89,7 @@ def main():
         del flat_embedded_prompts
         torch.cuda.empty_cache()
 
-        chad_score = image_meta_data.chad_score
+        chad_score = element.chad_score
 
         inputs.append(flat_vector)
         expected_outputs.append(chad_score)

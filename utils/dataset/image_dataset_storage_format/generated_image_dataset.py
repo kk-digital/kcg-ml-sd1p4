@@ -46,7 +46,7 @@ class GeneratedImageDataset:
                     file_path_no_extension = os.path.splitext(file_path)[0]
                     image_dir_path = os.path.dirname(file_path)
                     root_path = os.path.dirname(image_dir_path)
-                    features_dir_path = os.path.join(root_path, "features")
+                    features_dir_path = "features" if root_path is None or not root_path else root_path + '/' + "features"
                     file_base_name = os.path.basename(file_path_no_extension)
 
                     # get json
@@ -55,19 +55,19 @@ class GeneratedImageDataset:
                         json_content = json.load(file)
 
                     # get embedding
-                    file_path_embedding = os.path.join(features_dir_path, file_base_name + ".embedding.npz")
+                    file_path_embedding = features_dir_path + '/' + file_base_name + ".embedding.npz"
                     with zip_ref.open(file_path_embedding) as file:
                         embedding = np.load(file)
                         embedding_data = embedding['data']
 
                     # get clip
-                    file_path_clip = os.path.join(features_dir_path, file_base_name + ".clip.npz")
+                    file_path_clip = features_dir_path + '/' + file_base_name + ".clip.npz"
                     with zip_ref.open(file_path_clip) as file:
                         clip = np.load(file)
                         clip_data = clip['data']
 
                     # get latent
-                    file_path_latent = os.path.join(features_dir_path, file_base_name + ".latent.npz")
+                    file_path_latent = features_dir_path + '/' + file_base_name + ".latent.npz"
                     with zip_ref.open(file_path_latent) as file:
                         latent = np.load(file)
                         latent_data = latent['data']
@@ -75,7 +75,7 @@ class GeneratedImageDataset:
                     prompt_dict_data = {}
                     try:
                         # get prompt_dict
-                        file_path_prompt_dict = os.path.join(features_dir_path, file_base_name + ".prompt_dict.npz")
+                        file_path_prompt_dict = features_dir_path + '/' + file_base_name + ".prompt_dict.npz"
                         with zip_ref.open(file_path_prompt_dict) as file:
                             prompt_dict = np.load(file, allow_pickle=True)
                             prompt_dict_data = {"prompt_str": prompt_dict["prompt_str"],
