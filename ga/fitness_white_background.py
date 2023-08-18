@@ -15,7 +15,8 @@ def white_background_fitness(pil_image):
         - 0.0 indicates violations of the desired configuration.
         - Values between 0 and 1 indicate deviations from the ideal.
     """
-    
+    # ... [Initial checks remain the same] ...
+
     # Convert the PIL image to an OpenCV image format
     image = np.array(pil_image)[:, :, ::-1].copy()  # Convert RGB to BGR
 
@@ -32,19 +33,16 @@ def white_background_fitness(pil_image):
     border_mask[quarter_h:3*quarter_h, quarter_w:3*quarter_w] = 0
     border_pixels = gray[border_mask == 1]
     
-    # Penalty: Calculate non-zero pixels outside of the center square
-    penalty = np.sum(border_pixels > 0)
-
     # Compute the mean pixel intensity of the border
     mean_border_intensity = np.mean(border_pixels)
     mean_center_intensity = np.mean(central_region)
     
     # Ensure the central region is not too bright compared to the border
-    if mean_center_intensity > (mean_border_intensity - 10):  # Adjust the value '10' as needed
+    if mean_center_intensity > (mean_border_intensity - 10):  # Adjust the value '20' as needed
         return 0.0
 
-    # Compute the fitness based on the mean intensity of the border, with a penalty for non-white border pixels
-    fitness_score = (1 - abs(mean_border_intensity - 255) / 255) * (1 - penalty / len(border_pixels))
+    # Compute the fitness based on the mean intensity of the border (it should be white or near-white)
+    fitness_score = 1 - abs(mean_border_intensity - 255) / 255
 
     assert 0.0 <= fitness_score <= 1.0, "Background fitness value out of bounds!"
     return fitness_score
