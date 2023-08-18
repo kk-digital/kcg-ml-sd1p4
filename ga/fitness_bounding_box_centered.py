@@ -54,7 +54,7 @@ def centered_fitness(pil_image):
         # Drawing rectangle on the image
         color = (0, 255, 0) # Green color for the rectangle
         thickness = 2
-        cv2.rectangle(image, (x, y), (x+bounding_box_width, y+bounding_box_height), color, thickness)
+        cv2.rectangle(image, (x_top_left, y_top_left), (x_top_left + bounding_box_width, y_top_left + bounding_box_height), color, thickness)
     else:
         return 0.0
 

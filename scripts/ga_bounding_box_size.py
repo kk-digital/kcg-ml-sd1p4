@@ -53,7 +53,7 @@ image_features_clip_model, preprocess = clip.load("ViT-L/14", device=DEVICE)
 # Why are you using this prompt generator?
 EMBEDDED_PROMPTS_DIR = os.path.abspath(join(base_dir, 'input', 'embedded_prompts'))
 
-OUTPUT_DIR = os.path.abspath(join(base_dir, 'output', 'ga'))
+OUTPUT_DIR = os.path.abspath(join(base_dir, 'output', 'ga_box_size'))
 IMAGES_ROOT_DIR = os.path.abspath(join(OUTPUT_DIR, "images/"))
 FEATURES_DIR = os.path.abspath(join(OUTPUT_DIR, "features/"))
 
@@ -101,12 +101,15 @@ def calculate_fitness_score(ga_instance, solution, solution_idx):
     prompt_embedding = prompt_embedding.view(1, 77, 768).to(DEVICE)
 
 
-    image = sd.generate_images_from_embeddings(
+    latent = sd.generate_images_latent_from_embeddings(
         seed=SEED,
         embedded_prompt=prompt_embedding,
         null_prompt=NULL_PROMPT,
         uncond_scale=CFG_STRENGTH
     )
+
+    image = sd.get_image_from_latent(latent)
+    
     # move back to cpu
     prompt_embedding.to("cpu")
     del prompt_embedding
@@ -172,23 +175,26 @@ def store_generation_images(ga_instance):
         print("NULL_PROMPT, tensor size= ", str(torch.Tensor.size(NULL_PROMPT)))
 
         # WARNING: Is using autocast internally
-        image = sd.generate_images_from_embeddings(
+        latent = sd.generate_images_latent_from_embeddings(
             seed=SEED,
             embedded_prompt=prompt_embedding,
             null_prompt=NULL_PROMPT,
             uncond_scale=CFG_STRENGTH
         )
 
+        image = sd.get_image_from_latent(latent)
+
         # move to gpu and cleanup
         prompt_embedding.to("cpu")
         del prompt_embedding
 
         pil_image = to_pil(image[0])
-        filename = os.path.join(file_dir, f'g{generation:04}_{i:03}.jpg')
+        filename = os.path.join(file_dir, f'g{generation:04}_{i:03}.png')
         pil_image.save(filename)
 
     end_time = time.time()  # End timing for generation
     total_time = end_time - start_time
+    log_to_file(f"----------------------------------" )
     log_to_file(f"Total time taken for Generation #{generation}: {total_time} seconds")
     
     # Log images per generation
