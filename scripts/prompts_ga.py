@@ -212,7 +212,7 @@ def calculate_chad_score(ga_instance, solution, solution_idx):
         pil_image = pil_image.convert("L")
         pil_image = pil_image.convert("RGB")
 
-    chad_score = compute_chad_score_from_pil(pil_image)
+        _, chad_score = compute_chad_score_from_pil(pil_image)  # Unpack the result and ignore the raw_chad_score
     
     return chad_score
 
