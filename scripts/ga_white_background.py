@@ -231,7 +231,7 @@ mutation_rate = 0.001
 parent_selection_type = "tournament"  # "sss", rws, sus, rank, tournament
 
 # num_parents_mating = int(population_size *.80)
-num_parents_mating = int(population_size * .60)
+num_parents_mating = int(population_size * .25)
 keep_elitism = 0  # int(population_size*0.20)
 mutation_probability = 0.10
 # mutation_type = "adaptive" #try adaptive mutation
@@ -255,7 +255,7 @@ prompts_array = ga.generate_prompts(population_size, prompt_phrase_length)
 
 # get prompt_str array
 prompts_str_array = []
-prefix_prompt = " centered , white background, black and white, no background,"
+prefix_prompt = " centered , little character, white background, black and white, no background,"
 for prompt in prompts_array:
     prompt_str = prefix_prompt + prompt.get_prompt_str()
     prompts_str_array.append(prompt_str)
