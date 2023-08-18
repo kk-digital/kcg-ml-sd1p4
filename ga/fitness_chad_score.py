@@ -37,4 +37,4 @@ def compute_chad_score_from_pil(pil_image):
     
     scaled_chad_score = torch.sigmoid(torch.tensor(raw_chad_score)).item()
     
-    return scaled_chad_score
+    return raw_chad_score, scaled_chad_score
