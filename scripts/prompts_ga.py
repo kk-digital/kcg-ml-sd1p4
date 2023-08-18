@@ -247,8 +247,6 @@ def on_fitness(ga_instance, population_fitness):
 def on_mutation(ga_instance, offspring_mutation):
     print("Performing mutation at generation: ", ga_instance.generations_completed)
     log_to_file(f"Performing mutation at generation: {ga_instance.generations_completed}")
-    log_to_file(f"------------------------------------------ {ga_instance.generations_completed}")
-
 
 
 def store_generation_images(ga_instance):
@@ -288,6 +286,7 @@ def store_generation_images(ga_instance):
 
     end_time = time.time()  # End timing for generation
     total_time = end_time - start_time
+    log_to_file(f"----------------------------------" )
     log_to_file(f"Total time taken for Generation #{generation}: {total_time} seconds")
     
     # Log images per generation
