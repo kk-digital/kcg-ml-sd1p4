@@ -6,7 +6,7 @@ sys.path.insert(0, base_directory)
 
 from generation_task import GenerationTask
 from text_to_image import text_to_image
-from generate_images_from_prompt_generator import generate_images_from_random_prompt
+from generate_images_from_prompt_generator import generate_images_from_prompt_generator
 
 
 def parse_arguments():
@@ -25,7 +25,7 @@ def text_to_image_handler(generation_task):
 
 
 def generate_images_from_prompt_handler(generation_task):
-    generate_images_from_random_prompt(generation_task.num_images, generation_task.image_width,
+    generate_images_from_prompt_generator(generation_task.num_images, generation_task.image_width,
                                        generation_task.image_height, generation_task.cfg_strength,
                                        generation_task.batch_size, generation_task.checkpoint_path,
                                        generation_task.output_path, generation_task.seed, generation_task.flash,
@@ -46,7 +46,7 @@ def main():
 
     if generation_task.generation_task_type == 'text_to_image':
         text_to_image_handler(generation_task)
-    elif generation_task.generation_task_type == 'generate_images_from_random_prompt':
+    elif generation_task.generation_task_type == 'generate_images_from_prompt_generator':
         generate_images_from_prompt_handler(generation_task)
 
 

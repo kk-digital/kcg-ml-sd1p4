@@ -93,7 +93,7 @@ class Txt2Img(StableDiffusionBaseScript):
             return x
 
 
-def generate_images_from_random_prompt(num_images, image_width, image_height, cfg_strength, batch_size,
+def generate_images_from_prompt_generator(num_images, image_width, image_height, cfg_strength, batch_size,
                                        checkpoint_path, output, seed, flash, device, sampler, steps, force_cpu, num_datasets,
                                        image_batch_size, num_phrases):
     model_name = os.path.basename(checkpoint_path)
@@ -416,7 +416,7 @@ def main():
         .num_phrases() \
         .parse()
 
-    generate_images_from_random_prompt(opt.num_images, opt.image_width, opt.image_height, opt.cfg_scale,
+    generate_images_from_prompt_generator(opt.num_images, opt.image_width, opt.image_height, opt.cfg_scale,
                                        opt.batch_size, opt.checkpoint_path, opt.output, opt.seed, opt.flash,
                                        opt.cuda_device,
                                        opt.sampler, opt.steps, opt.force_cpu, opt.num_datasets, opt.image_batch_size,

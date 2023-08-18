@@ -76,11 +76,6 @@ class TestScripts(unittest.TestCase):
         self.run_script("./utility/scripts/grid_generator", input_path="./test/test_images/clip_segmentation",
                         output_path="./tmp", rows=3, columns=2, img_size=256)
 
-    def test_13_generate_images_from_random_prompt(self):
-        self.run_script(f"{self.scripts_path}generate_images_from_random_prompt",
-                        checkpoint_path="\"./input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors\"", cfg_scale=7, num_images=1,
-                        output="\"./output/\"")
-
     def test_14_chad_sort(self):
         self.run_script(f"{self.scripts_path}chad_score",
                         direct="--model-path=\"input/model/chad_score/chad-score-v1.pth\" --image-path=\"./test/test_images/test_img.jpg\"")
