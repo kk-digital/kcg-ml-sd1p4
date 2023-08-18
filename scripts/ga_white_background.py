@@ -235,7 +235,7 @@ num_parents_mating = int(population_size * .60)
 keep_elitism = 0  # int(population_size*0.20)
 mutation_probability = 0.10
 # mutation_type = "adaptive" #try adaptive mutation
-mutation_type = "random"
+mutation_type = "swap"
 
 
 # Load Stable Diffusion
