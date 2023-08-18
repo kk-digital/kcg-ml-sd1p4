@@ -184,7 +184,7 @@ def store_generation_images(ga_instance):
         del prompt_embedding
 
         pil_image = to_pil(image[0])
-        filename = os.path.join(file_dir, f'g{generation:04}_{i:03}.jpg')
+        filename = os.path.join(file_dir, f'g{generation:04}_{i:03}.png')
         pil_image.save(filename)
 
     end_time = time.time()  # End timing for generation
