@@ -265,7 +265,7 @@ def create_individual(genomes):
 NULL_PROMPT = prompt_embedding_vectors(sd, [""])[0]
 
 generations = args.generations
-population_size = 12
+population_size = 45
 
 # generate prompts and get embeddings
 prompt_phrase_length = 10  # number of words in prompt
