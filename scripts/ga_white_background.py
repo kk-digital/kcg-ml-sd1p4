@@ -30,7 +30,7 @@ random.seed()
 N_STEPS = 20  # 20, 12
 CFG_STRENGTH = 9
 
-FIXED_SEED = False
+FIXED_SEED = True
 CONVERT_GREY_SCALE_FOR_SCORING = False
 
 # Add argparse arguments
@@ -122,7 +122,7 @@ def calculate_fitness_score(ga_instance, solution, solution_idx):
         pil_image = pil_image.convert("L")
         pil_image = pil_image.convert("RGB")
 
-    fitness_score = fitness_pixel_value(pil_image)
+    fitness_score = white_background_fitness(pil_image)
     return fitness_score
 
 
@@ -217,10 +217,10 @@ def prompt_embedding_vectors(sd, prompt_array):
 
 # Call the GA loop function with your initialized StableDiffusion model
 
-MUTATION_RATE = 0.01
+MUTATION_RATE = 0.02
 
 generations = args.generations
-population_size = 12
+population_size = 40
 mutation_percent_genes = args.mutation_percent_genes
 mutation_probability = args.mutation_probability
 keep_elitism = args.keep_elitism
@@ -256,7 +256,7 @@ prompts_array = ga.generate_prompts(population_size, prompt_phrase_length)
 
 # get prompt_str array
 prompts_str_array = []
-prefix_prompt = " centered , black character, black object, white background, black and white, no background,"
+prefix_prompt = "isolated on white background, centered , white background, black character , black and white, no background, isolated on white background,"
 for prompt in prompts_array:
     prompt_str = prefix_prompt + prompt.get_prompt_str()
     prompts_str_array.append(prompt_str)
