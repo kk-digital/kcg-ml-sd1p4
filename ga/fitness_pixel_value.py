@@ -28,7 +28,7 @@ def fitness_pixel_value(pil_image):
     center_region = np_image[center_start:center_end, center_start:center_end]
 
     # Count pixels with value less than 80 in the center
-    count_below_80 = np.sum(center_region < 80)
+    count_below_80 = np.sum(center_region < 10)
 
     # Ideal count is the total number of pixels in the center region (256x256)
     ideal_count = (512 // 2) * (512 // 2)
