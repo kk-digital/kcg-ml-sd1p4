@@ -231,7 +231,7 @@ mutation_rate = 0.001
 parent_selection_type = "tournament"  # "sss", rws, sus, rank, tournament
 
 # num_parents_mating = int(population_size *.80)
-num_parents_mating = int(population_size * .25)
+num_parents_mating = int(population_size * .60)
 keep_elitism = 0  # int(population_size*0.20)
 mutation_probability = 0.10
 # mutation_type = "adaptive" #try adaptive mutation
