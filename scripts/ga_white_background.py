@@ -228,7 +228,7 @@ crossover_type = args.crossover_type
 mutation_type = args.mutation_type
 mutation_rate = 0.001
 
-parent_selection_type = "tournament"  # "sss", rws, sus, rank, tournament
+parent_selection_type = "rank"  # "sss", rws, sus, rank, tournament
 
 # num_parents_mating = int(population_size *.80)
 num_parents_mating = int(population_size * .60)
