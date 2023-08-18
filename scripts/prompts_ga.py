@@ -165,7 +165,7 @@ def generate_images_from_embeddings(embedded_prompts_array, null_prompt):
 # Initialize logger
 def log_to_file(message):
     
-    log_path = os.path.join(OUTPUT_DIR, "log.txt")
+    log_path = os.path.join(IMAGES_DIR, "log.txt")
 
     with open(log_path, "a") as log_file:
         log_file.write(message + "\n")
@@ -286,6 +286,7 @@ def store_generation_images(ga_instance):
 
     end_time = time.time()  # End timing for generation
     total_time = end_time - start_time
+    log_to_file(f"----------------------------------" )
     log_to_file(f"Total time taken for Generation #{generation}: {total_time} seconds")
     
     # Log images per generation
