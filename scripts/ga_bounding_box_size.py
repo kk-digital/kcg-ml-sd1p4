@@ -101,7 +101,7 @@ def calculate_fitness_score(ga_instance, solution, solution_idx):
     prompt_embedding = prompt_embedding.view(1, 77, 768).to(DEVICE)
 
 
-    image = sd.generate_images_from_embeddings(
+    image = sd.generate_images_latent_from_embeddings(
         seed=SEED,
         embedded_prompt=prompt_embedding,
         null_prompt=NULL_PROMPT,
@@ -172,7 +172,7 @@ def store_generation_images(ga_instance):
         print("NULL_PROMPT, tensor size= ", str(torch.Tensor.size(NULL_PROMPT)))
 
         # WARNING: Is using autocast internally
-        image = sd.generate_images_from_embeddings(
+        image = sd.generate_images_latent_from_embeddings(
             seed=SEED,
             embedded_prompt=prompt_embedding,
             null_prompt=NULL_PROMPT,

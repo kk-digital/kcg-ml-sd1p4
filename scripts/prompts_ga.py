@@ -165,7 +165,7 @@ def generate_images_from_embeddings(embedded_prompts_array, null_prompt):
 # Initialize logger
 def log_to_file(message):
     
-    log_path = os.path.join(OUTPUT_DIR, "log.txt")
+    log_path = os.path.join(IMAGES_DIR, "log.txt")
 
     with open(log_path, "a") as log_file:
         log_file.write(message + "\n")
@@ -247,6 +247,8 @@ def on_fitness(ga_instance, population_fitness):
 def on_mutation(ga_instance, offspring_mutation):
     print("Performing mutation at generation: ", ga_instance.generations_completed)
     log_to_file(f"Performing mutation at generation: {ga_instance.generations_completed}")
+    log_to_file(f"------------------------------------------ {ga_instance.generations_completed}")
+
 
 
 def store_generation_images(ga_instance):
