@@ -23,7 +23,7 @@ def fitness_pixel_value(pil_image):
     np_image = np.array(gray_image)
 
     # Count pixels with value less than 80
-    count_below_80 = np.sum(np_image < 80)
+    count_below_80 = np.sum(np_image < 16)
 
     # Ideal count is 1/4 of the total number of pixels in the image
     ideal_count = (512 * 512) // 4
