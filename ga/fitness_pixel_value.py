@@ -1,16 +1,16 @@
-from PIL import Image
 import numpy as np
+from PIL import Image
 
 def fitness_pixel_value(pil_image):
     """
-    This function calculates a fitness score for an image based on the number of pixels with values less than 80.
+    This function calculates a fitness score for an image based on the number of pixels with values less than 80 in the center of the image.
     
     Input:
     pil_image: A PIL.Image object of size 512x512.
 
     Output:
     fitness_score: A floating-point value between 0.0 and 1.0.
-        - 1.0 indicates exactly 1/4 of the image's pixels have values less than 80.
+        - 1.0 indicates the center 1/4 of the image has pixels with values less than 80.
         - Values between 0 and 1 indicate deviations from this ideal.
     """
 
@@ -22,11 +22,16 @@ def fitness_pixel_value(pil_image):
     gray_image = pil_image.convert('L')
     np_image = np.array(gray_image)
 
-    # Count pixels with value less than 80
-    count_below_80 = np.sum(np_image < 16)
+    # Define the center region, which should be 256x256 (half of 512x512)
+    center_start = 512 // 4
+    center_end = 3 * 512 // 4
+    center_region = np_image[center_start:center_end, center_start:center_end]
 
-    # Ideal count is 1/4 of the total number of pixels in the image
-    ideal_count = (512 * 512) // 4
+    # Count pixels with value less than 80 in the center
+    count_below_80 = np.sum(center_region < 80)
+
+    # Ideal count is the total number of pixels in the center region (256x256)
+    ideal_count = (512 // 2) * (512 // 2)
 
     # Fitness score is the ratio of the count_below_80 to the ideal count
     fitness_score = count_below_80 / ideal_count
