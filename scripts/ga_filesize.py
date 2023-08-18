@@ -198,6 +198,7 @@ def store_generation_images(ga_instance):
 
     end_time = time.time()  # End timing for generation
     total_time = end_time - start_time
+    log_to_file(f"----------------------------------" )
     log_to_file(f"Total time taken for Generation #{generation}: {total_time} seconds")
     
     # Log images per generation
