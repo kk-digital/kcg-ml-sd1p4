@@ -53,7 +53,7 @@ image_features_clip_model, preprocess = clip.load("ViT-L/14", device=DEVICE)
 # Why are you using this prompt generator?
 EMBEDDED_PROMPTS_DIR = os.path.abspath(join(base_dir, 'input', 'embedded_prompts'))
 
-OUTPUT_DIR = os.path.abspath(join(base_dir, 'output', 'ga'))
+OUTPUT_DIR = os.path.abspath(join(base_dir, 'output', 'ga_box_size'))
 IMAGES_ROOT_DIR = os.path.abspath(join(OUTPUT_DIR, "images/"))
 FEATURES_DIR = os.path.abspath(join(OUTPUT_DIR, "features/"))
 
