@@ -27,7 +27,7 @@ from ga.fitness_white_background import white_background_fitness
 
 random.seed()
 
-N_STEPS = 20  # 20, 12
+N_STEPS = 40  # 20, 12
 CFG_STRENGTH = 9
 
 FIXED_SEED = True
