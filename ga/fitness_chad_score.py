@@ -27,9 +27,7 @@ def compute_chad_score_from_pil(pil_image):
     Returns:
     - chad_score (torch.Tensor): Chad score for the input image.
     '''
-    # Ensure the image is in RGB mode
-    assert pil_image.mode == "RGB", "The image should be in RGB mode"
-    
+    # Ensure the image is in RGB mode    
     unsqueezed_image = preprocess(pil_image).unsqueeze(0).to(DEVICE)
     
     # Get CLIP encoding of the model
