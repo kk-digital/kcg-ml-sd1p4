@@ -286,16 +286,18 @@ def store_generation_images(ga_instance):
 
     end_time = time.time()  # End timing for generation
     total_time = end_time - start_time
+    print(f"Total time taken for Generation #{generation}: {total_time} seconds")
     log_to_file(f"----------------------------------" )
     log_to_file(f"Total time taken for Generation #{generation}: {total_time} seconds")
     
     # Log images per generation
     num_images = len(ga_instance.population)
-    
+    print(f"Images generated in Generation #{generation}: {num_images}")
     log_to_file(f"Images generated in Generation #{generation}: {num_images}")
     
     # Log images/sec
     images_per_second = num_images / total_time
+    print(f"Images per second in Generation #{generation}: {images_per_second}")
     log_to_file(f"Images per second in Generation #{generation}: {images_per_second}")
 
 
@@ -408,7 +410,8 @@ ga_instance = pygad.GA(initial_population=embedded_prompts_list,
                        # on_crossover=on_crossover,
                        on_start=store_generation_images,
                        )
-
+print(f"Batch Size: {population_size}")
+print((f"Generations: {generations}"))
 log_to_file(f"Batch Size: {population_size}")
 log_to_file(f"Mutation Type: {mutation_type}")
 log_to_file(f"Mutation Rate: {mutation_rate}")
