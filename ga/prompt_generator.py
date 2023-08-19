@@ -124,7 +124,7 @@ def initialize_prompt_list():
     prompt_list.add_modifier_phrases(["beautiful", "unreal", "masterpiece", "gorgeous", "stunning", "captivating",
                                      "breathtaking", "exquisite", "magnificent", "majestic", "elegant", "sublime",
                                      "futuristic", "cyberpunk", "hi-tech", "advanced", "innovative", "modern",
-                                     "fantasy", "mythical", "scifi", "character", "full character", "black and white",
+                                     "fantasy", "mythical", "scifi", "character", "black and white",
                                      "colored", "video game"])
 
     prompt_list.add_constraint_phrases(["white background", "no background", "not centered", "centered"])
