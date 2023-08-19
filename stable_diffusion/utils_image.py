@@ -37,7 +37,7 @@ def save_images(images: torch.Tensor, dest_path: str, img_format: str = 'jpeg'):
     # Transpose to `[batch_size, height, width, channels]` and convert to numpy
     images = images.cpu()
     images = images.permute(0, 2, 3, 1)
-    images = images.detach().float().numpy()
+    images = images.float().numpy()
 
     image_hash_list = []
     image_list = []

@@ -201,8 +201,6 @@ def calculate_chad_score(ga_instance, solution, solution_idx):
 
     image = sd.get_image_from_latent(latent)
 
-    latent.to("cpu")
-    del latent
 
     # move back to cpu
     prompt_embedding.to("cpu")
@@ -278,9 +276,6 @@ def store_generation_images(ga_instance):
         )
 
         image = sd.get_image_from_latent(latent)
-
-        latent.to("cpu")
-        del latent
 
         # move to gpu and cleanup
         prompt_embedding.to("cpu")

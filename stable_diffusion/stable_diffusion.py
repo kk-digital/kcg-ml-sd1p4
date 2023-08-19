@@ -381,4 +381,4 @@ class StableDiffusion:
                 temperature=temperature,
             )
 
-            return x
+            return self.get_image_from_latent(x)
