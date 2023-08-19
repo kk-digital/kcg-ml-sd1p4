@@ -102,14 +102,12 @@ def calculate_fitness_score(ga_instance, solution, solution_idx):
     prompt_embedding = prompt_embedding.view(1, 77, 768).to(DEVICE)
 
 
-    latent = sd.generate_images_latent_from_embeddings(
+    image = sd.generate_images_latent_from_embeddings(
         seed=SEED,
         embedded_prompt=prompt_embedding,
         null_prompt=NULL_PROMPT,
         uncond_scale=CFG_STRENGTH
     )
-
-    image = sd.get_image_from_latent(latent)
     
     # move back to cpu
     prompt_embedding.to("cpu")
@@ -176,14 +174,13 @@ def store_generation_images(ga_instance):
         print("NULL_PROMPT, tensor size= ", str(torch.Tensor.size(NULL_PROMPT)))
 
         # WARNING: Is using autocast internally
-        latent = sd.generate_images_latent_from_embeddings(
+        image = sd.generate_images_latent_from_embeddings(
             seed=SEED,
             embedded_prompt=prompt_embedding,
             null_prompt=NULL_PROMPT,
             uncond_scale=CFG_STRENGTH
         )
 
-        image = sd.get_image_from_latent(latent)
 
         # move to gpu and cleanup
         prompt_embedding.to("cpu")
@@ -220,7 +217,7 @@ def prompt_embedding_vectors(sd, prompt_array):
 MUTATION_RATE = 0.02
 
 generations = args.generations
-population_size = 20
+population_size = 128
 mutation_percent_genes = args.mutation_percent_genes
 mutation_probability = args.mutation_probability
 keep_elitism = args.keep_elitism
