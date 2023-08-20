@@ -39,6 +39,8 @@ def parse_arguments():
     parser.add_argument('--epsilon_scaled', type=float, default=0.2, help='Epsilon for scaled data (default: 0.2)')
     parser.add_argument('--use_76th_embedding', action='store_true',
                         help='If this option is set, only use the last entry in the embeddings tensor')
+    parser.add_argument('--use_piecewise_normalization', action='store_true',
+                        help='If this option is set, normalize the embedding vector using piecewise normalization')
     parser.add_argument('--show_validation_loss', action='store_true', help="whether to show validation loss")
 
     return parser.parse_args()
