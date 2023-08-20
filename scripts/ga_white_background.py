@@ -141,14 +141,14 @@ def on_fitness(ga_instance, population_fitness):
     print("Fitness (mean): ", np.mean(population_fitness_np))
     print("Fitness (variance): ", np.var(population_fitness_np))
     print("Fitness (best): ", np.max(population_fitness_np))
-    print("fitness array= ", str(population_fitness_np))
+    print("Fitness array= ", str(population_fitness_np))
 
     log_to_file(f"Generation #{ga_instance.generations_completed}")
     log_to_file(f"Population Size= {len(population_fitness_np)}")
     log_to_file(f"Fitness (mean): {np.mean(population_fitness_np)}")
     log_to_file(f"Fitness (variance): {np.var(population_fitness_np)}")
     log_to_file(f"Fitness (best): {np.max(population_fitness_np)}")
-    log_to_file(f"fitness array= {str(population_fitness_np)}")
+    log_to_file(f"Fitness array= {str(population_fitness_np)}")
 
 
 def on_mutation(ga_instance, offspring_mutation):
@@ -214,17 +214,15 @@ def prompt_embedding_vectors(sd, prompt_array):
 
 # Call the GA loop function with your initialized StableDiffusion model
 
-MUTATION_RATE = 0.02
 
 generations = args.generations
-population_size = 128
+population_size = 300
 mutation_percent_genes = args.mutation_percent_genes
 mutation_probability = args.mutation_probability
 keep_elitism = args.keep_elitism
 
 crossover_type = args.crossover_type
 mutation_type = args.mutation_type
-mutation_rate = 0.001
 
 parent_selection_type = "tournament"  # "sss", rws, sus, rank, tournament
 
@@ -253,7 +251,7 @@ prompts_array = ga.generate_prompts(population_size, prompt_phrase_length)
 
 # get prompt_str array
 prompts_str_array = []
-prefix_prompt = "isolated on white background, background chroma plain white, on white background, centered , small character, white background, no background,"
+prefix_prompt = "isolated on white background, background chroma plain white, on white background, tiny black character,  centered , small black character, white background, no background,"
 for prompt in prompts_array:
     prompt_str = prefix_prompt + prompt.get_prompt_str()
     prompts_str_array.append(prompt_str)
@@ -309,7 +307,6 @@ ga_instance = pygad.GA(initial_population=embedded_prompts_list,
 
 log_to_file(f"Batch Size: {population_size}")
 log_to_file(f"Mutation Type: {mutation_type}")
-log_to_file(f"Mutation Rate: {mutation_rate}")
 log_to_file(f"Generations: {generations}")
 
 ga_instance.run()
