@@ -64,6 +64,7 @@ from os.path import join
 import clip
 import pygad
 import argparse
+import csv 
 
 # import safetensors as st
 
@@ -123,6 +124,14 @@ os.makedirs(IMAGES_ROOT_DIR, exist_ok=True)
 # Creating new subdirectory for this run of the GA (e.g. output/ga/images/ga001)
 IMAGES_DIR = get_next_ga_dir(IMAGES_ROOT_DIR)
 os.makedirs(IMAGES_DIR, exist_ok=True)
+
+csv_filename = os.path.join(IMAGES_DIR, "fitness_data.csv")
+
+# Write the headers to the CSV file
+if not os.path.exists(csv_filename):
+    with open(csv_filename, 'w', newline='') as csvfile:
+        csvwriter = csv.writer(csvfile)
+        csvwriter.writerow(['Generation #', 'Population Size', 'Fitness (mean)', 'Fitness (variance)', 'Fitness (best)', 'Fitness array'])
 
 fitness_cache = {}
 
@@ -243,7 +252,18 @@ def on_fitness(ga_instance, population_fitness):
     log_to_file(f"Fitness (best): {np.max(population_fitness_np)}")
     log_to_file(f"fitness array= {str(population_fitness_np)}")
 
-
+            # Append the current generation data to the CSV file
+    with open(csv_filename, 'a', newline='') as csvfile:
+        csvwriter = csv.writer(csvfile)
+        csvwriter.writerow([
+            ga_instance.generations_completed,
+            len(population_fitness_np),
+            np.mean(population_fitness_np),
+            np.var(population_fitness_np),
+            np.max(population_fitness_np),
+            str(population_fitness_np.tolist())
+        ])
+      
 def on_mutation(ga_instance, offspring_mutation):
     print("Performing mutation at generation: ", ga_instance.generations_completed)
     log_to_file(f"Performing mutation at generation: {ga_instance.generations_completed}")
