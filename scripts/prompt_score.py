@@ -54,6 +54,7 @@ def main():
     # Example usage:
     zip_file_path = args.input_path
     use_76th_embedding = args.use_76th_embedding
+    use_piecewise_normalization = args.use_piecewise_normalization
     num_epochs = args.num_epochs
     epsilon_raw = args.epsilon_raw
     epsilon_scaled = args.epsilon_scaled
@@ -78,6 +79,21 @@ def main():
 
         if use_76th_embedding:
             embedding_vector = embedding_vector[:, 76]
+
+        if use_piecewise_normalization:
+
+            for i in range(embedding_vector.shape[0]):
+                vector = embedding_vector[i, :]
+
+                # Calculate min and max values
+                min_val = np.min(vector)
+                max_val = np.max(vector)
+
+                # Apply min-max normalization
+                normalized_vector = (vector - min_val) / (max_val - min_val)
+
+                # Update the original array with the normalized vector
+                embedding_vector[i, :] = normalized_vector
 
         embedding_vector = torch.tensor(embedding_vector, dtype=torch.float32, device=device);
         # Convert the tensor to a flat vector
@@ -243,6 +259,8 @@ def main():
     train_report_string_buffer.write('epsilon_scaled {:.4f}'.format(epsilon_scaled))
     train_report_string_buffer.write('\n')
     train_report_string_buffer.write('use_76th_embedding : ' + str(use_76th_embedding))
+    train_report_string_buffer.write('\n')
+    train_report_string_buffer.write('use_piecewise_normalization : ' + str(use_piecewise_normalization))
     train_report_string_buffer.write('\n')
     train_report_string_buffer.write('\n')
     train_report_string_buffer.write('\n')
