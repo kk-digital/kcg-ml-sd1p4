@@ -248,8 +248,6 @@ parent_selection_type = "tournament"  # "sss", rws, sus, rank, tournament
 
 # num_parents_mating = int(population_size *.80)
 num_parents_mating = int(population_size * .60)
-keep_elitism = 0  # int(population_size*0.20)
-mutation_probability = 0.10
 # mutation_type = "adaptive" #try adaptive mutation
 mutation_type = "swap"
 
@@ -293,7 +291,6 @@ embedded_prompts_list = embedded_prompts_array.reshape(population_size, 77 * 768
 # mutation_by_replacement=True,
 
 # note: uniform is good, two_points"
-crossover_type = "two_points"
 
 num_genes = 77 * 768  # 59136
 # Initialize the GA
@@ -304,9 +301,8 @@ ga_instance = pygad.GA(initial_population=embedded_prompts_list,
                        sol_per_pop=population_size,
                        num_genes=77 * 768,  # 59136
                        # Pygad uses 0-100 range for percentage
-                       mutation_percent_genes=0.05,
-                       # mutation_probability=mutation_probability,
-                       mutation_probability=0.20,
+                       mutation_percent_genes= mutation_percent_genes,
+                       mutation_probability = mutation_probability,
                        keep_elitism=keep_elitism,
                        crossover_type=crossover_type,
                        mutation_type=mutation_type,
