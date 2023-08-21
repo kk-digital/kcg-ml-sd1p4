@@ -207,10 +207,13 @@ def calculate_chad_score(ga_instance, solution, solution_idx):
         null_prompt=NULL_PROMPT,
         uncond_scale=CFG_STRENGTH
     )
-
+    print("before deleting ! ")
+    print(torch.cuda.memory_allocated() / 1024.0 / 1024.0)
     image = sd.get_image_from_latent(latent)
     del latent
     torch.cuda.empty_cache()
+    print(torch.cuda.memory_allocated() / 1024.0 / 1024.0)
+    print("after deleting ! ")
 
     # move back to cpu
     prompt_embedding.to("cpu")
