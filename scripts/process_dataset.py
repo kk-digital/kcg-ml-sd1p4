@@ -3,8 +3,8 @@ import os
 import argparse
 from tqdm import tqdm
 sys.path.insert(0, os.getcwd())
-from utils.dataset.image_dataset_storage_format.validator import ImageDatasetStorageFormatValidator
-from utils.dataset.image_dataset_storage_format.processor import ImageDatasetStorageFormatProcessor
+from utility.dataset.image_dataset_storage_format.validator import ImageDatasetStorageFormatValidator
+from utility.dataset.image_dataset_storage_format.processor import ImageDatasetStorageFormatProcessor
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

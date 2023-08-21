@@ -14,7 +14,7 @@ sys.path.insert(0, os.getcwd())
 from model.linear_regression import LinearRegressionModel
 from model.util_data_loader import ZipDataLoader
 from model.util_histogram import UtilHistogram
-from utils.dataset.image_dataset_storage_format.generated_image_dataset import GeneratedImageDataset
+from utility.dataset.generated_image_dataset import GeneratedImageDataset
 
 
 def split_data(input_list, validation_ratio=0.2):
