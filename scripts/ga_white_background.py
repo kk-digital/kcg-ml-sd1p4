@@ -306,7 +306,7 @@ ga_instance = pygad.GA(initial_population=embedded_prompts_list,
                        # Pygad uses 0-100 range for percentage
                        mutation_percent_genes=0.05,
                        # mutation_probability=mutation_probability,
-                       mutation_probability=0.10,
+                       mutation_probability=0.20,
                        keep_elitism=keep_elitism,
                        crossover_type=crossover_type,
                        mutation_type=mutation_type,
