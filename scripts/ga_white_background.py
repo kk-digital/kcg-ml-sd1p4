@@ -293,7 +293,7 @@ embedded_prompts_list = embedded_prompts_array.reshape(population_size, 77 * 768
 # mutation_by_replacement=True,
 
 # note: uniform is good, two_points"
-crossover_type = "uniform"
+crossover_type = "two_points"
 
 num_genes = 77 * 768  # 59136
 # Initialize the GA
