@@ -304,14 +304,18 @@ def store_generation_images(ga_instance):
         image = sd.get_image_from_latent(latent)
         del latent
         torch.cuda.empty_cache()
-        print(torch.cuda.memory_allocated() / 1024.0 / 1024.0)
         print("after deleting ! ")
+        print(torch.cuda.memory_allocated() / 1024.0 / 1024.0)
 
         # move to gpu and cleanup
         prompt_embedding.to("cpu")
         del prompt_embedding
 
         pil_image = to_pil(image[0])
+        del image
+        torch.cuda.empty_cache()
+        print("after deleting ! ")
+        print(torch.cuda.memory_allocated() / 1024.0 / 1024.0)
         filename = os.path.join(file_dir, f'g{generation:04}_{i:03}.png')
         pil_image.save(filename)
 
