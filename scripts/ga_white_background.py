@@ -304,9 +304,9 @@ ga_instance = pygad.GA(initial_population=embedded_prompts_list,
                        sol_per_pop=population_size,
                        num_genes=77 * 768,  # 59136
                        # Pygad uses 0-100 range for percentage
-                       mutation_percent_genes=0.01,
+                       mutation_percent_genes=0.05,
                        # mutation_probability=mutation_probability,
-                       mutation_probability=0.30,
+                       mutation_probability=0.10,
                        keep_elitism=keep_elitism,
                        crossover_type=crossover_type,
                        mutation_type=mutation_type,
