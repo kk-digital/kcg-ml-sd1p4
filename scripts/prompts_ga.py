@@ -209,6 +209,8 @@ def calculate_chad_score(ga_instance, solution, solution_idx):
     )
 
     image = sd.get_image_from_latent(latent)
+    del latent
+    torch.cuda.empty_cache()
 
     # move back to cpu
     prompt_embedding.to("cpu")
