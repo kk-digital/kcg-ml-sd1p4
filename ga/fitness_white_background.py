@@ -38,16 +38,16 @@ def white_background_fitness(pil_image):
     mean_center_intensity = np.mean(central_region)
     
     # Strict condition for white border
-    WHITE_THRESHOLD = 5  # Adjust as needed. If the border's mean intensity deviates more than this value from pure white, it's considered not white.
+    WHITE_THRESHOLD = 15  # Adjust as needed. If the border's mean intensity deviates more than this value from pure white, it's considered not white.
     if abs(mean_border_intensity - 255) > WHITE_THRESHOLD:
         return 0.0
 
     # Ensure the central region is not too bright compared to the border
-    if mean_center_intensity > (mean_border_intensity - 5):  #function becomes stricter try 1:
+    if mean_center_intensity > (mean_border_intensity - 8):  #function becomes stricter try 1:
         return 0.0
 
     deviation = abs(mean_border_intensity - 255) / 255
-    fitness_score = 1 - deviation**3
+    fitness_score = 1 - deviation**2
 
     assert 0.0 <= fitness_score <= 1.0, "Background fitness value out of bounds!"
     return fitness_score
