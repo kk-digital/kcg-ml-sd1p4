@@ -38,11 +38,11 @@ def white_background_fitness(pil_image):
     mean_center_intensity = np.mean(central_region)
     
     # Ensure the central region is not too bright compared to the border
-    if mean_center_intensity > (mean_border_intensity - 10):  #function becomes stricter try 1:
+    if mean_center_intensity > (mean_border_intensity - 5):  #function becomes stricter try 1:
         return 0.0
 
     deviation = abs(mean_border_intensity - 255) / 255
-    fitness_score = 1 - deviation**2
+    fitness_score = 1 - deviation**3
 
     assert 0.0 <= fitness_score <= 1.0, "Background fitness value out of bounds!"
     return fitness_score
