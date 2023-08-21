@@ -28,7 +28,7 @@ from ga.fitness_white_background import white_background_fitness
 
 random.seed()
 
-N_STEPS = 30  # 20, 12
+N_STEPS = 40  # 20, 12
 CFG_STRENGTH = 9
 
 FIXED_SEED = True
@@ -236,7 +236,7 @@ def prompt_embedding_vectors(sd, prompt_array):
 
 
 generations = args.generations
-population_size = 230
+population_size = 64
 mutation_percent_genes = args.mutation_percent_genes
 mutation_probability = args.mutation_probability
 keep_elitism = args.keep_elitism
