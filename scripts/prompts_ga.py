@@ -299,8 +299,6 @@ def store_generation_images(ga_instance):
             uncond_scale=CFG_STRENGTH
         )
 
-        image = sd.get_image_from_latent(latent)
-
         print("before deleting ! ")
         print(torch.cuda.memory_allocated() / 1024.0 / 1024.0)
         image = sd.get_image_from_latent(latent)
