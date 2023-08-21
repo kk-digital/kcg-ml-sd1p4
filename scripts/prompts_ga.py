@@ -301,6 +301,14 @@ def store_generation_images(ga_instance):
 
         image = sd.get_image_from_latent(latent)
 
+        print("before deleting ! ")
+        print(torch.cuda.memory_allocated() / 1024.0 / 1024.0)
+        image = sd.get_image_from_latent(latent)
+        del latent
+        torch.cuda.empty_cache()
+        print(torch.cuda.memory_allocated() / 1024.0 / 1024.0)
+        print("after deleting ! ")
+
         # move to gpu and cleanup
         prompt_embedding.to("cpu")
         del prompt_embedding
