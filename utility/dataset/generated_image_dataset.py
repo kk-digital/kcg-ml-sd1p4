@@ -7,7 +7,6 @@ import zipfile
 import json
 import random
 import numpy as np
-from utils.dataset.image_dataset_storage_format.validator import ImageDatasetStorageFormatValidator
 
 
 class GeneratedImageFeatures:
