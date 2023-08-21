@@ -207,19 +207,18 @@ def calculate_chad_score(ga_instance, solution, solution_idx):
         null_prompt=NULL_PROMPT,
         uncond_scale=CFG_STRENGTH
     )
-    print("before deleting ! ")
-    print(torch.cuda.memory_allocated() / 1024.0 / 1024.0)
+
     image = sd.get_image_from_latent(latent)
     del latent
     torch.cuda.empty_cache()
-    print(torch.cuda.memory_allocated() / 1024.0 / 1024.0)
-    print("after deleting ! ")
 
     # move back to cpu
     prompt_embedding.to("cpu")
     del prompt_embedding
 
     pil_image = to_pil(image[0])  # Convert to (height, width, channels)
+    del image
+    torch.cuda.empty_cache()
 
     # convert to grey scale
     if CONVERT_GREY_SCALE_FOR_SCORING == True:
@@ -299,13 +298,9 @@ def store_generation_images(ga_instance):
             uncond_scale=CFG_STRENGTH
         )
 
-        print("before deleting ! ")
-        print(torch.cuda.memory_allocated() / 1024.0 / 1024.0)
         image = sd.get_image_from_latent(latent)
         del latent
         torch.cuda.empty_cache()
-        print("after deleting ! ")
-        print(torch.cuda.memory_allocated() / 1024.0 / 1024.0)
 
         # move to gpu and cleanup
         prompt_embedding.to("cpu")
@@ -314,8 +309,6 @@ def store_generation_images(ga_instance):
         pil_image = to_pil(image[0])
         del image
         torch.cuda.empty_cache()
-        print("after deleting ! ")
-        print(torch.cuda.memory_allocated() / 1024.0 / 1024.0)
         filename = os.path.join(file_dir, f'g{generation:04}_{i:03}.png')
         pil_image.save(filename)
 
