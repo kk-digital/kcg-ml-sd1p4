@@ -209,12 +209,16 @@ def calculate_chad_score(ga_instance, solution, solution_idx):
     )
 
     image = sd.get_image_from_latent(latent)
+    del latent
+    torch.cuda.empty_cache()
 
     # move back to cpu
     prompt_embedding.to("cpu")
     del prompt_embedding
 
     pil_image = to_pil(image[0])  # Convert to (height, width, channels)
+    del image
+    torch.cuda.empty_cache()
 
     # convert to grey scale
     if CONVERT_GREY_SCALE_FOR_SCORING == True:
@@ -295,12 +299,16 @@ def store_generation_images(ga_instance):
         )
 
         image = sd.get_image_from_latent(latent)
+        del latent
+        torch.cuda.empty_cache()
 
         # move to gpu and cleanup
         prompt_embedding.to("cpu")
         del prompt_embedding
 
         pil_image = to_pil(image[0])
+        del image
+        torch.cuda.empty_cache()
         filename = os.path.join(file_dir, f'g{generation:04}_{i:03}.png')
         pil_image.save(filename)
 
@@ -334,7 +342,7 @@ def prompt_embedding_vectors(sd, prompt_array):
 MUTATION_RATE = 0.01
 
 generations = args.generations
-population_size = 12
+population_size = 80
 mutation_percent_genes = args.mutation_percent_genes
 mutation_probability = args.mutation_probability
 keep_elitism = args.keep_elitism
