@@ -171,6 +171,8 @@ def generate_images_from_embeddings(embedded_prompts_array, null_prompt):
         seed=SEED, embedded_prompt=embedded_prompt, null_prompt=null_prompt)
 '''
 
+clip_start_time = time.time()
+
 # Initialize logger
 def log_to_file(message):
     
@@ -446,6 +448,24 @@ log_to_file(f"Mutation Rate: {mutation_rate}")
 log_to_file(f"Generations: {generations}")
 
 ga_instance.run()
+
+# Record the end time after running the genetic algorithm
+clip_end_time = time.time()
+
+# Calculate the total time taken for Clip calculations
+clip_total_time = clip_end_time - clip_start_time
+
+# Get the number of Clip calculations made during the genetic algorithm
+num_clip_calculations = len(ga_instance.population) * args.generations
+
+# Calculate Clip calculations per second
+clip_calculations_per_second = num_clip_calculations / clip_total_time
+
+# Print the results
+log_to_file(f"----------------------------------" )
+log_to_file(f"Number of Clip Calculations: {num_clip_calculations} ")
+log_to_file(f"Total Time for Clip Calculations: {clip_total_time} seconds")
+log_to_file(f"Clip Calculations per Second {clip_calculations_per_second} ")
 
 '''
 Notes:
