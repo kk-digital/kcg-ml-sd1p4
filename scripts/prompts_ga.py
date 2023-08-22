@@ -436,6 +436,7 @@ num_clip_calculations = len(ga_instance.population) * args.generations
 clip_calculations_per_second = num_clip_calculations / clip_total_time
 
 # Print the results
+log_to_file(f"----------------------------------" )
 log_to_file(f"Number of Clip Calculations: {num_clip_calculations} ")
 log_to_file(f"Total Time for Clip Calculations: {clip_total_time} seconds")
 log_to_file(f"Clip Calculations per Second {clip_calculations_per_second} ")

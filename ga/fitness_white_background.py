@@ -43,7 +43,7 @@ def white_background_fitness(pil_image):
         return 0.0
 
     # Ensure the central region is not too bright compared to the border
-    if mean_center_intensity > (mean_border_intensity - 10):  #function becomes stricter try 1:
+    if mean_center_intensity > (mean_border_intensity - 5):  #function becomes stricter try 1:
         return 0.0
 
     deviation = abs(mean_border_intensity - 255) / 255
