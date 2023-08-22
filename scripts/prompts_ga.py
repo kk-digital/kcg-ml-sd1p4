@@ -163,6 +163,9 @@ def generate_images_from_embeddings(embedded_prompts_array, null_prompt):
 '''
 
 # Initialize logger
+
+clip_start_time = time.time()
+
 def log_to_file(message):
     
     log_path = os.path.join(IMAGES_DIR, "log.txt")
@@ -365,6 +368,8 @@ embedded_prompts = prompt_embedding_vectors(sd, prompt_array=prompts_str_array)
 
 print("genetic_algorithm_loop: population_size= ", population_size)
 
+
+
 # ERROR: REVIEW
 # TODO: What is this doing?
 # Move the 'embedded_prompts' tensor to CPU memory
@@ -416,6 +421,25 @@ log_to_file(f"Mutation Rate: {mutation_rate}")
 log_to_file(f"Generations: {generations}")
 
 ga_instance.run()
+
+
+# Record the end time after running the genetic algorithm
+clip_end_time = time.time()
+
+# Calculate the total time taken for Clip calculations
+clip_total_time = clip_end_time - clip_start_time
+
+# Get the number of Clip calculations made during the genetic algorithm
+num_clip_calculations = len(ga_instance.population) * args.generations
+
+# Calculate Clip calculations per second
+clip_calculations_per_second = num_clip_calculations / clip_total_time
+
+# Print the results
+print("Number of Clip Calculations:", num_clip_calculations)
+print("Total Time for Clip Calculations:", clip_total_time, "seconds")
+print("Clip Calculations per Second:", clip_calculations_per_second)
+
 
 '''
 Notes:
