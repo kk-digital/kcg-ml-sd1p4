@@ -315,7 +315,7 @@ def prompt_embedding_vectors(sd, prompt_array):
 MUTATION_RATE = 0.01
 
 generations = args.generations
-population_size = 128
+population_size = 10
 mutation_percent_genes = args.mutation_percent_genes
 mutation_probability = args.mutation_probability
 keep_elitism = args.keep_elitism
