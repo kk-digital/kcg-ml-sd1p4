@@ -28,12 +28,12 @@ def fitness_pixel_value(pil_image):
     center_region = np_image[quarter_h:3*quarter_h, quarter_w:3*quarter_w]
 
     # Count pixels with value less than 32 in the center
-    count_below_32 = np.sum(center_region < 32)
+    count_below_32 = np.sum(center_region < 16)
 
     # Count pixels with value greater than 224 outside the center
     outside_center_region = np_image.copy()
     outside_center_region[quarter_h:3*quarter_h, quarter_w:3*quarter_w] = 0
-    count_above_224 = np.sum(outside_center_region > 224)
+    count_above_224 = np.sum(outside_center_region > 240)
 
     # Ideal counts for both regions
     ideal_center_count = (h // 2) * (w // 2)
