@@ -3,14 +3,14 @@ from PIL import Image
 
 def fitness_pixel_value(pil_image):
     """
-    This function calculates a fitness score for an image based on the number of pixels with values less than 80 in the center of the image.
+    This function calculates a fitness score for an image based on the number of pixels with values less than 16 in the center of the image.
     
     Input:
     pil_image: A PIL.Image object of size 512x512.
 
     Output:
     fitness_score: A floating-point value between 0.0 and 1.0.
-        - 1.0 indicates the center 1/4 of the image has pixels with values less than 80.
+        - 1.0 indicates the center 1/4 of the image has pixels with values less than 16.
         - Values between 0 and 1 indicate deviations from this ideal.
     """
 
@@ -23,19 +23,20 @@ def fitness_pixel_value(pil_image):
     np_image = np.array(gray_image)
 
     # Define the center region, which should be 256x256 (half of 512x512)
-    center_start = 512 // 4
-    center_end = 3 * 512 // 4
-    center_region = np_image[center_start:center_end, center_start:center_end]
+    h, w = np_image.shape
+    quarter_h, quarter_w = h // 4, w // 4
+    center_region = np_image[quarter_h:3*quarter_h, quarter_w:3*quarter_w]
 
     # Count pixels with value less than 16 in the center
     count_below_16 = np.sum(center_region < 16)
 
     # Ideal count is the total number of pixels in the center region (256x256)
-    ideal_count = (512 // 2) * (512 // 2)
+    ideal_count = (h // 2) * (w // 2)
 
-    # Fitness score is the ratio of the count_below_80 to the ideal count
+    # Fitness score is the ratio of the count_below_16 to the ideal count
     fitness_score = count_below_16 / ideal_count
 
     assert 0.0 <= fitness_score <= 1.0, "Background fitness value out of bounds!"
 
     return fitness_score
+
