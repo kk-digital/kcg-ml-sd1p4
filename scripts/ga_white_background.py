@@ -140,7 +140,7 @@ def calculate_fitness_score(ga_instance, solution, solution_idx):
 
     sum_score = (fitness_white + fitness_pixel)
 
-    fitness_score = "{:.5f}".format(sum_score)
+    fitness_score = float("{:.5f}".format(sum_score))
     return fitness_score
 
 
@@ -254,7 +254,7 @@ def prompt_embedding_vectors(sd, prompt_array):
 
 
 generations = args.generations
-population_size = 64
+population_size = 80
 mutation_percent_genes = args.mutation_percent_genes
 mutation_probability = args.mutation_probability
 keep_elitism = args.keep_elitism
