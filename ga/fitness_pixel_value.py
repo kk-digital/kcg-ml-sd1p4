@@ -30,19 +30,32 @@ def fitness_pixel_value(pil_image):
     # Count pixels with value less than 32 in the center
     count_below_32 = np.sum(center_region < 32)
 
-    # Ideal count is the total number of pixels in the center region 
-    ideal_count = (h // 2) * (w // 2)
+    # Count pixels with value greater than 224 outside the center
+    outside_center_region = np_image.copy()
+    outside_center_region[quarter_h:3*quarter_h, quarter_w:3*quarter_w] = 0
+    count_above_224 = np.sum(outside_center_region > 224)
 
-    # Fitness score is the ratio of the count_below_32 to the ideal count
-    fitness_score = count_below_32 / ideal_count
+    # Ideal counts for both regions
+    ideal_center_count = (h // 2) * (w // 2)
+    ideal_outside_count = (3 * h // 4) * (3 * w // 4)
 
-    # Calculate the deviation from the ideal fitness score
-    deviation = 1 - fitness_score
+    # Fitness scores for both regions
+    center_fitness = count_below_32 / ideal_center_count
+    outside_fitness = count_above_224 / ideal_outside_count
 
-    # Calculate fitness score using the formula
-    fitness_score = 1 - deviation**2
+    # Calculate the deviation from the ideal fitness scores
+    center_deviation = 1 - center_fitness
+    outside_deviation = 1 - outside_fitness
+
+    # Apply the exponential penalty to the fitness scores
+    center_fitness = 1 - center_deviation**2
+    outside_fitness = 1 - outside_deviation**2
+
+    # Combine the fitness scores with weights, e.g., center fitness weighted more
+    fitness_score = 0.5 * center_fitness + 0.5 * outside_fitness
 
     assert 0.0 <= fitness_score <= 1.0, "Background fitness value out of bounds!"
 
     return fitness_score
+
 
