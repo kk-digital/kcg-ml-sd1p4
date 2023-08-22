@@ -138,8 +138,9 @@ def calculate_fitness_score(ga_instance, solution, solution_idx):
     fitness_white = white_background_fitness(pil_image)
     fitness_pixel = fitness_pixel_value(pil_image)
 
-    fitness_score = (fitness_white + fitness_pixel)
+    sum_score = (fitness_white + fitness_pixel)
 
+    fitness_score = "{:.5f}".format(sum_score)
     return fitness_score
 
 
