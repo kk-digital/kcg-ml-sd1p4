@@ -28,7 +28,7 @@ from ga.fitness_white_background import white_background_fitness
 
 random.seed()
 
-N_STEPS = 20  # 20, 12
+N_STEPS = 200  # 20, 12
 CFG_STRENGTH = 9
 
 FIXED_SEED = True
@@ -266,7 +266,6 @@ parent_selection_type = "tournament"  # "sss", rws, sus, rank, tournament
 # num_parents_mating = int(population_size *.80)
 num_parents_mating = int(population_size * .60)
 # mutation_type = "adaptive" #try adaptive mutation
-mutation_type = "swap"
 
 
 # Load Stable Diffusion
