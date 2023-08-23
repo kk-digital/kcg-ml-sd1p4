@@ -15,7 +15,17 @@ def white_background_fitness(pil_image):
         - 0.0 indicates violations of the desired configuration.
         - Values between 0 and 1 indicate deviations from the ideal.
     """
-    # ... [Initial checks remain the same] ...
+    # Check if image is None
+    if pil_image is None:
+        raise ValueError("Image etc is None")
+
+    # Check that the image size is 512x512
+    if pil_image.size != (512, 512):
+        raise ValueError("The image size should be 512x512")
+
+    # Check if image mode is not RGB
+    if pil_image.mode != "RGB":
+        raise ValueError("The provided image is not in RGB mode. Please provide an RGB image.")
 
     # Convert the PIL image to an OpenCV image format
     image = np.array(pil_image)[:, :, ::-1].copy()  # Convert RGB to BGR
