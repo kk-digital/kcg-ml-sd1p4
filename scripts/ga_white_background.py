@@ -253,7 +253,7 @@ def prompt_embedding_vectors(sd, prompt_array):
 
 
 generations = args.generations
-population_size = 10
+population_size = 2
 mutation_percent_genes = args.mutation_percent_genes
 mutation_probability = args.mutation_probability
 keep_elitism = args.keep_elitism
@@ -293,7 +293,7 @@ prefix_prompt1 = "isolated on white background, tiny character, simple backgroun
 
 
 # Use a range of 63 since you've already added one prompt
-for i in range(9):
+for i in range(1):
     prompt_str = prompts_array[i].get_prompt_str()
     prompts_str_array.append(prompt_str)
 
