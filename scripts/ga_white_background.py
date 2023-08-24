@@ -285,7 +285,7 @@ prompts_array = ga.generate_prompts(population_size, prompt_phrase_length)
 
 # get prompt_str array
 prompts_str_array = []
-prefix_prompt = "white background, centered,logo, black and white, isolated on white background "
+prefix_prompt = "white background, centered, small logo, black and white, isolated on white background "
 # Append prefix_prompt to prompts_str_array
 prompts_str_array.append(prefix_prompt)
 
