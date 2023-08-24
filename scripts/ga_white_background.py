@@ -28,7 +28,7 @@ from ga.fitness_white_background import white_background_fitness
 
 random.seed()
 
-N_STEPS = 20  # 20, 12
+N_STEPS = 30  # 20, 12
 CFG_STRENGTH = 9
 
 FIXED_SEED = True
@@ -285,7 +285,7 @@ prompts_array = ga.generate_prompts(population_size, prompt_phrase_length)
 
 # get prompt_str array
 prompts_str_array = []
-prefix_prompt = "isolated on white background, apple on white background, background chroma plain white, on a white surface, tiny apple,  centered "
+prefix_prompt = "apple on white background, centered, white wall background chroma plain white, on a white surface, tiny apple "
 # Append prefix_prompt to prompts_str_array
 prompts_str_array.append(prefix_prompt)
 
