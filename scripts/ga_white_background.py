@@ -292,8 +292,9 @@ prompts_str_array.append(prefix_prompt)
 prefix_prompt1 = "isolated on white background, simple background, background chroma plain white, small character "
 
 
-for prompt in prompts_array:
-    prompt_str = prefix_prompt1 + ", " +  prompt.get_prompt_str()
+# Use a range of 63 since you've already added one prompt
+for i in range(63):
+    prompt_str = prefix_prompt1 + ", " +  prompts_array[i].get_prompt_str()
     prompts_str_array.append(prompt_str)
 
 print(prompt_str)
