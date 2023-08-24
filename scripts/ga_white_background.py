@@ -286,18 +286,16 @@ prompts_array = ga.generate_prompts(population_size, prompt_phrase_length)
 # get prompt_str array
 prompts_str_array = []
 prefix_prompt = "isolated on white background, simple background, background chroma plain white, small character, on white background, solid color background no white character, on a white surface, tiny character,  centered , small character,"
-# Append prefix_prompt to prompts_str_array
-prompts_str_array.append(prefix_prompt)
-
-prefix_prompt1 = "isolated on white background, simple background, background chroma plain white, small character "
 
 
 for prompt in prompts_array:
-    prompt_str = prefix_prompt1 + ", " +  prompt.get_prompt_str()
+    prompt_str = prefix_prompt +  prompt.get_prompt_str()
     prompts_str_array.append(prompt_str)
 
 print(prompt_str)
 embedded_prompts = prompt_embedding_vectors(sd, prompt_array=prompts_str_array)
+
+
 
 print("genetic_algorithm_loop: population_size= ", population_size)
 
@@ -306,6 +304,7 @@ print("genetic_algorithm_loop: population_size= ", population_size)
 # Move the 'embedded_prompts' tensor to CPU memory
 embedded_prompts_cpu = embedded_prompts.to("cpu")
 embedded_prompts_array = embedded_prompts_cpu.detach().numpy()
+print(embedded_prompts_array.shape)
 embedded_prompts_list = embedded_prompts_array.reshape(population_size, 77 * 768).tolist()
 
 # random_mutation_min_val=5,
