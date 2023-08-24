@@ -248,6 +248,7 @@ def on_fitness(ga_instance, population_fitness):
     print("Population Size = ", len(population_fitness_np))
     print("Fitness (mean): ", np.mean(population_fitness_np))
     print("Fitness (variance): ", np.var(population_fitness_np))
+    print(f"Fitness (std): {np.sqrt(np.var(population_fitness_np))}") 
     print("Fitness (best): ", np.max(population_fitness_np))
     print("fitness array= ", str(population_fitness_np))
 
@@ -255,6 +256,7 @@ def on_fitness(ga_instance, population_fitness):
     log_to_file(f"Population Size= {len(population_fitness_np)}")
     log_to_file(f"Fitness (mean): {np.mean(population_fitness_np)}")
     log_to_file(f"Fitness (variance): {np.var(population_fitness_np)}")
+    log_to_file(f"Fitness (std): {np.sqrt(np.var(population_fitness_np))}") 
     log_to_file(f"Fitness (best): {np.max(population_fitness_np)}")
     log_to_file(f"fitness array= {str(population_fitness_np)}")
 
