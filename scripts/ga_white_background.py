@@ -285,7 +285,7 @@ prompts_array = ga.generate_prompts(population_size, prompt_phrase_length)
 
 # get prompt_str array
 prompts_str_array = []
-prefix_prompt = "white background, image of small logo on the pure white background"
+prefix_prompt = "image of small square on the pure white background"
 # Append prefix_prompt to prompts_str_array
 prompts_str_array.append(prefix_prompt)
 
