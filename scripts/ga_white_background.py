@@ -32,7 +32,7 @@ N_STEPS = 20  # 20, 12
 CFG_STRENGTH = 9
 
 FIXED_SEED = True
-CONVERT_GREY_SCALE_FOR_SCORING = False
+CONVERT_GREY_SCALE_FOR_SCORING = True
 
 # Add argparse arguments
 parser = argparse.ArgumentParser(description="Run genetic algorithm with specified parameters.")
