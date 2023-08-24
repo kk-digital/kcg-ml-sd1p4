@@ -285,7 +285,7 @@ prompts_array = ga.generate_prompts(population_size, prompt_phrase_length)
 
 # get prompt_str array
 prompts_str_array = []
-prefix_prompt = "paint of white apple on black background"
+prefix_prompt = "background hex 000000, skull"
 # Append prefix_prompt to prompts_str_array
 prompts_str_array.append(prefix_prompt)
 
