@@ -285,7 +285,7 @@ prompts_array = ga.generate_prompts(population_size, prompt_phrase_length)
 
 # get prompt_str array
 prompts_str_array = []
-prefix_prompt = "apple on white background, centered, white wall background chroma plain white, on a white surface, tiny apple "
+prefix_prompt = "red apple on white background, background chroma plain white, isolated on white background, centered, white wall, on a white surface, tiny apple "
 # Append prefix_prompt to prompts_str_array
 prompts_str_array.append(prefix_prompt)
 
@@ -309,7 +309,7 @@ embedded_prompts_cpu = embedded_prompts.to("cpu")
 embedded_prompts_array = embedded_prompts_cpu.detach().numpy()
 print(f"array shape: {embedded_prompts_array.shape}")
 embedded_prompts_list = embedded_prompts_array.reshape(population_size, 77 * 768).tolist()
-
+print(f"list embedded: {embedded_prompts_list}")
 # random_mutation_min_val=5,
 # random_mutation_max_val=10,
 # mutation_by_replacement=True,
