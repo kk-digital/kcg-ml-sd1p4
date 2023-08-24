@@ -28,10 +28,10 @@ from ga.fitness_white_background import white_background_fitness
 
 random.seed()
 
-N_STEPS = 50  # 20, 12
+N_STEPS = 20  # 20, 12
 CFG_STRENGTH = 9
 
-FIXED_SEED = True
+FIXED_SEED = False
 CONVERT_GREY_SCALE_FOR_SCORING = True
 
 # Add argparse arguments
