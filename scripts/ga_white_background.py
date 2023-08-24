@@ -285,7 +285,7 @@ prompts_array = ga.generate_prompts(population_size, prompt_phrase_length)
 
 # get prompt_str array
 prompts_str_array = []
-prefix_prompt = "green wall"
+prefix_prompt = "white robot on green background"
 # Append prefix_prompt to prompts_str_array
 prompts_str_array.append(prefix_prompt)
 
