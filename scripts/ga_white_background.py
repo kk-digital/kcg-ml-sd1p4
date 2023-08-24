@@ -253,7 +253,7 @@ def prompt_embedding_vectors(sd, prompt_array):
 
 
 generations = args.generations
-population_size = 64
+population_size = 10
 mutation_percent_genes = args.mutation_percent_genes
 mutation_probability = args.mutation_probability
 keep_elitism = args.keep_elitism
@@ -285,7 +285,7 @@ prompts_array = ga.generate_prompts(population_size, prompt_phrase_length)
 
 # get prompt_str array
 prompts_str_array = []
-prefix_prompt = "white background, centered, small logo, black and white, isolated on white background "
+prefix_prompt = "white background, centered, tiny logo, black and white, isolated on white background "
 # Append prefix_prompt to prompts_str_array
 prompts_str_array.append(prefix_prompt)
 
@@ -293,7 +293,7 @@ prefix_prompt1 = "isolated on white background, tiny character, simple backgroun
 
 
 # Use a range of 63 since you've already added one prompt
-for i in range(63):
+for i in range(9):
     prompt_str = prompts_array[i].get_prompt_str()
     prompts_str_array.append(prompt_str)
 
