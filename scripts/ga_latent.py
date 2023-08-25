@@ -14,6 +14,7 @@ import clip
 import pygad
 import argparse
 import csv
+import torch.nn.functional as F
 
 from chad_score.chad_score import ChadScorePredictor
 from ga.prompt_generator import generate_prompts
@@ -175,6 +176,10 @@ def fitness_func(ga_instance, solution, solution_idx):
     util_clip = ga_instance.util_clip
     chad_score_predictor = ga_instance.chad_score_predictor
 
+    for i in enumerate(solution):
+            if solution[i] > 1 or solution[i] < -1:
+                solution[i] = sigmoid(solution[i])
+
     solution_copy = solution.copy()  # flatten() is destructive operation
     solution_flattened = solution_copy.flatten()
     solution_reshaped = solution_flattened.reshape(1, 4, 64, 64)
@@ -182,6 +187,7 @@ def fitness_func(ga_instance, solution, solution_idx):
     latent = torch.tensor(solution_reshaped, device=device, dtype=torch.float32)
     images = sd.get_image_from_latent(latent)
 
+    # Write the tensor string to the file
     # cleanup
     del latent
     torch.cuda.empty_cache()
