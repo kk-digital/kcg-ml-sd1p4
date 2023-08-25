@@ -34,14 +34,14 @@ def parse_args():
     # Add argparse arguments
     parser = argparse.ArgumentParser(description="Run genetic algorithm with specified parameters.")
 
-    parser.add_argument('--generations', type=int, default=2000, help="Number of generations to run.")
+    parser.add_argument('--generations', type=int, default=100, help="Number of generations to run.")
     parser.add_argument('--mutation_probability', type=float, default=0.2, help="Probability of mutation.")
     parser.add_argument('--keep_elitism', type=int, default=0, help="1 to keep best individual, 0 otherwise.")
     parser.add_argument('--crossover_type', type=str, default="uniform", help="Type of crossover operation.")
     parser.add_argument('--mutation_type', type=str, default="random", help="Type of mutation operation.")
     parser.add_argument('--mutation_percent_genes', type=float, default=0.01,
                         help="The percentage of genes to be mutated.")
-    parser.add_argument('--population', type=int, default=5, help="Starting population size")
+    parser.add_argument('--population', type=int, default=80, help="Starting population size")
     parser.add_argument("--steps", type=int, default=20, help="Denoiser steps")
     parser.add_argument("--device", type=str, default="cuda", help="cuda device")
     parser.add_argument("--num_phrases", type=int, default=12, help="number of phrases in the prompt generator")
@@ -167,7 +167,6 @@ def on_mutation(ga_instance, offspring_mutation):
 
 
 def fitness_func(ga_instance, solution, solution_idx):
-    start_time = time.time()
     sd = ga_instance.sd
     device = ga_instance.device
     util_clip = ga_instance.util_clip
@@ -177,39 +176,20 @@ def fitness_func(ga_instance, solution, solution_idx):
     solution_flattened = solution_copy.flatten()
     solution_reshaped = solution_flattened.reshape(1, 4, 64, 64)
 
-    end_time = time.time()
-    print("fitness time 1: ", end_time - start_time)
-
     latent = torch.tensor(solution_reshaped, device=device, dtype=torch.float32)
-
-
-    end_time = time.time()
-    print("fitness time 2 : ", end_time - start_time)
     images = sd.get_image_from_latent(latent)
 
-
-    end_time = time.time()
-    print("fitness time 3 : ", end_time - start_time)
     # cleanup
     del latent
     torch.cuda.empty_cache()
-
-
 
     # Map images to `[0, 1]` space and clip
     images = torch.clamp((images + 1.0) / 2.0, min=0.0, max=1.0)
     # Transpose to `[batch_size, height, width, channels]` and convert to numpy
 
-    end_time = time.time()
-    print("fitness time 4 : ", end_time - start_time)
-
     images = images.cpu()
     images = images.permute(0, 2, 3, 1)
     images = images.detach().float().numpy()
-
-    end_time = time.time()
-    print("fitness time 5 : ", end_time - start_time)
-
 
     image_list = []
     # Save images
@@ -219,17 +199,10 @@ def fitness_func(ga_instance, solution, solution_idx):
 
     image = image_list[0]
 
-
-    end_time = time.time()
-    print("fitness time 6 : ", end_time - start_time)
-
     image_features = util_clip.get_image_features(image)
     # cleanup
     del image
     torch.cuda.empty_cache()
-
-    end_time = time.time()
-    print("fitness time 7 : ", end_time - start_time)
 
     chad_score = chad_score_predictor.get_chad_score(image_features)
 
@@ -237,8 +210,6 @@ def fitness_func(ga_instance, solution, solution_idx):
     del image_features
     torch.cuda.empty_cache()
 
-    end_time = time.time()
-    print("fitness time : ", end_time - start_time)
     return chad_score
 
 def store_generation_images(ga_instance):
@@ -255,7 +226,6 @@ def store_generation_images(ga_instance):
     os.makedirs(file_dir)
     for i, gene in enumerate(ga_instance.population):
         print("image : ", i)
-        start_time = time.time()
 
         solution_copy = gene.copy()
         solution_flattened = solution_copy.flatten()
@@ -270,14 +240,8 @@ def store_generation_images(ga_instance):
         del image
         torch.cuda.empty_cache()
 
-        end_time = time.time()
-        print("time : ", end_time - start_time)
-
         filename = os.path.join(file_dir, f'g{generation:04}_{i:03}.png')
         pil_image.save(filename)
-
-        end_time = time.time()
-        print("time + saving : ", end_time - start_time)
 
     end_time = time.time()  # End timing for generation
     total_time = end_time - start_time
