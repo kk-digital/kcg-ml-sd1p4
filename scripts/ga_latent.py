@@ -299,7 +299,7 @@ def main():
     checkpoint_path = args.checkpoint_path
     image_width = args.image_width
     image_height = args.image_height
-    use_randodm_images = args.use_randodm_images
+    use_random_images = args.use_random_images
 
     device = get_device(device=args.device)
     output_directory = args.output
