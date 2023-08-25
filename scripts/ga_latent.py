@@ -245,6 +245,7 @@ def store_generation_images(ga_instance):
         solution_copy = gene.copy()
         solution_flattened = solution_copy.flatten()
 
+        print(solution_flattened)
         for i in enumerate(solution_flattened):
             value = solution_flattened[i]
             if value > 1 or value < -1:
