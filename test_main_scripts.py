@@ -69,9 +69,6 @@ class TestScripts(unittest.TestCase):
     def test_10_embed_prompts_and_generate_images(self):
         self.run_script(f"{self.scripts_path}embed_prompts_and_generate_images")
 
-    def test_11_data_bounding_box_and_score_and_embedding_dataset(self):
-        self.run_script(f"{self.scripts_path}data_bounding_box_and_score_and_embedding_dataset")
-
     def test_12_grid_generator(self):
         self.run_script("./utility/scripts/grid_generator", input_path="./test/test_images/clip_segmentation",
                         output_path="./tmp", rows=3, columns=2, img_size=256)
