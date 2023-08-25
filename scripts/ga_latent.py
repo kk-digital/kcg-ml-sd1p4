@@ -190,13 +190,17 @@ def fitness_func(ga_instance, solution, solution_idx):
     images = torch.clamp((images + 1.0) / 2.0, min=0.0, max=1.0)
     # Transpose to `[batch_size, height, width, channels]` and convert to numpy
 
-    images = images.cpu()
-    images = images.permute(0, 2, 3, 1)
-    images = images.detach().float().numpy()
+    images_cpu = images.cpu()
+
+    del images
+    torch.cuda.empty_cache()
+
+    images_cpu = images_cpu.permute(0, 2, 3, 1)
+    images_cpu = images_cpu.detach().float().numpy()
 
     image_list = []
     # Save images
-    for i, img in enumerate(images):
+    for i, img in enumerate(images_cpu):
         img = Image.fromarray((255. * img).astype(np.uint8))
         image_list.append(img)
 
@@ -281,6 +285,9 @@ def main():
     image_width = args.image_width
     image_height = args.image_height
 
+
+    use_randodm_images = False
+
     device = get_device(device=args.device)
     output_directory = args.output
     output_image_directory = join(output_directory, "images/")
@@ -353,7 +360,6 @@ def main():
 
     prompt_list = generate_prompts(population_size, num_phrases)
 
-    use_randodm_images = False
     # Set a seed based on the current time
     seed = int(time.time())
     np.random.seed(seed)
