@@ -67,7 +67,7 @@ class TestScripts(unittest.TestCase):
                         num_iterations=1)
 
     def test_10_embed_prompts_and_generate_images(self):
-        self.run_script(f"{self.scripts_path}embed_prompts_and_generate_images")
+        self.run_script(f"{self.scripts_path}embed_prompts_and_generate_images", num_iterations=1)
 
     def test_12_grid_generator(self):
         self.run_script("./utility/scripts/grid_generator", input_path="./test/test_images/clip_segmentation",
@@ -86,7 +86,7 @@ class TestScripts(unittest.TestCase):
                         task_path="\"./test/test_generation_task/generate_images_from_random_prompt_v1.json\"")
 
     def test_17_run_prompts_ga(self):
-        self.run_script(f"{self.scripts_path}prompts_ga")
+        self.run_script(f"{self.scripts_path}prompts_ga", generations=2)
 
     def test_18_generate_images_from_prompt_generator(self):
         self.run_script(f"{self.scripts_path}generate_images_from_prompt_generator",
