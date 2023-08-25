@@ -353,30 +353,37 @@ def main():
 
     prompt_list = generate_prompts(population_size, num_phrases)
 
+    use_randodm_images = False
     # Set a seed based on the current time
     seed = int(time.time())
     np.random.seed(seed)
     # Generate and append random arrays to the list
     for i in range(population_size):
-        this_prompt = prompt_list[i].prompt_str
-        # no negative prompts for now
-        negative_prompts = []
-        un_cond, cond = txt2img.get_text_conditioning(cfg_strength, this_prompt, negative_prompts, 1)
-        latent = txt2img.generate_images_latent_from_embeddings(
-            batch_size=1,
-            embedded_prompt=cond,
-            null_prompt=un_cond,
-            uncond_scale=cfg_strength,
-            seed=seed,
-            w=image_width,
-            h=image_height
-        )
-        latent_numpy = latent.cpu().numpy()
+        gene = None
+        if use_randodm_images:
+            this_prompt = prompt_list[i].prompt_str
+            # no negative prompts for now
+            negative_prompts = []
+            un_cond, cond = txt2img.get_text_conditioning(cfg_strength, this_prompt, negative_prompts, 1)
+            latent = txt2img.generate_images_latent_from_embeddings(
+                batch_size=1,
+                embedded_prompt=cond,
+                null_prompt=un_cond,
+                uncond_scale=cfg_strength,
+                seed=seed,
+                w=image_width,
+                h=image_height
+            )
+            latent_numpy = latent.cpu().numpy()
 
-        del latent
-        torch.cuda.empty_cache()
+            del latent
+            torch.cuda.empty_cache()
 
-        random_population.append(latent_numpy.flatten())
+            gene = latent_numpy.flatten()
+        else:
+            gene = np.random.rand(num_genes)
+
+        random_population.append(gene)
 
     # Initialize the GA
     ga_instance = pygad.GA(initial_population=random_population,
@@ -433,10 +440,10 @@ def main():
     clip_calculations_per_second = num_clip_calculations / clip_total_time
 
     # Print the results
-    log_to_file(f"----------------------------------" )
-    log_to_file(f"Number of Clip Calculations: {num_clip_calculations} ")
-    log_to_file(f"Total Time for Clip Calculations: {clip_total_time} seconds")
-    log_to_file(f"Clip Calculations per Second {clip_calculations_per_second} ")
+    log_to_file(f"----------------------------------" , output_directory)
+    log_to_file(f"Number of Clip Calculations: {num_clip_calculations} ", output_directory)
+    log_to_file(f"Total Time for Clip Calculations: {clip_total_time} seconds", output_directory)
+    log_to_file(f"Clip Calculations per Second {clip_calculations_per_second} ", output_directory)
 
 
 
