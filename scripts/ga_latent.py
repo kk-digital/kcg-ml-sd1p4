@@ -177,8 +177,9 @@ def fitness_func(ga_instance, solution, solution_idx):
     chad_score_predictor = ga_instance.chad_score_predictor
 
     for i in enumerate(solution):
-            if solution[i] > 1 or solution[i] < -1:
-                solution[i] = sigmoid(solution[i])
+        value = solution[i]
+        if value > 1 or value < -1:
+            solution[i] = sigmoid(solution[i])
 
     solution_copy = solution.copy()  # flatten() is destructive operation
     solution_flattened = solution_copy.flatten()
