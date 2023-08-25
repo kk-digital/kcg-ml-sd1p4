@@ -449,6 +449,9 @@ log_to_file(f"Mutation Type: {mutation_type}")
 log_to_file(f"Mutation Rate: {mutation_rate}")
 log_to_file(f"Generations: {generations}")
 
+for idx, prompt_str in enumerate(prompts_str_array, 1):
+    log_to_file(f"Prompt {idx}: {prompt_str}") 
+
 ga_instance.run()
 
 # Record the end time after running the genetic algorithm
