@@ -88,43 +88,40 @@ target_latent = sd.generate_images_latent_from_embeddings(
         uncond_scale=CFG_STRENGTH
     )
 
-random_latent = random_tensor(low=-1.0, high=1.0, requires_grad=True)
-# optimizer = optim.Adam([latent], lr=learning_rate)
-optimizer = optim.SGD([random_latent], lr=learning_rate, momentum=0.0)
+random_latent = random_tensor(shape=(1, 4, 64, 64), low=-1.0, high=1.0, requires_grad=True)
+optimizer = optim.Adam([random_latent], lr=learning_rate)
+# optimizer = optim.SGD([random_latent], lr=learning_rate)
 mse_loss = nn.MSELoss(reduction='sum')
+# mse_loss = nn.MSELoss()
 
-# Early stopping
-best_loss = float('inf')
-best_latent = random_latent
-patience = 5
-early_stopping_counter = 0
+image_target_ = sd.model.autoencoder_decode(target_latent)
+pil_image_target = to_pil(image_target_[0])
+image_target_.detach()
+del image_target_
+torch.cuda.empty_cache()
+
+image_target = sd.model.autoencoder_decode(target_latent)
+image_target = image_target.detach()
 
 start_time = time.time()
 for i in range(0, iterations):
-    loss = mse_loss(random_latent, target_latent)
+    # loss = mse_loss(random_latent, target_latent)
+    image_output = sd.model.autoencoder_decode(random_latent)
+    loss = mse_loss(image_output, image_target)
     print(f'Iteration #{i+1}, loss {loss}')
-    if loss < best_loss:
-        best_loss = loss
-        best_latent = random_latent
-        early_stopping_counter = 0
-    else:
-        early_stopping_counter += 1
 
-    if early_stopping_counter >= patience:
-        print("Early stopping triggered. Stopping training.")
-        break
     loss.backward()
+    image_output = image_output.detach()
+    del image_output
+    torch.cuda.empty_cache()
     optimizer.step()
 end_time = time.time()
 
 elapsed_time = end_time - start_time
 print(f"Time elapsed: {elapsed_time:.4f} seconds")
 
-image_output = sd.model.autoencoder_decode(best_latent)
+image_output = sd.model.autoencoder_decode(random_latent)
 pil_image_output = to_pil(image_output[0])
-
-image_target = sd.model.autoencoder_decode(target_latent)
-pil_image_target = to_pil(image_target[0])
 
 output_dir = os.path.join('output', 'gradient_optimization')
 os.makedirs(output_dir, exist_ok=True)
