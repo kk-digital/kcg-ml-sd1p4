@@ -67,7 +67,7 @@ python3 ./scripts/generate_images_from_prompt_generator.py --checkpoint_path "./
 ## Preparing Image Dataset
 #### Validate Image Dataset
 ```
-usage: process_dataset.py dataset-validate [-h] [--image-dataset-path IMAGE_DATASET_PATH] [--is_tagged IS_TAGGED] [--tmp-path TMP_PATH]
+usage: process_dataset.py dataset-validate [-h] [--image-dataset-path IMAGE_DATASET_PATH] [--is-tagged IS_TAGGED] [--is-generated-dataset IS_GENERATED_DATASET]
 
 CLI tool for validating image dataset storage format
 
@@ -77,11 +77,27 @@ options:
                         The path of the image dataset to validate
   --is-tagged IS_TAGGED
                         True if dataset is a tagged dataset (default=False)
+  --is-generated-dataset IS_GENERATED_DATASET
+                        True if dataset is a generated dataset using kcg-ml-sd1p4's generate images using prompt generator (default=False)
+
 ```
+
+Sample command for untagged dataset: 
+
+    python ./scripts/image_dataset_storage_format/process_dataset.py dataset-validate --image-dataset-path "./test/test_zip_files/test-dataset-correct-format.zip"
+
+Sample command for tagged dataset: 
+
+    python ./scripts/image_dataset_storage_format/process_dataset.py dataset-validate --image-dataset-path "./test/test_zip_files/test-dataset-correct-format-tagged.zip" --is-tagged True
+
+Sample command for validating generated dataset from kcg-ml-sd1p4: 
+
+    python ./scripts/image_dataset_storage_format/process_dataset.py dataset-validate --image-dataset-path "./test/test_zip_files/test-generated-dataset-correct-format.zip" --is-generated-dataset True
+
 
 #### Format and Compute Manifest Of Image Dataset
 ```
-usage: process_dataset.py format-and-compute-manifest [-h] [--image-dataset-path IMAGE_DATASET_PATH] [--output-path OUTPUT_PATH] [--is-tagged IS_TAGGED] [--tmp-path TMP_PATH]
+usage: process_dataset.py format-and-compute-manifest [-h] [--image-dataset-path IMAGE_DATASET_PATH] [--is-tagged IS_TAGGED] [--is-generated-dataset IS_GENERATED_DATASET] [--output-path OUTPUT_PATH]
 
 CLI tool for formatting images and computing manifest of dataset
 
@@ -91,15 +107,23 @@ options:
                         The path of the image dataset to process
   --is-tagged IS_TAGGED
                         True if dataset is a tagged dataset (default=False)
-  --output-path OUTPUT_PATH   The path to save the dataset (default='./output')
-
+  --is-generated-dataset IS_GENERATED_DATASET
+                        True if dataset is a generated dataset using kcg-ml-sd1p4's generate images using prompt generator (default=False)
+  --output-path OUTPUT_PATH
+                        The path to save the dataset (default='./output')
 ```
 
-Sample command for untagged dataset:
+Sample command for untagged dataset: 
 
-``` shell
-python3 ./scripts/process_dataset.py format-and-compute-manifest --image-dataset-path "./input/set_0000.zip" --output-path="./output"
-```
+    python ./scripts/image_dataset_storage_format/process_dataset.py format-and-compute-manifest --image-dataset-path "./test/test_zip_files/test-dataset-not-all-images-are-in-images-dir.zip" --output-path="./output"
+
+Sample command for tagged dataset: 
+
+    python ./scripts/image_dataset_storage_format/process_dataset.py format-and-compute-manifest --image-dataset-path "./test/test_zip_files/test-dataset-no-features-manifest-tagged.zip" --is-tagged True --output-path="./output"
+
+Sample command for validating generated dataset from kcg-ml-sd1p4: 
+
+    python ./scripts/image_dataset_storage_format/process_dataset.py format-and-compute-manifest --image-dataset-path "./test/test_zip_files/test-generated-dataset-correct-format.zip" --output-path="./output" --is-generated-dataset True
 
 ## Sort The dataset
 ### Chad Sort

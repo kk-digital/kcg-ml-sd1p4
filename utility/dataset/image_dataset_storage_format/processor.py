@@ -2,23 +2,22 @@
 Processor processes all lacking data of an image dataset. It will move all images to /images, generate manifest.json, and generate features json.
 """
 import hashlib
-import io
 import re
-
-from PIL import Image
+import io
 from PIL import UnidentifiedImageError
-
-from utility.clip.clip_feature_zip_loader import ClipFeatureZipLoader
+from PIL import Image
 from .image_dataset_storage_format import *
+from utils.clip.clip_feature_zip_loader import ClipFeatureZipLoader
 
 # no max for image pixel size
 Image.MAX_IMAGE_PIXELS = None
 
 
 class ImageDatasetStorageFormatProcessor(ImageDatasetStorageFormat):
-    def format_and_compute_manifest(self, path_to_zip_file: str, is_tagged=False, output_path="./output"):
+    def format_and_compute_manifest(self, path_to_zip_file: str, is_tagged=False, is_generated_dataset=False,
+                                    output_path="./output"):
         self.load_zip_to_memory(path_to_zip_file)
-        data_list = self.get_all_images_in_zip(is_tagged)
+        data_list = self.get_all_supported_files_in_zip(is_tagged, is_generated_dataset)
         data_list = self.compute_manifest(data_list)
         self.save_data_to_zip(data_list, output_path)
 
@@ -43,14 +42,16 @@ class ImageDatasetStorageFormatProcessor(ImageDatasetStorageFormat):
             dumped_json = json.dumps(feature_vectors, indent=4)
             zip_file.writestr(save_file_path, data=dumped_json)
 
-    def get_all_images_in_zip(self, is_tagged=False) -> []:
+    def get_all_supported_files_in_zip(self, is_tagged=False, is_generated_dataset=False) -> []:
         data_list = []
 
         file_paths = self.zip_ref.namelist()
         for file_path in file_paths:
             name = os.path.basename(file_path)
+
             file_extension = os.path.splitext(name)[1]
-            if file_extension in list_of_supported_image_extensions:
+            if (file_extension in list_of_supported_image_extensions) or (
+                    is_generated_dataset is True and file_extension in [".json", ".npz"]):
                 parent_path = os.path.split(os.path.dirname(file_path))
                 parent_dir_name = parent_path[1]
 
@@ -58,10 +59,14 @@ class ImageDatasetStorageFormatProcessor(ImageDatasetStorageFormat):
                 image_bytes = self.zip_ref.read(file_path)
 
                 # if tagged, the second parent dir must be images
-                if is_tagged:
-                    file_full_path = os.path.join("images", parent_dir_name, name)
+                if file_extension in list_of_supported_image_extensions or (
+                        is_generated_dataset is True and file_extension == ".json"):
+                    if is_tagged:
+                        file_full_path = os.path.join("images", parent_dir_name, name)
+                    else:
+                        file_full_path = os.path.join("images", name)
                 else:
-                    file_full_path = os.path.join("images", name)
+                    file_full_path = os.path.join("features", name)
 
                 # add proper file path+file name and image to data list
                 data_list.append({"file-path": file_full_path, "data": image_bytes})
