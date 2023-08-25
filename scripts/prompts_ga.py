@@ -420,8 +420,8 @@ log_to_file(f"Mutation Type: {mutation_type}")
 log_to_file(f"Mutation Rate: {mutation_rate}")
 log_to_file(f"Generations: {generations}")
 
-for prompt_str in prompts_str_array:
-    log_to_file(f"Starting Prompts: {prompt_str}")    
+for idx, prompt_str in enumerate(prompts_str_array, 1):
+    log_to_file(f"Prompt {idx}: {prompt_str}") 
 
 ga_instance.run()
 
