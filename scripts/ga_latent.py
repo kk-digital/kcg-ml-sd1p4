@@ -176,13 +176,14 @@ def fitness_func(ga_instance, solution, solution_idx):
     util_clip = ga_instance.util_clip
     chad_score_predictor = ga_instance.chad_score_predictor
 
-    for i in enumerate(solution):
-        value = solution[i]
-        if value > 1 or value < -1:
-            solution[i] = sigmoid(solution[i])
-
     solution_copy = solution.copy()  # flatten() is destructive operation
     solution_flattened = solution_copy.flatten()
+
+    for i in enumerate(solution_flattened):
+        value = solution_flattened[i]
+        if value > 1 or value < -1:
+            solution_flattened[i] = sigmoid(solution_flattened[i])
+
     solution_reshaped = solution_flattened.reshape(1, 4, 64, 64)
 
     latent = torch.tensor(solution_reshaped, device=device, dtype=torch.float32)
@@ -243,6 +244,12 @@ def store_generation_images(ga_instance):
 
         solution_copy = gene.copy()
         solution_flattened = solution_copy.flatten()
+
+        for i in enumerate(solution_flattened):
+            value = solution_flattened[i]
+            if value > 1 or value < -1:
+                solution_flattened[i] = sigmoid(solution_flattened[i])
+
         solution_reshaped = solution_flattened.reshape(1, 4, 64, 64)
 
         latent = torch.tensor(solution_reshaped, device=device, dtype=torch.float32)
