@@ -79,7 +79,7 @@ class TestScripts(unittest.TestCase):
 
     def test_15_chad_sort(self):
         self.run_script(f"{self.scripts_path}chad_sort",
-                        direct="--dataset-path=\"test/test_zip_files/test-dataset-correct-format.zip\" --output-path=\"./output/chad_sort/\"")
+                        direct="--dataset-path=\"test/test_zip_files/test-generated-dataset-correct-format.zip\" --output-path=\"./output/chad_sort/\"")
 
     def test_16_run_generation_task(self):
         self.run_script(f"{self.scripts_path}run_generation_task",
