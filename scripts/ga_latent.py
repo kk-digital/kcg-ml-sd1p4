@@ -179,10 +179,10 @@ def fitness_func(ga_instance, solution, solution_idx):
     solution_copy = solution.copy()  # flatten() is destructive operation
     solution_flattened = solution_copy.flatten()
 
-    for i in enumerate(solution_flattened):
-        value = solution_flattened[i]
+    for j, g in enumerate(solution_flattened):
+        value = solution_flattened[j]
         if value > 1 or value < -1:
-            solution_flattened[i] = sigmoid(solution_flattened[i])
+            solution_flattened[j] = sigmoid(solution_flattened[j])
 
     solution_reshaped = solution_flattened.reshape(1, 4, 64, 64)
 
@@ -245,11 +245,10 @@ def store_generation_images(ga_instance):
         solution_copy = gene.copy()
         solution_flattened = solution_copy.flatten()
 
-        print(solution_flattened)
-        for i in enumerate(solution_flattened):
-            value = solution_flattened[i]
+        for j, g in enumerate(solution_flattened):
+            value = solution_flattened[j]
             if value > 1 or value < -1:
-                solution_flattened[i] = sigmoid(solution_flattened[i])
+                solution_flattened[j] = sigmoid(solution_flattened[j])
 
         solution_reshaped = solution_flattened.reshape(1, 4, 64, 64)
 
