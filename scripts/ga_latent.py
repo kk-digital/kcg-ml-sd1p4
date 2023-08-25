@@ -35,11 +35,11 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Run genetic algorithm with specified parameters.")
 
     parser.add_argument('--generations', type=int, default=100, help="Number of generations to run.")
-    parser.add_argument('--mutation_probability', type=float, default=0.0, help="Probability of mutation.")
+    parser.add_argument('--mutation_probability', type=float, default=0.001, help="Probability of mutation.")
     parser.add_argument('--keep_elitism', type=int, default=1, help="1 to keep best individual, 0 otherwise.")
     parser.add_argument('--crossover_type', type=str, default="uniform", help="Type of crossover operation.")
     parser.add_argument('--mutation_type', type=str, default="random", help="Type of mutation operation.")
-    parser.add_argument('--mutation_percent_genes', type=float, default=0.000,
+    parser.add_argument('--mutation_percent_genes', type=float, default=0.001,
                         help="The percentage of genes to be mutated.")
     parser.add_argument('--population', type=int, default=80, help="Starting population size")
     parser.add_argument("--steps", type=int, default=20, help="Denoiser steps")
