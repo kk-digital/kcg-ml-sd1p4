@@ -404,8 +404,12 @@ def main():
             w=image_width,
             h=image_height
         )
-        latent = latent.numpy()
-        random_gene = np.arange(latent.flatten())
+        latent_numpy = latent.cpu().numpy()
+
+        del latent
+        torch.cuda.empty_cache()
+
+        random_gene = np.arange(latent_numpy.flatten())
         random_population.append(random_gene)
 
     # Initialize the GA
