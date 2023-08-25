@@ -166,6 +166,9 @@ def on_mutation(ga_instance, offspring_mutation):
     log_to_file(f"Performing mutation at generation: {ga_instance.generations_completed}", output_directory)
 
 
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
 def fitness_func(ga_instance, solution, solution_idx):
     sd = ga_instance.sd
     device = ga_instance.device
@@ -205,12 +208,13 @@ def fitness_func(ga_instance, solution, solution_idx):
     torch.cuda.empty_cache()
 
     chad_score = chad_score_predictor.get_chad_score(image_features)
+    chad_score_scaled = sigmoid(chad_score)
 
     # cleanup
     del image_features
     torch.cuda.empty_cache()
 
-    return chad_score
+    return chad_score_scaled
 
 def store_generation_images(ga_instance):
     device = ga_instance.device
