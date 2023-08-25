@@ -21,13 +21,7 @@ The fitness score will be 1.0 when the object occupies one-fourth of the full im
 Example Usage:
 
 ``` shell
-python scripts/ga_bounding_box_size.py \
-  --generations 100 \
-  --mutation_probability 0.05 \
-  --crossover_type single_point \
-  --keep_elitism 0 \
-  --mutation_type random \
-  --mutation_percent_genes 0.05
+python scripts/ga_bounding_box_size.py --generations 100 --mutation_probability 0.05 --crossover_type single_point --keep_elitism 0 --mutation_type random --mutation_percent_genes 0.05
 ```
 
 Documentation for script at `./scripts/ga_bounding_box_centered.py`.
