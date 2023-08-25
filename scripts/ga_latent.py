@@ -7,7 +7,7 @@ sys.path.insert(0, base_dir)
 
 import random
 from os.path import join
-
+import shutil
 import clip
 import pygad
 import argparse
@@ -30,12 +30,13 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Run genetic algorithm with specified parameters.")
 
     parser.add_argument('--generations', type=int, default=2000, help="Number of generations to run.")
-    parser.add_argument('--mutation_probability', type=float, default=0.05, help="Probability of mutation.")
+    parser.add_argument('--mutation_probability', type=float, default=20, help="Probability of mutation.")
     parser.add_argument('--keep_elitism', type=int, default=0, help="1 to keep best individual, 0 otherwise.")
     parser.add_argument('--crossover_type', type=str, default="single_point", help="Type of crossover operation.")
     parser.add_argument('--mutation_type', type=str, default="random", help="Type of mutation operation.")
-    parser.add_argument('--mutation_percent_genes', type=float, default="0.001",
+    parser.add_argument('--mutation_percent_genes', type=float, default="1",
                         help="The percentage of genes to be mutated.")
+    parser.add_argument('--population', type=int, default=20, help="Starting population size")
     parser.add_argument('--seed', type=int, default=0, help="Seed for images generation")
     parser.add_argument("--cfg_strength", type=float, default=7.5)
     parser.add_argument("--steps", type=int, default=20, help="Denoiser steps")
@@ -105,8 +106,17 @@ def calculate_chad_score(ga_instance, solution, solution_idx):
 
 
 def cached_fitness_func(ga_instance, solution, solution_idx):
+    sd = ga_instance.sd
+    device = ga_instance.device
+
     solution_copy = solution.copy()  # flatten() is destructive operation
     solution_flattened = solution_copy.flatten()
+    solution_reshaped = solution_flattened.reshape(1, 64, 64)
+
+    latent = torch.tensor(solution_reshaped, device=device)
+    sd.get_image_from_latent(latent)
+
+    calculate_chad_score()
     if tuple(solution_flattened) in fitness_cache:
         print('Returning cached score', fitness_cache[tuple(solution_flattened)])
     if tuple(solution_flattened) not in fitness_cache:
@@ -218,6 +228,15 @@ def prompt_embedding_vectors(sd, prompt_array):
 def main():
 
     args = parse_args()
+    generations = args.generations
+    population_size = args.population
+    mutation_percent_genes = args.mutation_percent_genes
+    mutation_probability = args.mutation_probability
+    keep_elitism = args.keep_elitism
+    crossover_type = args.crossover_type
+    mutation_type = args.mutation_type
+    steps = args.steps;
+
     device = get_device(device=args.device)
     output_directory = args.output
     output_image_directory = join(output_directory, "images/")
@@ -232,21 +251,13 @@ def main():
 
     # make sure the directories are created
     os.makedirs(output_directory, exist_ok=True)
+    # Remove the directory and its contents recursively
+    shutil.rmtree(output_directory)
+    os.makedirs(output_image_directory, exist_ok=True)
+    os.makedirs(output_feature_directory, exist_ok=True)
 
-    OUTPUT_DIR = os.path.abspath(join(base_dir, 'output', 'ga'))
-    IMAGES_ROOT_DIR = os.path.abspath(join(OUTPUT_DIR, "images/"))
-    FEATURES_DIR = os.path.abspath(join(OUTPUT_DIR, "features/"))
 
-    os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    os.makedirs(FEATURES_DIR, exist_ok=True)
-    os.makedirs(IMAGES_ROOT_DIR, exist_ok=True)
-
-    # Creating new subdirectory for this run of the GA (e.g. output/ga/images/ga001)
-    IMAGES_DIR = get_next_ga_dir(IMAGES_ROOT_DIR)
-    os.makedirs(IMAGES_DIR, exist_ok=True)
-
-    csv_filename = os.path.join(IMAGES_DIR, "fitness_data.csv")
+    csv_filename = os.path.join(output_directory, "fitness_data.csv")
 
     # Write the headers to the CSV file
     if not os.path.exists(csv_filename):
@@ -254,102 +265,58 @@ def main():
             csvwriter = csv.writer(csvfile)
             csvwriter.writerow(['Generation #', 'Population Size', 'Fitness (mean)', 'Fitness (variance)', 'Fitness (best)', 'Fitness array'])
 
-    fitness_cache = {}
-
     # TODO: NULL_PROMPT is completely wrong
     NULL_PROMPT = None  # assign later
 
     # DEVICE = input("Set device: 'cuda:i' or 'cpu'")
     config = ModelPathConfig()
 
-    print(EMBEDDED_PROMPTS_DIR)
-    print(OUTPUT_DIR)
-    print(IMAGES_ROOT_DIR)
-    print(IMAGES_DIR)
-    print(FEATURES_DIR)
+    print(output_directory)
+    print(output_image_directory)
+    print(output_feature_directory)
+    print(csv_filename)
 
     clip_start_time = time.time()
 
-
     # Call the GA loop function with your initialized StableDiffusion model
 
-    generations = args.generations
-    population_size = 80
-    mutation_percent_genes = args.mutation_percent_genes
-    mutation_probability = args.mutation_probability
-    keep_elitism = args.keep_elitism
-
-    crossover_type = args.crossover_type
-    mutation_type = args.mutation_type
-    mutation_rate = 0.001
-
     parent_selection_type = "tournament"  # "sss", rws, sus, rank, tournament
-
     # num_parents_mating = int(population_size *.80)
     num_parents_mating = int(population_size * .60)
     # mutation_type = "adaptive" #try adaptive mutation
-
-    '''
-    Random: mutation_type=random
-    Swap: mutation_type=swap
-    Inversion: mutation_type=inversion
-    Scramble: mutation_type=scramble
-    '''
-
-    # adaptive mutation:
-    # https://neptune.ai/blog/adaptive-mutation-in-genetic-algorithm-with-python-examples
-
-    # Load Stable Diffusion
-    sd = StableDiffusion(device=DEVICE, n_steps=N_STEPS)
-    sd.quick_initialize().load_autoencoder(config.get_model(SDconfigs.VAE)).load_decoder(config.get_model(SDconfigs.VAE_DECODER))
-    sd.model.load_unet(config.get_model(SDconfigs.UNET))
-    # calculate prompts
-
-    # Get embedding of null prompt
-    NULL_PROMPT = prompt_embedding_vectors(sd, [""])[0]
-    # print("NULL_PROMPT= ", str(NULL_PROMPT))
-    # print("NULL_PROMPT size= ", str(torch.Tensor.size(NULL_PROMPT)))
-
-    # generate prompts and get embeddings
-    prompt_phrase_length = 10  # number of words in prompt
-    prompts_array = ga.generate_prompts(population_size, prompt_phrase_length)
-
-    # get prompt_str array
-    prompts_str_array = []
-    for prompt in prompts_array:
-        prompt_str = prompt.get_prompt_str()
-        prompts_str_array.append(prompt_str)
-
-    embedded_prompts = prompt_embedding_vectors(sd, prompt_array=prompts_str_array)
-
-    print("genetic_algorithm_loop: population_size= ", population_size)
-
-    # ERROR: REVIEW
-    # TODO: What is this doing?
-    # Move the 'embedded_prompts' tensor to CPU memory
-    embedded_prompts_cpu = embedded_prompts.to("cpu")
-    embedded_prompts_array = embedded_prompts_cpu.detach().numpy()
-    embedded_prompts_list = embedded_prompts_array.reshape(population_size, 77 * 768).tolist()
-
-    # random_mutation_min_val=5,
-    # random_mutation_max_val=10,
-    # mutation_by_replacement=True,
-
     # note: uniform is good, two_points"
     crossover_type = "uniform"
 
-    num_genes = 77 * 768  # 59136
+
+    # Load Stable Diffusion
+    sd = StableDiffusion(device=device, n_steps=steps)
+    sd.quick_initialize().load_autoencoder(config.get_model(SDconfigs.VAE)).load_decoder(config.get_model(SDconfigs.VAE_DECODER))
+    sd.model.load_unet(config.get_model(SDconfigs.UNET))
+
+    print("genetic_algorithm_loop: population_size= ", population_size)
+
+    # number of chromozome genes
+    num_genes = 64 * 64
+
+    # Create a list to store the random population
+    random_population = []
+
+    # Generate and append random arrays to the list
+    for _ in range(population_size):
+        random_gene = np.random.rand(num_genes)
+        random_population.append(random_gene)
+
     # Initialize the GA
-    ga_instance = pygad.GA(initial_population=embedded_prompts_list,
+    ga_instance = pygad.GA(initial_population=random_population,
                            num_generations=generations,
                            num_parents_mating=num_parents_mating,
                            fitness_func=cached_fitness_func,
                            sol_per_pop=population_size,
-                           num_genes=77 * 768,  # 59136
+                           num_genes=num_genes,
                            # Pygad uses 0-100 range for percentage
-                           mutation_percent_genes=0.01,
+                           mutation_percent_genes=mutation_percent_genes,
                            # mutation_probability=mutation_probability,
-                           mutation_probability=0.30,
+                           mutation_probability=mutation_probability,
                            keep_elitism=keep_elitism,
                            crossover_type=crossover_type,
                            mutation_type=mutation_type,
@@ -360,8 +327,6 @@ def main():
                            parent_selection_type=parent_selection_type,
                            keep_parents=0,
                            mutation_by_replacement=True,
-                           random_mutation_min_val=5,
-                           random_mutation_max_val=10,
                            # fitness_func=calculate_chad_score,
                            # on_parents=on_parents,
                            # on_crossover=on_crossover,
@@ -369,13 +334,10 @@ def main():
                            )
     print(f"Batch Size: {population_size}")
     print((f"Generations: {generations}"))
-    log_to_file(f"Batch Size: {population_size}")
-    log_to_file(f"Mutation Type: {mutation_type}")
-    log_to_file(f"Mutation Rate: {mutation_rate}")
-    log_to_file(f"Generations: {generations}")
 
-    for idx, prompt_str in enumerate(prompts_str_array, 1):
-        log_to_file(f"Prompt {idx}: {prompt_str}")
+    # pass custom data to ga_instance
+    ga_instance.sd = sd
+    ga_instance.device = device
 
     ga_instance.run()
 
@@ -397,12 +359,3 @@ def main():
     log_to_file(f"Total Time for Clip Calculations: {clip_total_time} seconds")
     log_to_file(f"Clip Calculations per Second {clip_calculations_per_second} ")
 
-    '''
-    Notes:
-    - 14 generatoins, readed 14 best
-    - with 12 rounds/iterations
-    - population size 16
-    - with uniform cross over
-    '''
-
-    del preprocess, image_features_clip_model, sd
