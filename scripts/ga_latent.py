@@ -409,8 +409,7 @@ def main():
         del latent
         torch.cuda.empty_cache()
 
-        random_gene = np.arange(latent_numpy.flatten())
-        random_population.append(random_gene)
+        random_population.append(latent_numpy.flatten())
 
     # Initialize the GA
     ga_instance = pygad.GA(initial_population=random_population,
