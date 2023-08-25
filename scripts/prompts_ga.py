@@ -242,8 +242,10 @@ def on_fitness(ga_instance, population_fitness):
     log_to_file(f"Fitness (mean): {np.mean(population_fitness_np)}")
     log_to_file(f"Fitness (variance): {np.var(population_fitness_np)}")
     log_to_file(f"Fitness (best): {np.max(population_fitness_np)}")
-    log_to_file(f"Prompt: {str(prompt)}")
     log_to_file(f"fitness array= {str(population_fitness_np)}")
+
+    for prompt_str in prompts_str_array:
+        log_to_file(f"Prompt: {prompt_str}")    
 
 
 def on_mutation(ga_instance, offspring_mutation):
