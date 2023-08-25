@@ -343,8 +343,6 @@ def prompt_embedding_vectors(sd, prompt_array):
 
 # Call the GA loop function with your initialized StableDiffusion model
 
-MUTATION_RATE = 0.01
-
 generations = args.generations
 population_size = 80
 mutation_percent_genes = args.mutation_percent_genes
@@ -359,10 +357,7 @@ parent_selection_type = "tournament"  # "sss", rws, sus, rank, tournament
 
 # num_parents_mating = int(population_size *.80)
 num_parents_mating = int(population_size * .60)
-keep_elitism = 0  # int(population_size*0.20)
-mutation_probability = 0.10
 # mutation_type = "adaptive" #try adaptive mutation
-mutation_type = "swap"
 
 '''
 Random: mutation_type=random
