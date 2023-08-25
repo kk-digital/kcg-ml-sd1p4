@@ -229,7 +229,6 @@ def store_generation_images(ga_instance):
     file_dir = os.path.join(output_image_directory, str(generation))
     os.makedirs(file_dir)
     for i, gene in enumerate(ga_instance.population):
-        print("image : ", i)
 
         solution_copy = gene.copy()
         solution_flattened = solution_copy.flatten()
