@@ -52,6 +52,7 @@ def parse_args():
     parser.add_argument("--image_width", type=int, default=512)
     parser.add_argument("--image_height", type=int, default=512)
     parser.add_argument("--output", type=str, default="./output/ga_latent/", help="Specifies the output folder")
+    parser.add_argument("--use_random_images", type=bool, default=False)
 
     args = parser.parse_args()
 
@@ -298,9 +299,7 @@ def main():
     checkpoint_path = args.checkpoint_path
     image_width = args.image_width
     image_height = args.image_height
-
-
-    use_randodm_images = False
+    use_randodm_images = args.use_randodm_images
 
     device = get_device(device=args.device)
     output_directory = args.output
