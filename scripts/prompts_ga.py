@@ -242,7 +242,7 @@ def on_fitness(ga_instance, population_fitness):
     log_to_file(f"Fitness (mean): {np.mean(population_fitness_np)}")
     log_to_file(f"Fitness (variance): {np.var(population_fitness_np)}")
     log_to_file(f"Fitness (best): {np.max(population_fitness_np)}")
-    log_to_file(f"Prompt: {str(prompt_str)}")
+    log_to_file(f"Prompt: {str(prompt)}")
     log_to_file(f"fitness array= {str(population_fitness_np)}")
 
 
@@ -364,7 +364,6 @@ prompts_str_array = []
 for prompt in prompts_array:
     prompt_str = prompt.get_prompt_str()
     prompts_str_array.append(prompt_str)
-    print (prompt)
 embedded_prompts = prompt_embedding_vectors(sd, prompt_array=prompts_str_array)
 
 print("genetic_algorithm_loop: population_size= ", population_size)
