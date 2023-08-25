@@ -237,9 +237,6 @@ def on_fitness(ga_instance, population_fitness):
     print("Fitness (best): ", np.max(population_fitness_np))
     print("fitness array= ", str(population_fitness_np))
 
-    for prompt_str in prompts_str_array:
-        log_to_file(f"Prompt: {prompt_str}")    
-
     log_to_file(f"Generation #{ga_instance.generations_completed}")
     log_to_file(f"Population Size= {len(population_fitness_np)}")
     log_to_file(f"Fitness (mean): {np.mean(population_fitness_np)}")
@@ -422,6 +419,9 @@ log_to_file(f"Batch Size: {population_size}")
 log_to_file(f"Mutation Type: {mutation_type}")
 log_to_file(f"Mutation Rate: {mutation_rate}")
 log_to_file(f"Generations: {generations}")
+
+for prompt_str in prompts_str_array:
+    log_to_file(f"Starting Prompts: {prompt_str}")    
 
 ga_instance.run()
 
