@@ -379,7 +379,7 @@ def main():
     # Generate and append random arrays to the list
     for i in range(population_size):
         gene = None
-        if use_random_images:
+        if not use_random_images:
             this_prompt = prompt_list[i].prompt_str
             # no negative prompts for now
             negative_prompts = []

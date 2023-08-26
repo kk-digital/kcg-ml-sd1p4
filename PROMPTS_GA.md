@@ -75,6 +75,59 @@ python scripts/ga_bounding_box_centered.py \
   --mutation_percent_genes 0.05
 ```
 
+
+
+### scripts/ga_latent.py
+
+Documentation for script at `./scripts/ga_latent.py`.
+
+The script generates random latent vectors or can generate images from random prompt to initialize a genetic algorithm population.
+The fitness function is chad_score.
+
+Example Usage:
+
+``` shell
+python scripts/ga_latent.py
+```
+### CLI args
+
+```
+options:
+  --generations GENERATIONS
+                        Number of generations to run.
+  --mutation_probability MUTATION_PROBABILITY
+                        Probability of mutation.
+  --keep_elitism KEEP_ELITISM
+                        1 to keep best individual, 0 otherwise.
+  --crossover_type CROSSOVER_TYPE
+                        Type of crossover operation.
+  --mutation_type MUTATION_TYPE
+                        Type of mutation operation.
+  --mutation_percent_genes MUTATION_PERCENT_GENES
+                        The percentage of genes to be mutated.
+  --use_random_images USE_RANDOM_IMAGES
+                        is the flag is strue, generate random latent vectors
+  --steps STEPS
+                        number of steps for sampler
+  --device DEVICE
+                        device to use  
+  --num_phrases NUM_PHRASES
+                        number of phrases in the random prompt generator
+  --cfg_strength CFG_STRENGTH
+                        cfg_strength for the generated images
+  --sampler SAMPLER
+                        sampler name (ddim, ddpm)
+  --cheackpoint_path CHEACKPOINT_PATh
+                        stable diffusion model path, used to generate images
+  --image_width IMAGE_WIDTH
+                        width of the generated textures
+  --image_height IMAGE_HEIGHT
+                        height of the generated textures
+  --output OUTPUT
+                        output path for the ga
+
+```
+
 ### scripts/ga_filesize.py
 
 Documentation for script at `./scripts/ga_filesize.py`.
