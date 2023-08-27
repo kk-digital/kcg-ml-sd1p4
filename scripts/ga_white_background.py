@@ -24,6 +24,7 @@ from ga.utils import get_next_ga_dir
 import ga
 from ga.fitness_pixel_value import fitness_pixel_value
 from ga.fitness_white_background import white_background_fitness
+from ga.fitness_filesize import filesize_fitness
 
 
 random.seed()
@@ -135,7 +136,7 @@ def calculate_fitness_score(ga_instance, solution, solution_idx):
         pil_image = pil_image.convert("L")
         pil_image = pil_image.convert("RGB")
 
-    fitness_score = white_background_fitness(pil_image)
+    fitness_score = filesize_fitness(pil_image)
     #fitness_pixel = fitness_pixel_value(pil_image)
 
     #fitness_score = (fitness_white + fitness_pixel) / 2.0
