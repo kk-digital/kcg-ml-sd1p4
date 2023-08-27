@@ -291,7 +291,7 @@ def main():
     mutation_probability = args.mutation_probability
     keep_elitism = args.keep_elitism
     crossover_type = args.crossover_type
-    mutation_type = args.mutation_type
+    mutation_type = None
     steps = args.steps
     num_phrases = args.num_phrases
     cfg_strength = args.cfg_strength
