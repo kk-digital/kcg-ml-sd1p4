@@ -302,7 +302,7 @@ print("genetic_algorithm_loop: population_size= ", population_size)
 embedded_prompts_cpu = embedded_prompts.to("cpu")
 embedded_prompts_array = embedded_prompts_cpu.detach().numpy()
 print(f"array shape: {embedded_prompts_array.shape}")
-embedded_prompts_list = embedded_prompts_array.reshape(population_size, 77 * 1024).tolist()
+embedded_prompts_list = embedded_prompts_array.reshape(population_size, 77 * 768).tolist()
 
 # Initialize the population of coefficients here:
 num_embeddings = 1024
