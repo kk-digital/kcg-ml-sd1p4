@@ -225,7 +225,7 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
                     w=image_width,
                     h=image_height
                 )
-
+                print("Shape of latent array:", latent.shape)  
                 task['latent'] = latent
 
             tmp_end_time = time.time()
