@@ -153,13 +153,12 @@ def generate_images_from_random_prompt(num_images, image_width, image_height, cf
         current_batch = []
         current_batch_index = 0
         current_batch_image_index = 0
-        prefix_prompt = "isolated on white background, simple background, background chroma plain white, on white background, solid background, centered, no background "
         # Loop through images and generate the prompt, seed for each one
         for i in range(num_images):
             print("Generating batches : image " + str(i) + " out of " + str(num_images));
 
             num_prompts_per_image = 12
-            this_prompt = prefix_prompt + prompt_generator.random_prompt(num_prompts_per_image)
+            this_prompt = prompt_generator.random_prompt(num_prompts_per_image)
             this_seed = seed_array[(i + current_task_index * num_images) % len(seed_array)]
             timestamp = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
             total_digits = 4

@@ -127,7 +127,7 @@ def initialize_prompt_list():
                                      "fantasy", "mythical", "scifi", "character",
                                      "colored", "video game"])
 
-    prompt_list.add_constraint_phrases(["white background", "no background", "not centered", "centered"])
+    prompt_list.add_constraint_phrases(["white background", "soild background" "no background", "centered", "isolated on white background", "simple background"])
 
     prompt_list.add_style_phrases(["sketch", "line drawing", "side scrolling"])
 
