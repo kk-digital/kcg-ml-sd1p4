@@ -237,7 +237,6 @@ def generate_images_from_prompt_generator(num_images, image_width, image_height,
                 image_list, image_hash_list = save_images(images, filename)
                 image_hash = image_hash_list[0]
                 image = image_list[0]
-
                 task['image'] = image
                 task['image_hash'] = image_hash
 
