@@ -200,6 +200,7 @@ def store_generation_images(ga_instance):
         if FIXED_SEED == True:
             SEED = 54846
         prompt_embedding = torch.tensor(ind, dtype=torch.float32).to(DEVICE)
+        print(prompt_embedding.shape)
         prompt_embedding = prompt_embedding.view(1, 77, 1024)
 
         print("prompt_embedding, tensor size= ", str(torch.Tensor.size(prompt_embedding)))
@@ -315,7 +316,7 @@ initial_population = np.random.uniform(-1, 1, (population_size, num_embeddings))
 
 # note: uniform is good, two_points"
 
-num_genes = 77 * 1024  # 59136
+num_genes = 77 * 1024  
 # Initialize the GA
 ga_instance = pygad.GA(initial_population=initial_population,
                        num_generations=generations,
