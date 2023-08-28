@@ -112,7 +112,7 @@ def calculate_fitness_score(ga_instance, solution, solution_idx, embedded_prompt
     
     # Convert the combined numpy array to a PyTorch tensor
     prompt_embedding = torch.tensor(combined_embedding_np, dtype=torch.float32)
-    prompt_embedding = prompt_embedding.view(1, 77, 1024).to(DEVICE)
+    prompt_embedding = prompt_embedding.view(1, 77, 768).to(DEVICE)
 
     latent = sd.generate_images_latent_from_embeddings(
         seed=SEED,
@@ -200,8 +200,7 @@ def store_generation_images(ga_instance):
         if FIXED_SEED == True:
             SEED = 54846
         prompt_embedding = torch.tensor(ind, dtype=torch.float32).to(DEVICE)
-        print(prompt_embedding.shape)
-        prompt_embedding = prompt_embedding.view(1, 77, 1024)
+        prompt_embedding = prompt_embedding.view(1, 77, 768)
 
         print("prompt_embedding, tensor size= ", str(torch.Tensor.size(prompt_embedding)))
         print("NULL_PROMPT, tensor size= ", str(torch.Tensor.size(NULL_PROMPT)))
@@ -287,7 +286,7 @@ prompts_array = ga.generate_prompts(population_size, prompt_phrase_length)
 
 # get prompt_str array
 prompts_str_array = []
-prefix_prompt = " on white, simple background, centered, black character, white background, no background,"
+prefix_prompt = " centered , white background, black object, black and white, no background,"
 for prompt in prompts_array:
     prompt_str = prefix_prompt + prompt.get_prompt_str()
     prompts_str_array.append(prompt_str)
@@ -316,14 +315,14 @@ initial_population = np.random.uniform(-1, 1, (population_size, num_embeddings))
 
 # note: uniform is good, two_points"
 
-num_genes = 77 * 1024  
+num_genes = 77 * 768  # 59136
 # Initialize the GA
 ga_instance = pygad.GA(initial_population=initial_population,
                        num_generations=generations,
                        num_parents_mating=num_parents_mating,
                        fitness_func=cached_fitness_func,
                        sol_per_pop=population_size,
-                       num_genes= num_genes,  
+                       num_genes=77 * 768,  # 59136
                        # Pygad uses 0-100 range for percentage
                        mutation_percent_genes= mutation_percent_genes,
                        mutation_probability = mutation_probability,
