@@ -112,7 +112,7 @@ def calculate_fitness_score(ga_instance, solution, solution_idx, embedded_prompt
     
     # Convert the combined numpy array to a PyTorch tensor
     prompt_embedding = torch.tensor(combined_embedding_np, dtype=torch.float32)
-    prompt_embedding = prompt_embedding.view(1, 77, 768).to(DEVICE)
+    prompt_embedding = prompt_embedding.view(1, 77, 1024).to(DEVICE)
 
     latent = sd.generate_images_latent_from_embeddings(
         seed=SEED,
@@ -200,7 +200,7 @@ def store_generation_images(ga_instance):
         if FIXED_SEED == True:
             SEED = 54846
         prompt_embedding = torch.tensor(ind, dtype=torch.float32).to(DEVICE)
-        prompt_embedding = prompt_embedding.view(1, 77, 768)
+        prompt_embedding = prompt_embedding.view(1, 77, 1024)
 
         print("prompt_embedding, tensor size= ", str(torch.Tensor.size(prompt_embedding)))
         print("NULL_PROMPT, tensor size= ", str(torch.Tensor.size(NULL_PROMPT)))
@@ -302,7 +302,7 @@ print("genetic_algorithm_loop: population_size= ", population_size)
 embedded_prompts_cpu = embedded_prompts.to("cpu")
 embedded_prompts_array = embedded_prompts_cpu.detach().numpy()
 print(f"array shape: {embedded_prompts_array.shape}")
-embedded_prompts_list = embedded_prompts_array.reshape(population_size, 77 * 768).tolist()
+embedded_prompts_list = embedded_prompts_array.reshape(population_size, 77 * 1024).tolist()
 
 # Initialize the population of coefficients here:
 num_embeddings = 1024
