@@ -173,12 +173,13 @@ class DDIMSampler(DiffusionSampler):
         start_h, end_h = quarter_height, 3 * quarter_height
         start_w, end_w = quarter_width, 3 * quarter_width
 
-        # Set all the image to white
-        x[:, :, :, :] = 1.0
+        # Set the areas outside the center 1/4th of the image to white
+        x[:, :, :start_h, :] = 1.0
+        x[:, :, end_h:, :] = 1.0
+        x[:, :, :, :start_w] = 1.0
+        x[:, :, :, end_w:] = 1.0
 
-        # Reset the center 1/4th of the image to its original values
-        x[:, :, start_h:end_h, start_w:end_w] = x_last[:, :, start_h:end_h, start_w:end_w] if x_last is not None else noise_fn([batch_size, channels, end_h - start_h, end_w - start_w], device=device)
-
+        # Return $x_0$
         return x
 
     @torch.no_grad()
