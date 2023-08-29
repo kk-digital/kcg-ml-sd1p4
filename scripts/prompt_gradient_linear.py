@@ -16,7 +16,7 @@ from configs.model_config import ModelPathConfig
 
 from ga.model_clip_text import clip_text_get_prompt_embedding
 from model.linear_regression import LinearRegressionModel
-from model.util_data_loader import ZipDataLoader
+from utility.dataset.generated_image_dataset import GeneratedImageDataset
 
 from stable_diffusion import StableDiffusion
 from stable_diffusion.utils_backend import get_device
@@ -172,24 +172,12 @@ def main():
     inputs = []
     expected_outputs = []
 
-    zip_data_loader = ZipDataLoader()
-    loaded_data = zip_data_loader.load(zip_file_path)
-
-    for element in loaded_data:
-        image_meta_data = element['image_meta_data']
-        embedding_vector = element['embedding_vector']
-
-        embedding_vector = torch.tensor(embedding_vector, dtype=torch.float32, device=DEVICE);
-        # Convert the tensor to a flat vector
-        flat_embedded_prompts = torch.flatten(embedding_vector)
-
-        with torch.no_grad():
-            flat_vector = flat_embedded_prompts.cpu().numpy()
-
-        chad_score = image_meta_data.chad_score
-
-        inputs.append(flat_vector)
-        expected_outputs.append(chad_score)
+    # Load the dataset
+    image_dataset = GeneratedImageDataset()
+    image_dataset.load_dataset(zip_file_path)
+    loaded_data, _ = image_dataset.get_training_and_validation_dataset(1.0)
+    inputs = loaded_data.get_embedding_vector()
+    expected_outputs = loaded_data.get_chad_scores()
 
     linear_regression_model = LinearRegressionModel(len(inputs[0]), DEVICE)
     linear_regression_model.load(model_path)
@@ -242,7 +230,7 @@ def main():
                         starting_model_score,
                         starting_chad_score)
     report_dir = os.path.join('output', 'gradient')
-    report_file_path = os.path.join(report_dir, 'report.txt')
+    report_file_path = os.path.join(report_dir, 'linear_regression_report.txt')
     print(report_str)
     with open(report_file_path, "w", encoding="utf-8") as file:
         file.write(report_str)
