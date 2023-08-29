@@ -174,10 +174,10 @@ class DDIMSampler(DiffusionSampler):
         start_w, end_w = quarter_width, 3 * quarter_width
 
         # Set the areas outside the center 1/4th of the image to white
-        x[:, :, :start_h, :] = 7.0
-        x[:, :, end_h:, :] = 7.0
-        x[:, :, :, :start_w] = 7.0
-        x[:, :, :, end_w:] = 7.0
+        x[:, :, :start_h, :] = 255.0
+        x[:, :, end_h:, :] = 255.0
+        x[:, :, :, :start_w] = 255.0
+        x[:, :, :, end_w:] = 255.0
 
         # Return $x_0$
         return x
