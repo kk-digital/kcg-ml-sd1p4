@@ -165,7 +165,17 @@ class DDIMSampler(DiffusionSampler):
 
                 # Add a delay for visibility of the loading animation
                 time.sleep(0.1)
-
+            # At the end of your function, before returning x:
+        batch_size, channels, height, width = x.shape
+        quarter_height, quarter_width = height // 4, width // 4
+        
+        # Calculate the start and end positions for height and width
+        start_h, end_h = quarter_height, 3 * quarter_height
+        start_w, end_w = quarter_width, 3 * quarter_width
+        
+        # Set the center 1/4th of the image to white for all batches and channels
+        x[:, :, start_h:end_h, start_w:end_w] = 1.0
+        
         # Return $x_0$
         return x
 
