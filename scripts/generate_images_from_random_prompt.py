@@ -89,7 +89,7 @@ class Txt2Img(StableDiffusionBaseScript):
                                     uncond_cond=null_prompt,
                                     noise_fn=noise_fn,
                                     temperature=temperature)
-
+            print (x)
             return x
 
 
