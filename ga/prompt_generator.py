@@ -4,6 +4,7 @@ import tiktoken
 import time
 import json
 
+
 class GeneratedPrompt():
     def __init__(self, prompt_dict: [], prompt_vector: []):
         self.prompt_dict = prompt_dict
@@ -117,19 +118,22 @@ def initialize_prompt_list():
     prompt_list = PromptList()
 
     prompt_list.add_topic_phrases(["chibi", "waifu", "cyborg", "dragon", "android", "mecha", "companion", "furry",
-                                  "robot", "mercenary", "wizard",
-                                  "pet", "shapeshifter", "pilot", "time traveler", "engineer", "slaver",
-                                  "samurai"])
+                                   "robot", "mercenary", "wizard",
+                                   "pet", "shapeshifter", "pilot", "time traveler", "engineer", "slaver",
+                                   "samurai"])
 
     prompt_list.add_modifier_phrases(["beautiful", "unreal", "masterpiece", "gorgeous", "stunning", "captivating",
-                                     "breathtaking", "exquisite", "magnificent", "majestic", "elegant", "sublime",
-                                     "futuristic", "cyberpunk", "hi-tech", "advanced", "innovative", "modern",
-                                     "fantasy", "mythical", "scifi", "character", "full character", "black and white",
-                                     "colored", "video game"])
+                                      "breathtaking", "exquisite", "magnificent", "majestic", "elegant", "sublime",
+                                      "futuristic", "cyberpunk", "hi-tech", "advanced", "innovative", "modern",
+                                      "fantasy", "mythical", "scifi", "character", "full character", "black and white",
+                                      "colored", "video game"])
 
     prompt_list.add_constraint_phrases(["white background", "no background", "not centered", "centered"])
 
-    prompt_list.add_style_phrases(["sketch", "line drawing", "side scrolling"])
+    prompt_list.add_style_phrases(
+        ["sketch", "line drawing", "side scrolling", "Highly stylized digital artwork of (an ocean of many hearts)",
+         "trending on artstation", "incredible vibrant colors", "dynamic epic composition", "foamy stylized water",
+         "ray tracing", "traditional art by studio ghibli"])
 
     return prompt_list.Prompts
 
@@ -167,7 +171,6 @@ def generate_prompts(prompt_count, prompt_phrase_length):
             num_tokens = len(prompt_tokens)
 
         prompt_list.append(GeneratedPrompt(prompt_dict, prompt_vector))
-
 
     return prompt_list
 
