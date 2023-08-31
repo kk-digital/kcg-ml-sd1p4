@@ -387,7 +387,7 @@ prompts_array = ga.generate_prompts(population_size, prompt_phrase_length)
 # get prompt_str array
 prompts_str_array = []
 for prompt in prompts_array:
-    prompt_str = prompt.get_prompt_str()
+    prompt_str = prompt.get_positive_prompt_str()
     prompts_str_array.append(prompt_str)
 
 embedded_prompts = prompt_embedding_vectors(sd, prompt_array=prompts_str_array)

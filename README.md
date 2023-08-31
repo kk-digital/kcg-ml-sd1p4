@@ -399,23 +399,31 @@ python scripts/prompt_gradient.py --input_path input/set_0000_v2.zip --model_pat
 ### Prompt Generator
 Generates prompts and saves to a json file
 ```
-usage: prompt_generator.py [-h] [--num-prompts NUM_PROMPTS] [--num-phrases NUM_PHRASES] [--output OUTPUT]
+usage: prompt_generator.py [-h] [--positive-prefix POSITIVE_PREFIX] [--num-prompts NUM_PROMPTS] [--csv-phrase-limit CSV_PHRASE_LIMIT] [--csv-path CSV_PATH] [--save-embeddings SAVE_EMBEDDINGS] [--output OUTPUT] [--checkpoint-path CHECKPOINT_PATH]
 
-Prompt Generator CLI tool
+Prompt Generator CLI tool generates prompts from phrases inside a csv
 
 options:
   -h, --help            show this help message and exit
+  --positive-prefix POSITIVE_PREFIX
+                        Prefix phrase to add to positive prompts
   --num-prompts NUM_PROMPTS
                         Number of prompts to generate
-  --num-phrases NUM_PHRASES
-                        Number of phrases per prompt
+  --csv-phrase-limit CSV_PHRASE_LIMIT
+                        Number of phrases to use from the csv data
+  --csv-path CSV_PATH   Full path to the csv path
+  --save-embeddings SAVE_EMBEDDINGS
+                        True if prompt embeddings will be saved
   --output OUTPUT       Output path for prompt list json
+  --checkpoint-path CHECKPOINT_PATH
+                        Path to the model checkpoint
+
 
 ```
 
 Example Usage:
 ```
-python ./scripts/prompt_generator.py --num-prompts 1000 --num-phrases 12 --output "./output/prompt_list_1000.json" 
+ python ./scripts/prompt_generator.py --num-prompts 2 --positive-prefix "icons, pixel art" --csv-phrase-limit 128 --csv-path ./input/civit_ai_data_phrase_count_v5.csv --save-embeddings True --output ./output/prompt_list_civitai.json --checkpoint-path ./input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors
 ```
 
 ### Auto-ml

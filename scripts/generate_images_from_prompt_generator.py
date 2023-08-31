@@ -147,7 +147,7 @@ def generate_images_from_prompt_generator(num_images, image_width, image_height,
         for i in range(num_images):
             print("Generating batches : image " + str(i) + " out of " + str(num_images));
 
-            this_prompt = prompt_list[i].prompt_str
+            this_prompt = prompt_list[i].positive_prompt_str
             prompt_dict = prompt_list[i]
             this_seed = seed_array[(i + current_task_index * num_images) % len(seed_array)]
             timestamp = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
@@ -343,9 +343,12 @@ def generate_images_from_prompt_generator(num_images, image_width, image_height,
                 # save image latent to its own file
                 np.savez_compressed(latent_filepath, data=latent)
                 # save prompt dictionary to its own file
-                np.savez_compressed(prompt_dict_filepath, prompt_dict=prompt_dict.prompt_dict,
-                                    prompt_str=prompt_dict.prompt_str, prompt_vector=prompt_dict.prompt_vector,
-                                    num_topics=prompt_dict.num_topics, num_modifiers=prompt_dict.num_modifiers,
+                np.savez_compressed(prompt_dict_filepath,
+                                    positive_prompt_str=prompt_dict.positive_prompt_str,
+                                    negative_prompt_str=prompt_dict.negative_prompt_str,
+                                    prompt_vector=prompt_dict.prompt_vector,
+                                    num_topics=prompt_dict.num_topics,
+                                    num_modifiers=prompt_dict.num_modifiers,
                                     num_styles=prompt_dict.num_styles,
                                     num_constraints=prompt_dict.num_constraints)
 
