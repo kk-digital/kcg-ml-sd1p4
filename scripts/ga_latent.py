@@ -380,7 +380,7 @@ def main():
     for i in range(population_size):
         gene = None
         if not use_random_images:
-            this_prompt = prompt_list[i].prompt_str
+            this_prompt = prompt_list[i].positive_prompt_str
             # no negative prompts for now
             negative_prompts = []
             un_cond, cond = txt2img.get_text_conditioning(cfg_strength, this_prompt, negative_prompts, 1)
