@@ -5,7 +5,7 @@ import tiktoken
 # source civitai json
 data_json = "./input/civitai_data.json"
 # full path of output csv file
-output_csv = "./input/civit_ai_data_phrase_count.csv"
+output_csv = "./input/civit_ai_data_phrase_count_v5.csv"
 
 
 # initialize tokenizer
@@ -47,17 +47,29 @@ for item in json_content:
 
     phrases = positive_phrases + negative_phrases
     for phrase in phrases:
+        # lowercase
+        phrase = phrase.lower()
+        # remove leading and trailing space
+        phrase = phrase.strip()
+
+        if phrase.count('(') != phrase.count(')'):
+            continue
+
+        if "<" in phrase or ">" in positive_phrases:
+            continue
+
+        if "lora" in phrase:
+            continue
+
         if phrase not in phrase_id:
-            # remove leading and trailing space
-            phrase = phrase.strip()
             phrase_id[phrase] = len(phrase_id)
 
-            if phrase in phrase_count:
-                count = phrase_count[phrase]
-                count += 1
-                phrase_count[phrase] = count
-            else:
-                phrase_count[phrase] = 0
+        if phrase in phrase_count:
+            count = phrase_count[phrase]
+            count += 1
+            phrase_count[phrase] = count
+        else:
+            phrase_count[phrase] = 0
 
 print("Total positive prompts: {}".format(i))
 print("Total neg prompts: {}".format(x))
@@ -71,8 +83,7 @@ for w in sorted_keys:
 
 # save csv
 # field names
-fields = ['index', 'count', 'phrase str', 'token size']
-
+fields = ['index', 'count', 'token size', 'phrase str']
 
 # writing to csv file
 with open(output_csv, 'w') as csvfile:
@@ -90,5 +101,5 @@ with open(output_csv, 'w') as csvfile:
         phrase_tokens = enc.encode(key, allowed_special={'<|endoftext|>'})
         num_tokens = len(phrase_tokens)
 
-        row = [phrase_id[key], val, key, num_tokens]
+        row = [phrase_id[key], val, num_tokens, key]
         csvwriter.writerow(row)
