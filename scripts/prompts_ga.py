@@ -55,6 +55,8 @@ import os
 import sys
 import time
 
+import torch
+
 base_dir = os.getcwd()
 sys.path.insert(0, base_dir)
 
@@ -344,7 +346,7 @@ def store_generation_images(ga_instance):
         with torch.no_grad():
             print("image_feature")
             print(image_feature.shape)
-            image_feature = image_feature.type(torch.cuda.FloatTensor)
+            image_feature = image_feature.to(torch.float32)
             print("float tensor")
             print(image_feature.shape)
             raw_chad_score = chad_score_predictor.get_chad_score(image_feature)
