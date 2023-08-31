@@ -338,12 +338,14 @@ def store_generation_images(ga_instance):
         print(batch_features.shape)
         for i, x in enumerate(batch_features):
             print(x.shape)
-            image_features.extend(x)
+            image_features.append(x)
 
     for i, image_feature in enumerate(image_features):
         with torch.no_grad():
+            print("image_feature")
             print(image_feature.shape)
             image_feature = image_feature.type(torch.cuda.FloatTensor)
+            print("float tensor")
             print(image_feature.shape)
             raw_chad_score = chad_score_predictor.get_chad_score(image_feature)
 
