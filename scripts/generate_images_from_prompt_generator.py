@@ -218,7 +218,6 @@ def generate_images_from_prompt_generator(num_images, image_width, image_height,
                 )
 
                 task['latent'] = latent
-                print("Shape of latent array:", latent.shape)  
 
             tmp_end_time = time.time()
             tmp_execution_time = tmp_end_time - tmp_start_time
