@@ -336,8 +336,7 @@ def store_generation_images(ga_instance):
 
         print("batch")
         print(batch_features.shape)
-        for i, feature in enumerate(batch_features):
-            image_features.extend(feature)
+        image_features.extend(batch_features)
 
     for i, image_feature in enumerate(image_features):
         with torch.no_grad():
@@ -346,7 +345,9 @@ def store_generation_images(ga_instance):
             print(image_feature.shape)
             raw_chad_score = chad_score_predictor.get_chad_score(image_feature)
 
-        scaled_chad_score = torch.sigmoid(torch.tensor(raw_chad_score)).item()
+        scaled_chad_score = torch.sigmoid(torch.tensor(raw_chad_score))
+        print(scaled_chad_score.shape)
+        scaled_chad_score = scaled_chad_score.item()
         population_fitness_list.append(scaled_chad_score)
 
     ga_instance.population_fitness_list = population_fitness_list
