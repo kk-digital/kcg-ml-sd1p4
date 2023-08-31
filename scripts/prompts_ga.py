@@ -379,7 +379,7 @@ def prompt_embedding_vectors(sd, prompt_array):
 # Call the GA loop function with your initialized StableDiffusion model
 
 generations = args.generations
-population_size = 17
+population_size = 80
 mutation_percent_genes = args.mutation_percent_genes
 mutation_probability = args.mutation_probability
 keep_elitism = args.keep_elitism
