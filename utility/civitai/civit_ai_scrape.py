@@ -103,3 +103,12 @@ with open(output_csv, 'w') as csvfile:
 
         row = [phrase_id[key], val, num_tokens, key]
         csvwriter.writerow(row)
+
+# # write list of phrases to text files
+# with open('./input/civitai_phrase_list.txt', 'w') as f:
+#     for key, val in sorted_dict.items():
+#         key = key.replace('"', "")
+#         key = key.replace("'", "")
+#         key = key.replace('\\', "")
+#         key = key.replace("/", "")
+#         f.write('"' + key + '", ')
