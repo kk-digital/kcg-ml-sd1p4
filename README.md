@@ -423,7 +423,7 @@ options:
 
 Example Usage:
 ```
- python ./scripts/prompt_generator.py --num-prompts 2 --positive-prefix "icons, pixel art" --csv-phrase-limit 128 --csv-path ./input/civit_ai_data_phrase_count_v5.csv --save-embeddings True --output ./output/prompt_list_civitai.json --checkpoint-path ./input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors
+ python ./scripts/prompt_generator.py --num-prompts 2 --positive-prefix "icons, pixel art" --csv-phrase-limit 128 --csv-path ./input/civit_ai_data_phrase_count_v5.csv --save-embeddings True --output ./output/prompt_list_civitai.npz --checkpoint-path ./input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors
 ```
 
 ### Auto-ml

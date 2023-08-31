@@ -6,6 +6,7 @@ import json
 import csv
 import torch
 from tqdm import tqdm
+import numpy as np
 
 base_directory = "./"
 sys.path.insert(0, base_directory)
@@ -329,20 +330,16 @@ def generate_prompts_from_csv(csv_dataset_path,
     return prompt_list
 
 
-def generate_prompts_and_save_to_json(csv_dataset_path,
+def generate_prompts_and_save_to_npz(csv_dataset_path,
                                       csv_phrase_limit,
                                       prompt_count,
                                       positive_prefix="",
                                       save_embeddings=True,
                                       checkpoint_path="",
-                                      json_output=""):
+                                      npz_output=""):
     prompt_list = generate_prompts_from_csv(csv_dataset_path, csv_phrase_limit, prompt_count, positive_prefix,
                                             save_embeddings, checkpoint_path)
     prompt_list_dict = [prompt.to_json() for prompt in prompt_list]
-    prompts_list_json = json.dumps(prompt_list_dict, indent=4)
+    np.savez_compressed(npz_output, data=prompt_list_dict)
 
-    # Save json
-    with open(json_output, "w") as outfile:
-        outfile.write(prompts_list_json)
-
-    print("Prompt list saved to {}".format(json_output))
+    print("Prompt list saved to {}".format(npz_output))
