@@ -337,8 +337,8 @@ def store_generation_images(ga_instance):
         print("batch")
         print(batch_features.shape)
         for i, x in enumerate(batch_features):
-            print(x)
-        image_features.extend(batch_features)
+            print(x.shape)
+            image_features.extend(x)
 
     for i, image_feature in enumerate(image_features):
         with torch.no_grad():
