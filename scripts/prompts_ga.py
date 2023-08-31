@@ -240,7 +240,6 @@ def calculate_chad_score(ga_instance, solution, solution_idx):
 
 
 def cached_fitness_func(ga_instance, solution, solution_idx):
-    print(ga_instance.population_fitness_list[solution_idx])
     return ga_instance.population_fitness_list[solution_idx]
 
 
@@ -346,7 +345,6 @@ def store_generation_images(ga_instance):
             raw_chad_score = chad_score_predictor.get_chad_score(image_feature)
 
         scaled_chad_score = torch.sigmoid(torch.tensor(raw_chad_score))
-        print(scaled_chad_score.item())
         scaled_chad_score = scaled_chad_score.item()
         population_fitness_list.append(scaled_chad_score)
 
