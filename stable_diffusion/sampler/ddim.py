@@ -165,30 +165,7 @@ class DDIMSampler(DiffusionSampler):
 
                 # Add a delay for visibility of the loading animation
                 time.sleep(0.1)
-            # Scale the latents
-        x = x / 0.18215
-        
-        # Clamp the values
-        x = torch.clamp(x, -1, 1)
-        
-        # Scale to 0-256 range
-        x = ((x + 1) / 2) * 256
-        
-        # Optional clamp to [0, 255]
-        x = torch.clamp(x, 0, 255)
-        
-        # At the end of your function, before returning x:
-        batch_size, channels, height, width = x.shape
-        quarter_height, quarter_width = height // 4, width // 4
 
-        start_h, end_h = quarter_height, 3 * quarter_height
-        start_w, end_w = quarter_width, 3 * quarter_width
-        
-        # Set the areas outside the center 1/4th of the image to white
-        x[:, :, :start_h, :] = 255
-        x[:, :, end_h:, :] = 255
-        x[:, :, :, :start_w] = 255
-        x[:, :, :, end_w:] = 255
         
         # Return $x_0$
         return x
