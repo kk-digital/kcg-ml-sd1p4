@@ -6,7 +6,7 @@ import os
 def parse_arguments():
     """Command-line arguments for 'classify' command."""
     parser = argparse.ArgumentParser(
-        description="Chad sort, takes in an image database and sorts it by chad score into many folders.")
+        description="Split image into many sub images.")
 
     parser.add_argument('--image_path', type=str, help='Path to the image to use')
     parser.add_argument('--output', type=str, help='Output folder')
