@@ -1,5 +1,7 @@
 from PIL import Image
+
 import argparse
+import os
 
 def parse_arguments():
     """Command-line arguments for 'classify' command."""
@@ -7,8 +9,7 @@ def parse_arguments():
         description="Chad sort, takes in an image database and sorts it by chad score into many folders.")
 
     parser.add_argument('--image_path', type=str, help='Path to the image to use')
-    parser.add_argument('--image_width', type=int, default=512,)
-    parser.add_argument('--image_height', type=int, default=512)
+    parser.add_argument('--output', type=str, help='Output folder')
     parser.add_argument('--output_image_width', type=int, default=64)
     parser.add_argument('--output_image_height', type=int, default=64)
 
@@ -44,12 +45,20 @@ def split_image_into_subimages(input_image_path, output_path, subimage_size):
             sub_image.save(f"{output_path}/subimage_{i}_{j}.png")
 
 if __name__ == "__main__":
-    input_image_path = "input_image.jpg"  # Replace with your input image path
-    output_path = "output_subimages"      # Output directory for sub-images
-    subimage_size = (64, 64)              # Size of each sub-image
+
+    args = parse_arguments()
+
+    image_path = args.image_path
+    output = args.output
+
+    output_image_width = args.output_image_width
+    output_image_height = args.output_image_height
+
+    input_image_path = image_path  # Replace with your input image path
+    output_path = output      # Output directory for sub-images
+    subimage_size = (output_image_width, output_image_height)              # Size of each sub-image
 
     # Create the output directory if it doesn't exist
-    import os
     os.makedirs(output_path, exist_ok=True)
 
     # Split the input image into sub-images

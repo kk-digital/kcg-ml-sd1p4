@@ -472,6 +472,30 @@ Example Usage:
 ```
 python ./scripts/generate_images_from_predictions.py --dataset-path "./output/chad-score-prediction.json" --output-path "./output/sort-generate-test" --num-class 10 --limit-per-class 1 
 ```
+
+### Split images
+```
+
+Split a bigger image example 512x512 into smaller pieces, example 64x64
+
+options:
+  -h, --help            show this help message and exit
+  --image_path IMAGE_PATH
+                        image input path
+  --output   OUTPUT
+                        Output path for the generated images
+  --output_image_width OUTPUT_IMAGE_WIDTH
+                        output image width
+  --output_image_height OUTPUT_IMAGE_HEIGHT
+                        output image height
+```
+
+Example Usage:
+```
+python scripts/split_image.py --image_path './input/test.png' --output './output/sub_images'
+```
+
+
 ## Tests
 ### To run all scripts
 1. Make an env
