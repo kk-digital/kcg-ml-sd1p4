@@ -240,7 +240,7 @@ def calculate_chad_score(ga_instance, solution, solution_idx):
 
 
 def cached_fitness_func(ga_instance, solution, solution_idx):
-    return calculate_chad_score(ga_instance, solution, solution_idx)
+    return ga_instance.population_fitness_list[solution_idx]
 
 
 def on_fitness(ga_instance, population_fitness):
