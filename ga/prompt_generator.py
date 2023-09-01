@@ -315,8 +315,10 @@ def generate_prompts_from_csv(csv_dataset_path,
             negative_prompt_embedding, positive_prompt_embedding = sd.get_text_conditioning(cfg_strength,
                                                                                             positive_prompt_str,
                                                                                             negative_prompt_str)
-            positive_prompt_embedding = positive_prompt_embedding.detach().cpu().numpy().tolist()
-            negative_prompt_embedding = negative_prompt_embedding.detach().cpu().numpy().tolist()
+
+            # convert to numpy then convert to f32 then convert to python list
+            positive_prompt_embedding = positive_prompt_embedding.detach().cpu().to(torch.float32)
+            negative_prompt_embedding = negative_prompt_embedding.detach().cpu().to(torch.float32)
             torch.cuda.empty_cache()
 
         prompt_list.append(
