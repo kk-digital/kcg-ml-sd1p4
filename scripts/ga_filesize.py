@@ -36,6 +36,7 @@ CONVERT_GREY_SCALE_FOR_SCORING = False
 parser = argparse.ArgumentParser(description="Run genetic algorithm with specified parameters.")
 parser.add_argument('--generations', type=int, default=2000, help="Number of generations to run.")
 parser.add_argument('--mutation_probability', type=float, default=0.05, help="Probability of mutation.")
+parser.add_argument('--population_size', type=int, default=100, help="Number of population to run.")
 parser.add_argument('--keep_elitism', type=int, default=0, help="1 to keep best individual, 0 otherwise.")
 parser.add_argument('--crossover_type', type=str, default="single_point", help="Type of crossover operation.")
 parser.add_argument('--mutation_type', type=str, default="random", help="Type of mutation operation.")
@@ -228,7 +229,7 @@ def prompt_embedding_vectors(sd, prompt_array):
 MUTATION_RATE = 0.01
 
 generations = args.generations
-population_size = 12
+population_size = args.population_size
 mutation_percent_genes = args.mutation_percent_genes
 mutation_probability = args.mutation_probability
 keep_elitism = args.keep_elitism
