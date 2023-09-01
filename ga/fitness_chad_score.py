@@ -37,6 +37,6 @@ def compute_chad_score_from_pil(pil_image):
         image_features = image_features_clip_model.encode_image(unsqueezed_image)
         raw_chad_score = chad_score_predictor.get_chad_score(image_features.type(torch.cuda.FloatTensor))
     
-    #scaled_chad_score = torch.sigmoid(torch.tensor(raw_chad_score)).item()
+    scaled_chad_score = torch.sigmoid(torch.tensor(raw_chad_score)).item()
     
-    return raw_chad_score #scaled_chad_score
+    return raw_chad_score, scaled_chad_score
