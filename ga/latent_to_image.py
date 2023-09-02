@@ -1,9 +1,13 @@
 import torch
 from torchvision.transforms import ToPILImage
+from PIL import Image
 
 """
     This script uses this technique (https://discuss.huggingface.co/t/decoding-latents-to-rgb-without-upscaling/23204) in order to give a simple preview of the latent space vector    , which is quicker than decoding the image. It also upscales the image to the desired resolution (defaulting to 512x512).
 """
+
+def to_pil(image):
+    return ToPILImage()(torch.clamp((image + 1.0) / 2.0, min=0.0, max=1.0))
 
 def validate_latent_vector(latent_vector):
     """
@@ -16,7 +20,7 @@ def validate_latent_vector(latent_vector):
     ValueError: If the latent vector has incorrect dimensions.
     """
     expected_dim = torch.Size([1, 4, 64, 64])
-    if images.shape != expected_dim:
+    if latent_vector.shape != expected_dim:
         raise ValueError(f"Latent vector should have shape ({expected_dim},), but got {latent_vector.shape}")
 
 def latent_to_pil_image(latent_vector, size=512):
@@ -35,16 +39,15 @@ def latent_to_pil_image(latent_vector, size=512):
     validate_latent_vector(latent_vector)
 
     # Decode the latent vector
-    decoded_image = to_pil(images.squeeze())
+    decoded_image = to_pil(latent_vector.squeeze())
 
-    # Resize the decoded image using upscaling
-    resize_transform = torch.nn.functional.interpolate
-    resized_image = resize_transform(decoded_image.unsqueeze(0), size=(size, size), mode='bicubic', align_corners=False)
+    # Convert single int to tuple (for the upscaler resolution)
+    size = (size, size)
 
-    # Convert the PyTorch tensor to a PIL image
-    pil_image = ToPILImage()(resized_image.squeeze())
+    # Resize the image using nearest neighbor algorithm
+    resized_image = decoded_image.resize(size, Image.NEAREST)
 
-    return pil_image
+    return resized_image
 
 def generate_image_from_latent(stable_diffusion, latent_vector):
     """
