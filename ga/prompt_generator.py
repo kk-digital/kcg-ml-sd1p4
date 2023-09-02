@@ -1,35 +1,59 @@
 # prompt_generator.py
 import random
 import tiktoken
-import time
+import sys
 import json
+import csv
+import torch
+from tqdm import tqdm
+import numpy as np
+
+base_directory = "./"
+sys.path.insert(0, base_directory)
+
+from scripts.stable_diffusion_base_script import StableDiffusionBaseScript
 
 
-class GeneratedPrompt():
-    def __init__(self, prompt_dict: [], prompt_vector: []):
-        self.prompt_dict = prompt_dict
-        self.prompt_str = ', '.join([prompt.Phrase for prompt in prompt_dict])
-        self.num_topics = len([prompt.Phrase for prompt in prompt_dict if "topic" in prompt.Types])
-        self.num_modifiers = len([prompt.Phrase for prompt in prompt_dict if "modifier" in prompt.Types])
-        self.num_styles = len([prompt.Phrase for prompt in prompt_dict if "style" in prompt.Types])
-        self.num_constraints = len([prompt.Phrase for prompt in prompt_dict if "constraint" in prompt.Types])
+class GeneratedPrompt:
+    def __init__(self, positive_prompt_str: str, negative_prompt_str: str, num_topics: int, num_modifiers: int,
+                 num_styles: int, num_constraints: int, prompt_vector: [], positive_prompt_embedding=None,
+                 negative_prompt_embedding=None):
+        self.positive_prompt_str = positive_prompt_str
+        self.negative_prompt_str = negative_prompt_str
+        self.num_topics = num_topics
+        self.num_modifiers = num_modifiers
+        self.num_styles = num_styles
+        self.num_constraints = num_constraints
 
-        # prompt_vector is a vector of 0 or 1, 1 if that index of prompt list is used
+        # prompt_vector is a vector of -1, 0, or 1
+        # 1 - used phrase for positive prompt
+        # 0 - unused phrase
+        # -1 - used for negative prompt
         self.prompt_vector = prompt_vector
 
-    def get_prompt_str(self):
-        return self.prompt_str
+        self.positive_prompt_embedding = positive_prompt_embedding
+        self.negative_prompt_embedding = negative_prompt_embedding
+
+    def get_positive_prompt_str(self):
+        return self.positive_prompt_str
+
+    def get_negative_prompt_str(self):
+        return self.negative_prompt_str
 
     def to_json(self):
-        return {'prompt-str': self.prompt_str,
+        return {'positive-prompt-str': self.positive_prompt_str,
+                'negative-prompt-str': self.negative_prompt_str,
                 'prompt-vector': self.prompt_vector,
                 'num-topics': self.num_topics,
                 'num-modifiers': self.num_modifiers,
                 'num-styles': self.num_styles,
-                'num-constraints': self.num_constraints}
+                'num-constraints': self.num_constraints,
+                'positive-prompt-embedding': self.positive_prompt_embedding,
+                'negative-prompt-embedding': self.negative_prompt_embedding,
+                }
 
 
-class PromptData():
+class PromptData:
     def __init__(self, index: int, phrase: str):
         self.Index = index
 
@@ -138,18 +162,47 @@ def initialize_prompt_list():
     return prompt_list.Prompts
 
 
-prompts = initialize_prompt_list()
+def initialize_prompt_list_from_csv(csv_dataset_path, csv_phrase_limit=0):
+    prompt_list = PromptList()
+    phrase_token_size_list = []
+    with open(csv_dataset_path) as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        line_count = 0
+        for row in csv_reader:
+            if line_count == 0:
+                line_count += 1
+            else:
+                # index,count,token size,phrase str
+                phrase = row[3]
+                prompt_list.add_phrase(phrase)
+                prompt_list.add_type_to_phrase(phrase, prompt_type="topic")
+
+                # add token count
+                phrase_token_size = int(row[2])
+                phrase_token_size_list.append(phrase_token_size)
+
+                line_count += 1
+
+            if csv_phrase_limit != 0 and line_count > csv_phrase_limit:
+                break
+
+    return prompt_list.Prompts, phrase_token_size_list
 
 
 # Function to generate prompts
+# To be deprecated
+# This only generates positive prompt
+# Still used in GA scripts
 def generate_prompts(prompt_count, prompt_phrase_length):
+    prompts = initialize_prompt_list()
+
     prompt_list = []
     enc = tiktoken.get_encoding("cl100k_base")
 
     for i in range(0, prompt_count):
         num_tokens = 100
         while num_tokens > 77:
-            prompt_dict = []
+            positive_prompt = []
             prompt_vector = [0] * len(prompts)
             for j in range(0, prompt_phrase_length):
                 random_prompt = random.choice(
@@ -158,30 +211,137 @@ def generate_prompts(prompt_count, prompt_phrase_length):
 
                 # update used array
                 prompt_vector[prompt_index] = 1
-                prompt_dict.append(random_prompt)
+                positive_prompt.append(random_prompt)
 
-            prompt_str = ', '.join([prompt.Phrase for prompt in prompt_dict])
-
-            start = time.time()
+            positive_prompt_str = ', '.join([prompt.Phrase for prompt in positive_prompt])
 
             # check the length of prompt embedding.
             # if it's more than 77, then regenerate/reroll
             # (max token size is 77)
-            prompt_tokens = enc.encode(prompt_str)
+            prompt_tokens = enc.encode(positive_prompt_str)
             num_tokens = len(prompt_tokens)
 
-        prompt_list.append(GeneratedPrompt(prompt_dict, prompt_vector))
+        num_topics = len([prompt.Phrase for prompt in positive_prompt if "topic" in prompt.Types])
+        num_modifiers = len([prompt.Phrase for prompt in positive_prompt if "modifier" in prompt.Types])
+        num_styles = len([prompt.Phrase for prompt in positive_prompt if "style" in prompt.Types])
+        num_constraints = len([prompt.Phrase for prompt in positive_prompt if "constraint" in prompt.Types])
+
+        prompt_list.append(
+            GeneratedPrompt(positive_prompt_str, "", prompt_vector, num_topics, num_modifiers, num_styles,
+                            num_constraints))
 
     return prompt_list
 
 
-def generate_prompts_and_save_to_json(prompt_count, prompt_phrase_length, json_output):
-    prompt_list = generate_prompts(prompt_count, prompt_phrase_length)
+def generate_prompts_from_csv(csv_dataset_path,
+                              csv_phrase_limit,
+                              prompt_count,
+                              positive_prefix="",
+                              save_embeddings=True,
+                              checkpoint_path=""):
+    phrases, phrases_token_size = initialize_prompt_list_from_csv(csv_dataset_path, csv_phrase_limit)
+
+    if checkpoint_path == "":
+        raise Exception("Invalid checkpoint path")
+
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    if save_embeddings is True:
+        cfg_strength = 12
+        sd = StableDiffusionBaseScript(
+            cuda_device=device,
+        )
+        sd.initialize_latent_diffusion(autoencoder=None, clip_text_embedder=None, unet_model=None,
+                                       path=checkpoint_path, force_submodels_init=True)
+
+    positive_prefix_token_size = 0
+    if positive_prefix != "":
+        # get token size for prefix
+        enc = tiktoken.get_encoding("cl100k_base")
+        positive_prefix_prompt_tokens = enc.encode(positive_prefix)
+        positive_prefix_token_size = len(positive_prefix_prompt_tokens)
+
+    print("Generating {} prompts...".format(prompt_count))
+    prompt_list = []
+    for i in tqdm(range(0, prompt_count)):
+        positive_prompt_total_token_size = positive_prefix_token_size
+        negative_prompt_total_token_size = 0
+        positive_prompt = []
+        negative_prompt = []
+        prompt_vector = [0] * len(phrases)
+
+        # positive prompt
+        while positive_prompt_total_token_size < 77:
+            random_prompt = random.choice(
+                [item for item in phrases if (prompt_vector[item.Index] == 0)])
+            prompt_index = random_prompt.Index
+
+            chosen_phrase_size = phrases_token_size[prompt_index]
+            sum_token_size = positive_prompt_total_token_size + chosen_phrase_size
+            if sum_token_size < 77:
+                # update used array
+                prompt_vector[prompt_index] = 1
+                positive_prompt.append(random_prompt)
+                positive_prompt_total_token_size = sum_token_size
+            else:
+                break
+
+        # negative prompt
+        while negative_prompt_total_token_size < 77:
+            random_prompt = random.choice(
+                [item for item in phrases if (prompt_vector[item.Index] == 0)])
+            prompt_index = random_prompt.Index
+
+            chosen_phrase_size = phrases_token_size[prompt_index]
+            sum_token_size = negative_prompt_total_token_size + chosen_phrase_size
+            if sum_token_size < 77:
+                # update used array
+                prompt_vector[prompt_index] = -1
+                negative_prompt.append(random_prompt)
+                negative_prompt_total_token_size = sum_token_size
+            else:
+                break
+
+        positive_prompt_str = ', '.join([prompt.Phrase for prompt in positive_prompt])
+        if positive_prefix != "":
+            positive_prompt_str = "{}, {}".format(positive_prefix, positive_prompt_str)
+        negative_prompt_str = ', '.join([prompt.Phrase for prompt in negative_prompt])
+
+        num_topics = len([prompt.Phrase for prompt in positive_prompt if "topic" in prompt.Types])
+        num_modifiers = len([prompt.Phrase for prompt in positive_prompt if "modifier" in prompt.Types])
+        num_styles = len([prompt.Phrase for prompt in positive_prompt if "style" in prompt.Types])
+        num_constraints = len([prompt.Phrase for prompt in positive_prompt if "constraint" in prompt.Types])
+
+        if save_embeddings is True:
+            negative_prompt_embedding, positive_prompt_embedding = sd.get_text_conditioning(cfg_strength,
+                                                                                            positive_prompt_str,
+                                                                                            negative_prompt_str)
+
+            # convert to numpy then convert to f32 then convert to python list
+            positive_prompt_embedding = positive_prompt_embedding.detach().cpu().to(torch.float32)
+            negative_prompt_embedding = negative_prompt_embedding.detach().cpu().to(torch.float32)
+            torch.cuda.empty_cache()
+
+        prompt_list.append(
+            GeneratedPrompt(positive_prompt_str, negative_prompt_str, num_topics, num_modifiers,
+                            num_styles, num_constraints, prompt_vector, positive_prompt_embedding,
+                            negative_prompt_embedding))
+
+    # unload model
+    sd.unload_model()
+
+    return prompt_list
+
+
+def generate_prompts_and_save_to_npz(csv_dataset_path,
+                                      csv_phrase_limit,
+                                      prompt_count,
+                                      positive_prefix="",
+                                      save_embeddings=True,
+                                      checkpoint_path="",
+                                      npz_output=""):
+    prompt_list = generate_prompts_from_csv(csv_dataset_path, csv_phrase_limit, prompt_count, positive_prefix,
+                                            save_embeddings, checkpoint_path)
     prompt_list_dict = [prompt.to_json() for prompt in prompt_list]
-    prompts_list_json = json.dumps(prompt_list_dict)
+    np.savez_compressed(npz_output, data=prompt_list_dict)
 
-    # Save json
-    with open(json_output, "w") as outfile:
-        outfile.write(prompts_list_json)
-
-    print("Prompt list saved to {}".format(json_output))
+    print("Prompt list saved to {}".format(npz_output))

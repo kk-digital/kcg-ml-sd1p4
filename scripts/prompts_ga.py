@@ -55,6 +55,8 @@ import os
 import sys
 import time
 
+import torch
+
 base_dir = os.getcwd()
 sys.path.insert(0, base_dir)
 
@@ -90,6 +92,7 @@ CONVERT_GREY_SCALE_FOR_SCORING = False
 # Add argparse arguments
 parser = argparse.ArgumentParser(description="Run genetic algorithm with specified parameters.")
 parser.add_argument('--generations', type=int, default=2000, help="Number of generations to run.")
+parser.add_argument('--population_size', type=int, default=100, help="Number of population to run.")
 parser.add_argument('--mutation_probability', type=float, default=0.05, help="Probability of mutation.")
 parser.add_argument('--keep_elitism', type=int, default=0, help="1 to keep best individual, 0 otherwise.")
 parser.add_argument('--crossover_type', type=str, default="single_point", help="Type of crossover operation.")
@@ -182,8 +185,7 @@ def log_to_file(message):
         log_file.write(message + "\n")
 
 
-# Function to calculate the chad score for batch of images
-def calculate_chad_score(ga_instance, solution, solution_idx):
+def get_pil_image_from_solution(ga_instance, solution, solution_idx):
     # set seed
     SEED = random.randint(0, 2 ** 24)
     if FIXED_SEED == True:
@@ -227,19 +229,19 @@ def calculate_chad_score(ga_instance, solution, solution_idx):
         pil_image = pil_image.convert("L")
         pil_image = pil_image.convert("RGB")
 
+    return pil_image
+
+# Function to calculate the chad score for batch of images
+def calculate_chad_score(ga_instance, solution, solution_idx):
+    pil_image = get_pil_image_from_solution(ga_instance, solution, solution_idx)
+
     _, chad_score = compute_chad_score_from_pil(pil_image)
     
     return chad_score
 
 
 def cached_fitness_func(ga_instance, solution, solution_idx):
-    solution_copy = solution.copy()  # flatten() is destructive operation
-    solution_flattened = solution_copy.flatten()
-    if tuple(solution_flattened) in fitness_cache:
-        print('Returning cached score', fitness_cache[tuple(solution_flattened)])
-    if tuple(solution_flattened) not in fitness_cache:
-        fitness_cache[tuple(solution_flattened)] = calculate_chad_score(ga_instance, solution, solution_idx)
-    return fitness_cache[tuple(solution_flattened)]
+    return calculate_chad_score(ga_instance, solution, solution_idx)
 
 
 def on_fitness(ga_instance, population_fitness):
@@ -280,6 +282,9 @@ def on_mutation(ga_instance, offspring_mutation):
 def store_generation_images(ga_instance):
     start_time = time.time()
     generation = ga_instance.generations_completed
+    batch_size = ga_instance.batch_size
+    population_fitness_list = []
+    population_image_list = []
     print("Generation #", generation)
     print("Population size: ", len(ga_instance.population))
     file_dir = os.path.join(IMAGES_DIR, str(generation))
@@ -316,6 +321,37 @@ def store_generation_images(ga_instance):
         filename = os.path.join(file_dir, f'g{generation:04}_{i:03}.png')
         pil_image.save(filename)
 
+        population_image_list.append(pil_image)
+
+    num_images = len(population_image_list)
+    num_batches = (num_images + batch_size - 1) // batch_size
+    image_features = []
+
+    for i in range(num_batches):
+        start_idx = i * batch_size
+        end_idx = min((i + 1) * batch_size, num_images)
+        batch_images = population_image_list[start_idx:end_idx]
+
+        batch_inputs = torch.stack([preprocess(image) for image in batch_images]).to(DEVICE)
+
+        with torch.no_grad():
+            batch_features = image_features_clip_model.encode_image(batch_inputs)
+
+        for i, x in enumerate(batch_features):
+            image_features.append(x)
+
+    for i, image_feature in enumerate(image_features):
+        with torch.no_grad():
+            image_feature = image_feature.to(torch.float32)
+            raw_chad_score = chad_score_predictor.get_chad_score(image_feature)
+
+        scaled_chad_score = torch.sigmoid(torch.tensor(raw_chad_score))
+        scaled_chad_score = scaled_chad_score.item()
+        population_fitness_list.append(scaled_chad_score)
+
+    ga_instance.population_fitness_list = population_fitness_list
+
+
     end_time = time.time()  # End timing for generation
     total_time = end_time - start_time
     print(f"Total time taken for Generation #{generation}: {total_time} seconds")
@@ -344,11 +380,10 @@ def prompt_embedding_vectors(sd, prompt_array):
 # Call the GA loop function with your initialized StableDiffusion model
 
 generations = args.generations
-population_size = 80
 mutation_percent_genes = args.mutation_percent_genes
 mutation_probability = args.mutation_probability
 keep_elitism = args.keep_elitism
-
+population_size = args.population_size
 crossover_type = args.crossover_type
 mutation_type = args.mutation_type
 mutation_rate = 0.001
@@ -387,7 +422,7 @@ prompts_array = ga.generate_prompts(population_size, prompt_phrase_length)
 # get prompt_str array
 prompts_str_array = []
 for prompt in prompts_array:
-    prompt_str = prompt.get_prompt_str()
+    prompt_str = prompt.get_positive_prompt_str()
     prompts_str_array.append(prompt_str)
 
 embedded_prompts = prompt_embedding_vectors(sd, prompt_array=prompts_str_array)
@@ -445,7 +480,10 @@ log_to_file(f"Mutation Rate: {mutation_rate}")
 log_to_file(f"Generations: {generations}")
 
 for idx, prompt_str in enumerate(prompts_str_array, 1):
-    log_to_file(f"Prompt {idx}: {prompt_str}") 
+    log_to_file(f"Prompt {idx}: {prompt_str}")
+
+batch_size = 8
+ga_instance.batch_size = batch_size
 
 ga_instance.run()
 
