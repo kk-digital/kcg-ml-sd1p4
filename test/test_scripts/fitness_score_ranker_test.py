@@ -13,8 +13,8 @@ def mock_fitness_function(image):
 
 def test_test_images():
     # Define mock arguments
-    fitness_function_path = 'path/to/your/mock_fitness_function.py'  # Replace with actual path
-    zip_path = 'path/to/sample.zip'  # Replace with actual sample ZIP file path
+    fitness_function_path = './ga/fitness_bounding_box_centered.py'  
+    zip_path = './test/test_zip_files/test-dataset-correct-format.zip'  
     output_path = 'test_output'
     
     # Call the function under test
