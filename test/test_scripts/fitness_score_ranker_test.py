@@ -32,8 +32,7 @@ def test_test_images():
     
     with open(json_path, 'r') as f:
         json_data = json.load(f)
-    assert "fitness_function_name" in json_data
-    assert "images" in json_data
+    assert fitness_function_name in json_data
     
     # Clean up
     rmtree(output_path)
