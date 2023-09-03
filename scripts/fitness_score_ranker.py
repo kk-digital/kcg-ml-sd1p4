@@ -11,7 +11,11 @@ def load_fitness_function(fitness_function_path):
     spec = importlib.util.spec_from_file_location("fitness_function", fitness_function_path)
     fitness_module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(fitness_module)
-    return fitness_module, fitness_function_name
+    fitness_function = getattr(fitness_module, fitness_function_name, None)
+    if fitness_function is None:
+        raise ValueError(f"No function named {fitness_function_name} found in {fitness_function_path}")
+    return fitness_function, fitness_function_name
+
 
 def test_images(fitness_function, zip_path, output_path):
     folder_names = [f"{score / 10:.1f}" for score in range(11)]
