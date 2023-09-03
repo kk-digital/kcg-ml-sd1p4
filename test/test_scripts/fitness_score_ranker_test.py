@@ -6,7 +6,7 @@ import json
 from shutil import rmtree
 from scripts.fitness_score_ranker import load_fitness_function, test_images
 
-
+# Mock fitness function for testing
 def mock_fitness_function(image):
     """Mock fitness function that returns 0.5 for all images."""
     return 0.5
@@ -30,11 +30,14 @@ def test_test_images():
     json_path = os.path.join(output_path, 'fitness_scores.json')
     assert os.path.exists(json_path)
     
-    # Optionally: Verify content of the JSON file
+    # Optionally: Verify the content of the JSON file
     with open(json_path, 'r') as f:
         json_data = json.load(f)
         assert json_data["fitness_function_name"] == "fitness_bounding_box_centered"
         assert isinstance(json_data["images"], dict)
+        for img, score in json_data["images"].items():
+            assert isinstance(img, str)
+            assert isinstance(score, (float, int))
     
     # Clean up
     rmtree(output_path)
