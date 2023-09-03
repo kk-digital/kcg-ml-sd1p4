@@ -7,17 +7,19 @@ import argparse
 import json
 
 def load_fitness_function(fitness_function_path):
-    fitness_function_name = os.path.basename(fitness_function_path).replace('.py', '')
     spec = importlib.util.spec_from_file_location("fitness_function", fitness_function_path)
     fitness_module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(fitness_module)
-    fitness_function = getattr(fitness_module, fitness_function_name, None)
+    fitness_function = getattr(fitness_module, 'evaluate', None)  # Assuming function name is 'evaluate'
     if fitness_function is None:
-        raise ValueError(f"No function named {fitness_function_name} found in {fitness_function_path}")
-    return fitness_function, fitness_function_name
+        raise ValueError(f"No function named 'evaluate' found in {fitness_function_path}")
+    return fitness_function
 
 
-def test_images(fitness_function, zip_path, output_path):
+
+def test_images(fitness_function, fitness_function_filepath, zip_path, output_path):
+    fitness_function_name = os.path.basename(fitness_function_filepath).replace('.py', '')
+
     folder_names = [f"{score / 10:.1f}" for score in range(11)]
     os.makedirs(output_path, exist_ok=True)
     
@@ -67,6 +69,7 @@ if __name__ == "__main__":
     parser.add_argument('--output_path', type=str, required=True, help="Path to the output folder.")
     args = parser.parse_args()
     
-    fitness_function, fitness_function_name = load_fitness_function(args.fitness_function)
-    test_images(fitness_function, args.zip_path, args.output_path)
+    fitness_function = load_fitness_function(args.fitness_function)
+    test_images(fitness_function, args.fitness_function, args.zip_path, args.output_path)
     print("Images ranked.")
+
