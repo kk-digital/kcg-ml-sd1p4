@@ -26,7 +26,7 @@ def load_fitness_function(fitness_function_path):
     return fitness_function
 
 
-def test_images(fitness_function, fitness_function_filepath, zip_path, output_path):
+def rank_images(fitness_function, fitness_function_filepath, zip_path, output_path):
     fitness_function_name = os.path.basename(fitness_function_filepath).replace('.py', '')
 
     folder_names = [f"{score / 10:.1f}" for score in range(11)]
@@ -79,5 +79,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     fitness_function = load_fitness_function(args.fitness_function)
-    test_images(fitness_function, args.fitness_function, args.zip_path, args.output_path)
+    rank_images(fitness_function, args.fitness_function, args.zip_path, args.output_path)
     print("Images ranked.")
