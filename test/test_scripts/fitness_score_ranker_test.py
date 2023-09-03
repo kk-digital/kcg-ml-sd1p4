@@ -18,7 +18,7 @@ def test_test_images():
     output_path = 'test_output'
     
     # Call the function under test
-    fitness_function, fitness_function_name = load_fitness_function(fitness_function_path)
+    fitness_function = load_fitness_function(fitness_function_path)
     test_images(fitness_function, zip_path, output_path)
     
     # Verify that the output directories are created
@@ -30,9 +30,6 @@ def test_test_images():
     json_path = os.path.join(output_path, 'fitness_scores.json')
     assert os.path.exists(json_path)
     
-    with open(json_path, 'r') as f:
-        json_data = json.load(f)
-    assert fitness_function_name in json_data
     
     # Clean up
     rmtree(output_path)
