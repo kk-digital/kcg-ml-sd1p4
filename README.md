@@ -27,6 +27,7 @@
     - [Prompt Score](#prompt-score)
     - [Prompt Embeddings Gradient Optimization](#prompt-embeddings-gradient-optimization)
     - [Prompt Generator](#prompt-generator)
+    - [Image Ranker by Fitness Score](#fitness_score_ranker) 
     - [Auto-ml](#auto-ml)
     - [Generate Images From Model Predictions](#generate-images-from-model-predictions)
   - [Tests](#tests)
@@ -424,6 +425,15 @@ options:
 Example Usage:
 ```
  python ./scripts/prompt_generator.py --num-prompts 2 --positive-prefix "icons, pixel art" --csv-phrase-limit 128 --csv-path ./input/civit_ai_data_phrase_count_v5.csv --save-embeddings True --output ./output/prompt_list_civitai.npz --checkpoint-path ./input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors
+```
+
+### Image Ranker by Fitness Score
+script will rank images according spedicif fitness functoin
+
+Example Usage:
+```
+python3 scripts/fitness_score_ranker.py --fitness_function ga/fitness_bounding_box_centered.py --zip_path /path/to/the/zip/file --output_path /path/to/the/output
+
 ```
 
 ### Auto-ml
