@@ -23,6 +23,7 @@ from stable_diffusion_base_script import StableDiffusionBaseScript
 from stable_diffusion.utils_backend import get_autocast, set_seed
 from chad_score.chad_score import ChadScorePredictor
 from model.util_clip import UtilClip
+from stable_diffusion.utils_image import save_images
 
 def parse_arguments():
     """Command-line arguments"""
@@ -266,6 +267,21 @@ if __name__ == "__main__":
     embedding_vector = torch.tensor(embedding_numpy, device=device, dtype=torch.float32)
 
     chad_score, chad_score_scaled = embeddings_chad_score(embedding_vector)
+
+    seed = 6789
+    latent = txt2img.generate_images_latent_from_embeddings(
+        batch_size=1,
+        embedded_prompt=embedding_vector,
+        null_prompt=null_prompt,
+        uncond_scale=cfg_strength,
+        seed=seed,
+        w=image_width,
+        h=image_height
+    )
+
+    images = txt2img.get_image_from_latent(latent)
+    image_list, image_hash_list = save_images(images, output + '/image.jpg');
+
     print(weight_array)
     print(chad_score)
     print(chad_score_scaled)
