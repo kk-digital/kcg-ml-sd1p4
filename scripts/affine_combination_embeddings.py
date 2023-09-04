@@ -8,6 +8,7 @@ import torch
 import time
 import torch.nn as nn
 import torch.optim as optim
+import random
 
 
 base_dir = "./"
@@ -42,6 +43,7 @@ def parse_arguments():
     parser.add_argument('--num_phrases', type=int, default=12)
     parser.add_argument('--iterations', type=int, default=1000)
     parser.add_argument('--learning_rate', type=float, default=0.0001)
+    parser.add_argument('--num_images', type=int, default=12)
 
     return parser.parse_args()
 
@@ -119,8 +121,7 @@ def combine_embeddings(embeddings_array, weight_array):
     return result_embedding
 
 
-def embeddings_chad_score(embeddings_vector):
-    seed = 6789
+def embeddings_chad_score(embeddings_vector, seed):
     latent = txt2img.generate_images_latent_from_embeddings(
         batch_size=1,
         embedded_prompt=embedding_vector,
@@ -188,6 +189,13 @@ if __name__ == "__main__":
     num_phrases = args.num_phrases
     iterations = args.iterations
     learning_rate = args.learning_rate
+    num_images = args.num_images
+
+    # Seed the random number generator with the current time
+    random.seed(time.time())
+
+    # Generate a random number between 0 and 1
+    seed = random.random()
 
     clip_text_embedder = CLIPTextEmbedder(device=get_device())
     clip_text_embedder.load_submodels()
@@ -245,7 +253,7 @@ if __name__ == "__main__":
         # Maximize fitness
         embedding_vector = torch.tensor(embedding_numpy, device=device, dtype=torch.float32)
 
-        chad_score, chad_score_scaled = embeddings_chad_score(embedding_vector)
+        chad_score, chad_score_scaled = embeddings_chad_score(embedding_vector, seed)
 
         input = torch.tensor([chad_score_scaled], device=device, dtype=torch.float32, requires_grad=True)
         target = torch.tensor([1.0], device=device, dtype=torch.float32, requires_grad=True)
@@ -260,28 +268,26 @@ if __name__ == "__main__":
     elapsed_time = end_time - start_time
     print(f"Time elapsed: {elapsed_time:.4f} seconds")
 
-    mbedding_numpy = combine_embeddings(embedded_prompts_array, weight_array.detach().cpu().numpy())
+    embeddings_numpy = combine_embeddings(embedded_prompts_array, weight_array.detach().cpu().numpy())
     null_prompt = clip_text_embedder('')
 
     # Maximize fitness
-    embedding_vector = torch.tensor(embedding_numpy, device=device, dtype=torch.float32)
+    embedding_vector = torch.tensor(embeddings_numpy, device=device, dtype=torch.float32)
 
     chad_score, chad_score_scaled = embeddings_chad_score(embedding_vector)
 
-    seed = 6789
-    latent = txt2img.generate_images_latent_from_embeddings(
-        batch_size=1,
-        embedded_prompt=embedding_vector,
-        null_prompt=null_prompt,
-        uncond_scale=cfg_strength,
-        seed=seed,
-        w=image_width,
-        h=image_height
-    )
+    for i in range(num_images):
+        random_seed = random.randint(0, 2 ** 24 - 1)
 
-    images = txt2img.get_image_from_latent(latent)
-    image_list, image_hash_list = save_images(images, output + '/image.jpg');
+        latent = txt2img.generate_images_latent_from_embeddings(
+            batch_size=1,
+            embedded_prompt=embedding_vector,
+            null_prompt=null_prompt,
+            uncond_scale=cfg_strength,
+            seed=random_seed,
+            w=image_width,
+            h=image_height
+        )
 
-    print(weight_array)
-    print(chad_score)
-    print(chad_score_scaled)
+        images = txt2img.get_image_from_latent(latent)
+        image_list, image_hash_list = save_images(images, output + '/image' + str(i+1) + '.jpg');
