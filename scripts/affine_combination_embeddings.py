@@ -6,6 +6,9 @@ import sys
 import numpy as np
 import torch
 import time
+import torch.nn as nn
+import torch.optim as optim
+
 
 base_dir = "./"
 sys.path.insert(0, base_dir)
@@ -36,6 +39,8 @@ def parse_arguments():
     parser.add_argument('--checkpoint_path',type=str, default=SD_CHECKPOINT_PATH)
     parser.add_argument('--num_prompts', type=int, default=12)
     parser.add_argument('--num_phrases', type=int, default=12)
+    parser.add_argument('--iterations', type=int, default=1000)
+    parser.add_argument('--learning_rate', type=float, default=0.0001)
 
     return parser.parse_args()
 
@@ -180,6 +185,8 @@ if __name__ == "__main__":
     checkpoint_path = args.checkpoint_path
     num_prompts = args.num_prompts
     num_phrases = args.num_phrases
+    iterations = args.iterations
+    learning_rate = args.learning_rate
 
     clip_text_embedder = CLIPTextEmbedder(device=get_device())
     clip_text_embedder.load_submodels()
@@ -223,13 +230,42 @@ if __name__ == "__main__":
 
     # array of random weights
     weight_array = np.random.rand(num_prompts)
+    weight_array = torch.tensor(weight_array, device=device, dtype=torch.float32, requires_grad=True)
     # Combinate into one Embedding
-    embedding_numpy = combine_embeddings(embedded_prompts_array, weight_array)
+
+    optimizer = optim.Adam([weight_array], lr=learning_rate)
+    mse_loss = nn.MSELoss(reduction='sum')
+
+    start_time = time.time()
+    for i in range(0, iterations):
+        embedding_numpy = combine_embeddings(embedded_prompts_array, weight_array.detach().cpu().numpy())
+        null_prompt = clip_text_embedder('')
+
+        # Maximize fitness
+        embedding_vector = torch.tensor(embedding_numpy, device=device, dtype=torch.float32)
+
+        chad_score, chad_score_scaled = embeddings_chad_score(embedding_vector)
+
+        input = torch.tensor([chad_score_scaled], device=device, dtype=torch.float32, requires_grad=True)
+        target = torch.tensor([1.0], device=device, dtype=torch.float32, requires_grad=True)
+
+        loss = mse_loss(input, target)
+        print(f'Iteration #{i + 1}, loss {loss}')
+
+        loss.backward()
+        optimizer.step()
+    end_time = time.time()
+
+    elapsed_time = end_time - start_time
+    print(f"Time elapsed: {elapsed_time:.4f} seconds")
+
+    mbedding_numpy = combine_embeddings(embedded_prompts_array, weight_array)
     null_prompt = clip_text_embedder('')
 
     # Maximize fitness
     embedding_vector = torch.tensor(embedding_numpy, device=device, dtype=torch.float32)
 
     chad_score, chad_score_scaled = embeddings_chad_score(embedding_vector)
+    print(weight_array)
     print(chad_score)
     print(chad_score_scaled)
