@@ -16,8 +16,8 @@ def parse_arguments():
     parser.add_argument('--csv-phrase-limit', type=int, default=0, help='Number of phrases to use from the csv data')
     parser.add_argument('--csv-path', type=str, help='Full path to the csv path')
     parser.add_argument('--save-embeddings', type=bool, default=True, help='True if prompt embeddings will be saved')
-    parser.add_argument('--output', type=str, default="./output/generated_prompts.npz",
-                        help='Output path for prompt list npz')
+    parser.add_argument('--output', type=str, default="./output/generated_prompts_test",
+                        help='Output path for dataset zip containing prompt list npz')
     parser.add_argument('--checkpoint-path', type=str, help='Path to the model checkpoint')
 
 
