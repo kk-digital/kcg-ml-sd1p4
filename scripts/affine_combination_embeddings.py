@@ -274,7 +274,7 @@ if __name__ == "__main__":
     # Maximize fitness
     embedding_vector = torch.tensor(embeddings_numpy, device=device, dtype=torch.float32)
 
-    chad_score, chad_score_scaled = embeddings_chad_score(embedding_vector)
+    chad_score, chad_score_scaled = embeddings_chad_score(embedding_vector, seed)
 
     for i in range(num_images):
         random_seed = random.randint(0, 2 ** 24 - 1)
