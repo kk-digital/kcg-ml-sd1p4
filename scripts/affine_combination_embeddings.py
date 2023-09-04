@@ -238,7 +238,8 @@ if __name__ == "__main__":
     util_clip = UtilClip(device=device)
     util_clip.load_model()
 
-    prompt_list = read_prompts_from_zip(prompts_path, num_prompts)
+    #prompt_list = read_prompts_from_zip(prompts_path, num_prompts)
+    prompt_list = generate_prompts(num_images, num_phrases)
 
     # Starts the text2img
     txt2img = Txt2Img(
@@ -256,7 +257,9 @@ if __name__ == "__main__":
     # Get N Embeddings
     for prompt in prompt_list:
         # get the embedding from positive text prompt
-        embedded_prompts = clip_text_embedder(prompt['positive-prompt-str'])
+        prompt_str = prompt.positive_prompt_str
+        # prompt_str = prompt['positive-prompt-str']
+        embedded_prompts = clip_text_embedder(prompt_str)
         embedded_prompts_numpy = embedded_prompts.detach().cpu().numpy()
 
         del embedded_prompts
