@@ -195,7 +195,7 @@ if __name__ == "__main__":
     random.seed(time.time())
 
     # Generate a random number between 0 and 1
-    seed = random.random()
+    seed = 6789
 
     clip_text_embedder = CLIPTextEmbedder(device=get_device())
     clip_text_embedder.load_submodels()
