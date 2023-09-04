@@ -260,7 +260,7 @@ if __name__ == "__main__":
     elapsed_time = end_time - start_time
     print(f"Time elapsed: {elapsed_time:.4f} seconds")
 
-    mbedding_numpy = combine_embeddings(embedded_prompts_array, weight_array)
+    mbedding_numpy = combine_embeddings(embedded_prompts_array, weight_array.detach().cpu().numpy())
     null_prompt = clip_text_embedder('')
 
     # Maximize fitness
