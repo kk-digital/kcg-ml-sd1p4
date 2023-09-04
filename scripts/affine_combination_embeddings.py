@@ -9,7 +9,7 @@ import time
 import torch.nn as nn
 import torch.optim as optim
 import random
-
+import zipfile
 
 base_dir = "./"
 sys.path.insert(0, base_dir)
@@ -43,7 +43,8 @@ def parse_arguments():
     parser.add_argument('--num_phrases', type=int, default=12)
     parser.add_argument('--iterations', type=int, default=1000)
     parser.add_argument('--learning_rate', type=float, default=0.0001)
-    parser.add_argument('--num_images', type=int, default=12)
+    parser.add_argument('--num_images', type=int, default=1)
+    parser.add_argument('--prompts_path', type=str, default='/input/prompt-list-civitai/prompt_list_civitai_10k_512_phrases.zip')
 
     return parser.parse_args()
 
@@ -104,6 +105,33 @@ class Txt2Img(StableDiffusionBaseScript):
                                     temperature=temperature)
 
             return x
+
+
+def read_prompts_from_zip(zip_file_path, num_prompts):
+    # Open the zip file for reading
+    with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
+        # Get a list of all file names in the zip archive
+        file_list = zip_ref.namelist()
+
+        # Initialize a list to store loaded arrays
+        loaded_arrays = []
+
+        # Iterate over the file list and load the first 100 .npz files
+        for file_name in file_list:
+            if file_name.endswith('.npz'):
+                with zip_ref.open(file_name) as npz_file:
+                    npz_data = np.load(npz_file)
+                    # Assuming you have a specific array name you want to load from the .npz file
+                    loaded_array = npz_data['data']
+                    loaded_arrays.append(loaded_array)
+
+            if len(loaded_arrays) >= num_prompts:
+                break  # Stop after loading the first 100 .npz files
+
+        return loaded_arrays
+
+
+# Now, loaded_arrays contains the loaded NumPy arrays from the first 100 .npz files
 
 def combine_embeddings(embeddings_array, weight_array):
 
@@ -190,11 +218,10 @@ if __name__ == "__main__":
     iterations = args.iterations
     learning_rate = args.learning_rate
     num_images = args.num_images
+    prompts_path = args.prompts_path
 
     # Seed the random number generator with the current time
     random.seed(time.time())
-
-    # Generate a random number between 0 and 1
     seed = 6789
 
     clip_text_embedder = CLIPTextEmbedder(device=get_device())
@@ -211,6 +238,8 @@ if __name__ == "__main__":
     util_clip = UtilClip(device=device)
     util_clip.load_model()
 
+    prompt_list = read_prompts_from_zip(prompts_path, num_prompts)
+
     # Starts the text2img
     txt2img = Txt2Img(
         sampler_name=sampler,
@@ -222,14 +251,12 @@ if __name__ == "__main__":
                                         path=checkpoint_path, force_submodels_init=True)
 
 
-    # Generate N Prompts
-    prompt_list = generate_prompts(num_prompts, num_phrases)
 
     embedded_prompts_array = []
     # Get N Embeddings
     for prompt in prompt_list:
         # get the embedding from positive text prompt
-        embedded_prompts = clip_text_embedder(prompt.positive_prompt_str)
+        embedded_prompts = clip_text_embedder(prompt['positive-prompt-str'])
         embedded_prompts_numpy = embedded_prompts.detach().cpu().numpy()
 
         del embedded_prompts
