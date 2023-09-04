@@ -277,17 +277,17 @@ if __name__ == "__main__":
     chad_score, chad_score_scaled = embeddings_chad_score(embedding_vector, seed)
 
     for i in range(num_images):
-        random_seed = random.randint(0, 2 ** 24 - 1)
 
         latent = txt2img.generate_images_latent_from_embeddings(
             batch_size=1,
             embedded_prompt=embedding_vector,
             null_prompt=null_prompt,
             uncond_scale=cfg_strength,
-            seed=random_seed,
+            seed=seed,
             w=image_width,
             h=image_height
         )
 
         images = txt2img.get_image_from_latent(latent)
-        image_list, image_hash_list = save_images(images, output + '/image' + str(i+1) + '.jpg');
+        image_list, image_hash_list = save_images(images, output + '/image' + str(i+1) + '.jpg')
+        seed = random.randint(0, 2 ** 24 - 1)
