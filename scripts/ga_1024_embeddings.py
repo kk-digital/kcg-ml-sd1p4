@@ -101,45 +101,46 @@ def log_to_file(message):
 
 
 # Function to calculate the chad score for batch of images
-def calculate_fitness_score(ga_instance, solution, solution_idx, embedded_prompts_array):
-    # set seed
+def calculate_fitness_score(ga_instance, solution, solution_idx):
+    # Set seed
     SEED = random.randint(0, 2 ** 24)
     if FIXED_SEED == True:
         SEED = 54846
 
-    # Linear combination of the solution coefficients and the embedded prompts
-    combined_embedding_np = np.dot(solution, embedded_prompts_array)
+    # Get the fixed embedding for this individual
+    fixed_embedding = torch.tensor(embedded_prompts_list[solution_idx], dtype=torch.float32).to(DEVICE)
     
-    # Convert the combined numpy array to a PyTorch tensor
-    prompt_embedding = torch.tensor(combined_embedding_np, dtype=torch.float32)
-    prompt_embedding = prompt_embedding.view(1, 77, 768).to(DEVICE)
+    # Perform the linear combination with the genome (solution)
+    # Assume that both the fixed_embedding and solution are 1D tensors, and that you want element-wise multiplication
+    combined_embedding = fixed_embedding * torch.tensor(solution, dtype=torch.float32).to(DEVICE)
 
+    # Re-shape combined_embedding to be used for image generation
+    combined_embedding = combined_embedding.view(1, 77, 768).to(DEVICE)
+    
+    # Generate image from the new combined_embedding
     latent = sd.generate_images_latent_from_embeddings(
         seed=SEED,
-        embedded_prompt=prompt_embedding,
+        embedded_prompt=combined_embedding,
         null_prompt=NULL_PROMPT,
         uncond_scale=CFG_STRENGTH
     )
-
+    
+    # Create image from latent
     image = sd.get_image_from_latent(latent)
-    del latent
-    torch.cuda.empty_cache()
 
-    # move back to cpu
-    prompt_embedding.to("cpu")
-    del prompt_embedding
+    # Move back to cpu and free the memory
+    combined_embedding.to("cpu")
+    del combined_embedding
 
     pil_image = to_pil(image[0])  # Convert to (height, width, channels)
-    del image
-    torch.cuda.empty_cache()
 
-    # convert to grey scale
+    # Convert to grey scale if needed
     if CONVERT_GREY_SCALE_FOR_SCORING == True:
         pil_image = pil_image.convert("L")
         pil_image = pil_image.convert("RGB")
 
+    # Calculate fitness score
     fitness_score = filesize_fitness(pil_image)
-
     return fitness_score
 
 
@@ -304,10 +305,7 @@ embedded_prompts_array = embedded_prompts_cpu.detach().numpy()
 print(f"array shape: {embedded_prompts_array.shape}")
 embedded_prompts_list = embedded_prompts_array.reshape(population_size, 77 * 768).tolist()
 
-# Initialize the population of coefficients here:
-num_embeddings = 1024
-# Initialize random coefficients between -1 and 1 for all individuals in the population
-initial_population = np.random.uniform(-1, 1, (population_size, num_embeddings))
+
 
 # random_mutation_min_val=5,
 # random_mutation_max_val=10,
@@ -315,14 +313,16 @@ initial_population = np.random.uniform(-1, 1, (population_size, num_embeddings))
 
 # note: uniform is good, two_points"
 
-num_genes = 77 * 768  # 59136
+num_genes = 1024  # Each individual is 1024 floats
+initial_population = np.random.uniform(low=-1, high=1, size=(population_size, num_genes)).tolist()
+
 # Initialize the GA
 ga_instance = pygad.GA(initial_population=initial_population,
                        num_generations=generations,
                        num_parents_mating=num_parents_mating,
                        fitness_func=calculate_fitness_score,
                        sol_per_pop=population_size,
-                       num_genes=num_embeddings, 
+                       num_genes=num_genes, 
                        # Pygad uses 0-100 range for percentage
                        mutation_percent_genes= mutation_percent_genes,
                        mutation_probability = mutation_probability,
