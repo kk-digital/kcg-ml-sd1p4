@@ -285,8 +285,8 @@ if __name__ == "__main__":
 
         chad_score, chad_score_scaled = embeddings_chad_score(embedding_vector, seed)
 
-        input = torch.tensor([chad_score], device=device, dtype=torch.float32, requires_grad=True)
-        target = torch.tensor([100.0], device=device, dtype=torch.float32, requires_grad=True)
+        input = torch.tensor([chad_score_scaled], device=device, dtype=torch.float32, requires_grad=True)
+        target = torch.tensor([1.0], device=device, dtype=torch.float32, requires_grad=True)
 
         loss = mse_loss(input, target)
         print(f'Iteration #{i + 1}, loss {loss}')
