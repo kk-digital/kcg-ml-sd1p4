@@ -320,9 +320,9 @@ num_genes = 77 * 768  # 59136
 ga_instance = pygad.GA(initial_population=initial_population,
                        num_generations=generations,
                        num_parents_mating=num_parents_mating,
-                       fitness_func=cached_fitness_func,
+                       fitness_func=calculate_fitness_score,
                        sol_per_pop=population_size,
-                       num_genes=77 * 768,  # 59136
+                       num_genes=num_embeddings, 
                        # Pygad uses 0-100 range for percentage
                        mutation_percent_genes= mutation_percent_genes,
                        mutation_probability = mutation_probability,
