@@ -11,11 +11,15 @@ base_dir = "./"
 sys.path.insert(0, base_dir)
 sys.path.insert(0, os.getcwd())
 
+
+from stable_diffusion.model_paths import SD_CHECKPOINT_PATH
 from stable_diffusion.utils_backend import get_device
 from ga.prompt_generator import generate_prompts
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion_base_script import StableDiffusionBaseScript
 from stable_diffusion.utils_backend import get_autocast, set_seed
+from chad_score.chad_score import ChadScorePredictor
+from model.util_clip import UtilClip
 
 def parse_arguments():
     """Command-line arguments"""
@@ -28,6 +32,8 @@ def parse_arguments():
     parser.add_argument('--cfg_strength', type=float, default=12)
     parser.add_argument('--device', type=str, default='cuda')
     parser.add_argument('--sampler', type=str, default='ddim')
+    parser.add_argument('--steps', type=int, default=20)
+    parser.add_argument('--checkpoint_path',type=str, default=SD_CHECKPOINT_PATH)
     parser.add_argument('--num_prompts', type=int, default=12)
     parser.add_argument('--num_phrases', type=int, default=12)
 
@@ -106,6 +112,61 @@ def combine_embeddings(embeddings_array, weight_array):
 
     return result_embedding
 
+
+def embeddings_chad_score(embeddings_vector):
+    seed = 6789
+    latent = txt2img.generate_images_latent_from_embeddings(
+        batch_size=1,
+        embedded_prompt=embedding_vector,
+        null_prompt=null_prompt,
+        uncond_scale=cfg_strength,
+        seed=seed,
+        w=image_width,
+        h=image_height
+    )
+
+    images = txt2img.get_image_from_latent(latent)
+
+    del latent
+    torch.cuda.empty_cache()
+
+    # Map images to `[0, 1]` space and clip
+    images = torch.clamp((images + 1.0) / 2.0, min=0.0, max=1.0)
+    # Transpose to `[batch_size, height, width, channels]` and convert to numpy
+
+    images_cpu = images.cpu()
+
+    del images
+    torch.cuda.empty_cache()
+
+    images_cpu = images_cpu.permute(0, 2, 3, 1)
+    images_cpu = images_cpu.detach().float().numpy()
+
+    image_list = []
+    # Save images
+    for i, img in enumerate(images_cpu):
+        img = Image.fromarray((255. * img).astype(np.uint8))
+        image_list.append(img)
+
+    image = image_list[0]
+
+    image_features = util_clip.get_image_features(image)
+    # cleanup
+    del image
+    torch.cuda.empty_cache()
+
+    chad_score = chad_score_predictor.get_chad_score(image_features)
+    chad_score_scaled = sigmoid(chad_score)
+
+    # cleanup
+    del image_features
+    torch.cuda.empty_cache()
+
+    return chad_score, chad_score_scaled
+
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
 if __name__ == "__main__":
     args = parse_arguments()
 
@@ -114,7 +175,9 @@ if __name__ == "__main__":
     image_height = args.image_height
     cfg_strength = args.cfg_strength
     device = get_device(args.device)
+    steps = args.steps
     sampler = args.sampler
+    checkpoint_path = args.checkpoint_path
     num_prompts = args.num_prompts
     num_phrases = args.num_phrases
 
@@ -128,11 +191,15 @@ if __name__ == "__main__":
     chad_score_predictor = ChadScorePredictor(device=device)
     chad_score_predictor.load_model(chad_score_model_path)
 
+    # Load the clip model
+    util_clip = UtilClip(device=device)
+    util_clip.load_model()
+
     # Starts the text2img
     txt2img = Txt2Img(
         sampler_name=sampler,
         n_steps=steps,
-        force_cpu=force_cpu,
+        force_cpu=False,
         cuda_device=device,
     )
     txt2img.initialize_latent_diffusion(autoencoder=None, clip_text_embedder=None, unet_model=None,
@@ -158,15 +225,11 @@ if __name__ == "__main__":
     weight_array = np.random.rand(num_prompts)
     # Combinate into one Embedding
     embedding_numpy = combine_embeddings(embedded_prompts_array, weight_array)
-    # Maximize fitness
+    null_prompt = clip_text_embedder('')
 
-    embedding_vector = clip_text_embedder(embedding_numpy)
-    latent = txt2img.generate_images_latent_from_embeddings(
-                    batch_size=batch_size,
-                    embedded_prompt=cond,
-                    null_prompt=un_cond,
-                    uncond_scale=cfg_strength,
-                    seed=this_seed,
-                    w=image_width,
-                    h=image_height
-                )
+    # Maximize fitness
+    embedding_vector = torch.tensor(embedding_numpy, device=device, dtype=torch.float32)
+
+    chad_score, chad_score_scaled = embeddings_chad_score(embedding_vector)
+    print(chad_score)
+    print(chad_score_scaled)
