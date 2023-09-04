@@ -30,7 +30,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser(
         description="Affine combination of embeddings.")
 
-    parser.add_argument('--output', type=str, help='Output folder')
+    parser.add_argument('--output', type=str, default='./output')
     parser.add_argument('--image_width', type=int, default=64)
     parser.add_argument('--image_height', type=int, default=64)
     parser.add_argument('--cfg_strength', type=float, default=12)
