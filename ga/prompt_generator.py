@@ -195,7 +195,6 @@ def initialize_prompt_list_from_csv(csv_dataset_path, csv_phrase_limit=0):
 # Still used in GA scripts
 def generate_prompts(prompt_count, prompt_phrase_length):
     prompts = initialize_prompt_list()
-
     prompt_list = []
     enc = tiktoken.get_encoding("cl100k_base")
 
@@ -227,8 +226,8 @@ def generate_prompts(prompt_count, prompt_phrase_length):
         num_constraints = len([prompt.Phrase for prompt in positive_prompt if "constraint" in prompt.Types])
 
         prompt_list.append(
-            GeneratedPrompt(positive_prompt_str, "", prompt_vector, num_topics, num_modifiers, num_styles,
-                            num_constraints))
+            GeneratedPrompt(positive_prompt_str, "", num_topics, num_modifiers, num_styles,
+                            num_constraints, prompt_vector))
 
     return prompt_list
 
