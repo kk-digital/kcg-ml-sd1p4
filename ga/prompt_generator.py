@@ -2,6 +2,8 @@
 import random
 import tiktoken
 import sys
+import os
+import shutil
 import json
 import csv
 import torch
@@ -331,16 +333,37 @@ def generate_prompts_from_csv(csv_dataset_path,
     return prompt_list
 
 
+def count_number_of_digits(num):
+    count = 0
+    while (num > 0):
+        count = count + 1
+        num = num // 10
+    return  count
+
 def generate_prompts_and_save_to_npz(csv_dataset_path,
                                       csv_phrase_limit,
                                       prompt_count,
                                       positive_prefix="",
                                       save_embeddings=True,
                                       checkpoint_path="",
-                                      npz_output=""):
+                                      dataset_output=""):
     prompt_list = generate_prompts_from_csv(csv_dataset_path, csv_phrase_limit, prompt_count, positive_prefix,
                                             save_embeddings, checkpoint_path)
-    prompt_list_dict = [prompt.to_json() for prompt in prompt_list]
-    np.savez_compressed(npz_output, data=prompt_list_dict)
 
-    print("Prompt list saved to {}".format(npz_output))
+    # Create the directory if it doesn't exist
+    if not os.path.exists(dataset_output):
+        os.makedirs(dataset_output)
+
+    count = 0
+    for prompt in prompt_list:
+        prompt_json = prompt.to_json()
+        filename = "{num:0{digits}}.npz".format(num=count, digits=count_number_of_digits(prompt_count))
+        file_path = os.path.join(dataset_output, filename)
+
+        # save data
+        np.savez_compressed(file_path, data=prompt_json)
+        count += 1
+
+    shutil.make_archive(dataset_output, 'zip', dataset_output)
+    print("Prompt list saved to {}".format(dataset_output))
+    shutil.rmtree(dataset_output)
