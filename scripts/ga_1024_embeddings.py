@@ -115,7 +115,7 @@ def calculate_fitness_score(ga_instance, solution, solution_idx):
     combined_embedding = fixed_embedding * torch.tensor(solution, dtype=torch.float32).to(DEVICE)
 
     # Re-shape combined_embedding to be used for image generation
-    combined_embedding = combined_embedding.view(1, 77, 768).to(DEVICE)
+    combined_embedding = combined_embedding.view(1, 1024).to(DEVICE)
     
     # Generate image from the new combined_embedding
     latent = sd.generate_images_latent_from_embeddings(
