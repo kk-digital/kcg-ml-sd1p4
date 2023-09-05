@@ -269,7 +269,7 @@ if __name__ == "__main__":
         embedded_prompts_array.append(embedded_prompts)
 
     # array of  weights
-    weight_array = np.full(num_prompts, 1.0)
+    weight_array = np.full(num_prompts, 1.0 / num_prompts)
     weight_array = torch.tensor(weight_array, device=device, dtype=torch.float32, requires_grad=True)
     # Combinate into one Embedding
 
@@ -294,6 +294,7 @@ if __name__ == "__main__":
 
         loss.backward()
         optimizer.step()
+
     end_time = time.time()
 
     elapsed_time = end_time - start_time
