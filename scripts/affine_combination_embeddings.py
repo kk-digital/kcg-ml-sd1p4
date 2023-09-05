@@ -304,7 +304,7 @@ if __name__ == "__main__":
     # Maximize fitness
     embedding_vector = torch.tensor(embeddings_numpy, device=device, dtype=torch.float32)
 
-    chad_score, chad_score_scaled = embeddings_chad_score(embedding_vector, seed)
+    chad_score, chad_score_scaled = embeddings_chad_score(embedding_vector, seed, iterations, output)
 
     latent = txt2img.generate_images_latent_from_embeddings(
         batch_size=1,
