@@ -249,24 +249,25 @@ class StableDiffusionProcessing:
         return image_conditioning
 
     def img2img_image_conditioning(self, source_image, latent_image, image_mask=None):
-        source_image = devices.cond_cast_float(source_image)
-
-        # HACK: Using introspection as the Depth2Image model doesn't appear to uniquely
-        # identify itself with a field common to all models. The conditioning_key is also hybrid.
-        if isinstance(self.sd_model, LatentDepth2ImageDiffusion):
-            return self.depth2img_image_conditioning(source_image)
-
-        if self.sd_model.cond_stage_key == "edit":
-            return self.edit_image_conditioning(source_image)
-
-        if self.sampler.conditioning_key in {'hybrid', 'concat'}:
-            return self.inpainting_image_conditioning(source_image, latent_image, image_mask=image_mask)
-
-        if self.sampler.conditioning_key == "crossattn-adm":
-            return self.unclip_image_conditioning(source_image)
-
-        # Dummy zero conditioning if we're not using inpainting or depth model.
         return latent_image.new_zeros(latent_image.shape[0], 5, 1, 1)
+        # source_image = devices.cond_cast_float(source_image)
+
+        # # HACK: Using introspection as the Depth2Image model doesn't appear to uniquely
+        # # identify itself with a field common to all models. The conditioning_key is also hybrid.
+        # if isinstance(self.sd_model, LatentDepth2ImageDiffusion):
+        #     return self.depth2img_image_conditioning(source_image)
+
+        # if self.sd_model.cond_stage_key == "edit":
+        #     return self.edit_image_conditioning(source_image)
+
+        # if self.sampler.conditioning_key in {'hybrid', 'concat'}:
+        #     return self.inpainting_image_conditioning(source_image, latent_image, image_mask=image_mask)
+
+        # if self.sampler.conditioning_key == "crossattn-adm":
+        #     return self.unclip_image_conditioning(source_image)
+
+        # # Dummy zero conditioning if we're not using inpainting or depth model.
+        # return latent_image.new_zeros(latent_image.shape[0], 5, 1, 1)
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         pass
