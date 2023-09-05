@@ -19,8 +19,8 @@ from modules.ui import plaintext_to_html
 opts = None
 state = None
 # NOTE: Init this
-sd_model = None
-device = None
+SD_MODEL = None
+DEVICE = None
 
 @dataclass(repr=False)
 class StableDiffusionProcessing:
@@ -146,7 +146,7 @@ class StableDiffusionProcessing:
     @property
     def sd_model(self):
         # return shared.sd_model
-        return sd_model
+        return SD_MODEL
 
     @sd_model.setter
     def sd_model(self, value):
@@ -187,74 +187,75 @@ class StableDiffusionProcessing:
 
         return txt2img_image_conditioning(self.sd_model, x, width or self.width, height or self.height)
 
-    def depth2img_image_conditioning(self, source_image):
-        # Use the AddMiDaS helper to Format our source image to suit the MiDaS model
-        transformer = AddMiDaS(model_type="dpt_hybrid")
-        transformed = transformer({"jpg": rearrange(source_image[0], "c h w -> h w c")})
-        midas_in = torch.from_numpy(transformed["midas_in"][None, ...]).to(device=shared.device)
-        midas_in = repeat(midas_in, "1 ... -> n ...", n=self.batch_size)
+    # def depth2img_image_conditioning(self, source_image):
+    #     # Use the AddMiDaS helper to Format our source image to suit the MiDaS model
+    #     transformer = AddMiDaS(model_type="dpt_hybrid")
+    #     transformed = transformer({"jpg": rearrange(source_image[0], "c h w -> h w c")})
+    #     # midas_in = torch.from_numpy(transformed["midas_in"][None, ...]).to(device=shared.device)
+    #     midas_in = torch.from_numpy(transformed["midas_in"][None, ...]).to(device=DEVICE)
+    #     midas_in = repeat(midas_in, "1 ... -> n ...", n=self.batch_size)
 
-        conditioning_image = images_tensor_to_samples(source_image*0.5+0.5, approximation_indexes.get(opts.sd_vae_encode_method))
-        conditioning = torch.nn.functional.interpolate(
-            self.sd_model.depth_model(midas_in),
-            size=conditioning_image.shape[2:],
-            mode="bicubic",
-            align_corners=False,
-        )
+    #     conditioning_image = images_tensor_to_samples(source_image*0.5+0.5, approximation_indexes.get(opts.sd_vae_encode_method))
+    #     conditioning = torch.nn.functional.interpolate(
+    #         self.sd_model.depth_model(midas_in),
+    #         size=conditioning_image.shape[2:],
+    #         mode="bicubic",
+    #         align_corners=False,
+    #     )
 
-        (depth_min, depth_max) = torch.aminmax(conditioning)
-        conditioning = 2. * (conditioning - depth_min) / (depth_max - depth_min) - 1.
-        return conditioning
+    #     (depth_min, depth_max) = torch.aminmax(conditioning)
+    #     conditioning = 2. * (conditioning - depth_min) / (depth_max - depth_min) - 1.
+    #     return conditioning
 
-    def edit_image_conditioning(self, source_image):
-        conditioning_image = images_tensor_to_samples(source_image*0.5+0.5, approximation_indexes.get(opts.sd_vae_encode_method))
+    # def edit_image_conditioning(self, source_image):
+    #     conditioning_image = images_tensor_to_samples(source_image*0.5+0.5, approximation_indexes.get(opts.sd_vae_encode_method))
 
-        return conditioning_image
+    #     return conditioning_image
 
-    def unclip_image_conditioning(self, source_image):
-        c_adm = self.sd_model.embedder(source_image)
-        if self.sd_model.noise_augmentor is not None:
-            noise_level = 0 # TODO: Allow other noise levels?
-            c_adm, noise_level_emb = self.sd_model.noise_augmentor(c_adm, noise_level=repeat(torch.tensor([noise_level]).to(c_adm.device), '1 -> b', b=c_adm.shape[0]))
-            c_adm = torch.cat((c_adm, noise_level_emb), 1)
-        return c_adm
+    # def unclip_image_conditioning(self, source_image):
+    #     c_adm = self.sd_model.embedder(source_image)
+    #     if self.sd_model.noise_augmentor is not None:
+    #         noise_level = 0 # TODO: Allow other noise levels?
+    #         c_adm, noise_level_emb = self.sd_model.noise_augmentor(c_adm, noise_level=repeat(torch.tensor([noise_level]).to(c_adm.device), '1 -> b', b=c_adm.shape[0]))
+    #         c_adm = torch.cat((c_adm, noise_level_emb), 1)
+    #     return c_adm
 
-    def inpainting_image_conditioning(self, source_image, latent_image, image_mask=None):
-        self.is_using_inpainting_conditioning = True
+    # def inpainting_image_conditioning(self, source_image, latent_image, image_mask=None):
+    #     self.is_using_inpainting_conditioning = True
 
-        # Handle the different mask inputs
-        if image_mask is not None:
-            if torch.is_tensor(image_mask):
-                conditioning_mask = image_mask
-            else:
-                conditioning_mask = np.array(image_mask.convert("L"))
-                conditioning_mask = conditioning_mask.astype(np.float32) / 255.0
-                conditioning_mask = torch.from_numpy(conditioning_mask[None, None])
+    #     # Handle the different mask inputs
+    #     if image_mask is not None:
+    #         if torch.is_tensor(image_mask):
+    #             conditioning_mask = image_mask
+    #         else:
+    #             conditioning_mask = np.array(image_mask.convert("L"))
+    #             conditioning_mask = conditioning_mask.astype(np.float32) / 255.0
+    #             conditioning_mask = torch.from_numpy(conditioning_mask[None, None])
 
-                # Inpainting model uses a discretized mask as input, so we round to either 1.0 or 0.0
-                conditioning_mask = torch.round(conditioning_mask)
-        else:
-            conditioning_mask = source_image.new_ones(1, 1, *source_image.shape[-2:])
+    #             # Inpainting model uses a discretized mask as input, so we round to either 1.0 or 0.0
+    #             conditioning_mask = torch.round(conditioning_mask)
+    #     else:
+    #         conditioning_mask = source_image.new_ones(1, 1, *source_image.shape[-2:])
 
-        # Create another latent image, this time with a masked version of the original input.
-        # Smoothly interpolate between the masked and unmasked latent conditioning image using a parameter.
-        conditioning_mask = conditioning_mask.to(device=source_image.device, dtype=source_image.dtype)
-        conditioning_image = torch.lerp(
-            source_image,
-            source_image * (1.0 - conditioning_mask),
-            getattr(self, "inpainting_mask_weight", shared.opts.inpainting_mask_weight)
-        )
+    #     # Create another latent image, this time with a masked version of the original input.
+    #     # Smoothly interpolate between the masked and unmasked latent conditioning image using a parameter.
+    #     conditioning_mask = conditioning_mask.to(device=source_image.device, dtype=source_image.dtype)
+    #     conditioning_image = torch.lerp(
+    #         source_image,
+    #         source_image * (1.0 - conditioning_mask),
+    #         getattr(self, "inpainting_mask_weight", shared.opts.inpainting_mask_weight)
+    #     )
 
-        # Encode the new masked image using first stage of network.
-        conditioning_image = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(conditioning_image))
+    #     # Encode the new masked image using first stage of network.
+    #     conditioning_image = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(conditioning_image))
 
-        # Create the concatenated conditioning tensor to be fed to `c_concat`
-        conditioning_mask = torch.nn.functional.interpolate(conditioning_mask, size=latent_image.shape[-2:])
-        conditioning_mask = conditioning_mask.expand(conditioning_image.shape[0], -1, -1, -1)
-        image_conditioning = torch.cat([conditioning_mask, conditioning_image], dim=1)
-        image_conditioning = image_conditioning.to(shared.device).type(self.sd_model.dtype)
+    #     # Create the concatenated conditioning tensor to be fed to `c_concat`
+    #     conditioning_mask = torch.nn.functional.interpolate(conditioning_mask, size=latent_image.shape[-2:])
+    #     conditioning_mask = conditioning_mask.expand(conditioning_image.shape[0], -1, -1, -1)
+    #     image_conditioning = torch.cat([conditioning_mask, conditioning_image], dim=1)
+    #     image_conditioning = image_conditioning.to(shared.device).type(self.sd_model.dtype)
 
-        return image_conditioning
+    #     return image_conditioning
 
     def img2img_image_conditioning(self, source_image, latent_image, image_mask=None):
         return latent_image.new_zeros(latent_image.shape[0], 5, 1, 1)
