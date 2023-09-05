@@ -290,6 +290,8 @@ if __name__ == "__main__":
         input = chad_score_scaled
         loss = mse_loss(input, target)
 
+        print(f'Iteration #{i + 1}, loss {loss}')
+
         loss.backward()
         optimizer.step()
     end_time = time.time()
