@@ -149,7 +149,7 @@ def combine_embeddings(embeddings_array, weight_array):
     return result_embedding
 
 
-def embeddings_chad_score(embeddings_vector, seed):
+def embeddings_chad_score(embeddings_vector, seed, index, output):
     latent = txt2img.generate_images_latent_from_embeddings(
         batch_size=1,
         embedded_prompt=embedding_vector,
@@ -161,6 +161,7 @@ def embeddings_chad_score(embeddings_vector, seed):
     )
 
     images = txt2img.get_image_from_latent(latent)
+    image_list, image_hash_list = save_images(images, output + '/image' + str(index + 1) + '.jpg')
 
     del latent
     torch.cuda.empty_cache()
@@ -252,7 +253,6 @@ if __name__ == "__main__":
                                         path=checkpoint_path, force_submodels_init=True)
 
 
-
     embedded_prompts_array = []
     # Get N Embeddings
     for prompt in prompt_list:
@@ -283,10 +283,10 @@ if __name__ == "__main__":
         # Maximize fitness
         embedding_vector = torch.tensor(embedding_numpy, device=device, dtype=torch.float32)
 
-        chad_score, chad_score_scaled = embeddings_chad_score(embedding_vector, seed)
+        chad_score, chad_score_scaled = embeddings_chad_score(embedding_vector, seed, i, output)
 
-        input = torch.tensor([chad_score], device=device, dtype=torch.float32, requires_grad=True)
-        target = torch.tensor([100.0], device=device, dtype=torch.float32, requires_grad=True)
+        input = torch.tensor([chad_score_scaled], device=device, dtype=torch.float32, requires_grad=True)
+        target = torch.tensor([1.0], device=device, dtype=torch.float32, requires_grad=True)
 
         loss = mse_loss(input, target)
         print(f'Iteration #{i + 1}, loss {loss}')
@@ -306,18 +306,15 @@ if __name__ == "__main__":
 
     chad_score, chad_score_scaled = embeddings_chad_score(embedding_vector, seed)
 
-    for i in range(num_images):
+    latent = txt2img.generate_images_latent_from_embeddings(
+        batch_size=1,
+        embedded_prompt=embedding_vector,
+        null_prompt=null_prompt,
+        uncond_scale=cfg_strength,
+        seed=seed,
+        w=image_width,
+        h=image_height
+    )
 
-        latent = txt2img.generate_images_latent_from_embeddings(
-            batch_size=1,
-            embedded_prompt=embedding_vector,
-            null_prompt=null_prompt,
-            uncond_scale=cfg_strength,
-            seed=seed,
-            w=image_width,
-            h=image_height
-        )
-
-        images = txt2img.get_image_from_latent(latent)
-        image_list, image_hash_list = save_images(images, output + '/image' + str(i+1) + '.jpg')
-        seed = random.randint(0, 2 ** 24 - 1)
+    images = txt2img.get_image_from_latent(latent)
+    image_list, image_hash_list = save_images(images, output + '/image.jpg')
