@@ -259,7 +259,7 @@ if __name__ == "__main__":
         # get the embedding from positive text prompt
         # prompt_str = prompt.positive_prompt_str
         print(type(prompt))
-        print(len(prompt))
+        print(prompt.shape)
         print(prompt)
         prompt_str = prompt['positive-prompt-str']
         embedded_prompts = clip_text_embedder(prompt_str)
