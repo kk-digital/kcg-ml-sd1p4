@@ -352,3 +352,12 @@ class CLI:
         )
 
         return self
+
+    def prompt_list_dataset_path(self):
+        self.parser.add_argument(
+            '--prompt_list_dataset_path',
+            type=str,
+            help='The path to prompt list dataset zip'
+        )
+
+        return self

@@ -176,8 +176,11 @@ def initialize_prompt_list_from_csv(csv_dataset_path, csv_phrase_limit=0):
             else:
                 # index,count,token size,phrase str
                 phrase = row[3]
-                prompt_list.add_phrase(phrase)
-                prompt_list.add_type_to_phrase(phrase, prompt_type="topic")
+
+                index = len(prompt_list.Prompts)
+                new_prompt = PromptData(index, phrase)
+                new_prompt.Types.append("topic")
+                prompt_list.Prompts.append(new_prompt)
 
                 # add token count
                 phrase_token_size = int(row[2])
@@ -200,15 +203,19 @@ def generate_prompts(prompt_count, prompt_phrase_length):
     prompt_list = []
     enc = tiktoken.get_encoding("cl100k_base")
 
+    len_prompt_phrases = len(prompts)
     for i in range(0, prompt_count):
         num_tokens = 100
         while num_tokens > 77:
             positive_prompt = []
             prompt_vector = [0] * len(prompts)
             for j in range(0, prompt_phrase_length):
-                random_prompt = random.choice(
-                    [item for item in prompts if (prompt_vector[item.Index] == 0)])
-                prompt_index = random_prompt.Index
+                while True:
+                    random_index = random.randint(0, len_prompt_phrases-1)
+                    if prompt_vector[random_index] == 0:
+                        prompt_index = random_index
+                        random_prompt = prompts[prompt_index]
+                        break
 
                 # update used array
                 prompt_vector[prompt_index] = 1
