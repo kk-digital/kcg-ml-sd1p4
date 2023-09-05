@@ -260,7 +260,7 @@ if __name__ == "__main__":
         # prompt_str = prompt.positive_prompt_str
         print(type(prompt))
         print(prompt.shape)
-        prompt = prompt.flatten()
+        prompt = prompt.flatten()[0]
         print(prompt)
         prompt_str = prompt['positive-prompt-str']
         embedded_prompts = clip_text_embedder(prompt_str)
