@@ -11,16 +11,18 @@ import gradio as gr
 # from modules.generation_parameters_copypaste import create_override_settings_dict, parse_generation_parameters
 # from modules.processing import Processed, StableDiffusionProcessingImg2Img, process_images
 # from modules.shared import opts, state
-import modules.shared as shared
+# import modules.shared as shared
 # import modules.processing as processing
-from modules.ui import plaintext_to_html
+# from modules.ui import plaintext_to_html
 # import modules.scripts
 
 opts = None
 state = None
-# NOTE: Init this
+# NOTE: Init SD_MODEL
 SD_MODEL = None
 DEVICE = None
+PROMPT_STYLES = None
+# TOTAL_TQDM = None
 
 @dataclass(repr=False)
 class StableDiffusionProcessing:
@@ -314,8 +316,10 @@ class StableDiffusionProcessing:
         if len(self.all_prompts) != len(self.all_negative_prompts):
             raise RuntimeError(f"Received a different number of prompts ({len(self.all_prompts)}) and negative prompts ({len(self.all_negative_prompts)})")
 
-        self.all_prompts = [shared.prompt_styles.apply_styles_to_prompt(x, self.styles) for x in self.all_prompts]
-        self.all_negative_prompts = [shared.prompt_styles.apply_negative_styles_to_prompt(x, self.styles) for x in self.all_negative_prompts]
+        # self.all_prompts = [shared.prompt_styles.apply_styles_to_prompt(x, self.styles) for x in self.all_prompts]
+        # self.all_negative_prompts = [shared.prompt_styles.apply_negative_styles_to_prompt(x, self.styles) for x in self.all_negative_prompts]
+        self.all_prompts = [PROMPT_STYLES.apply_styles_to_prompt(x, self.styles) for x in self.all_prompts]
+        self.all_negative_prompts = [PROMPT_STYLES.apply_negative_styles_to_prompt(x, self.styles) for x in self.all_negative_prompts]
 
         self.main_prompt = self.all_prompts[0]
         self.main_negative_prompt = self.all_negative_prompts[0]
@@ -329,7 +333,8 @@ class StableDiffusionProcessing:
             hires_steps,
             use_old_scheduling,
             opts.CLIP_stop_at_last_layers,
-            shared.sd_model.sd_checkpoint_info,
+            # shared.sd_model.sd_checkpoint_info,
+            SD_MODEL.sd_checkpoint_info,
             extra_network_data,
             opts.sdxl_crop_left,
             opts.sdxl_crop_top,
@@ -350,13 +355,15 @@ class StableDiffusionProcessing:
         caches is a list with items described above.
         """
 
-        if shared.opts.use_old_scheduling:
+        # if shared.opts.use_old_scheduling:
+        if opts.use_old_scheduling:
             old_schedules = prompt_parser.get_learned_conditioning_prompt_schedules(required_prompts, steps, hires_steps, False)
             new_schedules = prompt_parser.get_learned_conditioning_prompt_schedules(required_prompts, steps, hires_steps, True)
             if old_schedules != new_schedules:
                 self.extra_generation_params["Old prompt editing timelines"] = True
 
-        cached_params = self.cached_params(required_prompts, steps, extra_network_data, hires_steps, shared.opts.use_old_scheduling)
+        # cached_params = self.cached_params(required_prompts, steps, extra_network_data, hires_steps, shared.opts.use_old_scheduling)
+        cached_params = self.cached_params(required_prompts, steps, extra_network_data, hires_steps, opts.use_old_scheduling)
 
         for cache in caches:
             if cache[0] is not None and cached_params == cache[0]:
@@ -365,7 +372,8 @@ class StableDiffusionProcessing:
         cache = caches[0]
 
         with devices.autocast():
-            cache[1] = function(shared.sd_model, required_prompts, steps, hires_steps, shared.opts.use_old_scheduling)
+            # cache[1] = function(shared.sd_model, required_prompts, steps, hires_steps, shared.opts.use_old_scheduling)
+            cache[1] = function(SD_MODEL, required_prompts, steps, hires_steps, opts.use_old_scheduling)
 
         cache[0] = cached_params
         return cache[1]
@@ -535,7 +543,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             self.mask_blur_y = value
 
     def init(self, all_prompts, all_seeds, all_subseeds):
-        self.image_cfg_scale: float = self.image_cfg_scale if shared.sd_model.cond_stage_key == "edit" else None
+        # self.image_cfg_scale: float = self.image_cfg_scale if shared.sd_model.cond_stage_key == "edit" else None
+        self.image_cfg_scale: float = self.image_cfg_scale if SD_MODEL.cond_stage_key == "edit" else None
 
         self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
         crop_region = None
@@ -636,7 +645,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             raise RuntimeError(f"bad number of images passed: {len(imgs)}; expecting {self.batch_size} or less")
 
         image = torch.from_numpy(batch_images)
-        image = image.to(shared.device, dtype=devices.dtype_vae)
+        # image = image.to(shared.device, dtype=devices.dtype_vae)
+        image = image.to(DEVICE, dtype=devices.dtype_vae)
 
         if opts.sd_vae_encode_method != 'Full':
             self.extra_generation_params['VAE Encoder'] = opts.sd_vae_encode_method
@@ -655,8 +665,10 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             latmask = np.around(latmask)
             latmask = np.tile(latmask[None], (4, 1, 1))
 
-            self.mask = torch.asarray(1.0 - latmask).to(shared.device).type(self.sd_model.dtype)
-            self.nmask = torch.asarray(latmask).to(shared.device).type(self.sd_model.dtype)
+            # self.mask = torch.asarray(1.0 - latmask).to(shared.device).type(self.sd_model.dtype)
+            # self.nmask = torch.asarray(latmask).to(shared.device).type(self.sd_model.dtype)
+            self.mask = torch.asarray(1.0 - latmask).to(DEVICE).type(self.sd_model.dtype)
+            self.nmask = torch.asarray(latmask).to(DEVICE).type(self.sd_model.dtype)
 
             # this needs to be fixed to be done in sample() using actual seeds for batches
             if self.inpainting_fill == 2:
@@ -770,7 +782,8 @@ def img2img():
     # assert 0. <= denoising_strength <= 1., 'can only work with strength in [0.0, 1.0]'
 
     p = StableDiffusionProcessingImg2Img(
-        sd_model=shared.sd_model,
+        # sd_model=shared.sd_model,
+        sd_model=SD_MODEL,
         outpath_samples=opts.outdir_samples or opts.outdir_img2img_samples,
         outpath_grids=opts.outdir_grids or opts.outdir_img2img_grids,
         prompt=prompt,
@@ -801,8 +814,8 @@ def img2img():
 
     p.user = request.username
 
-    if shared.cmd_opts.enable_console_prompts:
-        print(f"\nimg2img: {prompt}", file=shared.progress_print_out)
+    # if shared.cmd_opts.enable_console_prompts:
+    #     print(f"\nimg2img: {prompt}", file=shared.progress_print_out)
 
     if mask:
         p.extra_generation_params["Mask blur"] = mask_blur
@@ -819,7 +832,8 @@ def img2img():
         # if processed is None:
         processed = process_images(p)
 
-    shared.total_tqdm.clear()
+    # shared.total_tqdm.clear()
+    # TOTAL_TQDM.clear()
 
     generation_info_js = processed.js()
     if opts.samples_log_stdout:
@@ -828,4 +842,5 @@ def img2img():
     if opts.do_not_show_images:
         processed.images = []
 
-    return processed.images, generation_info_js, plaintext_to_html(processed.info), plaintext_to_html(processed.comments, classname="comments")
+    # return processed.images, generation_info_js, plaintext_to_html(processed.info), plaintext_to_html(processed.comments, classname="comments")
+    return processed.images, generation_info_js, processed.info, processed.comments
