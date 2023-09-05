@@ -258,6 +258,7 @@ if __name__ == "__main__":
     for prompt in prompt_list:
         # get the embedding from positive text prompt
         # prompt_str = prompt.positive_prompt_str
+        print(prompt)
         prompt_str = prompt['positive-prompt-str']
         embedded_prompts = clip_text_embedder(prompt_str)
         embedded_prompts_numpy = embedded_prompts.detach().cpu().numpy()
