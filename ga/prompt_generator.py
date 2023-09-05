@@ -176,8 +176,11 @@ def initialize_prompt_list_from_csv(csv_dataset_path, csv_phrase_limit=0):
             else:
                 # index,count,token size,phrase str
                 phrase = row[3]
-                prompt_list.add_phrase(phrase)
-                prompt_list.add_type_to_phrase(phrase, prompt_type="topic")
+
+                index = len(prompt_list.Prompts)
+                new_prompt = PromptData(index, phrase)
+                new_prompt.Types.append("topic")
+                prompt_list.Prompts.append(new_prompt)
 
                 # add token count
                 phrase_token_size = int(row[2])
