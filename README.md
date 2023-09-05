@@ -415,16 +415,15 @@ options:
   --csv-path CSV_PATH   Full path to the csv path
   --save-embeddings SAVE_EMBEDDINGS
                         True if prompt embeddings will be saved
-  --output OUTPUT       Output path for prompt list json
+  --output OUTPUT       Output path for dataset zip containing prompt list npz
   --checkpoint-path CHECKPOINT_PATH
                         Path to the model checkpoint
-
-
 ```
 
 Example Usage:
 ```
- python ./scripts/prompt_generator.py --num-prompts 2 --positive-prefix "icons, pixel art" --csv-phrase-limit 128 --csv-path ./input/civit_ai_data_phrase_count_v5.csv --save-embeddings True --output ./output/prompt_list_civitai.npz --checkpoint-path ./input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors
+  python ./scripts/prompt_generator.py --num-prompts 50 --positive-prefix "environmental, concept art, side scrolling, video game" --csv-phrase-limit 512 --csv-path ./input/civit_ai_data_phrase_count_v5.csv --save-embeddings True --output ./output/prompt_list_civitai_50_test --checkpoint-path ./input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors
+
 ```
 
 ### Image Ranker by Fitness Score

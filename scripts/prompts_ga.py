@@ -96,7 +96,7 @@ parser.add_argument('--population_size', type=int, default=100, help="Number of 
 parser.add_argument('--mutation_probability', type=float, default=0.05, help="Probability of mutation.")
 parser.add_argument('--keep_elitism', type=int, default=0, help="1 to keep best individual, 0 otherwise.")
 parser.add_argument('--crossover_type', type=str, default="single_point", help="Type of crossover operation.")
-parser.add_argument('--mutation_type', type=str, default="random", help="Type of mutation operation.")
+parser.add_argument('--mutation_type', type=str, default="swap", help="Type of mutation operation.")
 parser.add_argument('--mutation_percent_genes', type=float, default="0.001",
                     help="The percentage of genes to be mutated.")
 args = parser.parse_args()
