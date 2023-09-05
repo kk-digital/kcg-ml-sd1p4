@@ -133,18 +133,14 @@ def read_prompts_from_zip(zip_file_path, num_prompts):
 
 # Now, loaded_arrays contains the loaded NumPy arrays from the first 100 .npz files
 
-def combine_embeddings(embeddings_array, weight_array):
+def combine_embeddings(embeddings_array, weight_array, device):
 
     # empty embedding filled with zeroes
-    result_embedding = np.zeros((1, 77, 768))
+    result_embedding = torch.zeros(1, 77, 768, device=device, dtype=torch.float32)
 
-    num_elements = len(embeddings_array)
-    for i in range(num_elements):
-        embedding = embeddings_array[i]
-        weight = weight_array[i]
-
-        embedding = embedding * weight
-        result_embedding += embedding
+    # Multiply each tensor by its corresponding float and sum up
+    for embedding, weight in zip(embeddings_array, weight_array):
+        result_embedding += embedding * weight
 
     return result_embedding
 
@@ -258,18 +254,11 @@ if __name__ == "__main__":
     for prompt in prompt_list:
         # get the embedding from positive text prompt
         # prompt_str = prompt.positive_prompt_str
-        print(type(prompt))
-        print(prompt.shape)
         prompt = prompt.flatten()[0]
-        print(prompt)
         prompt_str = prompt['positive-prompt-str']
         embedded_prompts = clip_text_embedder(prompt_str)
-        embedded_prompts_numpy = embedded_prompts.detach().cpu().numpy()
 
-        del embedded_prompts
-        torch.cuda.empty_cache()
-
-        embedded_prompts_array.append(embedded_prompts_numpy)
+        embedded_prompts_array.append(embedded_prompts)
 
     # array of  weights
     weight_array = np.full(num_prompts, 1.0 / num_prompts)
@@ -281,11 +270,11 @@ if __name__ == "__main__":
 
     start_time = time.time()
     for i in range(0, iterations):
-        embedding_numpy = combine_embeddings(embedded_prompts_array, weight_array.detach().cpu().numpy())
-        null_prompt = clip_text_embedder('')
+        # Zero the gradients
+        optimizer.zero_grad()
 
-        # Maximize fitness
-        embedding_vector = torch.tensor(embedding_numpy, device=device, dtype=torch.float32)
+        embedding_vector = combine_embeddings(embedded_prompts_array, weight_array, device)
+        null_prompt = clip_text_embedder('')
 
         chad_score, chad_score_scaled = embeddings_chad_score(embedding_vector, seed, i, output)
 
@@ -301,24 +290,3 @@ if __name__ == "__main__":
 
     elapsed_time = end_time - start_time
     print(f"Time elapsed: {elapsed_time:.4f} seconds")
-
-    embeddings_numpy = combine_embeddings(embedded_prompts_array, weight_array.detach().cpu().numpy())
-    null_prompt = clip_text_embedder('')
-
-    # Maximize fitness
-    embedding_vector = torch.tensor(embeddings_numpy, device=device, dtype=torch.float32)
-
-    chad_score, chad_score_scaled = embeddings_chad_score(embedding_vector, seed, iterations, output)
-
-    latent = txt2img.generate_images_latent_from_embeddings(
-        batch_size=1,
-        embedded_prompt=embedding_vector,
-        null_prompt=null_prompt,
-        uncond_scale=cfg_strength,
-        seed=seed,
-        w=image_width,
-        h=image_height
-    )
-
-    images = txt2img.get_image_from_latent(latent)
-    image_list, image_hash_list = save_images(images, output + '/image.jpg')
