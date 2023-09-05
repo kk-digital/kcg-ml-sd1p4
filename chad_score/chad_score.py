@@ -52,3 +52,6 @@ class ChadScorePredictor:
 
     def get_chad_score(self, image_features):
         return self.model(image_features).item()
+
+    def get_chad_score_tensor(self, image_features):
+        return self.model(image_features)

@@ -10,6 +10,7 @@ import torch.nn as nn
 import torch.optim as optim
 import random
 import zipfile
+import torchvision.transforms as transforms
 
 base_dir = "./"
 sys.path.insert(0, base_dir)
@@ -145,10 +146,13 @@ def combine_embeddings(embeddings_array, weight_array, device):
     return result_embedding
 
 
-def embeddings_chad_score(embeddings_vector, seed, index, output):
+def embeddings_chad_score(embeddings_vector, seed, index, output, chad_score_predictor):
+
+    null_prompt = clip_text_embedder('')
+
     latent = txt2img.generate_images_latent_from_embeddings(
         batch_size=1,
-        embedded_prompt=embedding_vector,
+        embedded_prompt=embeddings_vector,
         null_prompt=null_prompt,
         uncond_scale=cfg_strength,
         seed=seed,
@@ -164,31 +168,35 @@ def embeddings_chad_score(embeddings_vector, seed, index, output):
 
     # Map images to `[0, 1]` space and clip
     images = torch.clamp((images + 1.0) / 2.0, min=0.0, max=1.0)
-    # Transpose to `[batch_size, height, width, channels]` and convert to numpy
 
-    images_cpu = images.cpu()
 
+    #image_features = util_clip.get_image_features(images)
+
+    ## Normalize the image tensor
+    mean = torch.tensor([0.48145466, 0.4578275, 0.40821073], device=device).view(-1, 1, 1)
+    std = torch.tensor([0.26862954, 0.26130258, 0.27577711], device=device).view(-1, 1, 1)
+
+    normalized_image_tensor = (images - mean) / std
+
+    # Resize the image to [N, C, 224, 224]
+    transform = transforms.Compose([transforms.Resize((224, 224))])
+    resized_image_tensor = transform(normalized_image_tensor)
+
+    # Get the CLIP features
+    image_features = util_clip.model.encode_image(resized_image_tensor)
+    image_features = image_features.squeeze(0)
+
+    #image_input = util_clip.preprocess(images=images, return_tensors="pt")
+    #image_input = image_input.unsqueeze(0)
+
+    image_features = image_features.to(torch.float32)
+
+    # cleanup
     del images
     torch.cuda.empty_cache()
 
-    images_cpu = images_cpu.permute(0, 2, 3, 1)
-    images_cpu = images_cpu.detach().float().numpy()
-
-    image_list = []
-    # Save images
-    for i, img in enumerate(images_cpu):
-        img = Image.fromarray((255. * img).astype(np.uint8))
-        image_list.append(img)
-
-    image = image_list[0]
-
-    image_features = util_clip.get_image_features(image)
-    # cleanup
-    del image
-    torch.cuda.empty_cache()
-
-    chad_score = chad_score_predictor.get_chad_score(image_features)
-    chad_score_scaled = sigmoid(chad_score)
+    chad_score = chad_score_predictor.get_chad_score_tensor(image_features)
+    chad_score_scaled = torch.sigmoid(chad_score)
 
     # cleanup
     del image_features
@@ -268,21 +276,19 @@ if __name__ == "__main__":
     optimizer = optim.Adam([weight_array], lr=learning_rate)
     mse_loss = nn.MSELoss(reduction='sum')
 
+    target = torch.tensor([1.0], device=device, dtype=torch.float32, requires_grad=True)
+
     start_time = time.time()
     for i in range(0, iterations):
         # Zero the gradients
         optimizer.zero_grad()
 
         embedding_vector = combine_embeddings(embedded_prompts_array, weight_array, device)
-        null_prompt = clip_text_embedder('')
 
-        chad_score, chad_score_scaled = embeddings_chad_score(embedding_vector, seed, i, output)
+        chad_score, chad_score_scaled = embeddings_chad_score(embedding_vector, seed, i, output, chad_score_predictor)
 
-        input = torch.tensor([chad_score_scaled], device=device, dtype=torch.float32, requires_grad=True)
-        target = torch.tensor([1.0], device=device, dtype=torch.float32, requires_grad=True)
-
+        input = chad_score_scaled
         loss = mse_loss(input, target)
-        print(f'Iteration #{i + 1}, loss {loss}')
 
         loss.backward()
         optimizer.step()
