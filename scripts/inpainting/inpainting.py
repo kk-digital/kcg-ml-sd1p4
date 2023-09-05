@@ -1,4 +1,5 @@
 import os
+import json
 from contextlib import closing
 from pathlib import Path
 
@@ -6,14 +7,20 @@ import numpy as np
 from PIL import Image, ImageOps, ImageFilter, ImageEnhance, UnidentifiedImageError
 import gradio as gr
 
-from modules import images as imgutil
-from modules.generation_parameters_copypaste import create_override_settings_dict, parse_generation_parameters
-from modules.processing import Processed, StableDiffusionProcessingImg2Img, process_images
-from modules.shared import opts, state
+# from modules import images as imgutil
+# from modules.generation_parameters_copypaste import create_override_settings_dict, parse_generation_parameters
+# from modules.processing import Processed, StableDiffusionProcessingImg2Img, process_images
+# from modules.shared import opts, state
 import modules.shared as shared
-import modules.processing as processing
+# import modules.processing as processing
 from modules.ui import plaintext_to_html
-import modules.scripts
+# import modules.scripts
+
+opts = None
+state = None
+# NOTE: Init this
+sd_model = None
+device = None
 
 @dataclass(repr=False)
 class StableDiffusionProcessing:
@@ -138,7 +145,8 @@ class StableDiffusionProcessing:
 
     @property
     def sd_model(self):
-        return shared.sd_model
+        # return shared.sd_model
+        return sd_model
 
     @sd_model.setter
     def sd_model(self, value):
@@ -383,6 +391,102 @@ class StableDiffusionProcessing:
         """Returns whether generated images need to be written to disk"""
         return opts.samples_save and not self.do_not_save_samples and (opts.save_incomplete_images or not state.interrupted and not state.skipped)
 
+class Processed:
+    def __init__(self, p: StableDiffusionProcessing, images_list, seed=-1, info="", subseed=None, all_prompts=None, all_negative_prompts=None, all_seeds=None, all_subseeds=None, index_of_first_image=0, infotexts=None, comments=""):
+        self.images = images_list
+        self.prompt = p.prompt
+        self.negative_prompt = p.negative_prompt
+        self.seed = seed
+        self.subseed = subseed
+        self.subseed_strength = p.subseed_strength
+        self.info = info
+        self.comments = "".join(f"{comment}\n" for comment in p.comments)
+        self.width = p.width
+        self.height = p.height
+        self.sampler_name = p.sampler_name
+        self.cfg_scale = p.cfg_scale
+        self.image_cfg_scale = getattr(p, 'image_cfg_scale', None)
+        self.steps = p.steps
+        self.batch_size = p.batch_size
+        self.restore_faces = p.restore_faces
+        self.face_restoration_model = opts.face_restoration_model if p.restore_faces else None
+        self.sd_model_name = p.sd_model_name
+        self.sd_model_hash = p.sd_model_hash
+        self.sd_vae_name = p.sd_vae_name
+        self.sd_vae_hash = p.sd_vae_hash
+        self.seed_resize_from_w = p.seed_resize_from_w
+        self.seed_resize_from_h = p.seed_resize_from_h
+        self.denoising_strength = getattr(p, 'denoising_strength', None)
+        self.extra_generation_params = p.extra_generation_params
+        self.index_of_first_image = index_of_first_image
+        self.styles = p.styles
+        self.job_timestamp = state.job_timestamp
+        self.clip_skip = opts.CLIP_stop_at_last_layers
+        self.token_merging_ratio = p.token_merging_ratio
+        self.token_merging_ratio_hr = p.token_merging_ratio_hr
+
+        self.eta = p.eta
+        self.ddim_discretize = p.ddim_discretize
+        self.s_churn = p.s_churn
+        self.s_tmin = p.s_tmin
+        self.s_tmax = p.s_tmax
+        self.s_noise = p.s_noise
+        self.s_min_uncond = p.s_min_uncond
+        self.sampler_noise_scheduler_override = p.sampler_noise_scheduler_override
+        self.prompt = self.prompt if not isinstance(self.prompt, list) else self.prompt[0]
+        self.negative_prompt = self.negative_prompt if not isinstance(self.negative_prompt, list) else self.negative_prompt[0]
+        self.seed = int(self.seed if not isinstance(self.seed, list) else self.seed[0]) if self.seed is not None else -1
+        self.subseed = int(self.subseed if not isinstance(self.subseed, list) else self.subseed[0]) if self.subseed is not None else -1
+        self.is_using_inpainting_conditioning = p.is_using_inpainting_conditioning
+
+        self.all_prompts = all_prompts or p.all_prompts or [self.prompt]
+        self.all_negative_prompts = all_negative_prompts or p.all_negative_prompts or [self.negative_prompt]
+        self.all_seeds = all_seeds or p.all_seeds or [self.seed]
+        self.all_subseeds = all_subseeds or p.all_subseeds or [self.subseed]
+        self.infotexts = infotexts or [info]
+
+    def js(self):
+        obj = {
+            "prompt": self.all_prompts[0],
+            "all_prompts": self.all_prompts,
+            "negative_prompt": self.all_negative_prompts[0],
+            "all_negative_prompts": self.all_negative_prompts,
+            "seed": self.seed,
+            "all_seeds": self.all_seeds,
+            "subseed": self.subseed,
+            "all_subseeds": self.all_subseeds,
+            "subseed_strength": self.subseed_strength,
+            "width": self.width,
+            "height": self.height,
+            "sampler_name": self.sampler_name,
+            "cfg_scale": self.cfg_scale,
+            "steps": self.steps,
+            "batch_size": self.batch_size,
+            "restore_faces": self.restore_faces,
+            "face_restoration_model": self.face_restoration_model,
+            "sd_model_name": self.sd_model_name,
+            "sd_model_hash": self.sd_model_hash,
+            "sd_vae_name": self.sd_vae_name,
+            "sd_vae_hash": self.sd_vae_hash,
+            "seed_resize_from_w": self.seed_resize_from_w,
+            "seed_resize_from_h": self.seed_resize_from_h,
+            "denoising_strength": self.denoising_strength,
+            "extra_generation_params": self.extra_generation_params,
+            "index_of_first_image": self.index_of_first_image,
+            "infotexts": self.infotexts,
+            "styles": self.styles,
+            "job_timestamp": self.job_timestamp,
+            "clip_skip": self.clip_skip,
+            "is_using_inpainting_conditioning": self.is_using_inpainting_conditioning,
+        }
+
+        return json.dumps(obj)
+
+    def infotext(self, p: StableDiffusionProcessing, index):
+        return create_infotext(p, self.all_prompts, self.all_seeds, self.all_subseeds, comments=[], position_in_batch=index % self.batch_size, iteration=index // self.batch_size)
+
+    def get_token_merging_ratio(self, for_hr=False):
+        return self.token_merging_ratio_hr if for_hr else self.token_merging_ratio
 
 @dataclass(repr=False)
 class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
@@ -583,6 +687,44 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         return self.token_merging_ratio or ("token_merging_ratio" in self.override_settings and opts.token_merging_ratio) or opts.token_merging_ratio_img2img or opts.token_merging_ratio
 
 
+def process_images(p: StableDiffusionProcessing) -> Processed:
+    # if p.scripts is not None:
+    #     p.scripts.before_process(p)
+
+    stored_opts = {k: opts.data[k] for k in p.override_settings.keys()}
+
+    try:
+        # if no checkpoint override or the override checkpoint can't be found, remove override entry and load opts checkpoint
+        # and if after running refiner, the refiner model is not unloaded - webui swaps back to main model here, if model over is present it will be reloaded afterwards
+        if sd_models.checkpoint_aliases.get(p.override_settings.get('sd_model_checkpoint')) is None:
+            p.override_settings.pop('sd_model_checkpoint', None)
+            sd_models.reload_model_weights()
+
+        for k, v in p.override_settings.items():
+            opts.set(k, v, is_api=True, run_callbacks=False)
+
+            if k == 'sd_model_checkpoint':
+                sd_models.reload_model_weights()
+
+            if k == 'sd_vae':
+                sd_vae.reload_vae_weights()
+
+        sd_models.apply_token_merging(p.sd_model, p.get_token_merging_ratio())
+
+        res = process_images_inner(p)
+
+    finally:
+        sd_models.apply_token_merging(p.sd_model, 0)
+
+        # restore opts to original state
+        if p.override_settings_restore_afterwards:
+            for k, v in stored_opts.items():
+                setattr(opts, k, v)
+
+                if k == 'sd_vae':
+                    sd_vae.reload_vae_weights()
+
+    return res
 
 # def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_styles, init_img, sketch, init_img_with_mask, inpaint_color_sketch, inpaint_color_sketch_orig, init_img_inpaint, init_mask_inpaint, steps: int, sampler_name: str, mask_blur: int, mask_alpha: float, inpainting_fill: int, n_iter: int, batch_size: int, cfg_scale: float, image_cfg_scale: float, denoising_strength: float, selected_scale_tab: int, height: int, width: int, scale_by: float, resize_mode: int, inpaint_full_res: bool, inpaint_full_res_padding: int, inpainting_mask_invert: int, img2img_batch_input_dir: str, img2img_batch_output_dir: str, img2img_batch_inpaint_mask_dir: str, override_settings_texts, img2img_batch_use_png_info: bool, img2img_batch_png_info_props: list, img2img_batch_png_info_dir: str, request: gr.Request, *args):
 def img2img():
@@ -653,7 +795,7 @@ def img2img():
         override_settings=override_settings,
     )
 
-    p.scripts = modules.scripts.scripts_img2img
+    # p.scripts = modules.scripts.scripts_img2img
     p.script_args = args
 
     p.user = request.username
@@ -672,9 +814,9 @@ def img2img():
 
         #     processed = Processed(p, [], p.seed, "")
         # else:
-        processed = modules.scripts.scripts_img2img.run(p, *args)
-        if processed is None:
-            processed = process_images(p)
+        # processed = modules.scripts.scripts_img2img.run(p, *args)
+        # if processed is None:
+        processed = process_images(p)
 
     shared.total_tqdm.clear()
 
