@@ -120,7 +120,7 @@ def read_prompts_from_zip(zip_file_path, num_prompts):
         for file_name in file_list:
             if file_name.endswith('.npz'):
                 with zip_ref.open(file_name) as npz_file:
-                    npz_data = np.load(npz_file)
+                    npz_data = np.load(npz_file, allow_pickle=True)
                     # Assuming you have a specific array name you want to load from the .npz file
                     loaded_array = npz_data['data']
                     loaded_arrays.append(loaded_array)
