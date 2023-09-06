@@ -134,7 +134,9 @@ def get_embeddings(batch, current_batch_index, image_batch_size, num_images, bat
         task['cond'] = torch.tensor(positive_prompt_embedding).cpu()
 
         # no negative prompts for now
-        task['un_cond'] = txt2img.model.get_text_conditioning(batch_size * [""]).cpu()
+        un_cond = txt2img.model.get_text_conditioning(batch_size * [""])
+        task['un_cond'] = un_cond.cpu()
+        del un_cond
 
     tmp_end_time = time.time()
     tmp_execution_time = tmp_end_time - tmp_start_time
@@ -280,12 +282,11 @@ def save_image_data(batch, current_batch_index, image_batch_size, num_images, fe
         # convert tensor to numpy array
         with torch.no_grad():
             embedded_vector = cond.cpu().numpy()
-        # free cond memory
 
+        # free cond memory
         del task['cond']
         torch.cuda.empty_cache()
         # free un_cond memory
-
         del task['un_cond']
         torch.cuda.empty_cache()
         # image latent
