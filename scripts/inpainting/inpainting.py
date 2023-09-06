@@ -55,7 +55,8 @@ opts.save_init_img = False
 opts.img2img_color_correction = False
 opts.img2img_background_color = '#ffffff'
 
-state = None
+# NOTE: I think state is used for having a job queue for the web app
+# state = None
 # NOTE: Init SD_MODEL
 SD_MODEL = None
 DEVICE = None
@@ -363,29 +364,27 @@ class StableDiffusionProcessing:
 
     #     return self.token_merging_ratio or opts.token_merging_ratio
 
-    # def setup_prompts(self):
-    #     if isinstance(self.prompt,list):
-    #         self.all_prompts = self.prompt
-    #     elif isinstance(self.negative_prompt, list):
-    #         self.all_prompts = [self.prompt] * len(self.negative_prompt)
-    #     else:
-    #         self.all_prompts = self.batch_size * self.n_iter * [self.prompt]
+    def setup_prompts(self):
+        if isinstance(self.prompt,list):
+            self.all_prompts = self.prompt
+        elif isinstance(self.negative_prompt, list):
+            self.all_prompts = [self.prompt] * len(self.negative_prompt)
+        else:
+            self.all_prompts = self.batch_size * self.n_iter * [self.prompt]
 
-    #     if isinstance(self.negative_prompt, list):
-    #         self.all_negative_prompts = self.negative_prompt
-    #     else:
-    #         self.all_negative_prompts = [self.negative_prompt] * len(self.all_prompts)
+        if isinstance(self.negative_prompt, list):
+            self.all_negative_prompts = self.negative_prompt
+        else:
+            self.all_negative_prompts = [self.negative_prompt] * len(self.all_prompts)
 
-    #     if len(self.all_prompts) != len(self.all_negative_prompts):
-    #         raise RuntimeError(f"Received a different number of prompts ({len(self.all_prompts)}) and negative prompts ({len(self.all_negative_prompts)})")
+        if len(self.all_prompts) != len(self.all_negative_prompts):
+            raise RuntimeError(f"Received a different number of prompts ({len(self.all_prompts)}) and negative prompts ({len(self.all_negative_prompts)})")
 
-    #     # self.all_prompts = [shared.prompt_styles.apply_styles_to_prompt(x, self.styles) for x in self.all_prompts]
-    #     # self.all_negative_prompts = [shared.prompt_styles.apply_negative_styles_to_prompt(x, self.styles) for x in self.all_negative_prompts]
-    #     self.all_prompts = [PROMPT_STYLES.apply_styles_to_prompt(x, self.styles) for x in self.all_prompts]
-    #     self.all_negative_prompts = [PROMPT_STYLES.apply_negative_styles_to_prompt(x, self.styles) for x in self.all_negative_prompts]
+        # self.all_prompts = [shared.prompt_styles.apply_styles_to_prompt(x, self.styles) for x in self.all_prompts]
+        # self.all_negative_prompts = [shared.prompt_styles.apply_negative_styles_to_prompt(x, self.styles) for x in self.all_negative_prompts]
 
-    #     self.main_prompt = self.all_prompts[0]
-    #     self.main_negative_prompt = self.all_negative_prompts[0]
+        self.main_prompt = self.all_prompts[0]
+        self.main_negative_prompt = self.all_negative_prompts[0]
 
     # def cached_params(self, required_prompts, steps, extra_network_data, hires_steps=None, use_old_scheduling=False):
     #     """Returns parameters that invalidate the cond cache if changed"""
@@ -492,7 +491,7 @@ class Processed:
         self.extra_generation_params = p.extra_generation_params
         self.index_of_first_image = index_of_first_image
         self.styles = p.styles
-        self.job_timestamp = state.job_timestamp
+        # self.job_timestamp = state.job_timestamp
         self.clip_skip = opts.CLIP_stop_at_last_layers
         self.token_merging_ratio = p.token_merging_ratio
         self.token_merging_ratio_hr = p.token_merging_ratio_hr
@@ -547,7 +546,7 @@ class Processed:
             "index_of_first_image": self.index_of_first_image,
             "infotexts": self.infotexts,
             "styles": self.styles,
-            "job_timestamp": self.job_timestamp,
+            # "job_timestamp": self.job_timestamp,
             "clip_skip": self.clip_skip,
             "is_using_inpainting_conditioning": self.is_using_inpainting_conditioning,
         }
@@ -739,7 +738,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         # if opts.sd_vae_encode_method != 'Full':
         #     self.extra_generation_params['VAE Encoder'] = opts.sd_vae_encode_method
 
-        self.init_latent = images_tensor_to_samples(image, approximation_indexes.get(opts.sd_vae_encode_method), self.sd_model)
+        # self.init_latent = images_tensor_to_samples(image, approximation_indexes.get(opts.sd_vae_encode_method), self.sd_model)
+        self.init_latent = self.model.autoencoder_encode(image)
         # devices.torch_gc()
         # NOTE: Assuming only cuda for now
         with torch.cuda.device('cuda'):
@@ -768,17 +768,17 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             elif self.inpainting_fill == 3:
                 self.init_latent = self.init_latent * self.mask
 
-        self.image_conditioning = self.init_latent.new_zeros(latent_image.shape[0], 5, 1, 1)
+        self.image_conditioning = self.init_latent.new_zeros(self.init_latent.shape[0], 5, 1, 1)
         # self.image_conditioning = self.img2img_image_conditioning(image * 2 - 1, self.init_latent, image_mask)
 
     def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
         # x = self.rng.next()
         # NOTE: This will crash, but problem for later
-        x = []
+        x = create_random_tensors(shape=(10, 512, 512))
 
-        if self.initial_noise_multiplier != 1.0:
-            self.extra_generation_params["Noise multiplier"] = self.initial_noise_multiplier
-            x *= self.initial_noise_multiplier
+        # if self.initial_noise_multiplier != 1.0:
+        #     self.extra_generation_params["Noise multiplier"] = self.initial_noise_multiplier
+        #     x *= self.initial_noise_multiplier
 
         samples = self.sampler.sample_img2img(self, self.init_latent, x, conditioning, unconditional_conditioning, image_conditioning=self.image_conditioning)
 
@@ -786,7 +786,10 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             samples = samples * self.nmask + self.init_latent * self.mask
 
         del x
-        devices.torch_gc()
+        # devices.torch_gc()
+        with torch.cuda.device('cuda'):
+            torch.cuda.empty_cache()
+            torch.cuda.ipc_collect()
 
         return samples
 
@@ -833,19 +836,19 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     # modules.sd_hijack.model_hijack.apply_circular(p.tiling)
     # modules.sd_hijack.model_hijack.clear_comments()
 
-    # p.setup_prompts()
+    p.setup_prompts()
 
     if isinstance(seed, list):
         p.all_seeds = seed
     else:
-        # p.all_seeds = [int(seed) + (x if p.subseed_strength == 0 else 0) for x in range(len(p.all_prompts))]
-        p.all_seeds = [seed]
+        p.all_seeds = [int(seed) + (x if p.subseed_strength == 0 else 0) for x in range(len(p.all_prompts))]
+        # p.all_seeds = [seed]
 
     if isinstance(subseed, list):
         p.all_subseeds = subseed
     else:
-        # p.all_subseeds = [int(subseed) + x for x in range(len(p.all_prompts))]
-        p.all_subseeds = [subseed]
+        p.all_subseeds = [int(subseed) + x for x in range(len(p.all_prompts))]
+        # p.all_subseeds = [subseed]
 
     # if os.path.exists(cmd_opts.embeddings_dir) and not p.do_not_reload_embeddings:
     #     model_hijack.embedding_db.load_textual_inversion_embeddings()
@@ -874,11 +877,11 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         for n in range(p.n_iter):
             p.iteration = n
 
-            if state.skipped:
-                state.skipped = False
+            # if state.skipped:
+            #     state.skipped = False
 
-            if state.interrupted:
-                break
+            # if state.interrupted:
+            #     break
 
             # sd_models.reload_model_weights()  # model can be changed for example by refiner
 
@@ -925,8 +928,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             # if p.n_iter > 1:
             #     shared.state.job = f"Batch {n+1} out of {p.n_iter}"
 
-            with devices.without_autocast() if devices.unet_needs_upcast else devices.autocast():
-                samples_ddim = p.sample(conditioning=p.c, unconditional_conditioning=p.uc, seeds=p.seeds, subseeds=p.subseeds, subseed_strength=p.subseed_strength, prompts=p.prompts)
+            # with devices.without_autocast() if devices.unet_needs_upcast else devices.autocast():
+            samples_ddim = p.sample(conditioning=p.c, unconditional_conditioning=p.uc, seeds=p.seeds, subseeds=p.subseeds, subseed_strength=p.subseed_strength, prompts=p.prompts)
 
             if getattr(samples_ddim, 'already_decoded', False):
                 x_samples_ddim = samples_ddim
@@ -944,7 +947,10 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             # if lowvram.is_enabled(shared.sd_model):
             #     lowvram.send_everything_to_cpu()
 
-            devices.torch_gc()
+            # devices.torch_gc()
+            with torch.cuda.device('cuda'):
+                torch.cuda.empty_cache()
+                torch.cuda.ipc_collect()
 
             if p.scripts is not None:
                 p.scripts.postprocess_batch(p, x_samples_ddim, batch_number=n)
@@ -971,10 +977,16 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     if save_samples and opts.save_images_before_face_restoration:
                         images.save_image(Image.fromarray(x_sample), p.outpath_samples, "", p.seeds[i], p.prompts[i], opts.samples_format, info=infotext(i), p=p, suffix="-before-face-restoration")
 
-                    devices.torch_gc()
+                    # devices.torch_gc()
+                    with torch.cuda.device('cuda'):
+                        torch.cuda.empty_cache()
+                        torch.cuda.ipc_collect()
 
                     x_sample = modules.face_restoration.restore_faces(x_sample)
-                    devices.torch_gc()
+                    # devices.torch_gc()
+                    with torch.cuda.device('cuda'):
+                        torch.cuda.empty_cache()
+                        torch.cuda.ipc_collect()
 
                 image = Image.fromarray(x_sample)
 
@@ -1016,9 +1028,12 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
             del x_samples_ddim
 
-            devices.torch_gc()
+            # devices.torch_gc()
+            with torch.cuda.device('cuda'):
+                torch.cuda.empty_cache()
+                torch.cuda.ipc_collect()
 
-            state.nextjob()
+            # state.nextjob()
 
         p.color_corrections = None
 
@@ -1040,7 +1055,10 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     if not p.disable_extra_networks and p.extra_network_data:
         extra_networks.deactivate(p, p.extra_network_data)
 
-    devices.torch_gc()
+    # devices.torch_gc()
+    with torch.cuda.device('cuda'):
+        torch.cuda.empty_cache()
+        torch.cuda.ipc_collect()
 
     res = Processed(
         p,
