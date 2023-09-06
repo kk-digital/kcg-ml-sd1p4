@@ -1,11 +1,20 @@
 import os
+import sys
 import json
 from contextlib import closing
 from pathlib import Path
 
 import numpy as np
+from dataclasses import dataclass, field
+from typing import Any
 from PIL import Image, ImageOps, ImageFilter, ImageEnhance, UnidentifiedImageError
 import gradio as gr
+
+# NOTE: Our libraries
+sys.path.append(os.path.abspath(''))
+from stable_diffusion.sampler.ddim import DDIMSampler
+from stable_diffusion.sampler.ddpm import DDPMSampler
+from stable_diffusion.sampler.diffusion import DiffusionSampler
 
 # from modules import images as imgutil
 # from modules.generation_parameters_copypaste import create_override_settings_dict, parse_generation_parameters
@@ -70,7 +79,7 @@ class StableDiffusionProcessing:
     token_merging_ratio_hr = 0
     disable_extra_networks: bool = False
 
-    scripts_value: scripts.ScriptRunner = field(default=None, init=False)
+    # scripts_value: scripts.ScriptRunner = field(default=None, init=False)
     script_args_value: list = field(default=None, init=False)
     scripts_setup_complete: bool = field(default=False, init=False)
 
@@ -78,7 +87,9 @@ class StableDiffusionProcessing:
     cached_c = [None, None]
 
     comments: dict = None
-    sampler: sd_samplers_common.Sampler | None = field(default=None, init=False)
+    # NOTE: We'll need to setup our sampler later. Trickier, because method calls need to match.
+    # sampler: sd_samplers_common.Sampler | None = field(default=None, init=False)
+    sampler: DiffusionSampler = field(default=None, init=False)
     is_using_inpainting_conditioning: bool = field(default=False, init=False)
     paste_to: tuple | None = field(default=None, init=False)
 
@@ -87,7 +98,7 @@ class StableDiffusionProcessing:
     c: tuple = field(default=None, init=False)
     uc: tuple = field(default=None, init=False)
 
-    rng: rng.ImageRNG | None = field(default=None, init=False)
+    # rng: rng.ImageRNG | None = field(default=None, init=False)
     step_multiplier: int = field(default=1, init=False)
     color_corrections: list = field(default=None, init=False)
 
@@ -154,16 +165,16 @@ class StableDiffusionProcessing:
     def sd_model(self, value):
         pass
 
-    @property
-    def scripts(self):
-        return self.scripts_value
+    # @property
+    # def scripts(self):
+    #     return self.scripts_value
 
-    @scripts.setter
-    def scripts(self, value):
-        self.scripts_value = value
+    # @scripts.setter
+    # def scripts(self, value):
+    #     self.scripts_value = value
 
-        if self.scripts_value and self.script_args_value and not self.scripts_setup_complete:
-            self.setup_scripts()
+    #     if self.scripts_value and self.script_args_value and not self.scripts_setup_complete:
+    #         self.setup_scripts()
 
     @property
     def script_args(self):
@@ -176,18 +187,18 @@ class StableDiffusionProcessing:
         if self.scripts_value and self.script_args_value and not self.scripts_setup_complete:
             self.setup_scripts()
 
-    def setup_scripts(self):
-        self.scripts_setup_complete = True
+    # def setup_scripts(self):
+    #     self.scripts_setup_complete = True
 
-        self.scripts.setup_scrips(self, is_ui=not self.is_api)
+    #     self.scripts.setup_scrips(self, is_ui=not self.is_api)
 
     def comment(self, text):
         self.comments[text] = 1
 
-    def txt2img_image_conditioning(self, x, width=None, height=None):
-        self.is_using_inpainting_conditioning = self.sd_model.model.conditioning_key in {'hybrid', 'concat'}
+    # def txt2img_image_conditioning(self, x, width=None, height=None):
+    #     self.is_using_inpainting_conditioning = self.sd_model.model.conditioning_key in {'hybrid', 'concat'}
 
-        return txt2img_image_conditioning(self.sd_model, x, width or self.width, height or self.height)
+    #     return txt2img_image_conditioning(self.sd_model, x, width or self.width, height or self.height)
 
     # def depth2img_image_conditioning(self, source_image):
     #     # Use the AddMiDaS helper to Format our source image to suit the MiDaS model
@@ -300,105 +311,105 @@ class StableDiffusionProcessing:
 
         return self.token_merging_ratio or opts.token_merging_ratio
 
-    def setup_prompts(self):
-        if isinstance(self.prompt,list):
-            self.all_prompts = self.prompt
-        elif isinstance(self.negative_prompt, list):
-            self.all_prompts = [self.prompt] * len(self.negative_prompt)
-        else:
-            self.all_prompts = self.batch_size * self.n_iter * [self.prompt]
+    # def setup_prompts(self):
+    #     if isinstance(self.prompt,list):
+    #         self.all_prompts = self.prompt
+    #     elif isinstance(self.negative_prompt, list):
+    #         self.all_prompts = [self.prompt] * len(self.negative_prompt)
+    #     else:
+    #         self.all_prompts = self.batch_size * self.n_iter * [self.prompt]
 
-        if isinstance(self.negative_prompt, list):
-            self.all_negative_prompts = self.negative_prompt
-        else:
-            self.all_negative_prompts = [self.negative_prompt] * len(self.all_prompts)
+    #     if isinstance(self.negative_prompt, list):
+    #         self.all_negative_prompts = self.negative_prompt
+    #     else:
+    #         self.all_negative_prompts = [self.negative_prompt] * len(self.all_prompts)
 
-        if len(self.all_prompts) != len(self.all_negative_prompts):
-            raise RuntimeError(f"Received a different number of prompts ({len(self.all_prompts)}) and negative prompts ({len(self.all_negative_prompts)})")
+    #     if len(self.all_prompts) != len(self.all_negative_prompts):
+    #         raise RuntimeError(f"Received a different number of prompts ({len(self.all_prompts)}) and negative prompts ({len(self.all_negative_prompts)})")
 
-        # self.all_prompts = [shared.prompt_styles.apply_styles_to_prompt(x, self.styles) for x in self.all_prompts]
-        # self.all_negative_prompts = [shared.prompt_styles.apply_negative_styles_to_prompt(x, self.styles) for x in self.all_negative_prompts]
-        self.all_prompts = [PROMPT_STYLES.apply_styles_to_prompt(x, self.styles) for x in self.all_prompts]
-        self.all_negative_prompts = [PROMPT_STYLES.apply_negative_styles_to_prompt(x, self.styles) for x in self.all_negative_prompts]
+    #     # self.all_prompts = [shared.prompt_styles.apply_styles_to_prompt(x, self.styles) for x in self.all_prompts]
+    #     # self.all_negative_prompts = [shared.prompt_styles.apply_negative_styles_to_prompt(x, self.styles) for x in self.all_negative_prompts]
+    #     self.all_prompts = [PROMPT_STYLES.apply_styles_to_prompt(x, self.styles) for x in self.all_prompts]
+    #     self.all_negative_prompts = [PROMPT_STYLES.apply_negative_styles_to_prompt(x, self.styles) for x in self.all_negative_prompts]
 
-        self.main_prompt = self.all_prompts[0]
-        self.main_negative_prompt = self.all_negative_prompts[0]
+    #     self.main_prompt = self.all_prompts[0]
+    #     self.main_negative_prompt = self.all_negative_prompts[0]
 
-    def cached_params(self, required_prompts, steps, extra_network_data, hires_steps=None, use_old_scheduling=False):
-        """Returns parameters that invalidate the cond cache if changed"""
+    # def cached_params(self, required_prompts, steps, extra_network_data, hires_steps=None, use_old_scheduling=False):
+    #     """Returns parameters that invalidate the cond cache if changed"""
 
-        return (
-            required_prompts,
-            steps,
-            hires_steps,
-            use_old_scheduling,
-            opts.CLIP_stop_at_last_layers,
-            # shared.sd_model.sd_checkpoint_info,
-            SD_MODEL.sd_checkpoint_info,
-            extra_network_data,
-            opts.sdxl_crop_left,
-            opts.sdxl_crop_top,
-            self.width,
-            self.height,
-        )
+    #     return (
+    #         required_prompts,
+    #         steps,
+    #         hires_steps,
+    #         use_old_scheduling,
+    #         opts.CLIP_stop_at_last_layers,
+    #         # shared.sd_model.sd_checkpoint_info,
+    #         SD_MODEL.sd_checkpoint_info,
+    #         extra_network_data,
+    #         opts.sdxl_crop_left,
+    #         opts.sdxl_crop_top,
+    #         self.width,
+    #         self.height,
+    #     )
 
-    def get_conds_with_caching(self, function, required_prompts, steps, caches, extra_network_data, hires_steps=None):
-        """
-        Returns the result of calling function(shared.sd_model, required_prompts, steps)
-        using a cache to store the result if the same arguments have been used before.
+    # def get_conds_with_caching(self, function, required_prompts, steps, caches, extra_network_data, hires_steps=None):
+    #     """
+    #     Returns the result of calling function(shared.sd_model, required_prompts, steps)
+    #     using a cache to store the result if the same arguments have been used before.
 
-        cache is an array containing two elements. The first element is a tuple
-        representing the previously used arguments, or None if no arguments
-        have been used before. The second element is where the previously
-        computed result is stored.
+    #     cache is an array containing two elements. The first element is a tuple
+    #     representing the previously used arguments, or None if no arguments
+    #     have been used before. The second element is where the previously
+    #     computed result is stored.
 
-        caches is a list with items described above.
-        """
+    #     caches is a list with items described above.
+    #     """
 
-        # if shared.opts.use_old_scheduling:
-        if opts.use_old_scheduling:
-            old_schedules = prompt_parser.get_learned_conditioning_prompt_schedules(required_prompts, steps, hires_steps, False)
-            new_schedules = prompt_parser.get_learned_conditioning_prompt_schedules(required_prompts, steps, hires_steps, True)
-            if old_schedules != new_schedules:
-                self.extra_generation_params["Old prompt editing timelines"] = True
+    #     # if shared.opts.use_old_scheduling:
+    #     if opts.use_old_scheduling:
+    #         old_schedules = prompt_parser.get_learned_conditioning_prompt_schedules(required_prompts, steps, hires_steps, False)
+    #         new_schedules = prompt_parser.get_learned_conditioning_prompt_schedules(required_prompts, steps, hires_steps, True)
+    #         if old_schedules != new_schedules:
+    #             self.extra_generation_params["Old prompt editing timelines"] = True
 
-        # cached_params = self.cached_params(required_prompts, steps, extra_network_data, hires_steps, shared.opts.use_old_scheduling)
-        cached_params = self.cached_params(required_prompts, steps, extra_network_data, hires_steps, opts.use_old_scheduling)
+    #     # cached_params = self.cached_params(required_prompts, steps, extra_network_data, hires_steps, shared.opts.use_old_scheduling)
+    #     cached_params = self.cached_params(required_prompts, steps, extra_network_data, hires_steps, opts.use_old_scheduling)
 
-        for cache in caches:
-            if cache[0] is not None and cached_params == cache[0]:
-                return cache[1]
+    #     for cache in caches:
+    #         if cache[0] is not None and cached_params == cache[0]:
+    #             return cache[1]
 
-        cache = caches[0]
+    #     cache = caches[0]
 
-        with devices.autocast():
-            # cache[1] = function(shared.sd_model, required_prompts, steps, hires_steps, shared.opts.use_old_scheduling)
-            cache[1] = function(SD_MODEL, required_prompts, steps, hires_steps, opts.use_old_scheduling)
+    #     with devices.autocast():
+    #         # cache[1] = function(shared.sd_model, required_prompts, steps, hires_steps, shared.opts.use_old_scheduling)
+    #         cache[1] = function(SD_MODEL, required_prompts, steps, hires_steps, opts.use_old_scheduling)
 
-        cache[0] = cached_params
-        return cache[1]
+    #     cache[0] = cached_params
+    #     return cache[1]
 
-    def setup_conds(self):
-        prompts = prompt_parser.SdConditioning(self.prompts, width=self.width, height=self.height)
-        negative_prompts = prompt_parser.SdConditioning(self.negative_prompts, width=self.width, height=self.height, is_negative_prompt=True)
+    # def setup_conds(self):
+    #     prompts = prompt_parser.SdConditioning(self.prompts, width=self.width, height=self.height)
+    #     negative_prompts = prompt_parser.SdConditioning(self.negative_prompts, width=self.width, height=self.height, is_negative_prompt=True)
 
-        sampler_config = sd_samplers.find_sampler_config(self.sampler_name)
-        total_steps = sampler_config.total_steps(self.steps) if sampler_config else self.steps
-        self.step_multiplier = total_steps // self.steps
-        self.firstpass_steps = total_steps
+    #     sampler_config = sd_samplers.find_sampler_config(self.sampler_name)
+    #     total_steps = sampler_config.total_steps(self.steps) if sampler_config else self.steps
+    #     self.step_multiplier = total_steps // self.steps
+    #     self.firstpass_steps = total_steps
 
-        self.uc = self.get_conds_with_caching(prompt_parser.get_learned_conditioning, negative_prompts, total_steps, [self.cached_uc], self.extra_network_data)
-        self.c = self.get_conds_with_caching(prompt_parser.get_multicond_learned_conditioning, prompts, total_steps, [self.cached_c], self.extra_network_data)
+    #     self.uc = self.get_conds_with_caching(prompt_parser.get_learned_conditioning, negative_prompts, total_steps, [self.cached_uc], self.extra_network_data)
+    #     self.c = self.get_conds_with_caching(prompt_parser.get_multicond_learned_conditioning, prompts, total_steps, [self.cached_c], self.extra_network_data)
 
-    def get_conds(self):
-        return self.c, self.uc
+    # def get_conds(self):
+    #     return self.c, self.uc
 
-    def parse_extra_network_prompts(self):
-        self.prompts, self.extra_network_data = extra_networks.parse_prompts(self.prompts)
+    # def parse_extra_network_prompts(self):
+    #     self.prompts, self.extra_network_data = extra_networks.parse_prompts(self.prompts)
 
-    def save_samples(self) -> bool:
-        """Returns whether generated images need to be written to disk"""
-        return opts.samples_save and not self.do_not_save_samples and (opts.save_incomplete_images or not state.interrupted and not state.skipped)
+    # def save_samples(self) -> bool:
+    #     """Returns whether generated images need to be written to disk"""
+    #     return opts.samples_save and not self.do_not_save_samples and (opts.save_incomplete_images or not state.interrupted and not state.skipped)
 
 class Processed:
     def __init__(self, p: StableDiffusionProcessing, images_list, seed=-1, info="", subseed=None, all_prompts=None, all_negative_prompts=None, all_seeds=None, all_subseeds=None, index_of_first_image=0, infotexts=None, comments=""):
@@ -530,11 +541,12 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         self.initial_noise_multiplier = opts.initial_noise_multiplier if self.initial_noise_multiplier is None else self.initial_noise_multiplier
 
     # NOTE: Check if bug
-    # @property
-    # def mask_blur(self):
-    #     if self.mask_blur_x == self.mask_blur_y:
-    #         return self.mask_blur_x
-    #     return None
+    # NOTE: Doesn't run if we comment this.
+    @property
+    def mask_blur(self):
+        if self.mask_blur_x == self.mask_blur_y:
+            return self.mask_blur_x
+        return None
 
     @mask_blur.setter
     def mask_blur(self, value):
@@ -546,7 +558,13 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         # self.image_cfg_scale: float = self.image_cfg_scale if shared.sd_model.cond_stage_key == "edit" else None
         self.image_cfg_scale: float = self.image_cfg_scale if SD_MODEL.cond_stage_key == "edit" else None
 
-        self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
+        # self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
+        if self.sampler_name == 'ddim':
+            self.sampler = DDIMSampler(self.model,
+                                       n_steps=self.n_steps,
+                                       ddim_eta=self.ddim_eta)
+        elif self.sampler_name == 'ddpm':
+            self.sampler = DDPMSampler(self.model)
         crop_region = None
 
         image_mask = self.image_mask
@@ -680,7 +698,9 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         # self.image_conditioning = self.img2img_image_conditioning(image * 2 - 1, self.init_latent, image_mask)
 
     def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
-        x = self.rng.next()
+        # x = self.rng.next()
+        # NOTE: This will crash, but problem for later
+        x = []
 
         if self.initial_noise_multiplier != 1.0:
             self.extra_generation_params["Noise multiplier"] = self.initial_noise_multiplier
