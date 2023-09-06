@@ -383,6 +383,7 @@ def generate_images_from_prompt_list(num_images, image_width, image_height, cfg_
                                         path=checkpoint_path, force_submodels_init=True)
 
     for current_task_index in range(num_datasets):
+        dataset_start_time = time.time()
         print("Generating Dataset : " + str(current_task_index))
         start_time = time.time()
         generation_task_result_list = []
@@ -400,6 +401,7 @@ def generate_images_from_prompt_list(num_images, image_width, image_height, cfg_
 
         current_batch_index = 0
         for batch in batch_list:
+            batch_start_time = time.time()
             print("------ Batch " + str(current_batch_index + 1) + " out of " + str(len(batch_list)) + " ----------")
 
             batch = get_embeddings(batch, current_batch_index, image_batch_size, num_images, batch_size, txt2img)
@@ -416,6 +418,9 @@ def generate_images_from_prompt_list(num_images, image_width, image_height, cfg_
                                                           generation_task_result_list)
 
             current_batch_index += 1
+            batch_execution_time = batch_start_time - time.time()
+            print("Batch duration: {0:0.02f} seconds".format(batch_execution_time))
+
 
         for generation_task_result_item in generation_task_result_list:
             generation_task_result = generation_task_result_item['generation_task_result']
@@ -436,6 +441,9 @@ def generate_images_from_prompt_list(num_images, image_width, image_height, cfg_
         if os.path.exists(set_directory_path):
             shutil.rmtree(set_directory_path)
             print(f"Deleted folder: {set_folder_name}")
+
+        dataset_execution_time = dataset_start_time - time.time()
+        print("Dataset generation duration: {0:0.02f} seconds".format(dataset_execution_time))
 
 
 def main():
