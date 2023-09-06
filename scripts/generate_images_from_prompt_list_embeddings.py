@@ -136,6 +136,7 @@ def get_embeddings(batch, current_batch_index, image_batch_size, num_images, bat
         # no negative prompts for now
         un_cond = txt2img.model.get_text_conditioning(batch_size * [""])
         task['un_cond'] = un_cond.cpu()
+        del positive_prompt_embedding
         del un_cond
 
     tmp_end_time = time.time()
