@@ -155,7 +155,11 @@ def get_latents(batch, current_batch_index, image_batch_size, num_images, batch_
         processed_images = processed_images + 1
 
         cond = task['cond'].to(txt2img.device)
-        un_cond = task['un_cond'].to(txt2img.device)
+
+        un_cond = task['un_cond']
+        if un_cond is not None:
+            un_cond = un_cond.to(txt2img.device)
+
         this_seed = task['seed']
 
         latent = txt2img.generate_images_latent_from_embeddings(
