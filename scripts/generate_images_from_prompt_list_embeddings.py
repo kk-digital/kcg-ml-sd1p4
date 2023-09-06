@@ -240,10 +240,12 @@ def compute_image_chad_score(batch, current_batch_index, image_batch_size, num_i
         print("Generating image chad score " + str(processed_images + 1) + " out of " + str(num_images))
         processed_images = processed_images + 1
 
-        image_features = task['image_features']
+        image_features = task['image_features'].to(chad_score_predictor.device)
         # compute chad_score
         chad_score = chad_score_predictor.get_chad_score(image_features)
         task['chad_score'] = chad_score
+        del image_features
+        torch.cuda.empty_cache()
 
     tmp_end_time = time.time()
     tmp_execution_time = tmp_end_time - tmp_start_time
