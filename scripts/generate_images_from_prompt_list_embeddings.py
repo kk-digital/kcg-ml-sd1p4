@@ -192,6 +192,8 @@ def generate_images_from_latents(batch, current_batch_index, image_batch_size, n
 
         images = txt2img.get_image_from_latent(latent)
         del latent
+        torch.cuda.empty_cache()
+
         image_list, image_hash_list = save_images(images, filename)
         image_hash = image_hash_list[0]
         image = image_list[0]
@@ -201,7 +203,6 @@ def generate_images_from_latents(batch, current_batch_index, image_batch_size, n
     tmp_end_time = time.time()
     tmp_execution_time = tmp_end_time - tmp_start_time
     print("latent -> image completed time: {0:0.02f} seconds".format(tmp_execution_time))
-    torch.cuda.empty_cache()
 
     return batch
 
