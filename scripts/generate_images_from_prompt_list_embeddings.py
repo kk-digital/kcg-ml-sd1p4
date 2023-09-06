@@ -170,11 +170,12 @@ def get_latents(batch, current_batch_index, image_batch_size, num_images, batch_
         task['latent'] = latent.cpu()
         del cond
         del un_cond
+        del latent
+        torch.cuda.empty_cache()
 
     tmp_end_time = time.time()
     tmp_execution_time = tmp_end_time - tmp_start_time
     print("Image latent generation completed time: {0:0.02f} seconds".format(tmp_execution_time))
-    torch.cuda.empty_cache()
 
     return batch
 
@@ -220,12 +221,13 @@ def compute_image_features(batch, current_batch_index, image_batch_size, num_ima
         # get image features
         image = task['image']
         image_features = util_clip.get_image_features(image)
-        task['image_features'] = image_features
+        task['image_features'] = image_features.cpu()
+        del image_features
+        torch.cuda.empty_cache()
 
     tmp_end_time = time.time()
     tmp_execution_time = tmp_end_time - tmp_start_time
     print("Image features generation completed time: {0:0.02f} seconds".format(tmp_execution_time))
-    torch.cuda.empty_cache()
 
     return batch
 
@@ -418,7 +420,7 @@ def generate_images_from_prompt_list(num_images, image_width, image_height, cfg_
                                                           generation_task_result_list)
 
             current_batch_index += 1
-            batch_execution_time = batch_start_time - time.time()
+            batch_execution_time = time.time() - batch_start_time
             print("Batch duration: {0:0.02f} seconds".format(batch_execution_time))
 
 
@@ -442,7 +444,7 @@ def generate_images_from_prompt_list(num_images, image_width, image_height, cfg_
             shutil.rmtree(set_directory_path)
             print(f"Deleted folder: {set_folder_name}")
 
-        dataset_execution_time = dataset_start_time - time.time()
+        dataset_execution_time = time.time() - dataset_start_time
         print("Dataset generation duration: {0:0.02f} seconds".format(dataset_execution_time))
 
 
