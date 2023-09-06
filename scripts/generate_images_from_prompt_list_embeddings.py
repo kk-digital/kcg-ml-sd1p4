@@ -222,6 +222,7 @@ def compute_image_features(batch, current_batch_index, image_batch_size, num_ima
         image = task['image']
         image_features = util_clip.get_image_features(image)
         task['image_features'] = image_features.cpu()
+        del image
         del image_features
         torch.cuda.empty_cache()
 
