@@ -1,4 +1,6 @@
 import os
+import torch
+from os.path import join
 import sys
 import json
 from contextlib import closing
@@ -11,7 +13,8 @@ from PIL import Image, ImageOps, ImageFilter, ImageEnhance, UnidentifiedImageErr
 import gradio as gr
 
 # NOTE: Our libraries
-sys.path.append(os.path.abspath(''))
+base_dir = os.getcwd()
+sys.path.append(base_dir)
 from stable_diffusion.sampler.ddim import DDIMSampler
 from stable_diffusion.sampler.ddpm import DDPMSampler
 from stable_diffusion.sampler.diffusion import DiffusionSampler
@@ -25,7 +28,19 @@ from stable_diffusion.sampler.diffusion import DiffusionSampler
 # from modules.ui import plaintext_to_html
 # import modules.scripts
 
-opts = None
+# opts = None
+output_dir = join(base_dir, 'output', 'inpainting')
+os.makedirs(output_dir, exist_ok=True)
+
+class Options:
+    outdir_samples: str
+    # initial_noise_multiplier: float
+
+opts = Options()
+
+opts.outdir_samples = output_dir
+# opts.initial_noise_multiplier = 1.0
+
 state = None
 # NOTE: Init SD_MODEL
 SD_MODEL = None
@@ -37,7 +52,7 @@ PROMPT_STYLES = None
 class StableDiffusionProcessing:
     sd_model: object = None
     outpath_samples: str = None
-    outpath_grids: str = None
+    # outpath_grids: str = None
     prompt: str = ""
     prompt_for_display: str = None
     negative_prompt: str = ""
@@ -65,13 +80,13 @@ class StableDiffusionProcessing:
     do_not_reload_embeddings: bool = False
     denoising_strength: float = 0
     ddim_discretize: str = None
-    s_min_uncond: float = None
-    s_churn: float = None
-    s_tmax: float = None
-    s_tmin: float = None
-    s_noise: float = None
-    override_settings: dict[str, Any] = None
-    override_settings_restore_afterwards: bool = True
+    # s_min_uncond: float = None
+    # s_churn: float = None
+    # s_tmax: float = None
+    # s_tmin: float = None
+    # s_noise: float = None
+    # override_settings: dict[str, Any] = None
+    # override_settings_restore_afterwards: bool = True
     sampler_index: int = None
     refiner_checkpoint: str = None
     refiner_switch_at: float = None
@@ -80,8 +95,8 @@ class StableDiffusionProcessing:
     disable_extra_networks: bool = False
 
     # scripts_value: scripts.ScriptRunner = field(default=None, init=False)
-    script_args_value: list = field(default=None, init=False)
-    scripts_setup_complete: bool = field(default=False, init=False)
+    # script_args_value: list = field(default=None, init=False)
+    # scripts_setup_complete: bool = field(default=False, init=False)
 
     cached_uc = [None, None]
     cached_c = [None, None]
@@ -135,15 +150,15 @@ class StableDiffusionProcessing:
             self.styles = []
 
         self.sampler_noise_scheduler_override = None
-        self.s_min_uncond = self.s_min_uncond if self.s_min_uncond is not None else opts.s_min_uncond
-        self.s_churn = self.s_churn if self.s_churn is not None else opts.s_churn
-        self.s_tmin = self.s_tmin if self.s_tmin is not None else opts.s_tmin
-        self.s_tmax = (self.s_tmax if self.s_tmax is not None else opts.s_tmax) or float('inf')
-        self.s_noise = self.s_noise if self.s_noise is not None else opts.s_noise
+        # self.s_min_uncond = self.s_min_uncond if self.s_min_uncond is not None else opts.s_min_uncond
+        # self.s_churn = self.s_churn if self.s_churn is not None else opts.s_churn
+        # self.s_tmin = self.s_tmin if self.s_tmin is not None else opts.s_tmin
+        # self.s_tmax = (self.s_tmax if self.s_tmax is not None else opts.s_tmax) or float('inf')
+        # self.s_noise = self.s_noise if self.s_noise is not None else opts.s_noise
 
         self.extra_generation_params = self.extra_generation_params or {}
-        self.override_settings = self.override_settings or {}
-        self.script_args = self.script_args or {}
+        # self.override_settings = self.override_settings or {}
+        # self.script_args = self.script_args or {}
 
         self.refiner_checkpoint_info = None
 
@@ -176,16 +191,16 @@ class StableDiffusionProcessing:
     #     if self.scripts_value and self.script_args_value and not self.scripts_setup_complete:
     #         self.setup_scripts()
 
-    @property
-    def script_args(self):
-        return self.script_args_value
+    # @property
+    # def script_args(self):
+    #     return self.script_args_value
 
-    @script_args.setter
-    def script_args(self, value):
-        self.script_args_value = value
+    # @script_args.setter
+    # def script_args(self, value):
+    #     self.script_args_value = value
 
-        if self.scripts_value and self.script_args_value and not self.scripts_setup_complete:
-            self.setup_scripts()
+        # if self.scripts_value and self.script_args_value and not self.scripts_setup_complete:
+        #     self.setup_scripts()
 
     # def setup_scripts(self):
     #     self.scripts_setup_complete = True
@@ -301,9 +316,11 @@ class StableDiffusionProcessing:
         self.sampler = None
         self.c = None
         self.uc = None
-        if not opts.persistent_cond_cache:
-            StableDiffusionProcessing.cached_c = [None, None]
-            StableDiffusionProcessing.cached_uc = [None, None]
+        # if not opts.persistent_cond_cache:
+        #     StableDiffusionProcessing.cached_c = [None, None]
+        #     StableDiffusionProcessing.cached_uc = [None, None]
+        StableDiffusionProcessing.cached_c = [None, None]
+        StableDiffusionProcessing.cached_uc = [None, None]
 
     def get_token_merging_ratio(self, for_hr=False):
         if for_hr:
@@ -447,11 +464,11 @@ class Processed:
 
         self.eta = p.eta
         self.ddim_discretize = p.ddim_discretize
-        self.s_churn = p.s_churn
-        self.s_tmin = p.s_tmin
-        self.s_tmax = p.s_tmax
-        self.s_noise = p.s_noise
-        self.s_min_uncond = p.s_min_uncond
+        # self.s_churn = p.s_churn
+        # self.s_tmin = p.s_tmin
+        # self.s_tmax = p.s_tmax
+        # self.s_noise = p.s_noise
+        # self.s_min_uncond = p.s_min_uncond
         self.sampler_noise_scheduler_override = p.sampler_noise_scheduler_override
         self.prompt = self.prompt if not isinstance(self.prompt, list) else self.prompt[0]
         self.negative_prompt = self.negative_prompt if not isinstance(self.negative_prompt, list) else self.negative_prompt[0]
@@ -510,7 +527,7 @@ class Processed:
 
 @dataclass(repr=False)
 class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
-    # init_images: list = None
+    init_images: list = None
     # resize_mode: int = 0
     # denoising_strength: float = 0.75
     image_cfg_scale: float = None
@@ -538,7 +555,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
         self.image_mask = self.mask
         self.mask = None
-        self.initial_noise_multiplier = opts.initial_noise_multiplier if self.initial_noise_multiplier is None else self.initial_noise_multiplier
+        # self.initial_noise_multiplier = opts.initial_noise_multiplier if self.initial_noise_multiplier is None else self.initial_noise_multiplier
 
     # NOTE: Check if bug
     # NOTE: Doesn't run if we comment this.
@@ -724,43 +741,52 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
     # if p.scripts is not None:
     #     p.scripts.before_process(p)
 
-    stored_opts = {k: opts.data[k] for k in p.override_settings.keys()}
+    # stored_opts = {k: opts.data[k] for k in p.override_settings.keys()}
 
     try:
         # if no checkpoint override or the override checkpoint can't be found, remove override entry and load opts checkpoint
         # and if after running refiner, the refiner model is not unloaded - webui swaps back to main model here, if model over is present it will be reloaded afterwards
-        if sd_models.checkpoint_aliases.get(p.override_settings.get('sd_model_checkpoint')) is None:
-            p.override_settings.pop('sd_model_checkpoint', None)
-            sd_models.reload_model_weights()
+        # if sd_models.checkpoint_aliases.get(p.override_settings.get('sd_model_checkpoint')) is None:
+        #     p.override_settings.pop('sd_model_checkpoint', None)
+        #     sd_models.reload_model_weights()
 
-        for k, v in p.override_settings.items():
-            opts.set(k, v, is_api=True, run_callbacks=False)
+        # for k, v in p.override_settings.items():
+        #     opts.set(k, v, is_api=True, run_callbacks=False)
 
-            if k == 'sd_model_checkpoint':
-                sd_models.reload_model_weights()
+        #     if k == 'sd_model_checkpoint':
+        #         sd_models.reload_model_weights()
 
-            if k == 'sd_vae':
-                sd_vae.reload_vae_weights()
+        #     if k == 'sd_vae':
+        #         sd_vae.reload_vae_weights()
 
-        sd_models.apply_token_merging(p.sd_model, p.get_token_merging_ratio())
+        # sd_models.apply_token_merging(p.sd_model, p.get_token_merging_ratio())
 
         res = process_images_inner(p)
 
     finally:
-        sd_models.apply_token_merging(p.sd_model, 0)
+        # NOTE: Added just to not deal with indentation after removing try/finally
+        print('')
+        # sd_models.apply_token_merging(p.sd_model, 0)
 
         # restore opts to original state
-        if p.override_settings_restore_afterwards:
-            for k, v in stored_opts.items():
-                setattr(opts, k, v)
+        # if p.override_settings_restore_afterwards:
+        #     for k, v in stored_opts.items():
+        #         setattr(opts, k, v)
 
-                if k == 'sd_vae':
-                    sd_vae.reload_vae_weights()
+        #         if k == 'sd_vae':
+        #             sd_vae.reload_vae_weights()
 
     return res
 
 # def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_styles, init_img, sketch, init_img_with_mask, inpaint_color_sketch, inpaint_color_sketch_orig, init_img_inpaint, init_mask_inpaint, steps: int, sampler_name: str, mask_blur: int, mask_alpha: float, inpainting_fill: int, n_iter: int, batch_size: int, cfg_scale: float, image_cfg_scale: float, denoising_strength: float, selected_scale_tab: int, height: int, width: int, scale_by: float, resize_mode: int, inpaint_full_res: bool, inpaint_full_res_padding: int, inpainting_mask_invert: int, img2img_batch_input_dir: str, img2img_batch_output_dir: str, img2img_batch_inpaint_mask_dir: str, override_settings_texts, img2img_batch_use_png_info: bool, img2img_batch_png_info_props: list, img2img_batch_png_info_dir: str, request: gr.Request, *args):
-def img2img():
+def img2img(prompt: str, negative_prompt: str, sampler_name: str, batch_size: int, n_iter: int, steps: int, cfg_scale: float, width: int, height: int, mask_blur: int, inpainting_fill: int,
+            #resize_mode: int,
+            # denoising_strength: float,
+            # image_cfg_scale: float,
+            # inpaint_full_res: bool,
+            # inpaint_full_res_padding: int,
+            # inpainting_mask_invert: int
+            ):
     # override_settings = create_override_settings_dict(override_settings_texts)
 
     # is_batch = mode == 5
@@ -788,6 +814,8 @@ def img2img():
     # else:
     #     image = None
     #     mask = None
+    image = None
+    mask = None
 
     # # Use the EXIF orientation of photos taken by smartphones.
     # if image is not None:
@@ -805,10 +833,10 @@ def img2img():
         # sd_model=shared.sd_model,
         sd_model=SD_MODEL,
         outpath_samples=opts.outdir_samples or opts.outdir_img2img_samples,
-        outpath_grids=opts.outdir_grids or opts.outdir_img2img_grids,
+        # outpath_grids=opts.outdir_grids or opts.outdir_img2img_grids,
         prompt=prompt,
         negative_prompt=negative_prompt,
-        styles=prompt_styles,
+        # styles=prompt_styles,
         sampler_name=sampler_name,
         batch_size=batch_size,
         n_iter=n_iter,
@@ -820,19 +848,19 @@ def img2img():
         mask=mask,
         mask_blur=mask_blur,
         inpainting_fill=inpainting_fill,
-        resize_mode=resize_mode,
-        denoising_strength=denoising_strength,
-        image_cfg_scale=image_cfg_scale,
-        inpaint_full_res=inpaint_full_res,
-        inpaint_full_res_padding=inpaint_full_res_padding,
-        inpainting_mask_invert=inpainting_mask_invert,
-        override_settings=override_settings,
+        # resize_mode=resize_mode,
+        # denoising_strength=denoising_strength,
+        # image_cfg_scale=image_cfg_scale,
+        # inpaint_full_res=inpaint_full_res,
+        # inpaint_full_res_padding=inpaint_full_res_padding,
+        # inpainting_mask_invert=inpainting_mask_invert,
+        # override_settings=override_settings,
     )
 
     # p.scripts = modules.scripts.scripts_img2img
-    p.script_args = args
+    # p.script_args = args
 
-    p.user = request.username
+    # p.user = request.username
 
     # if shared.cmd_opts.enable_console_prompts:
     #     print(f"\nimg2img: {prompt}", file=shared.progress_print_out)
@@ -864,3 +892,22 @@ def img2img():
 
     # return processed.images, generation_info_js, plaintext_to_html(processed.info), plaintext_to_html(processed.comments, classname="comments")
     return processed.images, generation_info_js, processed.info, processed.comments
+
+img2img(prompt="Sample prompt",
+        negative_prompt="Negative sample prompt",
+        sampler_name="ddim",
+        batch_size=1,
+        n_iter=5,
+        steps=5,
+        cfg_scale=7.1,
+        width=512,
+        height=512,
+        mask_blur=4,
+        inpainting_fill=4,
+        # resize_mode=3,
+        # denoising_strength=0.75,
+        # image_cfg_scale=0.5,
+        # inpaint_full_res=False,
+        # inpaint_full_res_padding=10,
+        # inpainting_mask_invert=5
+        )
