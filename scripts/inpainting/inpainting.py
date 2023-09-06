@@ -1,8 +1,10 @@
 import os
 import torch
+import hashlib
 from os.path import join
 import sys
 import json
+import cv2
 from contextlib import closing
 from pathlib import Path
 
@@ -41,11 +43,17 @@ os.makedirs(output_dir, exist_ok=True)
 class Options:
     outdir_samples: str
     # initial_noise_multiplier: float
+    save_init_img: bool
+    img2img_color_correction: bool
+    img2img_background_color: str
 
 opts = Options()
 
 opts.outdir_samples = output_dir
 # opts.initial_noise_multiplier = 1.0
+opts.save_init_img = False
+opts.img2img_color_correction = False
+opts.img2img_background_color = '#ffffff'
 
 state = None
 # NOTE: Init SD_MODEL
@@ -53,6 +61,27 @@ SD_MODEL = None
 DEVICE = None
 PROMPT_STYLES = None
 # TOTAL_TQDM = None
+
+def flatten(img, bgcolor):
+    """replaces transparency with bgcolor (example: "#ffffff"), returning an RGB mode image with no transparency"""
+
+    if img.mode == "RGBA":
+        background = Image.new('RGBA', img.size, bgcolor)
+        background.paste(img, mask=img)
+        img = background
+
+    return img.convert('RGB')
+
+def create_binary_mask(image):
+    if image.mode == 'RGBA' and image.getextrema()[-1] != (255, 255):
+        image = image.split()[-1].convert("L").point(lambda x: 255 if x > 128 else 0)
+    else:
+        image = image.convert('L')
+    return image
+
+def create_random_tensors(shape=(1, 4, 64, 64), low=0.0, high=1.0, device=DEVICE, requires_grad=False):
+    random_tensor = torch.tensor(np.random.uniform(low=low, high=high, size=shape), dtype=torch.float32, device=device, requires_grad=requires_grad)
+    return random_tensor
 
 @dataclass(repr=False)
 class StableDiffusionProcessing:
@@ -434,13 +463,6 @@ class StableDiffusionProcessing:
     #     """Returns whether generated images need to be written to disk"""
     #     return opts.samples_save and not self.do_not_save_samples and (opts.save_incomplete_images or not state.interrupted and not state.skipped)
 
-def create_binary_mask(image):
-    if image.mode == 'RGBA' and image.getextrema()[-1] != (255, 255):
-        image = image.split()[-1].convert("L").point(lambda x: 255 if x > 128 else 0)
-    else:
-        image = image.convert('L')
-    return image
-
 class Processed:
     def __init__(self, p: StableDiffusionProcessing, images_list, seed=-1, info="", subseed=None, all_prompts=None, all_negative_prompts=None, all_seeds=None, all_subseeds=None, index_of_first_image=0, infotexts=None, comments=""):
         self.images = images_list
@@ -646,7 +668,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             #     image_mask = images.resize_image(2, mask, self.width, self.height)
             #     self.paste_to = (x1, y1, x2-x1, y2-y1)
             # else:
-            image_mask = images.resize_image(self.resize_mode, image_mask, self.width, self.height)
+            # image_mask = images.resize_image(self.resize_mode, image_mask, self.width, self.height)
             np_mask = np.array(image_mask)
             np_mask = np.clip((np_mask.astype(np.float32)) * 2, 0, 255).astype(np.uint8)
             self.mask_for_overlay = Image.fromarray(np_mask)
@@ -659,6 +681,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         if add_color_corrections:
             self.color_corrections = []
         imgs = []
+        print(self.init_images)
         for img in self.init_images:
 
             # Save init image
@@ -666,10 +689,11 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 self.init_img_hash = hashlib.md5(img.tobytes()).hexdigest()
                 images.save_image(img, path=opts.outdir_init_images, basename=None, forced_filename=self.init_img_hash, save_to_dirs=False)
 
-            image = images.flatten(img, opts.img2img_background_color)
+            # image = images.flatten(img, opts.img2img_background_color)
+            image = flatten(img, opts.img2img_background_color)
 
-            if crop_region is None and self.resize_mode != 3:
-                image = images.resize_image(self.resize_mode, image, self.width, self.height)
+            # if crop_region is None and self.resize_mode != 3:
+            #     image = images.resize_image(self.resize_mode, image, self.width, self.height)
 
             if image_mask is not None:
                 image_masked = Image.new('RGBa', (image.width, image.height))
@@ -680,14 +704,14 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             # crop_region is not None if we are doing inpaint full res
             if crop_region is not None:
                 image = image.crop(crop_region)
-                image = images.resize_image(2, image, self.width, self.height)
+                # image = images.resize_image(2, image, self.width, self.height)
 
-            if image_mask is not None:
-                if self.inpainting_fill != 1:
-                    image = masking.fill(image, latent_mask)
+            # if image_mask is not None:
+            #     if self.inpainting_fill != 1:
+            #         image = masking.fill(image, latent_mask)
 
-            if add_color_corrections:
-                self.color_corrections.append(setup_color_correction(image))
+            # if add_color_corrections:
+            #     self.color_corrections.append(setup_color_correction(image))
 
             image = np.array(image).astype(np.float32) / 255.0
             image = np.moveaxis(image, 2, 0)
@@ -710,16 +734,20 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
         image = torch.from_numpy(batch_images)
         # image = image.to(shared.device, dtype=devices.dtype_vae)
-        image = image.to(DEVICE, dtype=devices.dtype_vae)
+        image = image.to(self.device, dtype=torch.float32)
 
-        if opts.sd_vae_encode_method != 'Full':
-            self.extra_generation_params['VAE Encoder'] = opts.sd_vae_encode_method
+        # if opts.sd_vae_encode_method != 'Full':
+        #     self.extra_generation_params['VAE Encoder'] = opts.sd_vae_encode_method
 
         self.init_latent = images_tensor_to_samples(image, approximation_indexes.get(opts.sd_vae_encode_method), self.sd_model)
-        devices.torch_gc()
+        # devices.torch_gc()
+        # NOTE: Assuming only cuda for now
+        with torch.cuda.device('cuda'):
+            torch.cuda.empty_cache()
+            torch.cuda.ipc_collect()
 
-        if self.resize_mode == 3:
-            self.init_latent = torch.nn.functional.interpolate(self.init_latent, size=(self.height // opt_f, self.width // opt_f), mode="bilinear")
+        # if self.resize_mode == 3:
+        #     self.init_latent = torch.nn.functional.interpolate(self.init_latent, size=(self.height // opt_f, self.width // opt_f), mode="bilinear")
 
         if image_mask is not None:
             init_mask = latent_mask
@@ -913,8 +941,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
             del samples_ddim
 
-            if lowvram.is_enabled(shared.sd_model):
-                lowvram.send_everything_to_cpu()
+            # if lowvram.is_enabled(shared.sd_model):
+            #     lowvram.send_everything_to_cpu()
 
             devices.torch_gc()
 
@@ -1071,7 +1099,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
     return res
 
 # def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_styles, init_img, sketch, init_img_with_mask, inpaint_color_sketch, inpaint_color_sketch_orig, init_img_inpaint, init_mask_inpaint, steps: int, sampler_name: str, mask_blur: int, mask_alpha: float, inpainting_fill: int, n_iter: int, batch_size: int, cfg_scale: float, image_cfg_scale: float, denoising_strength: float, selected_scale_tab: int, height: int, width: int, scale_by: float, resize_mode: int, inpaint_full_res: bool, inpaint_full_res_padding: int, inpainting_mask_invert: int, img2img_batch_input_dir: str, img2img_batch_output_dir: str, img2img_batch_inpaint_mask_dir: str, override_settings_texts, img2img_batch_use_png_info: bool, img2img_batch_png_info_props: list, img2img_batch_png_info_dir: str, request: gr.Request, *args):
-def img2img(prompt: str, negative_prompt: str, sampler_name: str, batch_size: int, n_iter: int, steps: int, cfg_scale: float, width: int, height: int, mask_blur: int, inpainting_fill: int,
+def img2img(prompt: str, negative_prompt: str, sampler_name: str, batch_size: int, n_iter: int, steps: int, cfg_scale: float, width: int, height: int, mask_blur: int, inpainting_fill: int, init_img
             #resize_mode: int,
             # denoising_strength: float,
             # image_cfg_scale: float,
@@ -1106,7 +1134,7 @@ def img2img(prompt: str, negative_prompt: str, sampler_name: str, batch_size: in
     # else:
     #     image = None
     #     mask = None
-    image = None
+    image = init_img
     mask = None
 
     # # Use the EXIF orientation of photos taken by smartphones.
@@ -1185,6 +1213,8 @@ def img2img(prompt: str, negative_prompt: str, sampler_name: str, batch_size: in
     # return processed.images, generation_info_js, plaintext_to_html(processed.info), plaintext_to_html(processed.comments, classname="comments")
     return processed.images, generation_info_js, processed.info, processed.comments
 
+image = Image.open("test.png")
+
 img2img(prompt="Sample prompt",
         negative_prompt="Negative sample prompt",
         sampler_name="ddim",
@@ -1196,6 +1226,7 @@ img2img(prompt="Sample prompt",
         height=512,
         mask_blur=4,
         inpainting_fill=4,
+        init_img=image
         # resize_mode=3,
         # denoising_strength=0.75,
         # image_cfg_scale=0.5,
