@@ -107,20 +107,18 @@ def calculate_fitness_score(ga_instance, solution, solution_idx):
     if FIXED_SEED == True:
         SEED = 54846
 
-    # Get the fixed embedding for this individual
-    fixed_embedding = torch.tensor(embedded_prompts_list[solution_idx], dtype=torch.float32).to(DEVICE)
     
-    # Perform the linear combination with the genome (solution)
-    # Assume that both the fixed_embedding and solution are 1D tensors, and that you want element-wise multiplication
-    combined_embedding = fixed_embedding * torch.tensor(solution, dtype=torch.float32).to(DEVICE)
+    # Linear combination of the solution coefficients and the embedded prompts
+    combined_embedding_np = np.dot(solution, embedded_prompts_array)
 
-    # Re-shape combined_embedding to be used for image generation
-    combined_embedding = combined_embedding.view(1, 1024).to(DEVICE)
+    # Convert the combined numpy array to a PyTorch tensor
+    prompt_embedding = torch.tensor(combined_embedding_np, dtype=torch.float32)
+    prompt_embedding = prompt_embedding.view(1, 77, 768).to(DEVICE)
     
     # Generate image from the new combined_embedding
     latent = sd.generate_images_latent_from_embeddings(
         seed=SEED,
-        embedded_prompt=combined_embedding,
+        embedded_prompt=prompt_embedding,
         null_prompt=NULL_PROMPT,
         uncond_scale=CFG_STRENGTH
     )
