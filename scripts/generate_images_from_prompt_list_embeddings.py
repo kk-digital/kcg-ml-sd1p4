@@ -134,10 +134,8 @@ def get_embeddings(batch, current_batch_index, image_batch_size, num_images, bat
         task['cond'] = torch.tensor(positive_prompt_embedding).cpu()
 
         # no negative prompts for now
-        un_cond = txt2img.model.get_text_conditioning(batch_size * [""])
-        task['un_cond'] = un_cond.cpu()
+        task['un_cond'] = None
         del positive_prompt_embedding
-        del un_cond
 
     tmp_end_time = time.time()
     tmp_execution_time = tmp_end_time - tmp_start_time
