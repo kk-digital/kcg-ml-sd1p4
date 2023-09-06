@@ -139,6 +139,7 @@ def get_embeddings(batch, current_batch_index, image_batch_size, num_images, bat
     tmp_end_time = time.time()
     tmp_execution_time = tmp_end_time - tmp_start_time
     print("Text embedding loading completed Time: {0:0.2f} seconds".format(tmp_execution_time))
+    torch.cuda.empty_cache()
 
     return batch
 
@@ -166,14 +167,15 @@ def get_latents(batch, current_batch_index, image_batch_size, num_images, batch_
             h=image_height
         )
 
+        task['latent'] = latent.cpu()
         del cond
         del un_cond
-
-        task['latent'] = latent.cpu()
 
     tmp_end_time = time.time()
     tmp_execution_time = tmp_end_time - tmp_start_time
     print("Image latent generation completed time: {0:0.02f} seconds".format(tmp_execution_time))
+    torch.cuda.empty_cache()
+
     return batch
 
 
@@ -199,6 +201,8 @@ def generate_images_from_latents(batch, current_batch_index, image_batch_size, n
     tmp_end_time = time.time()
     tmp_execution_time = tmp_end_time - tmp_start_time
     print("latent -> image completed time: {0:0.02f} seconds".format(tmp_execution_time))
+    torch.cuda.empty_cache()
+
     return batch
 
 
@@ -218,6 +222,8 @@ def compute_image_features(batch, current_batch_index, image_batch_size, num_ima
     tmp_end_time = time.time()
     tmp_execution_time = tmp_end_time - tmp_start_time
     print("Image features generation completed time: {0:0.02f} seconds".format(tmp_execution_time))
+    torch.cuda.empty_cache()
+
     return batch
 
 
@@ -237,6 +243,8 @@ def compute_image_chad_score(batch, current_batch_index, image_batch_size, num_i
     tmp_end_time = time.time()
     tmp_execution_time = tmp_end_time - tmp_start_time
     print("Image chad score completed time: {0:0.02f} seconds".format(tmp_execution_time))
+    torch.cuda.empty_cache()
+
     return batch
 
 
