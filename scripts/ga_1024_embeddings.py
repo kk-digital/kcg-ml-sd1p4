@@ -219,7 +219,7 @@ def store_generation_images(ga_instance):
         torch.cuda.empty_cache()
 
         # move to gpu and cleanup
-        prompt_embedding.to("cpu")
+        prompt_embedding.to("cpu") 
         del prompt_embedding
 
         pil_image = to_pil(image[0])
