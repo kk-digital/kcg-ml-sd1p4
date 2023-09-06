@@ -780,12 +780,18 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         #     self.extra_generation_params["Noise multiplier"] = self.initial_noise_multiplier
         #     x *= self.initial_noise_multiplier
 
-        samples = self.sampler.sample_img2img(self, self.init_latent, x, conditioning, unconditional_conditioning, image_conditioning=self.image_conditioning)
+        # samples = self.sampler.sample_img2img(self, self.init_latent, x, conditioning, unconditional_conditioning, image_conditioning=self.image_conditioning)
+        samples = self.sampler.paint(x=x,
+                                     orig=self.init_latent,
+                                     t_start=0,
+                                     cond=conditioning,
+                                     uncond_cond=unconditional_conditioning,
+                                     mask=self.image_conditioning)
 
         if self.mask is not None:
             samples = samples * self.nmask + self.init_latent * self.mask
 
-        del x
+        # del x
         # devices.torch_gc()
         with torch.cuda.device('cuda'):
             torch.cuda.empty_cache()
@@ -931,13 +937,15 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             # with devices.without_autocast() if devices.unet_needs_upcast else devices.autocast():
             samples_ddim = p.sample(conditioning=p.c, unconditional_conditioning=p.uc, seeds=p.seeds, subseeds=p.subseeds, subseed_strength=p.subseed_strength, prompts=p.prompts)
 
-            if getattr(samples_ddim, 'already_decoded', False):
-                x_samples_ddim = samples_ddim
-            else:
-                if opts.sd_vae_decode_method != 'Full':
-                    p.extra_generation_params['VAE Decoder'] = opts.sd_vae_decode_method
+            # if getattr(samples_ddim, 'already_decoded', False):
+            #     x_samples_ddim = samples_ddim
+            # else:
+            #     if opts.sd_vae_decode_method != 'Full':
+            #         p.extra_generation_params['VAE Decoder'] = opts.sd_vae_decode_method
 
-                x_samples_ddim = decode_latent_batch(p.sd_model, samples_ddim, target_device=devices.cpu, check_for_nans=True)
+            #     x_samples_ddim = decode_latent_batch(p.sd_model, samples_ddim, target_device=devices.cpu, check_for_nans=True)
+            x_samples_ddim = samples_ddim
+            print('shape', x_samples_ddim.shape)
 
             x_samples_ddim = torch.stack(x_samples_ddim).float()
             x_samples_ddim = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
