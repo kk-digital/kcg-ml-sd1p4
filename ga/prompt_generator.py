@@ -324,7 +324,7 @@ def generate_prompts_from_csv(csv_dataset_path,
                                                                                             positive_prompt_str,
                                                                                             negative_prompt_str)
 
-            # convert to numpy then convert to f32 then convert to python list
+            # convert to fp32
             positive_prompt_embedding = positive_prompt_embedding.detach().cpu().to(torch.float32)
             negative_prompt_embedding = negative_prompt_embedding.detach().cpu().to(torch.float32)
             torch.cuda.empty_cache()

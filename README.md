@@ -283,9 +283,9 @@ options:
 python3 ./scripts/generate_images_from_prompt_generator.py --checkpoint_path "./input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors" --cfg_scale 7 --num_images 10 --num_phrases 12 --output "./output/"
 ```
 
-### Generate Images From Prompt List Dataset
+### Generate Images From Prompt List Dataset Embeddings
 
-To generate images from prompt list dataset, these are the available CLI arguments:
+To generate images from prompt list dataset embeddings, these are the available CLI arguments:
 
 ```
 options:
@@ -319,7 +319,7 @@ options:
 ```
 
 ``` shell
-python3 ./scripts/generate_images_from_prompt_list.py --checkpoint_path "./input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors" --cfg_scale 7 --num_images 2 --output ./output/generated-dataset-from-prompt-list --prompt_list_dataset_path ./test/test_zip_files/prompt_list_civitai_2_test.zip 
+python3 ./scripts/generate_images_from_prompt_list_embeddings.py --checkpoint_path "./input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors" --cfg_scale 7 --num_images 2 --output ./output/generated-dataset-from-prompt-list --prompt_list_dataset_path ./test/test_zip_files/prompt_list_civitai_2_test.zip 
 ```
 
 ### Chad Score
