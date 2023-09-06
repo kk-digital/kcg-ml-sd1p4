@@ -134,11 +134,13 @@ def get_embeddings(batch, current_batch_index, image_batch_size, num_images, bat
         task['cond'] = torch.tensor(positive_prompt_embedding).cpu()
 
         # no negative prompts for now
-        task['un_cond'] = txt2img.model.get_text_conditioning(batch_size * [""]).cpu()
+        task['un_cond'] = None
+        del positive_prompt_embedding
 
     tmp_end_time = time.time()
     tmp_execution_time = tmp_end_time - tmp_start_time
     print("Text embedding loading completed Time: {0:0.2f} seconds".format(tmp_execution_time))
+    torch.cuda.empty_cache()
 
     return batch
 
@@ -153,7 +155,11 @@ def get_latents(batch, current_batch_index, image_batch_size, num_images, batch_
         processed_images = processed_images + 1
 
         cond = task['cond'].to(txt2img.device)
-        un_cond = task['un_cond'].to(txt2img.device)
+
+        un_cond = task['un_cond']
+        if un_cond is not None:
+            un_cond = un_cond.to(txt2img.device)
+
         this_seed = task['seed']
 
         latent = txt2img.generate_images_latent_from_embeddings(
@@ -166,14 +172,16 @@ def get_latents(batch, current_batch_index, image_batch_size, num_images, batch_
             h=image_height
         )
 
+        task['latent'] = latent.cpu()
         del cond
         del un_cond
-
-        task['latent'] = latent.cpu()
+        del latent
+        torch.cuda.empty_cache()
 
     tmp_end_time = time.time()
     tmp_execution_time = tmp_end_time - tmp_start_time
     print("Image latent generation completed time: {0:0.02f} seconds".format(tmp_execution_time))
+
     return batch
 
 
@@ -190,7 +198,11 @@ def generate_images_from_latents(batch, current_batch_index, image_batch_size, n
 
         images = txt2img.get_image_from_latent(latent)
         del latent
+
         image_list, image_hash_list = save_images(images, filename)
+        del images
+        torch.cuda.empty_cache()
+
         image_hash = image_hash_list[0]
         image = image_list[0]
         task['image'] = image
@@ -199,6 +211,7 @@ def generate_images_from_latents(batch, current_batch_index, image_batch_size, n
     tmp_end_time = time.time()
     tmp_execution_time = tmp_end_time - tmp_start_time
     print("latent -> image completed time: {0:0.02f} seconds".format(tmp_execution_time))
+
     return batch
 
 
@@ -213,11 +226,15 @@ def compute_image_features(batch, current_batch_index, image_batch_size, num_ima
         # get image features
         image = task['image']
         image_features = util_clip.get_image_features(image)
-        task['image_features'] = image_features
+        task['image_features'] = image_features.cpu()
+        del image
+        del image_features
+        torch.cuda.empty_cache()
 
     tmp_end_time = time.time()
     tmp_execution_time = tmp_end_time - tmp_start_time
     print("Image features generation completed time: {0:0.02f} seconds".format(tmp_execution_time))
+
     return batch
 
 
@@ -229,14 +246,18 @@ def compute_image_chad_score(batch, current_batch_index, image_batch_size, num_i
         print("Generating image chad score " + str(processed_images + 1) + " out of " + str(num_images))
         processed_images = processed_images + 1
 
-        image_features = task['image_features']
+        image_features = task['image_features'].to(chad_score_predictor.device)
         # compute chad_score
         chad_score = chad_score_predictor.get_chad_score(image_features)
         task['chad_score'] = chad_score
+        del image_features
+        torch.cuda.empty_cache()
 
     tmp_end_time = time.time()
     tmp_execution_time = tmp_end_time - tmp_start_time
     print("Image chad score completed time: {0:0.02f} seconds".format(tmp_execution_time))
+    torch.cuda.empty_cache()
+
     return batch
 
 
@@ -264,12 +285,11 @@ def save_image_data(batch, current_batch_index, image_batch_size, num_images, fe
         # convert tensor to numpy array
         with torch.no_grad():
             embedded_vector = cond.cpu().numpy()
-        # free cond memory
 
+        # free cond memory
         del task['cond']
         torch.cuda.empty_cache()
         # free un_cond memory
-
         del task['un_cond']
         torch.cuda.empty_cache()
         # image latent
@@ -336,7 +356,7 @@ def save_image_data(batch, current_batch_index, image_batch_size, num_images, fe
         tmp_execution_time = tmp_end_time - tmp_start_time
         print("Saving of image data duration: {0:0.02f} seconds".format(tmp_execution_time))
 
-        return generation_task_result_list
+    return generation_task_result_list
 
 
 def generate_images_from_prompt_list(num_images, image_width, image_height, cfg_strength, batch_size,
@@ -372,6 +392,7 @@ def generate_images_from_prompt_list(num_images, image_width, image_height, cfg_
                                         path=checkpoint_path, force_submodels_init=True)
 
     for current_task_index in range(num_datasets):
+        dataset_start_time = time.time()
         print("Generating Dataset : " + str(current_task_index))
         start_time = time.time()
         generation_task_result_list = []
@@ -389,6 +410,7 @@ def generate_images_from_prompt_list(num_images, image_width, image_height, cfg_
 
         current_batch_index = 0
         for batch in batch_list:
+            batch_start_time = time.time()
             print("------ Batch " + str(current_batch_index + 1) + " out of " + str(len(batch_list)) + " ----------")
 
             batch = get_embeddings(batch, current_batch_index, image_batch_size, num_images, batch_size, txt2img)
@@ -405,6 +427,9 @@ def generate_images_from_prompt_list(num_images, image_width, image_height, cfg_
                                                           generation_task_result_list)
 
             current_batch_index += 1
+            batch_execution_time = time.time() - batch_start_time
+            print("Batch duration: {0:0.02f} seconds".format(batch_execution_time))
+
 
         for generation_task_result_item in generation_task_result_list:
             generation_task_result = generation_task_result_item['generation_task_result']
@@ -425,6 +450,9 @@ def generate_images_from_prompt_list(num_images, image_width, image_height, cfg_
         if os.path.exists(set_directory_path):
             shutil.rmtree(set_directory_path)
             print(f"Deleted folder: {set_folder_name}")
+
+        dataset_execution_time = time.time() - dataset_start_time
+        print("Dataset generation duration: {0:0.02f} seconds".format(dataset_execution_time))
 
 
 def main():
