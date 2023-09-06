@@ -536,7 +536,7 @@ options:
 
 Example Usage:
 ```
-python scripts/split_image.py --image_path './input/test.png' --output './output/sub_images'
+python scripts/split_image.py --image_path './test/test_images/512x512_test.png' --output './output/sub_images'
 ```
 
 
