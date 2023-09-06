@@ -356,7 +356,7 @@ def save_image_data(batch, current_batch_index, image_batch_size, num_images, fe
         tmp_execution_time = tmp_end_time - tmp_start_time
         print("Saving of image data duration: {0:0.02f} seconds".format(tmp_execution_time))
 
-        return generation_task_result_list
+    return generation_task_result_list
 
 
 def generate_images_from_prompt_list(num_images, image_width, image_height, cfg_strength, batch_size,
