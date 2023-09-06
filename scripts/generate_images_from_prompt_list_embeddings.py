@@ -131,10 +131,10 @@ def get_embeddings(batch, current_batch_index, image_batch_size, num_images, bat
         processed_images = processed_images + 1
 
         positive_prompt_embedding = task['positive_prompt_embedding']
-        task['cond'] = torch.tensor(positive_prompt_embedding).to(txt2img.device)
+        task['cond'] = torch.tensor(positive_prompt_embedding).cpu()
 
         # no negative prompts for now
-        task['un_cond'] = txt2img.model.get_text_conditioning(batch_size * [""])
+        task['un_cond'] = txt2img.model.get_text_conditioning(batch_size * [""]).cpu()
 
     tmp_end_time = time.time()
     tmp_execution_time = tmp_end_time - tmp_start_time
@@ -152,8 +152,8 @@ def get_latents(batch, current_batch_index, image_batch_size, num_images, batch_
         print("Generating image latent " + str(processed_images + 1) + " out of " + str(num_images))
         processed_images = processed_images + 1
 
-        cond = task['cond']
-        un_cond = task['un_cond']
+        cond = task['cond'].to(txt2img.device)
+        un_cond = task['un_cond'].to(txt2img.device)
         this_seed = task['seed']
 
         latent = txt2img.generate_images_latent_from_embeddings(
@@ -166,7 +166,10 @@ def get_latents(batch, current_batch_index, image_batch_size, num_images, batch_
             h=image_height
         )
 
-        task['latent'] = latent
+        del cond
+        del un_cond
+
+        task['latent'] = latent.cpu()
 
     tmp_end_time = time.time()
     tmp_execution_time = tmp_end_time - tmp_start_time
@@ -182,10 +185,11 @@ def generate_images_from_latents(batch, current_batch_index, image_batch_size, n
         print("latent -> image " + str(processed_images + 1) + " out of " + str(num_images))
         processed_images = processed_images + 1
 
-        latent = task['latent']
+        latent = task['latent'].to(txt2img.device)
         filename = task['filename']
 
         images = txt2img.get_image_from_latent(latent)
+        del latent
         image_list, image_hash_list = save_images(images, filename)
         image_hash = image_hash_list[0]
         image = image_list[0]
