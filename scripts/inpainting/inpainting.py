@@ -830,6 +830,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
         orig_noise = torch.randn(self.init_latent.shape, device=DEVICE)
 
+        x = self.sampler.q_sample(self.init_latent, 35, noise=orig_noise)
+
         # samples = self.sampler.sample(shape=[1, 4, 64, 64],
         #                               cond=conditioning,
         #                               uncond_cond=unconditional_conditioning
