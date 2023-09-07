@@ -828,6 +828,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         print('mask', mask.shape)
         print('x', x.shape)
 
+        orig_noise = torch.randn(self.init_latent.shape, device=DEVICE)
+
         # samples = self.sampler.sample(shape=[1, 4, 64, 64],
         #                               cond=conditioning,
         #                               uncond_cond=unconditional_conditioning
@@ -836,6 +838,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                                      orig=self.init_latent,
                                      t_start=35,
                                      cond=conditioning,
+                                     orig_noise=orig_noise,
                                      uncond_scale=0.1,
                                      # cond=self.image_conditioning,
                                      uncond_cond=unconditional_conditioning,
