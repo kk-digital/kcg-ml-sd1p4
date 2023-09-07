@@ -14,6 +14,7 @@ import clip
 import pygad
 import argparse
 import csv
+import zipfile
 import torch.nn.functional as F
 
 from chad_score.chad_score import ChadScorePredictor
@@ -26,6 +27,7 @@ from stable_diffusion.utils_backend import get_autocast, set_seed
 # TODO: rename stable_diffusion.utils_backend to /utils/cuda.py
 from stable_diffusion.utils_backend import get_device
 from stable_diffusion.utils_image import *
+from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from ga.utils import get_next_ga_dir
 import ga
 from ga.fitness_chad_score import compute_chad_score_from_pil
@@ -54,6 +56,7 @@ def parse_args():
     parser.add_argument("--output", type=str, default="./output/ga_latent/", help="Specifies the output folder")
     parser.add_argument("--use_random_images", type=bool, default=False)
     parser.add_argument("--num_prompts", type=int, default=1024)
+    parser.add_argument('--prompts_path', type=str, default='/input/prompt-list-civitai/prompt_list_civitai_10k_512_phrases.zip')
 
     args = parser.parse_args()
 
@@ -172,61 +175,86 @@ def on_mutation(ga_instance, offspring_mutation):
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
-def fitness_func(ga_instance, solution, solution_idx):
-    sd = ga_instance.sd
-    device = ga_instance.device
-    util_clip = ga_instance.util_clip
-    chad_score_predictor = ga_instance.chad_score_predictor
+def combine_embeddings(embeddings_array, weight_array, device):
 
-    solution_copy = solution.copy()  # flatten() is destructive operation
-    solution_flattened = solution_copy.flatten()
+    # empty embedding filled with zeroes
+    result_embedding = torch.zeros(1, 77, 768, device=device, dtype=torch.float32)
 
-    for j, g in enumerate(solution_flattened):
-        value = solution_flattened[j]
-        if value > 1 or value < -1:
-            solution_flattened[j] = sigmoid(solution_flattened[j])
+    # Multiply each tensor by its corresponding float and sum up
+    for embedding, weight in zip(embeddings_array, weight_array):
+        result_embedding += embedding * weight
 
-    solution_reshaped = solution_flattened.reshape(1, 4, 64, 64)
+    return result_embedding
 
-    latent = torch.tensor(solution_reshaped, device=device, dtype=torch.float32)
-    images = sd.get_image_from_latent(latent)
+def embeddings_chad_score(embeddings_vector, seed, output, chad_score_predictor, clip_text_embedder, txt2img, cfg_strength=12,
+                          image_width=512, image_height=512):
 
-    # Write the tensor string to the file
-    # cleanup
+    null_prompt = clip_text_embedder('')
+
+    latent = txt2img.generate_images_latent_from_embeddings(
+        batch_size=1,
+        embedded_prompt=embeddings_vector,
+        null_prompt=null_prompt,
+        uncond_scale=cfg_strength,
+        seed=seed,
+        w=image_width,
+        h=image_height
+    )
+
+    images = txt2img.get_image_from_latent(latent)
+    image_list, image_hash_list = save_images(images, output + '/image' + str(index + 1) + '.jpg')
+
     del latent
     torch.cuda.empty_cache()
 
     # Map images to `[0, 1]` space and clip
     images = torch.clamp((images + 1.0) / 2.0, min=0.0, max=1.0)
-    # Transpose to `[batch_size, height, width, channels]` and convert to numpy
 
-    images_cpu = images.cpu()
 
+    ## Normalize the image tensor
+    mean = torch.tensor([0.48145466, 0.4578275, 0.40821073], device=device).view(-1, 1, 1)
+    std = torch.tensor([0.26862954, 0.26130258, 0.27577711], device=device).view(-1, 1, 1)
+
+    normalized_image_tensor = (images - mean) / std
+
+    # Resize the image to [N, C, 224, 224]
+    transform = transforms.Compose([transforms.Resize((224, 224))])
+    resized_image_tensor = transform(normalized_image_tensor)
+
+    # Get the CLIP features
+    image_features = util_clip.model.encode_image(resized_image_tensor)
+    image_features = image_features.squeeze(0)
+
+    image_features = image_features.to(torch.float32)
+
+    # cleanup
     del images
     torch.cuda.empty_cache()
 
-    images_cpu = images_cpu.permute(0, 2, 3, 1)
-    images_cpu = images_cpu.detach().float().numpy()
-
-    image_list = []
-    # Save images
-    for i, img in enumerate(images_cpu):
-        img = Image.fromarray((255. * img).astype(np.uint8))
-        image_list.append(img)
-
-    image = image_list[0]
-
-    image_features = util_clip.get_image_features(image)
-    # cleanup
-    del image
-    torch.cuda.empty_cache()
-
-    chad_score = chad_score_predictor.get_chad_score(image_features)
-    chad_score_scaled = sigmoid(chad_score)
+    chad_score = chad_score_predictor.get_chad_score_tensor(image_features)
+    chad_score_scaled = torch.sigmoid(chad_score)
 
     # cleanup
     del image_features
     torch.cuda.empty_cache()
+
+    return chad_score, chad_score_scaled
+
+
+def fitness_func(ga_instance, solution, solution_idx):
+    sd = ga_instance.sd
+    device = ga_instance.device
+    util_clip = ga_instance.util_clip
+    chad_score_predictor = ga_instance.chad_score_predictor
+    clip_text_embedder = ga_instance.clip_text_embedder
+    embedded_prompts_array = ga_instance.embedded_prompts_array
+    txt2img = ga_instance.txt2img
+    weight_array = solution
+    output_directory = ga_instance.output_directory
+    seed = 6789
+
+    embedding_vector = combine_embeddings(embedded_prompts_array, weight_array, device)
+    chad_score, chad_score_scaled = embeddings_chad_score(embedding_vector, seed, output_directory, chad_score_predictor, clip_text_embedder, txt2img)
 
     return chad_score_scaled
 
@@ -283,6 +311,28 @@ def store_generation_images(ga_instance):
     log_to_file(f"Images per second in Generation #{generation}: {images_per_second}", output_directory)
 
 
+def read_prompts_from_zip(zip_file_path, num_prompts):
+    # Open the zip file for reading
+    with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
+        # Get a list of all file names in the zip archive
+        file_list = zip_ref.namelist()
+
+        # Initialize a list to store loaded arrays
+        loaded_arrays = []
+
+        # Iterate over the file list and load the first 100 .npz files
+        for file_name in file_list:
+            if file_name.endswith('.npz'):
+                with zip_ref.open(file_name) as npz_file:
+                    npz_data = np.load(npz_file, allow_pickle=True)
+                    # Assuming you have a specific array name you want to load from the .npz file
+                    loaded_array = npz_data['data']
+                    loaded_arrays.append(loaded_array)
+
+            if len(loaded_arrays) >= num_prompts:
+                break  # Stop after loading the first 100 .npz files
+
+        return loaded_arrays
 def main():
 
     args = parse_args()
@@ -302,6 +352,7 @@ def main():
     image_height = args.image_height
     use_random_images = args.use_random_images
     num_prompts = args.num_prompts
+    prompts_path = args.prompts_path
 
     device = get_device(device=args.device)
     output_directory = args.output
@@ -310,6 +361,9 @@ def main():
 
     util_clip = UtilClip(device=device)
     util_clip.load_model()
+
+    clip_text_embedder = CLIPTextEmbedder(device=get_device())
+    clip_text_embedder.load_submodels()
 
     chad_score_model_path = "input/model/chad_score/chad-score-v1.pth"
     chad_score_predictor = ChadScorePredictor(device=device)
@@ -370,7 +424,8 @@ def main():
     # number of chromozome genes
     num_genes = num_prompts
 
-    prompt_list = generate_prompts(num_prompts, num_phrases)
+    prompt_list = read_prompts_from_zip(prompts_path, num_prompts)
+    #prompt_list = generate_prompts(num_prompts, num_phrases)
 
     # embeddings array
     embedded_prompts_array = []
@@ -436,6 +491,9 @@ def main():
     ga_instance.util_clip = util_clip
     ga_instance.chad_score_predictor = chad_score_predictor
     ga_instance.output_directory = output_directory
+    ga_instance.embedded_prompts_array = embedded_prompts_array
+    ga_instance.clip_text_embedder = clip_text_embedder
+    ga_instance.txt2img = txt2img
 
     ga_instance.run()
 
