@@ -1,7 +1,6 @@
 import os
 import sys
 import time
-
 import torch
 import random
 from os.path import join
@@ -205,7 +204,7 @@ def embeddings_chad_score(device, embeddings_vector, generation, index, seed, ou
     images = txt2img.get_image_from_latent(latent)
     print('save', ' generation ', generation, ' index : ', index + 1)
     generation_dir = output + '/' + str(generation)
-    os.mkdirs(generation_dir, exist_ok=True)
+    os.makedirs(generation_dir, exist_ok=True)
     image_list, image_hash_list = save_images(images, generation_dir + '/' + str(index + 1) + '.jpg')
 
     del latent
