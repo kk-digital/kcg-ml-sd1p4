@@ -381,8 +381,8 @@ def main():
     # number of chromozome genes
     num_genes = num_prompts
 
-    #prompt_list = read_prompts_from_zip(prompts_path, num_prompts)
-    prompt_list = generate_prompts(num_prompts, num_phrases)
+    prompt_list = read_prompts_from_zip(prompts_path, num_prompts)
+    #prompt_list = generate_prompts(num_prompts, num_phrases)
 
     # embeddings array
     embedded_prompts_array = []
@@ -392,9 +392,9 @@ def main():
         # prompt_str = prompt.positive_prompt_str
 
         #prompt = prompt.flatten()[0]
-        #prompt_str = prompt['positive-prompt-str']
+        prompt_str = prompt['positive-prompt-str']
 
-        prompt_str = prompt.positive_prompt_str
+        #prompt_str = prompt.positive_prompt_str
         embedded_prompts = clip_text_embedder(prompt_str)
 
         embedded_prompts_array.append(embedded_prompts)
@@ -407,7 +407,7 @@ def main():
     np.random.seed(seed)
 
     for i in range(population_size):
-        random_weights = np.random.dirichlet(np.ones(num_prompts),size=1).flatten()
+        random_weights = np.random.dirichlet(np.ones(num_prompts), size=1).flatten()
         print(sum(random_weights))
         normalized_weights = (random_weights - np.mean(random_weights)) / np.std(random_weights)
         random_population.append(normalized_weights)
