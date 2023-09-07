@@ -204,7 +204,9 @@ def embeddings_chad_score(device, embeddings_vector, generation, index, seed, ou
 
     images = txt2img.get_image_from_latent(latent)
     print('save', ' generation ', generation, ' index : ', index + 1)
-    image_list, image_hash_list = save_images(images, output + '/image_gen' + str(generation) + '_' + str(index + 1) + '.jpg')
+    generation_dir = output + '/' + str(generation)
+    os.mkdirs(generation_dir, exist_ok=True)
+    image_list, image_hash_list = save_images(images, generation_dir + '/' + str(index + 1) + '.jpg')
 
     del latent
     torch.cuda.empty_cache()
@@ -273,7 +275,7 @@ def read_prompts_from_zip(zip_file_path, num_prompts):
     with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
         # Get a list of all file names in the zip archive
         file_list = zip_ref.namelist()
-
+        random.shuffle(file_list)
         # Initialize a list to store loaded arrays
         loaded_arrays = []
 
