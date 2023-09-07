@@ -391,7 +391,7 @@ def main():
         # get the embedding from positive text prompt
         # prompt_str = prompt.positive_prompt_str
 
-        #prompt = prompt.flatten()[0]
+        prompt = prompt.flatten()[0]
         prompt_str = prompt['positive-prompt-str']
 
         #prompt_str = prompt.positive_prompt_str
