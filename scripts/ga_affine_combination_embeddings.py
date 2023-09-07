@@ -233,8 +233,6 @@ def embeddings_chad_score(device, embeddings_vector, generation, index, seed, ou
     image_features = image_features.to(torch.float32)
 
     # cleanup
-    del images
-    torch.cuda.empty_cache()
 
     chad_score = chad_score_predictor.get_chad_score_tensor(image_features)
     chad_score_scaled = torch.sigmoid(chad_score)
