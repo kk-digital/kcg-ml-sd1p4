@@ -3,10 +3,6 @@ import sys
 import time
 
 import torch
-
-base_dir = os.getcwd()
-sys.path.insert(0, base_dir)
-
 import random
 from os.path import join
 import shutil
@@ -16,6 +12,11 @@ import argparse
 import csv
 import zipfile
 import torch.nn.functional as F
+import torchvision.transforms as transforms
+
+
+base_dir = os.getcwd()
+sys.path.insert(0, base_dir)
 
 from chad_score.chad_score import ChadScorePredictor
 from ga.prompt_generator import generate_prompts
@@ -186,7 +187,7 @@ def combine_embeddings(embeddings_array, weight_array, device):
 
     return result_embedding
 
-def embeddings_chad_score(embeddings_vector, seed, output, chad_score_predictor, clip_text_embedder, txt2img, cfg_strength=12,
+def embeddings_chad_score(device, embeddings_vector, generation, index, seed, output, chad_score_predictor, clip_text_embedder, txt2img, util_clip, cfg_strength=12,
                           image_width=512, image_height=512):
 
     null_prompt = clip_text_embedder('')
@@ -202,7 +203,7 @@ def embeddings_chad_score(embeddings_vector, seed, output, chad_score_predictor,
     )
 
     images = txt2img.get_image_from_latent(latent)
-    image_list, image_hash_list = save_images(images, output + '/image' + str(index + 1) + '.jpg')
+    image_list, image_hash_list = save_images(images, output + '/image_gen' + str(generation) + '_' + str(index + 1) + '.jpg')
 
     del latent
     torch.cuda.empty_cache()
@@ -251,64 +252,15 @@ def fitness_func(ga_instance, solution, solution_idx):
     txt2img = ga_instance.txt2img
     weight_array = solution
     output_directory = ga_instance.output_directory
+    generation = ga_instance.generations_completed
     seed = 6789
 
     embedding_vector = combine_embeddings(embedded_prompts_array, weight_array, device)
-    chad_score, chad_score_scaled = embeddings_chad_score(embedding_vector, seed, output_directory, chad_score_predictor, clip_text_embedder, txt2img)
+    chad_score, chad_score_scaled = embeddings_chad_score(device, embedding_vector, generation, solution_idx, seed, output_directory, chad_score_predictor, clip_text_embedder, txt2img, util_clip)
 
     return chad_score_scaled
 
 def store_generation_images(ga_instance):
-    device = ga_instance.device
-    sd = ga_instance.sd
-    output_image_directory = ga_instance.output_image_directory
-    output_directory = ga_instance.output_directory
-
-    start_time = time.time()
-    generation = ga_instance.generations_completed
-    print("Generation #", generation)
-    print("Population size: ", len(ga_instance.population))
-    file_dir = os.path.join(output_image_directory, str(generation))
-    os.makedirs(file_dir)
-    for i, gene in enumerate(ga_instance.population):
-
-        solution_copy = gene.copy()
-        solution_flattened = solution_copy.flatten()
-
-        for j, g in enumerate(solution_flattened):
-            value = solution_flattened[j]
-            if value > 1 or value < -1:
-                solution_flattened[j] = sigmoid(solution_flattened[j])
-
-        solution_reshaped = solution_flattened.reshape(1, 4, 64, 64)
-
-        latent = torch.tensor(solution_reshaped, device=device, dtype=torch.float32)
-        image = sd.get_image_from_latent(latent)
-        del latent
-        torch.cuda.empty_cache()
-
-        pil_image = to_pil(image[0])
-        del image
-        torch.cuda.empty_cache()
-
-        filename = os.path.join(file_dir, f'g{generation:04}_{i:03}.png')
-        pil_image.save(filename)
-
-    end_time = time.time()  # End timing for generation
-    total_time = end_time - start_time
-    print(f"Total time taken for Generation #{generation}: {total_time} seconds")
-    log_to_file(f"----------------------------------", output_directory)
-    log_to_file(f"Total time taken for Generation #{generation}: {total_time} seconds", output_directory)
-
-    # Log images per generation
-    num_images = len(ga_instance.population)
-    print(f"Images generated in Generation #{generation}: {num_images}")
-    log_to_file(f"Images generated in Generation #{generation}: {num_images}", output_directory)
-
-    # Log images/sec
-    images_per_second = num_images / total_time
-    print(f"Images per second in Generation #{generation}: {images_per_second}")
-    log_to_file(f"Images per second in Generation #{generation}: {images_per_second}", output_directory)
 
 
 def read_prompts_from_zip(zip_file_path, num_prompts):
