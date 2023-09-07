@@ -203,6 +203,7 @@ def embeddings_chad_score(device, embeddings_vector, generation, index, seed, ou
     )
 
     images = txt2img.get_image_from_latent(latent)
+    print('save', ' generation ', generation, ' index : ', index + 1)
     image_list, image_hash_list = save_images(images, output + '/image_gen' + str(generation) + '_' + str(index + 1) + '.jpg')
 
     del latent
@@ -253,15 +254,19 @@ def fitness_func(ga_instance, solution, solution_idx):
     weight_array = solution
     output_directory = ga_instance.output_directory
     generation = ga_instance.generations_completed
+    cfg_strength = ga_instance.cfg_strength
+    image_width = ga_instance.image_width
+    image_height = ga_instance.image_height
     seed = 6789
 
     embedding_vector = combine_embeddings(embedded_prompts_array, weight_array, device)
-    chad_score, chad_score_scaled = embeddings_chad_score(device, embedding_vector, generation, solution_idx, seed, output_directory, chad_score_predictor, clip_text_embedder, txt2img, util_clip)
+    chad_score, chad_score_scaled = embeddings_chad_score(device, embedding_vector, generation, solution_idx, seed, output_directory, chad_score_predictor, clip_text_embedder, txt2img, util_clip,
+                                                          cfg_strength, image_width, image_height)
 
     return chad_score_scaled
 
 def store_generation_images(ga_instance):
-
+    return 0
 
 def read_prompts_from_zip(zip_file_path, num_prompts):
     # Open the zip file for reading
@@ -446,6 +451,9 @@ def main():
     ga_instance.embedded_prompts_array = embedded_prompts_array
     ga_instance.clip_text_embedder = clip_text_embedder
     ga_instance.txt2img = txt2img
+    ga_instance.cfg_strength = cfg_strength
+    ga_instance.image_width = image_width
+    ga_instance.image_height = image_height
 
     ga_instance.run()
 
