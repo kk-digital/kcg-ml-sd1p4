@@ -24,8 +24,12 @@ from stable_diffusion.sampler.diffusion import DiffusionSampler
 from stable_diffusion.latent_diffusion import LatentDiffusion
 from stable_diffusion.utils_model import initialize_latent_diffusion
 from stable_diffusion.utils_backend import get_device
+from stable_diffusion.utils_image import to_pil
 from stable_diffusion import StableDiffusion
 from stable_diffusion.model_paths import (SDconfigs)
+
+# NOTE: It's just for the prompt embedder. Later refactor
+import ga
 
 # from modules import images as imgutil
 # from modules.generation_parameters_copypaste import create_override_settings_dict, parse_generation_parameters
@@ -59,7 +63,7 @@ opts.img2img_background_color = '#ffffff'
 # state = None
 # NOTE: Init SD_MODEL
 SD_MODEL = None
-DEVICE = None
+DEVICE = get_device()
 PROMPT_STYLES = None
 # TOTAL_TQDM = None
 
@@ -176,9 +180,30 @@ class StableDiffusionProcessing:
 
     is_api: bool = field(default=False, init=False)
 
+    # NOTE: Originally not here
+    sd: StableDiffusion = None
+    config: ModelPathConfig = None
+    model: LatentDiffusion = None
+    n_steps: int = 50
+    ddim_eta: float = 0.0
+    device = get_device()
+
+    def prompt_embedding_vectors(self, prompt_array):
+        embedded_prompts = ga.clip_text_get_prompt_embedding(self.config, prompts=prompt_array)
+        embedded_prompts.to("cpu")
+        return embedded_prompts
+
     def __post_init__(self):
         if self.sampler_index is not None:
             print("sampler_index argument for StableDiffusionProcessing does not do anything; use sampler_name", file=sys.stderr)
+
+        # NOTE: Initializing stable diffusion
+        self.sd = StableDiffusion(device=self.device, n_steps=self.n_steps)
+        self.config = ModelPathConfig()
+        self.sd.quick_initialize().load_autoencoder(self.config.get_model(SDconfigs.VAE)).load_decoder(self.config.get_model(SDconfigs.VAE_DECODER))
+        self.sd.model.load_unet(self.config.get_model(SDconfigs.UNET))
+        self.sd.initialize_latent_diffusion(path='input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors', force_submodels_init=True)
+        self.model = self.sd.model
 
         self.comments = {}
 
@@ -284,42 +309,44 @@ class StableDiffusionProcessing:
     #         c_adm = torch.cat((c_adm, noise_level_emb), 1)
     #     return c_adm
 
-    # def inpainting_image_conditioning(self, source_image, latent_image, image_mask=None):
-    #     self.is_using_inpainting_conditioning = True
+    def inpainting_image_conditioning(self, source_image, latent_image, image_mask=None):
+        # self.is_using_inpainting_conditioning = True
 
-    #     # Handle the different mask inputs
-    #     if image_mask is not None:
-    #         if torch.is_tensor(image_mask):
-    #             conditioning_mask = image_mask
-    #         else:
-    #             conditioning_mask = np.array(image_mask.convert("L"))
-    #             conditioning_mask = conditioning_mask.astype(np.float32) / 255.0
-    #             conditioning_mask = torch.from_numpy(conditioning_mask[None, None])
+        # Handle the different mask inputs
+        if image_mask is not None:
+            if torch.is_tensor(image_mask):
+                conditioning_mask = image_mask
+            else:
+                conditioning_mask = np.array(image_mask.convert("L"))
+                conditioning_mask = conditioning_mask.astype(np.float32) / 255.0
+                conditioning_mask = torch.from_numpy(conditioning_mask[None, None])
 
-    #             # Inpainting model uses a discretized mask as input, so we round to either 1.0 or 0.0
-    #             conditioning_mask = torch.round(conditioning_mask)
-    #     else:
-    #         conditioning_mask = source_image.new_ones(1, 1, *source_image.shape[-2:])
+                # Inpainting model uses a discretized mask as input, so we round to either 1.0 or 0.0
+                conditioning_mask = torch.round(conditioning_mask)
+        else:
+            conditioning_mask = source_image.new_ones(1, 1, *source_image.shape[-2:])
 
-    #     # Create another latent image, this time with a masked version of the original input.
-    #     # Smoothly interpolate between the masked and unmasked latent conditioning image using a parameter.
-    #     conditioning_mask = conditioning_mask.to(device=source_image.device, dtype=source_image.dtype)
-    #     conditioning_image = torch.lerp(
-    #         source_image,
-    #         source_image * (1.0 - conditioning_mask),
-    #         getattr(self, "inpainting_mask_weight", shared.opts.inpainting_mask_weight)
-    #     )
+        # Create another latent image, this time with a masked version of the original input.
+        # Smoothly interpolate between the masked and unmasked latent conditioning image using a parameter.
+        conditioning_mask = conditioning_mask.to(device=source_image.device, dtype=source_image.dtype)
+        conditioning_image = torch.lerp(
+            source_image,
+            source_image * (1.0 - conditioning_mask),
+            1.0
+        )
 
-    #     # Encode the new masked image using first stage of network.
-    #     conditioning_image = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(conditioning_image))
+        # Encode the new masked image using first stage of network.
+        # conditioning_image = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(conditioning_image))
+        conditioning_image = self.model.autoencoder_encode(conditioning_image)
 
-    #     # Create the concatenated conditioning tensor to be fed to `c_concat`
-    #     conditioning_mask = torch.nn.functional.interpolate(conditioning_mask, size=latent_image.shape[-2:])
-    #     conditioning_mask = conditioning_mask.expand(conditioning_image.shape[0], -1, -1, -1)
-    #     image_conditioning = torch.cat([conditioning_mask, conditioning_image], dim=1)
-    #     image_conditioning = image_conditioning.to(shared.device).type(self.sd_model.dtype)
+        # Create the concatenated conditioning tensor to be fed to `c_concat`
+        conditioning_mask = torch.nn.functional.interpolate(conditioning_mask, size=latent_image.shape[-2:])
+        conditioning_mask = conditioning_mask.expand(conditioning_image.shape[0], -1, -1, -1)
+        image_conditioning = torch.cat([conditioning_mask, conditioning_image], dim=1)
+        # image_conditioning = image_conditioning.to(shared.device).type(self.sd_model.dtype)
+        image_conditioning = image_conditioning.to(DEVICE).type(torch.float32)
 
-    #     return image_conditioning
+        return image_conditioning
 
     def img2img_image_conditioning(self, source_image, latent_image, image_mask=None):
         return latent_image.new_zeros(latent_image.shape[0], 5, 1, 1)
@@ -418,11 +445,11 @@ class StableDiffusionProcessing:
     #     """
 
     #     # if shared.opts.use_old_scheduling:
-    #     if opts.use_old_scheduling:
-    #         old_schedules = prompt_parser.get_learned_conditioning_prompt_schedules(required_prompts, steps, hires_steps, False)
-    #         new_schedules = prompt_parser.get_learned_conditioning_prompt_schedules(required_prompts, steps, hires_steps, True)
-    #         if old_schedules != new_schedules:
-    #             self.extra_generation_params["Old prompt editing timelines"] = True
+    #     # if opts.use_old_scheduling:
+    #     #     old_schedules = prompt_parser.get_learned_conditioning_prompt_schedules(required_prompts, steps, hires_steps, False)
+    #     #     new_schedules = prompt_parser.get_learned_conditioning_prompt_schedules(required_prompts, steps, hires_steps, True)
+    #     #     if old_schedules != new_schedules:
+    #     #         self.extra_generation_params["Old prompt editing timelines"] = True
 
     #     # cached_params = self.cached_params(required_prompts, steps, extra_network_data, hires_steps, shared.opts.use_old_scheduling)
     #     cached_params = self.cached_params(required_prompts, steps, extra_network_data, hires_steps, opts.use_old_scheduling)
@@ -449,8 +476,18 @@ class StableDiffusionProcessing:
     #     self.step_multiplier = total_steps // self.steps
     #     self.firstpass_steps = total_steps
 
-    #     self.uc = self.get_conds_with_caching(prompt_parser.get_learned_conditioning, negative_prompts, total_steps, [self.cached_uc], self.extra_network_data)
-    #     self.c = self.get_conds_with_caching(prompt_parser.get_multicond_learned_conditioning, prompts, total_steps, [self.cached_c], self.extra_network_data)
+        # self.uc = self.get_conds_with_caching(prompt_parser.get_learned_conditioning, negative_prompts, total_steps, [self.cached_uc], self.extra_network_data)
+        # self.c = self.get_conds_with_caching(prompt_parser.get_multicond_learned_conditioning, prompts, total_steps, [self.cached_c], self.extra_network_data)
+
+        embedded_prompts = self.prompt_embedding_vectors(prompt_array=self.all_prompts)
+        embedded_prompts_cpu = embedded_prompts.to("cpu")
+        embedded_prompts_list = embedded_prompts_cpu.detach().numpy()
+
+        prompt_embedding = torch.tensor(embedded_prompts_list[0], dtype=torch.float32)
+        prompt_embedding = prompt_embedding.view(1, 77, 768).to(DEVICE)
+
+        self.uc = self.prompt_embedding_vectors([""])[0]
+        self.c = prompt_embedding
 
     # def get_conds(self):
     #     return self.c, self.uc
@@ -584,12 +621,6 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
     # mask_for_overlay: Image = field(default=None, init=False)
     # init_latent: torch.Tensor = field(default=None, init=False)
 
-    # NOTE: Originally not here
-    model: LatentDiffusion = None
-    n_steps: int = 10
-    ddim_eta: float = 0.0
-    device = get_device()
-
     def __post_init__(self):
         super().__post_init__()
 
@@ -615,15 +646,6 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         # self.image_cfg_scale: float = self.image_cfg_scale if shared.sd_model.cond_stage_key == "edit" else None
         # self.image_cfg_scale: float = self.image_cfg_scale if SD_MODEL.cond_stage_key == "edit" else None
         self.image_cfg_scale: float = self.image_cfg_scale
-
-        # NOTE: Initializing stable diffusion
-        sd = StableDiffusion(device=self.device, n_steps=self.n_steps)
-        config = ModelPathConfig()
-        sd.quick_initialize().load_autoencoder(config.get_model(SDconfigs.VAE)).load_decoder(config.get_model(SDconfigs.VAE_DECODER))
-        sd.model.load_unet(config.get_model(SDconfigs.UNET))
-        sd.initialize_latent_diffusion(path='input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors', force_submodels_init=True)
-
-        self.model = sd.model
 
         # self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
         if self.sampler_name == 'ddim':
@@ -768,28 +790,64 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             elif self.inpainting_fill == 3:
                 self.init_latent = self.init_latent * self.mask
 
-        self.image_conditioning = self.init_latent.new_zeros(self.init_latent.shape[0], 5, 1, 1)
+        # self.image_conditioning = self.init_latent.new_zeros(self.init_latent.shape[0], 5, 1, 1)
+        self.image_conditioning = self.inpainting_image_conditioning(image * 2 - 1, self.init_latent, image_mask)
         # self.image_conditioning = self.img2img_image_conditioning(image * 2 - 1, self.init_latent, image_mask)
 
     def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
         # x = self.rng.next()
         # NOTE: This will crash, but problem for later
-        x = create_random_tensors(shape=(10, 512, 512))
+        x = create_random_tensors(shape=(1, 4, 64, 64))
 
         # if self.initial_noise_multiplier != 1.0:
         #     self.extra_generation_params["Noise multiplier"] = self.initial_noise_multiplier
         #     x *= self.initial_noise_multiplier
 
         # samples = self.sampler.sample_img2img(self, self.init_latent, x, conditioning, unconditional_conditioning, image_conditioning=self.image_conditioning)
+        # pil_image = to_pil(x[0])
+        # pil_image.save('output/inpainting/x.png')
+        # init_latent = self.init_latent[:, :3, :, :]
+        # pil_image = to_pil(init_latent[0])
+        # pil_image.save('output/inpainting/orig_latent.png')
+        # pil_image = to_pil(self.mask)
+        # pil_image.save('output/inpainting/mask.png')
+        # pil_image = to_pil(self.image_conditioning[:, :3, :, :][0])
+        # pil_image.save('output/inpainting/image_conditioning.png')
+        # pil_image = to_pil(conditioning)
+        # pil_image.save('output/inpainting/conditioning.png')
+        # pil_image = to_pil(unconditional_conditioning)
+        # pil_image.save('output/inpainting/unconditional_conditioning.png')
+
+        mask = torch.zeros_like(x, device=self.device)
+        mask[:, :, mask.shape[2] // 2:, :] = 1.
+
+        print('init_latent.shape', self.init_latent.shape)
+        print('conditioning.shape', conditioning.shape)
+        print('unconditional_conditioning.shape', unconditional_conditioning.shape)
+        print('image_conditioning.shape', self.image_conditioning.shape)
+        print('mask', mask.shape)
+        print('x', x.shape)
+
+        # samples = self.sampler.sample(shape=[1, 4, 64, 64],
+        #                               cond=conditioning,
+        #                               uncond_cond=unconditional_conditioning
+        #                              )
         samples = self.sampler.paint(x=x,
                                      orig=self.init_latent,
-                                     t_start=0,
+                                     t_start=35,
                                      cond=conditioning,
+                                     uncond_scale=0.1,
+                                     # cond=self.image_conditioning,
                                      uncond_cond=unconditional_conditioning,
-                                     mask=self.image_conditioning)
+                                     mask=mask
+                                     )
 
-        if self.mask is not None:
-            samples = samples * self.nmask + self.init_latent * self.mask
+        images = self.sd.get_image_from_latent(samples)
+        pil_image = to_pil(images[0])
+        pil_image.save('output/inpainting/result_notlatent.png')
+
+        # if self.mask is not None:
+        #     samples = samples * self.nmask + self.init_latent * self.mask
 
         # del x
         # devices.torch_gc()
@@ -946,6 +1004,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             #     x_samples_ddim = decode_latent_batch(p.sd_model, samples_ddim, target_device=devices.cpu, check_for_nans=True)
             x_samples_ddim = samples_ddim
             print('shape', x_samples_ddim.shape)
+            pil_image = to_pil(x_samples_ddim[0])
+            pil_image.save('output/inpainting/result.png')
 
             x_samples_ddim = torch.stack(x_samples_ddim).float()
             x_samples_ddim = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
