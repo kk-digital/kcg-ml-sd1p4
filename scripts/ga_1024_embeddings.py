@@ -197,6 +197,15 @@ def on_mutation(ga_instance, offspring_mutation):
     print("Performing mutation at generation: ", ga_instance.generations_completed)
     log_to_file(f"Performing mutation at generation: {ga_instance.generations_completed}")
 
+predefined_embedding_matrix = np.random.rand(77, 768) # Replace this with your actual predefined embedding matrix
+
+def genes_to_embedding(genes):
+    # Implement your strategy to convert 100 genes to a 77x768 embedding
+    # For example, here we are using genes as weights to compute a weighted sum of some vectors in the predefined embedding matrix
+    embedding = np.zeros((77, 768))
+    for i, gene in enumerate(genes):
+        embedding += gene * predefined_embedding_matrix[:, i % 768]  # This is a very basic example, you'd want a more thoughtful approach
+    return embedding
 
 def store_generation_images(ga_instance):
     start_time = time.time()
@@ -209,7 +218,7 @@ def store_generation_images(ga_instance):
         SEED = random.randint(0, 2 ** 24)
         if FIXED_SEED == True:
             SEED = 54846
-        prompt_embedding = torch.tensor(ind, dtype=torch.float32).to(DEVICE)
+        prompt_embedding = torch.tensor(genes_to_embedding(ind), dtype=torch.float32).to(DEVICE)        
         print(f"Shape of individual (ind): {np.array(ind).shape}")
         print(f"Shape of prompt_embedding before reshaping: {prompt_embedding.shape}")
         prompt_embedding = prompt_embedding.view(1, 77, 768)
