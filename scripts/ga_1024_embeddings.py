@@ -201,11 +201,11 @@ predefined_embedding_matrix = np.random.rand(77, 768) # Replace this with your a
 
 def genes_to_embedding(genes):
     # Implement your strategy to convert 100 genes to a 77x768 embedding
-    # For example, here we are using genes as weights to compute a weighted sum of some vectors in the predefined embedding matrix
     embedding = np.zeros((77, 768))
     for i, gene in enumerate(genes):
-        embedding += gene * predefined_embedding_matrix[:, i % 768]  # This is a very basic example, you'd want a more thoughtful approach
+        embedding += gene * predefined_embedding_matrix[:, [i % 768]]  # Note the additional brackets to keep the dimensions correct for broadcasting
     return embedding
+
 
 def store_generation_images(ga_instance):
     start_time = time.time()
