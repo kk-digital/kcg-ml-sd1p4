@@ -109,7 +109,13 @@ def calculate_fitness_score(ga_instance, solution, solution_idx):
 
     
     # Linear combination of the solution coefficients and the embedded prompts
-    combined_embedding_np = np.dot(solution, embedded_prompts_array)
+    # combined_embedding_np = np.dot(solution, embedded_prompts_array)
+    # print(combined_embedding_np.shape)
+
+    combined_embedding_np = np.zeros((77, 768))
+    for i, coeff in enumerate(solution):
+        combined_embedding_np = combined_embedding_np + embedded_prompts_array[i] * coeff
+
     print(combined_embedding_np.shape)
 
     # Convert the combined numpy array to a PyTorch tensor
