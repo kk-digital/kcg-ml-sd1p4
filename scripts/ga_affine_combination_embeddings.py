@@ -407,7 +407,8 @@ def main():
     np.random.seed(seed)
 
     for i in range(population_size):
-        random_weights = np.random.rand(num_prompts)
+        random_weights = np.random.dirichlet(np.ones(num_prompts),size=1).flatten()
+        print(sum(random_weights))
         normalized_weights = (random_weights - np.mean(random_weights)) / np.std(random_weights)
         random_population.append(normalized_weights)
 
