@@ -287,8 +287,9 @@ NULL_PROMPT = prompt_embedding_vectors(sd, [""])[0]
 # print("NULL_PROMPT size= ", str(torch.Tensor.size(NULL_PROMPT)))
 
 # generate prompts and get embeddings
+num_genes = 1024  # Each individual is 1024 floats
 prompt_phrase_length = 6  # number of words in prompt
-prompts_array = ga.generate_prompts(population_size, prompt_phrase_length)
+prompts_array = ga.generate_prompts(num_genes, prompt_phrase_length)
 
 # get prompt_str array
 prompts_str_array = []
@@ -308,7 +309,7 @@ print("genetic_algorithm_loop: population_size= ", population_size)
 embedded_prompts_cpu = embedded_prompts.to("cpu")
 embedded_prompts_array = embedded_prompts_cpu.detach().numpy()
 print(f"array shape: {embedded_prompts_array.shape}")
-embedded_prompts_list = embedded_prompts_array.reshape(population_size, 77 * 768).tolist()
+embedded_prompts_list = embedded_prompts_array.reshape(num_genes, 77 * 768).tolist()
 
 
 
@@ -318,7 +319,6 @@ embedded_prompts_list = embedded_prompts_array.reshape(population_size, 77 * 768
 
 # note: uniform is good, two_points"
 
-num_genes = 1024  # Each individual is 1024 floats
 initial_population = np.random.uniform(low=-1, high=1, size=(population_size, num_genes)).tolist()
 
 # Initialize the GA
