@@ -133,8 +133,6 @@ def calculate_fitness_score(ga_instance, solution, solution_idx):
     # Create image from latent
     image = sd.get_image_from_latent(latent)
 
-    # Move back to cpu and free the memory
-    combined_embedding_np.to("cpu")
     del combined_embedding_np
 
     prompt_embedding = prompt_embedding.to("cpu")
