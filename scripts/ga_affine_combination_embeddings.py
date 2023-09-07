@@ -274,10 +274,7 @@ def read_prompts_from_zip(zip_file_path, num_prompts):
     with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
         # Get a list of all file names in the zip archive
         file_list = zip_ref.namelist()
-        print(file_list)
         random.shuffle(file_list)
-        print('after')
-        print(file_list)
         # Initialize a list to store loaded arrays
         loaded_arrays = []
 
@@ -411,8 +408,8 @@ def main():
     np.random.seed(seed)
 
     for i in range(population_size):
-        #random_weights = np.random.dirichlet(np.ones(num_prompts), size=1).flatten()
-        random_weights = np.full(num_prompts, 1.0 / num_prompts)
+        random_weights = np.random.dirichlet(np.ones(num_prompts), size=1).flatten()
+        #random_weights = np.full(num_prompts, 1.0 / num_prompts)
         #normalized_weights = (random_weights - np.mean(random_weights)) / np.std(random_weights)
         random_population.append(random_weights)
 
