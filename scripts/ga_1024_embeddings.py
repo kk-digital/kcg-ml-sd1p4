@@ -210,6 +210,8 @@ def store_generation_images(ga_instance):
         if FIXED_SEED == True:
             SEED = 54846
         prompt_embedding = torch.tensor(ind, dtype=torch.float32).to(DEVICE)
+        print(f"Shape of individual (ind): {np.array(ind).shape}")
+        print(f"Shape of prompt_embedding before reshaping: {prompt_embedding.shape}")
         prompt_embedding = prompt_embedding.view(1, 77, 768)
 
         print("prompt_embedding, tensor size= ", str(torch.Tensor.size(prompt_embedding)))
