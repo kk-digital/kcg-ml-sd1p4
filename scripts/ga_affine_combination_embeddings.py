@@ -49,7 +49,7 @@ def parse_args():
     parser.add_argument("--steps", type=int, default=20, help="Denoiser steps")
     parser.add_argument("--device", type=str, default="cuda", help="cuda device")
     parser.add_argument("--num_phrases", type=int, default=12, help="number of phrases in the prompt generator")
-    parser.add_argument("--cfg_strength", type=float, default=7.5)
+    parser.add_argument("--cfg_strength", type=float, default=12)
     parser.add_argument("--sampler", type=str, default="ddim", help="sampler to use for stable diffusion")
     parser.add_argument("--checkpoint_path", type=str, default="./input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors")
     parser.add_argument("--image_width", type=int, default=512)
@@ -263,7 +263,7 @@ def fitness_func(ga_instance, solution, solution_idx):
     chad_score, chad_score_scaled = embeddings_chad_score(device, embedding_vector, generation, solution_idx, seed, output_directory, chad_score_predictor, clip_text_embedder, txt2img, util_clip,
                                                           cfg_strength, image_width, image_height)
 
-    return chad_score_scaled
+    return chad_score_scaled.item()
 
 def store_generation_images(ga_instance):
     return 0
@@ -381,8 +381,8 @@ def main():
     # number of chromozome genes
     num_genes = num_prompts
 
-    prompt_list = read_prompts_from_zip(prompts_path, num_prompts)
-    #prompt_list = generate_prompts(num_prompts, num_phrases)
+    #prompt_list = read_prompts_from_zip(prompts_path, num_prompts)
+    prompt_list = generate_prompts(num_prompts, num_phrases)
 
     # embeddings array
     embedded_prompts_array = []
@@ -390,8 +390,11 @@ def main():
     for prompt in prompt_list:
         # get the embedding from positive text prompt
         # prompt_str = prompt.positive_prompt_str
-        prompt = prompt.flatten()[0]
-        prompt_str = prompt['positive-prompt-str']
+
+        #prompt = prompt.flatten()[0]
+        #prompt_str = prompt['positive-prompt-str']
+
+        prompt_str = prompt.positive_prompt_str
         embedded_prompts = clip_text_embedder(prompt_str)
 
         embedded_prompts_array.append(embedded_prompts)
