@@ -147,7 +147,7 @@ def calculate_fitness_score(ga_instance, solution, solution_idx):
         pil_image = pil_image.convert("RGB")
 
     # Calculate fitness score
-    fitness_score = filesize_fitness(pil_image)
+    fitness_score = white_background_fitness(pil_image)
     return fitness_score
 
 
