@@ -134,8 +134,12 @@ def calculate_fitness_score(ga_instance, solution, solution_idx):
     image = sd.get_image_from_latent(latent)
 
     # Move back to cpu and free the memory
-    prompt_embedding.to("cpu")
+    combined_embedding_np.to("cpu")
+    del combined_embedding_np
+
+    prompt_embedding = prompt_embedding.to("cpu")
     del prompt_embedding
+
 
     pil_image = to_pil(image[0])  # Convert to (height, width, channels)
 
