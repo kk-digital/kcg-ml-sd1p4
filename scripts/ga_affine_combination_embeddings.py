@@ -54,7 +54,7 @@ def parse_args():
     parser.add_argument("--checkpoint_path", type=str, default="./input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors")
     parser.add_argument("--image_width", type=int, default=512)
     parser.add_argument("--image_height", type=int, default=512)
-    parser.add_argument("--output", type=str, default="./output/ga_latent/", help="Specifies the output folder")
+    parser.add_argument("--output", type=str, default="./output/ga_affine_combination_embeddings/", help="Specifies the output folder")
     parser.add_argument("--use_random_images", type=bool, default=False)
     parser.add_argument("--num_prompts", type=int, default=1024)
     parser.add_argument('--prompts_path', type=str, default='/input/prompt-list-civitai/prompt_list_civitai_10k_512_phrases.zip')
