@@ -213,21 +213,23 @@ def embeddings_chad_score(device, embeddings_vector, generation, index, seed, ou
     # Map images to `[0, 1]` space and clip
     images = torch.clamp((images + 1.0) / 2.0, min=0.0, max=1.0)
 
+    images_cpu = images.cpu()
 
-    ## Normalize the image tensor
-    mean = torch.tensor([0.48145466, 0.4578275, 0.40821073], device=device).view(-1, 1, 1)
-    std = torch.tensor([0.26862954, 0.26130258, 0.27577711], device=device).view(-1, 1, 1)
+    del images
+    torch.cuda.empty_cache()
 
-    normalized_image_tensor = (images - mean) / std
+    images_cpu = images_cpu.permute(0, 2, 3, 1)
+    images_cpu = images_cpu.detach().float().numpy()
 
-    # Resize the image to [N, C, 224, 224]
-    transform = transforms.Compose([transforms.Resize((224, 224))])
-    resized_image_tensor = transform(normalized_image_tensor)
+    image_list = []
+    # Save images
+    for i, img in enumerate(images_cpu):
+        img = Image.fromarray((255. * img).astype(np.uint8))
+        image_list.append(img)
 
-    # Get the CLIP features
-    image_features = util_clip.model.encode_image(resized_image_tensor)
-    image_features = image_features.squeeze(0)
+    image = image_list[0]
 
+    image_features = util_clip.get_image_features(image)
     image_features = image_features.to(torch.float32)
 
     # cleanup
