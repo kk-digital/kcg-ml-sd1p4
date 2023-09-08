@@ -10,9 +10,19 @@ import argparse
 import csv
 import zipfile
 
-
 base_dir = os.getcwd()
 sys.path.insert(0, base_dir)
+
+from toolz import pipe
+from leap_ec import context
+from leap_ec import Individual as leapIndividual
+from leap_ec.decoder import Decoder as leapDecoder
+from leap_ec.problem import ScalarProblem
+from leap_ec.real_rep.ops import mutate_gaussian
+from leap_ec import util
+import leap_ec.ops as ops
+
+import numpy as np
 
 from chad_score.chad_score import ChadScorePredictor
 from ga.prompt_generator import generate_prompts
@@ -23,9 +33,12 @@ from stable_diffusion_base_script import StableDiffusionBaseScript
 from stable_diffusion.utils_backend import get_autocast, set_seed
 # TODO: rename stable_diffusion.utils_backend to /utils/cuda.py
 from stable_diffusion.utils_backend import get_device
-from stable_diffusion.utils_image import *
+from stable_diffusion.utils_image import save_images
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from ga.utils import get_next_ga_dir
+
+from PIL import Image
+
 import ga
 from ga.fitness_chad_score import compute_chad_score_from_pil
 
@@ -58,7 +71,6 @@ def parse_args():
     args = parser.parse_args()
 
     return args
-
 
 
 class Txt2Img(StableDiffusionBaseScript):
@@ -118,14 +130,11 @@ class Txt2Img(StableDiffusionBaseScript):
             return x
 
 
-
 def log_to_file(message, output_directory):
     log_path = os.path.join(output_directory, "log.txt")
 
     with open(log_path, "a") as log_file:
         log_file.write(message + "\n")
-
-
 
 
 def on_fitness(ga_instance, population_fitness):
@@ -172,6 +181,7 @@ def on_mutation(ga_instance, offspring_mutation):
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
+
 def combine_embeddings(embeddings_array, weight_array, device):
 
     # empty embedding filled with zeroes
@@ -182,6 +192,7 @@ def combine_embeddings(embeddings_array, weight_array, device):
         result_embedding += embedding * weight
 
     return result_embedding
+
 
 def combine_embeddings_numpy(embeddings_array_numpy, weight_array, device):
 
@@ -197,6 +208,7 @@ def combine_embeddings_numpy(embeddings_array_numpy, weight_array, device):
     result_embedding = result_embedding.to(torch.float32)
 
     return result_embedding
+
 
 def generate_image_from_embedding(embeddings_vector, index, seed, output, clip_text_embedder, txt2img, cfg_strength=12,
                           image_width=512, image_height=512):
@@ -218,8 +230,7 @@ def generate_image_from_embedding(embeddings_vector, index, seed, output, clip_t
     image_list, image_hash_list = save_images(images, generation_dir + '/' + str(index + 1) + '.jpg')
 
 
-def embeddings_chad_score(device, embeddings_vector, generation, index, seed, output, chad_score_predictor, clip_text_embedder, txt2img, util_clip, cfg_strength=12,
-                          image_width=512, image_height=512):
+def embeddings_chad_score(device, embeddings_vector, generation, index, seed, output, chad_score_predictor, clip_text_embedder, txt2img, util_clip, cfg_strength=12, image_width=512, image_height=512):
 
     null_prompt = clip_text_embedder('')
 
@@ -277,7 +288,6 @@ def embeddings_chad_score(device, embeddings_vector, generation, index, seed, ou
 
 
 def fitness_func(ga_instance, solution, solution_idx):
-    sd = ga_instance.sd
     device = ga_instance.device
     util_clip = ga_instance.util_clip
     chad_score_predictor = ga_instance.chad_score_predictor
@@ -298,8 +308,10 @@ def fitness_func(ga_instance, solution, solution_idx):
 
     return chad_score.item()
 
+
 def store_generation_images(ga_instance):
     return 0
+
 
 def read_prompts_from_zip(zip_file_path, num_prompts):
     # Open the zip file for reading
@@ -323,8 +335,9 @@ def read_prompts_from_zip(zip_file_path, num_prompts):
                 break  # Stop after loading the first 100 .npz files
 
         return loaded_arrays
-def main():
 
+
+def main():
     args = parse_args()
     generations = args.generations
     population_size = args.population
@@ -334,13 +347,11 @@ def main():
     crossover_type = args.crossover_type
     mutation_type = args.mutation_type
     steps = args.steps
-    num_phrases = args.num_phrases
     cfg_strength = args.cfg_strength
     sampler = args.sampler
     checkpoint_path = args.checkpoint_path
     image_width = args.image_width
     image_height = args.image_height
-    use_random_images = args.use_random_images
     num_prompts = args.num_prompts
     prompts_path = args.prompts_path
 
@@ -393,7 +404,6 @@ def main():
     # mutation_type = "adaptive" #try adaptive mutation
     # note: uniform is good, two_points"
 
-
     # Load Stable Diffusion
     sd = StableDiffusion(device=device, n_steps=steps)
     sd.quick_initialize().load_autoencoder(config.get_model(SDconfigs.VAE)).load_decoder(config.get_model(SDconfigs.VAE_DECODER))
@@ -415,7 +425,7 @@ def main():
     num_genes = num_prompts
 
     prompt_list = read_prompts_from_zip(prompts_path, num_prompts)
-    #prompt_list = generate_prompts(num_prompts, num_phrases)
+    # prompt_list = generate_prompts(num_prompts, num_phrases)
 
     # embeddings array
     embedded_prompts_array = []
@@ -430,7 +440,7 @@ def main():
         prompt_str = prompt['positive-prompt-str']
         print(prompt_str)
 
-        #prompt_str = prompt.positive_prompt_str
+        # prompt_str = prompt.positive_prompt_str
         embedded_prompts = clip_text_embedder(prompt_str)
 
         seed = 6789
@@ -450,10 +460,9 @@ def main():
 
     for i in range(population_size):
         random_weights = np.random.dirichlet(np.ones(num_prompts), size=1).flatten()
-        #random_weights = np.full(num_prompts, 1.0 / num_prompts)
-        #normalized_weights = (random_weights - np.mean(random_weights)) / np.std(random_weights)
+        # random_weights = np.full(num_prompts, 1.0 / num_prompts)
+        # normalized_weights = (random_weights - np.mean(random_weights)) / np.std(random_weights)
         random_population.append(random_weights)
-
 
     # Initialize the GA
     ga_instance = pygad.GA(initial_population=random_population,
@@ -516,11 +525,10 @@ def main():
     clip_calculations_per_second = num_clip_calculations / clip_total_time
 
     # Print the results
-    log_to_file(f"----------------------------------" , output_directory)
+    log_to_file("----------------------------------", output_directory)
     log_to_file(f"Number of Clip Calculations: {num_clip_calculations} ", output_directory)
     log_to_file(f"Total Time for Clip Calculations: {clip_total_time} seconds", output_directory)
     log_to_file(f"Clip Calculations per Second {clip_calculations_per_second} ", output_directory)
-
 
 
 if __name__ == "__main__":
