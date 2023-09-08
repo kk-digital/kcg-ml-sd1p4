@@ -56,7 +56,7 @@ def parse_args():
     parser.add_argument("--output", type=str, default="./output/ga_affine_combination_embeddings/", help="Specifies the output folder")
     parser.add_argument("--use_random_images", type=bool, default=False)
     parser.add_argument("--num_prompts", type=int, default=1024)
-    parser.add_argument('--prompts_path', type=str, default='/input/prompt-list-civitai/prompt_list_civitai_10k_512_phrases.zip')
+    parser.add_argument('--prompts_path', type=str, default='/input/prompt-list-civitai/prompt_list_civitai_2k_all_phrases_no_prefix.zip')
 
     args = parser.parse_args()
 
@@ -200,6 +200,26 @@ def combine_embeddings_numpy(embeddings_array_numpy, weight_array, device):
     result_embedding = result_embedding.to(torch.float32)
 
     return result_embedding
+
+def generate_image_from_embedding(embeddings_vector, index, seed, output, clip_text_embedder, txt2img, cfg_strength=12,
+                          image_width=512, image_height=512):
+    null_prompt = clip_text_embedder('')
+
+    latent = txt2img.generate_images_latent_from_embeddings(
+        batch_size=1,
+        embedded_prompt=embeddings_vector,
+        null_prompt=null_prompt,
+        uncond_scale=cfg_strength,
+        seed=seed,
+        w=image_width,
+        h=image_height
+    )
+
+    images = txt2img.get_image_from_latent(latent)
+    generation_dir = output + '/starting_images_from_embeddings/'
+    os.makedirs(generation_dir, exist_ok=True)
+    image_list, image_hash_list = save_images(images, generation_dir + '/' + str(index + 1) + '.jpg')
+
 
 def embeddings_chad_score(device, embeddings_vector, generation, index, seed, output, chad_score_predictor, clip_text_embedder, txt2img, util_clip, cfg_strength=12,
                           image_width=512, image_height=512):
@@ -403,15 +423,23 @@ def main():
     # embeddings array
     embedded_prompts_array = []
     # Get N Embeddings
+
+    idx = 0
     for prompt in prompt_list:
         # get the embedding from positive text prompt
         # prompt_str = prompt.positive_prompt_str
 
         prompt = prompt.flatten()[0]
         prompt_str = prompt['positive-prompt-str']
+        print(prompt_str)
 
         #prompt_str = prompt.positive_prompt_str
         embedded_prompts = clip_text_embedder(prompt_str)
+
+        seed = 6789
+
+        generate_image_from_embedding(embedded_prompts, idx, seed, output_directory, clip_text_embedder, txt2img, cfg_strength, image_width, image_height)
+        idx = idx + 1
 
         embedded_prompts_numpy = embedded_prompts.detach().cpu().numpy()
 
@@ -422,10 +450,6 @@ def main():
 
     # Create a list to store the random population
     random_population = []
-
-    # Set a seed based on the current time
-    seed = int(time.time())
-    np.random.seed(seed)
 
     for i in range(population_size):
         random_weights = np.random.dirichlet(np.ones(num_prompts), size=1).flatten()
