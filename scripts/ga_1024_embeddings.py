@@ -147,7 +147,7 @@ def calculate_fitness_score(ga_instance, solution, solution_idx):
         pil_image = pil_image.convert("RGB")
 
     # Calculate fitness score
-    fitness_score = white_background_fitness(pil_image)
+    fitness_score = filesize_fitness(pil_image)
     return fitness_score
 
 
@@ -291,7 +291,7 @@ NULL_PROMPT = prompt_embedding_vectors(sd, [""])[0]
 # print("NULL_PROMPT size= ", str(torch.Tensor.size(NULL_PROMPT)))
 
 # generate prompts and get embeddings
-num_genes = 1024  # Each individual is 1024 floats
+num_genes = 100  # Each individual is 1024 floats
 prompt_phrase_length = 6  # number of words in prompt
 prompts_array = ga.generate_prompts(num_genes, prompt_phrase_length)
 
@@ -314,7 +314,6 @@ embedded_prompts_cpu = embedded_prompts.to("cpu")
 embedded_prompts_array = embedded_prompts_cpu.detach().numpy()
 print(f"array shape: {embedded_prompts_array.shape}")
 embedded_prompts_list = embedded_prompts_array.reshape(num_genes, 77 * 768).tolist()
-
 
 predefined_embedding_matrix = embedded_prompts_array.mean(axis=0).reshape((77, 768))
 
