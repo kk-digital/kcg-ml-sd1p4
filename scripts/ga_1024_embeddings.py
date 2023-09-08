@@ -305,8 +305,7 @@ for prompt in prompts_array:
 
 print(prompt_str)
 embedded_prompts = prompt_embedding_vectors(sd, prompt_array=prompts_str_array)
-del embedded_prompts
-torch.cuda.empty_cache()
+
 
 print("genetic_algorithm_loop: population_size= ", population_size)
 
@@ -314,10 +313,13 @@ print("genetic_algorithm_loop: population_size= ", population_size)
 # TODO: What is this doing?
 # Move the 'embedded_prompts' tensor to CPU memory
 embedded_prompts_cpu = embedded_prompts.to("cpu")
+del embedded_prompts
 torch.cuda.empty_cache()
 embedded_prompts_array = embedded_prompts_cpu.detach().numpy()
+del embedded_prompts_cpu
 print(f"array shape: {embedded_prompts_array.shape}")
 embedded_prompts_list = embedded_prompts_array.reshape(num_genes, 77 * 768).tolist()
+del embedded_prompts_array
 
 
 
