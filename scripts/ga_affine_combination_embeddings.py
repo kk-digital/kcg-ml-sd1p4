@@ -431,6 +431,7 @@ def main():
 
         prompt = prompt.flatten()[0]
         prompt_str = prompt['positive-prompt-str']
+        print(prompt_str)
 
         #prompt_str = prompt.positive_prompt_str
         embedded_prompts = clip_text_embedder(prompt_str)
