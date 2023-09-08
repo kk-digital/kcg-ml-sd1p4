@@ -258,6 +258,7 @@ def prompt_embedding_vectors(sd, prompt_array):
     embedded_prompts = ga.clip_text_get_prompt_embedding(config, prompts=prompt_array)
     # print("embedded_prompt, tensor shape= "+ str(torch.Tensor.size(embedded_prompts)))
     embedded_prompts.to("cpu")
+    torch.cuda.empty_cache()
     return embedded_prompts
 
 # Call the GA loop function with your initialized StableDiffusion model
