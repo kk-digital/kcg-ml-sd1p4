@@ -540,6 +540,64 @@ python scripts/split_image.py --image_path './test/test_images/512x512_test.png'
 ```
 
 
+
+### Affine Combination Of Embeddings GA
+
+Combines N Number of prompts, the prompts are loaded from zip file
+Each prompt has a weight
+We search the weight vector space and try to maximize the fitness function
+The fitness function for now is chad score
+```
+options:
+  -h, --help            show this help message and exit
+  --generations GENERATIONS
+                        The number of generations to execute
+  --mutation_probability MUTATION_PROBABILITY
+                        The probability of the occurence of a mutation
+  --keep_elitism KEEP_ELITISM
+                        Whether to keep the top fitness individual or not
+  --crossover_type CROSSOVER_TYPE
+                        Type of the crossover
+  --mutation_type MUTATION_TYPE
+                        Type of the mutation (swapn, random ...)
+  --mutation_percent_genes MUTATION_PERCENT_GENES    
+                        Percentage of the gene that will be mutated
+  --population POPULATION
+                        Number of starting population
+  --steps STEPS
+                        Number of steps for the sampler (iterations)
+                       
+  --device DEVICE
+                        Defaults to cuda:0
+  --num_phrases NUM_PHRASES
+                        Number of phrases to use         
+  --cfg_strength CFG_STRENGTH
+                        Defaults to 12                 
+  --sampler SAMPLER
+                        Sampler name (ddim, ddpm)                  
+                        
+  --checkpoint_path CHECKPOINT_PATH
+                        Path to the model checkpoint                  
+                        
+  --image_width IMAGE_WIDTH
+                        Generated image width                
+  --image_height IMAGE_HEIGHT
+                        Generated image height                 
+                        
+  --output OUTPUT
+                        Path to output folder                  
+  --num_prompts NUM_PROMPTS
+                        Number of prompts that will be used in the affine combination of embeddings                          
+ --prompts_path PROMPTs_PATH
+                        Path to the prompts zip file                        
+```
+
+Example Usage:
+```
+ python ./scripts/ga_affine_combination_embeddings.py --population 6 --num_prompts 6
+```
+
+
 ## Tests
 ### To run all scripts
 1. Make an env
