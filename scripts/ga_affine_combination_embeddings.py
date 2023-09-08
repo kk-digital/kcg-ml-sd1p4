@@ -186,6 +186,19 @@ def combine_embeddings(embeddings_array, weight_array, device):
 
     return result_embedding
 
+def combine_embeddings_numpy(embeddings_array_numpy, weight_array, device):
+
+    # empty embedding filled with zeroes
+    result_embedding_numpy = np.zeros((1, 77, 768))
+
+    # Multiply each tensor by its corresponding float and sum up
+    for embedding, weight in zip(embeddings_array_numpy, weight_array):
+        result_embedding_numpy += embedding * weight
+
+    result_embedding = torch.from_numpy(result_embedding_numpy, device = device, dtype = torch.float32)
+
+    return result_embedding
+
 def embeddings_chad_score(device, embeddings_vector, generation, index, seed, output, chad_score_predictor, clip_text_embedder, txt2img, util_clip, cfg_strength=12,
                           image_width=512, image_height=512):
 
@@ -260,7 +273,7 @@ def fitness_func(ga_instance, solution, solution_idx):
     image_height = ga_instance.image_height
     seed = 6789
 
-    embedding_vector = combine_embeddings(embedded_prompts_array, weight_array, device)
+    embedding_vector = combine_embeddings_numpy(embedded_prompts_array, weight_array, device)
     chad_score, chad_score_scaled = embeddings_chad_score(device, embedding_vector, generation, solution_idx, seed, output_directory, chad_score_predictor, clip_text_embedder, txt2img, util_clip,
                                                           cfg_strength, image_width, image_height)
 
@@ -398,7 +411,12 @@ def main():
         #prompt_str = prompt.positive_prompt_str
         embedded_prompts = clip_text_embedder(prompt_str)
 
-        embedded_prompts_array.append(embedded_prompts)
+        embedded_prompts_numpy = embedded_prompts.detach().cpu().numpy()
+
+        del embedded_prompts
+        torch.cuda.empty_cache()
+
+        embedded_prompts_array.append(embedded_prompts_numpy)
 
     # Create a list to store the random population
     random_population = []
