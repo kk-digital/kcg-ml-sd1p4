@@ -38,11 +38,11 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Run genetic algorithm with specified parameters.")
 
     parser.add_argument('--generations', type=int, default=100, help="Number of generations to run.")
-    parser.add_argument('--mutation_probability', type=float, default=0.001, help="Probability of mutation.")
+    parser.add_argument('--mutation_probability', type=float, default=0.2, help="Probability of mutation.")
     parser.add_argument('--keep_elitism', type=int, default=1, help="1 to keep best individual, 0 otherwise.")
     parser.add_argument('--crossover_type', type=str, default="uniform", help="Type of crossover operation.")
-    parser.add_argument('--mutation_type', type=str, default="random", help="Type of mutation operation.")
-    parser.add_argument('--mutation_percent_genes', type=float, default=0.001,
+    parser.add_argument('--mutation_type', type=str, default="swap", help="Type of mutation operation.")
+    parser.add_argument('--mutation_percent_genes', type=float, default=0.1,
                         help="The percentage of genes to be mutated.")
     parser.add_argument('--population', type=int, default=80, help="Starting population size")
     parser.add_argument("--steps", type=int, default=20, help="Denoiser steps")
@@ -264,7 +264,7 @@ def fitness_func(ga_instance, solution, solution_idx):
     chad_score, chad_score_scaled = embeddings_chad_score(device, embedding_vector, generation, solution_idx, seed, output_directory, chad_score_predictor, clip_text_embedder, txt2img, util_clip,
                                                           cfg_strength, image_width, image_height)
 
-    return chad_score.item()
+    return chad_score_scaled.item()
 
 def store_generation_images(ga_instance):
     return 0
@@ -300,7 +300,7 @@ def main():
     mutation_probability = args.mutation_probability
     keep_elitism = args.keep_elitism
     crossover_type = args.crossover_type
-    mutation_type = None
+    mutation_type = args.mutation_type
     steps = args.steps
     num_phrases = args.num_phrases
     cfg_strength = args.cfg_strength
