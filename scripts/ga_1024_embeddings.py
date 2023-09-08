@@ -304,8 +304,8 @@ for prompt in prompts_array:
     prompts_str_array.append(prompt_str)
 
 print(prompt_str)
+print("test")
 embedded_prompts = prompt_embedding_vectors(sd, prompt_array=prompts_str_array)
-
 
 print("genetic_algorithm_loop: population_size= ", population_size)
 
