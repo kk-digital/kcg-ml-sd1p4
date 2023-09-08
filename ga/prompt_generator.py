@@ -299,10 +299,11 @@ def generate_prompts_from_csv(csv_dataset_path,
             prompt_index = random_prompt.Index
 
             # count ratio
-            chosen_phrase_positive_ratio = positive_count_list[prompt_index]/negative_count_list[prompt_index]
-            if chosen_phrase_positive_ratio < positive_ratio_threshold:
-                # then dont use this phrase
-                continue
+            if negative_count_list[prompt_index] != 0:
+                chosen_phrase_positive_ratio = positive_count_list[prompt_index]/negative_count_list[prompt_index]
+                if chosen_phrase_positive_ratio < positive_ratio_threshold:
+                    # then dont use this phrase
+                    continue
 
             chosen_phrase_size = phrases_token_size[prompt_index]
             sum_token_size = positive_prompt_total_token_size + chosen_phrase_size
@@ -321,10 +322,11 @@ def generate_prompts_from_csv(csv_dataset_path,
             prompt_index = random_prompt.Index
 
             # count ratio
-            chosen_phrase_negative_ratio = negative_count_list[prompt_index] / positive_count_list[prompt_index]
-            if chosen_phrase_negative_ratio < negative_ratio_threshold:
-                # then dont use this phrase
-                continue
+            if positive_count_list[prompt_index] != 0:
+                chosen_phrase_negative_ratio = negative_count_list[prompt_index] / positive_count_list[prompt_index]
+                if chosen_phrase_negative_ratio < negative_ratio_threshold:
+                    # then dont use this phrase
+                    continue
 
             chosen_phrase_size = phrases_token_size[prompt_index]
             sum_token_size = negative_prompt_total_token_size + chosen_phrase_size
