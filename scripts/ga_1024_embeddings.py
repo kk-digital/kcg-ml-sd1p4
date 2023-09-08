@@ -195,15 +195,6 @@ def on_mutation(ga_instance, offspring_mutation):
     print("Performing mutation at generation: ", ga_instance.generations_completed)
     log_to_file(f"Performing mutation at generation: {ga_instance.generations_completed}")
 
-predefined_embedding_matrix = np.random.rand(77, 768) # Replace this with your actual predefined embedding matrix
-
-def genes_to_embedding(genes):
-    # Implement your strategy to convert 100 genes to a 77x768 embedding
-    embedding = np.zeros((77, 768))
-    for i, gene in enumerate(genes):
-        embedding += gene * predefined_embedding_matrix[:, [i % 768]]  # Note the additional brackets to keep the dimensions correct for broadcasting
-    return embedding
-
 
 def store_generation_images(ga_instance):
     start_time = time.time()
@@ -323,6 +314,16 @@ embedded_prompts_cpu = embedded_prompts.to("cpu")
 embedded_prompts_array = embedded_prompts_cpu.detach().numpy()
 print(f"array shape: {embedded_prompts_array.shape}")
 embedded_prompts_list = embedded_prompts_array.reshape(num_genes, 77 * 768).tolist()
+
+
+predefined_embedding_matrix = embedded_prompts_array.mean(axis=0).reshape((77, 768))
+
+def genes_to_embedding(genes):
+    # Implement your strategy to convert 100 genes to a 77x768 embedding
+    embedding = np.zeros((77, 768))
+    for i, gene in enumerate(genes):
+        embedding += gene * predefined_embedding_matrix[:, [i % 768]]  # Note the additional brackets to keep the dimensions correct for broadcasting
+    return embedding
 
 
 
