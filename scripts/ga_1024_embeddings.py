@@ -255,14 +255,10 @@ def store_generation_images(ga_instance):
 
 def prompt_embedding_vectors(sd, prompt_array):
     # Generate embeddings for each prompt
-    embedded_prompts_original = ga.clip_text_get_prompt_embedding(config, prompts=prompt_array)
+    embedded_prompts = ga.clip_text_get_prompt_embedding(config, prompts=prompt_array)
     # print("embedded_prompt, tensor shape= "+ str(torch.Tensor.size(embedded_prompts)))
-    embedded_prompts = embedded_prompts_original.to("cpu")
-    torch.cuda.empty_cache()  # Clear CUDA cache
-    del embedded_prompts  # Delete the tensor
+    embedded_prompts.to("cpu")
     return embedded_prompts
-
-
 
 # Call the GA loop function with your initialized StableDiffusion model
 
