@@ -305,6 +305,8 @@ for prompt in prompts_array:
 
 print(prompt_str)
 embedded_prompts = prompt_embedding_vectors(sd, prompt_array=prompts_str_array)
+del embedded_prompts
+torch.cuda.empty_cache()
 
 print("genetic_algorithm_loop: population_size= ", population_size)
 
