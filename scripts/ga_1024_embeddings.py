@@ -134,7 +134,6 @@ def calculate_fitness_score(ga_instance, solution, solution_idx):
     image = sd.get_image_from_latent(latent)
 
     # Move back to cpu and free the memory
-    combined_embedding_np.to("cpu")
     del combined_embedding_np
 
     prompt_embedding = prompt_embedding.to("cpu")
@@ -236,6 +235,8 @@ def store_generation_images(ga_instance):
         torch.cuda.empty_cache()
         filename = os.path.join(file_dir, f'g{generation:04}_{i:03}.png')
         pil_image.save(filename)
+        del pil_image  # Delete the PIL image
+        torch.cuda.empty_cache()
 
 
     end_time = time.time()  # End timing for generation
@@ -254,10 +255,13 @@ def store_generation_images(ga_instance):
 
 def prompt_embedding_vectors(sd, prompt_array):
     # Generate embeddings for each prompt
-    embedded_prompts = ga.clip_text_get_prompt_embedding(config, prompts=prompt_array)
+    embedded_prompts_original = ga.clip_text_get_prompt_embedding(config, prompts=prompt_array)
     # print("embedded_prompt, tensor shape= "+ str(torch.Tensor.size(embedded_prompts)))
-    embedded_prompts.to("cpu")
+    embedded_prompts = embedded_prompts_original.to("cpu")
+    torch.cuda.empty_cache()  # Clear CUDA cache
+    del embedded_prompts  # Delete the tensor
     return embedded_prompts
+
 
 
 # Call the GA loop function with your initialized StableDiffusion model
