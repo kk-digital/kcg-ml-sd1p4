@@ -195,7 +195,9 @@ def combine_embeddings_numpy(embeddings_array_numpy, weight_array, device):
     for embedding, weight in zip(embeddings_array_numpy, weight_array):
         result_embedding_numpy += embedding * weight
 
-    result_embedding = torch.from_numpy(result_embedding_numpy, device = device, dtype = torch.float32)
+    result_embedding = torch.from_numpy(result_embedding_numpy)
+    result_embedding = result_embedding.to(device)
+    result_embedding = result_embedding.to(torch.float32)
 
     return result_embedding
 
