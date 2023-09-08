@@ -41,7 +41,7 @@ parser.add_argument('--generations', type=int, default=2000, help="Number of gen
 parser.add_argument('--mutation_probability', type=float, default=0.05, help="Probability of mutation.")
 parser.add_argument('--keep_elitism', type=int, default=0, help="1 to keep best individual, 0 otherwise.")
 parser.add_argument('--crossover_type', type=str, default="single_point", help="Type of crossover operation.")
-parser.add_argument('--mutation_type', type=str, default="swap", help="Type of mutation operation.")
+parser.add_argument('--mutation_type', type=str, default="random", help="Type of mutation operation.")
 parser.add_argument('--mutation_percent_genes', type=float, default="0.001",
                     help="The percentage of genes to be mutated.")
 args = parser.parse_args()
@@ -133,6 +133,8 @@ def calculate_fitness_score(ga_instance, solution, solution_idx):
     # Create image from latent
     image = sd.get_image_from_latent(latent)
 
+    # Move back to cpu and free the memory
+    combined_embedding_np.to("cpu")
     del combined_embedding_np
 
     prompt_embedding = prompt_embedding.to("cpu")
@@ -207,9 +209,7 @@ def store_generation_images(ga_instance):
         SEED = random.randint(0, 2 ** 24)
         if FIXED_SEED == True:
             SEED = 54846
-        prompt_embedding = torch.tensor(genes_to_embedding(ind), dtype=torch.float32).to(DEVICE)        
-        print(f"Shape of individual (ind): {np.array(ind).shape}")
-        print(f"Shape of prompt_embedding before reshaping: {prompt_embedding.shape}")
+        prompt_embedding = torch.tensor(ind, dtype=torch.float32).to(DEVICE)
         prompt_embedding = prompt_embedding.view(1, 77, 768)
 
         print("prompt_embedding, tensor size= ", str(torch.Tensor.size(prompt_embedding)))
@@ -291,7 +291,7 @@ NULL_PROMPT = prompt_embedding_vectors(sd, [""])[0]
 # print("NULL_PROMPT size= ", str(torch.Tensor.size(NULL_PROMPT)))
 
 # generate prompts and get embeddings
-num_genes = 1024  # Each individual is 1024 floats
+num_genes = 100  # Each individual is 1024 floats
 prompt_phrase_length = 6  # number of words in prompt
 prompts_array = ga.generate_prompts(num_genes, prompt_phrase_length)
 
@@ -314,15 +314,6 @@ embedded_prompts_cpu = embedded_prompts.to("cpu")
 embedded_prompts_array = embedded_prompts_cpu.detach().numpy()
 print(f"array shape: {embedded_prompts_array.shape}")
 embedded_prompts_list = embedded_prompts_array.reshape(num_genes, 77 * 768).tolist()
-
-predefined_embedding_matrix = embedded_prompts_array.mean(axis=0).reshape((77, 768))
-
-def genes_to_embedding(genes):
-    # Implement your strategy to convert 100 genes to a 77x768 embedding
-    embedding = np.zeros((77, 768))
-    for i, gene in enumerate(genes):
-        embedding += gene * predefined_embedding_matrix[:, [i % 768]]  # Note the additional brackets to keep the dimensions correct for broadcasting
-    return embedding
 
 
 
