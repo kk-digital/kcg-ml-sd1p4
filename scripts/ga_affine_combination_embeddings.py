@@ -279,7 +279,7 @@ def fitness_func(ga_instance, solution, solution_idx):
     chad_score, chad_score_scaled = embeddings_chad_score(device, embedding_vector, generation, solution_idx, seed, output_directory, chad_score_predictor, clip_text_embedder, txt2img, util_clip,
                                                           cfg_strength, image_width, image_height)
 
-    return chad_score_scaled.item()
+    return chad_score.item()
 
 def store_generation_images(ga_instance):
     return 0
