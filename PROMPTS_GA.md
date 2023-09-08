@@ -38,7 +38,7 @@ chad score. All scripts use Pygad as their GA library, with the exception of
 Example Usage:
 
 ``` shell
-python scripts/prompts_ga.py --generations 100 --mutation_probability 0.05 --crossover_type single_point --keep_elitism 0 --mutation_type random --mutation_percent_genes 0.05
+python scripts/prompts_ga.py --generations 5 --mutation_probability 0.10 --crossover_type single_point --keep_elitism 0 --mutation_type swap --mutation_percent_genes 0.05 --population_size 5
 ```
 
 ### scripts/ga_bounding_box_size.py

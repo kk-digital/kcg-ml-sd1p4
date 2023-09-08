@@ -2,6 +2,8 @@
 import random
 import tiktoken
 import sys
+import os
+import shutil
 import json
 import csv
 import torch
@@ -174,8 +176,11 @@ def initialize_prompt_list_from_csv(csv_dataset_path, csv_phrase_limit=0):
             else:
                 # index,count,token size,phrase str
                 phrase = row[3]
-                prompt_list.add_phrase(phrase)
-                prompt_list.add_type_to_phrase(phrase, prompt_type="topic")
+
+                index = len(prompt_list.Prompts)
+                new_prompt = PromptData(index, phrase)
+                new_prompt.Types.append("topic")
+                prompt_list.Prompts.append(new_prompt)
 
                 # add token count
                 phrase_token_size = int(row[2])
@@ -195,19 +200,22 @@ def initialize_prompt_list_from_csv(csv_dataset_path, csv_phrase_limit=0):
 # Still used in GA scripts
 def generate_prompts(prompt_count, prompt_phrase_length):
     prompts = initialize_prompt_list()
-
     prompt_list = []
     enc = tiktoken.get_encoding("cl100k_base")
 
+    len_prompt_phrases = len(prompts)
     for i in range(0, prompt_count):
         num_tokens = 100
         while num_tokens > 77:
             positive_prompt = []
             prompt_vector = [0] * len(prompts)
             for j in range(0, prompt_phrase_length):
-                random_prompt = random.choice(
-                    [item for item in prompts if (prompt_vector[item.Index] == 0)])
-                prompt_index = random_prompt.Index
+                while True:
+                    random_index = random.randint(0, len_prompt_phrases-1)
+                    if prompt_vector[random_index] == 0:
+                        prompt_index = random_index
+                        random_prompt = prompts[prompt_index]
+                        break
 
                 # update used array
                 prompt_vector[prompt_index] = 1
@@ -227,8 +235,8 @@ def generate_prompts(prompt_count, prompt_phrase_length):
         num_constraints = len([prompt.Phrase for prompt in positive_prompt if "constraint" in prompt.Types])
 
         prompt_list.append(
-            GeneratedPrompt(positive_prompt_str, "", prompt_vector, num_topics, num_modifiers, num_styles,
-                            num_constraints))
+            GeneratedPrompt(positive_prompt_str, "", num_topics, num_modifiers, num_styles,
+                            num_constraints, prompt_vector))
 
     return prompt_list
 
@@ -316,7 +324,7 @@ def generate_prompts_from_csv(csv_dataset_path,
                                                                                             positive_prompt_str,
                                                                                             negative_prompt_str)
 
-            # convert to numpy then convert to f32 then convert to python list
+            # convert to fp32
             positive_prompt_embedding = positive_prompt_embedding.detach().cpu().to(torch.float32)
             negative_prompt_embedding = negative_prompt_embedding.detach().cpu().to(torch.float32)
             torch.cuda.empty_cache()
@@ -332,16 +340,37 @@ def generate_prompts_from_csv(csv_dataset_path,
     return prompt_list
 
 
+def count_number_of_digits(num):
+    count = 0
+    while (num > 0):
+        count = count + 1
+        num = num // 10
+    return  count
+
 def generate_prompts_and_save_to_npz(csv_dataset_path,
                                       csv_phrase_limit,
                                       prompt_count,
                                       positive_prefix="",
                                       save_embeddings=True,
                                       checkpoint_path="",
-                                      npz_output=""):
+                                      dataset_output=""):
     prompt_list = generate_prompts_from_csv(csv_dataset_path, csv_phrase_limit, prompt_count, positive_prefix,
                                             save_embeddings, checkpoint_path)
-    prompt_list_dict = [prompt.to_json() for prompt in prompt_list]
-    np.savez_compressed(npz_output, data=prompt_list_dict)
 
-    print("Prompt list saved to {}".format(npz_output))
+    # Create the directory if it doesn't exist
+    if not os.path.exists(dataset_output):
+        os.makedirs(dataset_output)
+
+    count = 0
+    for prompt in prompt_list:
+        prompt_json = prompt.to_json()
+        filename = "{num:0{digits}}.npz".format(num=count, digits=count_number_of_digits(prompt_count))
+        file_path = os.path.join(dataset_output, filename)
+
+        # save data
+        np.savez_compressed(file_path, data=prompt_json)
+        count += 1
+
+    shutil.make_archive(dataset_output, 'zip', dataset_output)
+    print("Prompt list saved to {}".format(dataset_output))
+    shutil.rmtree(dataset_output)

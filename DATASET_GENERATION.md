@@ -121,3 +121,41 @@ options:
 python3 ./scripts/generate_images_from_prompt_generator.py --checkpoint_path "./input/model/v1-5-pruned-emaonly.safetensors" --cfg_scale 7 --num_images 10 --num_phrases 12 --output "./output/"
 ```
 
+### Generate Images From Prompt List Dataset Embeddings
+
+To generate images from prompt list dataset embeddings, these are the available CLI arguments:
+
+```
+options:
+  -h, --help            show this help message and exit
+  --batch_size BATCH_SIZE
+                        How many images to generate at once (default: 1)
+  --output OUTPUT       Path to the output directory (default: ./output)
+  --sampler SAMPLER     Name of the sampler to use (default: ddim)
+  --checkpoint_path CHECKPOINT_PATH
+                        Path to the checkpoint file (default: './input/model/v1-5-pruned-emaonly.safetensors')
+  --flash               whether to use flash attention
+  --steps STEPS         Number of steps to use (default: 20)
+  --cfg_scale CFG_SCALE
+                        unconditional guidance scale: eps = eps(x, empty) + scale * (eps(x, cond) - eps(x, empty))
+  --force_cpu           force CPU usage
+  --cuda_device CUDA_DEVICE
+                        cuda device to use for generation
+  --num_images NUM_IMAGES
+                        How many images to generate (default: 1)
+  --seed SEED           Seed for the image generation (default: )
+  --image_width IMAGE_WIDTH
+                        Generate image width (default: 512)
+  --image_height IMAGE_HEIGHT
+                        Generate image height (default: 512)
+  --num_datasets NUM_DATASETS
+                        Number of datasets to generate (default: 1)
+  --image_batch_size IMAGE_BATCH_SIZE
+                        Number of batches (default: 1)
+  --prompt_list_dataset_path PROMPT_LIST_DATASET_PATH
+                        The path to prompt list dataset zip
+```
+
+``` shell
+python3 ./scripts/generate_images_from_prompt_list_embeddings.py --checkpoint_path "./input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors" --cfg_scale 7 --num_images 2 --output ./output/generated-dataset-from-prompt-list --prompt_list_dataset_path ./test/test_zip_files/prompt_list_civitai_2_test.zip 
+```
