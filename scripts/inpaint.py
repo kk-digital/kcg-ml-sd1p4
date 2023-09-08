@@ -317,12 +317,15 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             for j in range(0, 64, square_size * 2):
                 mask_np[i:i + square_size, j:j + square_size] = 1
 
+        mask_np = np.tile(mask_np, (4, 1, 1))
+
         mask = torch.tensor(mask_np, dtype=torch.float32, device=DEVICE)
+        mask = mask.unsqueeze(0) # Adding batch dimension
 
         orig_noise = torch.randn(self.init_latent.shape, device=DEVICE)
 
         t_start = 35
-        uncond_scale = 0.9
+        uncond_scale = 0.1
         x = self.sampler.q_sample(self.init_latent, t_start, noise=orig_noise)
 
         samples = self.sampler.paint(x=x,
@@ -415,7 +418,7 @@ def img2img(prompt: str, negative_prompt: str, sampler_name: str, batch_size: in
 
 image = Image.open("white.png")
 
-img2img(prompt="64x64, iron, crystal, icon, side scrolling, pixel art, protruding, sprite sheet, flat",
+img2img(prompt="pixel art",
         negative_prompt="real life",
         sampler_name="ddim",
         batch_size=1,
