@@ -311,14 +311,17 @@ print("genetic_algorithm_loop: population_size= ", population_size)
 
 # ERROR: REVIEW
 # TODO: What is this doing?
-# Move the 'embedded_prompts' tensor to CPU memory
-embedded_prompts_cpu = embedded_prompts.to("cpu")
+# Move the tensor to CPU and convert it to a numpy array in one step
+embedded_prompts_array = embedded_prompts.to("cpu").detach().numpy()
+# Free up GPU memory
 del embedded_prompts
 torch.cuda.empty_cache()
-embedded_prompts_array = embedded_prompts_cpu.detach().numpy()
-del embedded_prompts_cpu
+
 print(f"array shape: {embedded_prompts_array.shape}")
+
+# Convert the numpy array to a list and reshape it in one step
 embedded_prompts_list = embedded_prompts_array.reshape(num_genes, 77 * 768).tolist()
+# Free up memory used by the numpy array
 del embedded_prompts_array
 
 
