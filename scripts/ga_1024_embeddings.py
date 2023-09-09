@@ -210,8 +210,8 @@ def store_generation_images(ga_instance):
             SEED = 54846
 
         combined_embedding_np = np.zeros((77, 768))
-        for i, coeff in enumerate(ind):
-            combined_embedding_np = combined_embedding_np + embedded_prompts_numpy[i] * coeff
+        for ii, coeff in enumerate(ind):
+            combined_embedding_np = combined_embedding_np + embedded_prompts_numpy[ii] * coeff
 
         combined_embedding = torch.from_numpy(combined_embedding_np)
         combined_embedding = combined_embedding.to(device=get_device(), dtype=torch.float32)
@@ -230,7 +230,7 @@ def store_generation_images(ga_instance):
         pil_image = to_pil(image[0])
         del image
         torch.cuda.empty_cache()
-        filename = os.path.join(file_dir, f'g{generation:04}_{i:03}.png')
+        filename = os.path.join(file_dir, f'g{generation:04}_{i:03}{i}.png')
         pil_image.save(filename)
         del pil_image  # Delete the PIL image
         torch.cuda.empty_cache()
