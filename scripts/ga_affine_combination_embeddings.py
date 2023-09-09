@@ -182,6 +182,8 @@ def on_mutation(ga_instance, offspring_mutation):
         ind /= ind.sum()
         ga_instance.population[i] = ind
 
+        print(sum(ga_instance.population[i]))
+
 
 
 
