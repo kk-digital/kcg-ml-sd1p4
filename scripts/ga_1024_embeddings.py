@@ -253,15 +253,12 @@ def store_generation_images(ga_instance):
 def clip_text_get_prompt_embedding_numpy(config, prompts: list):
     #load model from memory
     clip_text_embedder = CLIPTextEmbedder(device=get_device())
-    clip_text_embedder.load_submodels(
-        tokenizer_path=config.get_model_folder_path(CLIPconfigs.TXT_EMB_TOKENIZER),
-        transformer_path=config.get_model_folder_path(CLIPconfigs.TXT_EMB_TEXT_MODEL)
-    )
+    clip_text_embedder.load_submodels()
 
     prompt_embedding_numpy_list = []
     for prompt in prompts:
         print(prompt)
-        prompt_embedding = clip_text_embedder.forward(prompt)
+        prompt_embedding = clip_text_embedder(prompt)
 
         prompt_embedding_cpu = prompt_embedding.cpu()
 

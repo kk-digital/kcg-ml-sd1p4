@@ -24,6 +24,7 @@ import json
 base_directory = "./"
 sys.path.insert(0, base_directory)
 
+
 from chad_score.chad_score import ChadScorePredictor
 from model.util_clip import UtilClip
 from prompt_generator import PromptGenerator
