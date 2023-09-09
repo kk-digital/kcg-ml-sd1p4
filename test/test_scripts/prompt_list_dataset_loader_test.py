@@ -12,7 +12,7 @@ def test_load_prompt_list_no_limit():
 
     prompt_dataset.load_prompt_list(dataset_path)
 
-    assert len(prompt_dataset.prompt_list) == 2
+    assert len(prompt_dataset.prompt_paths) == 2
 
 
 def test_load_prompt_list_with_limit():
@@ -22,4 +22,4 @@ def test_load_prompt_list_with_limit():
 
     prompt_dataset.load_prompt_list(dataset_path, limit)
 
-    assert len(prompt_dataset.prompt_list) == limit
+    assert len(prompt_dataset.prompt_paths) == limit

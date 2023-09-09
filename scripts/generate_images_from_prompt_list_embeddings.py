@@ -84,7 +84,7 @@ class Txt2Img(StableDiffusionBaseScript):
             return x
 
 
-def get_batch_list(num_images, prompt_list, seed_array, current_task_index, image_dir, image_batch_size):
+def get_batch_list(num_images, prompt_dataset, seed_array, current_task_index, image_dir, image_batch_size):
     batch_list = []
     current_batch = []
     current_batch_index = 0
@@ -93,7 +93,7 @@ def get_batch_list(num_images, prompt_list, seed_array, current_task_index, imag
     for i in range(num_images):
         print("Generating batches : image " + str(i) + " out of " + str(num_images));
 
-        prompt_dict = prompt_list[i].get_prompt_dict()
+        prompt_dict = prompt_dataset.get_prompt_data(i).get_prompt_dict()
         this_seed = seed_array[(i + current_task_index * num_images) % len(seed_array)]
         timestamp = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
         total_digits = 4
@@ -121,7 +121,7 @@ def get_batch_list(num_images, prompt_list, seed_array, current_task_index, imag
     return batch_list
 
 
-def get_embeddings(prompt_list, batch, current_batch_index, image_batch_size, num_images, include_negative_prompt=False):
+def get_embeddings(prompt_dataset, batch, current_batch_index, image_batch_size, num_images, include_negative_prompt=False):
     # generate text embeddings in batches
     processed_images = current_batch_index * image_batch_size
     tmp_start_time = time.time()
@@ -129,12 +129,13 @@ def get_embeddings(prompt_list, batch, current_batch_index, image_batch_size, nu
         print("Get text embeddings " + str(processed_images + 1) + " out of " + str(num_images))
         processed_images = processed_images + 1
 
-        positive_prompt_embedding = prompt_list[task["prompt_index"]].positive_prompt_embedding
+        prompt_index = task["prompt_index"]
+        positive_prompt_embedding = prompt_dataset.get_prompt_data(prompt_index).positive_prompt_embedding
         task['cond'] = torch.tensor(positive_prompt_embedding).cpu()
         del positive_prompt_embedding
 
         if include_negative_prompt is True:
-            negative_prompt_embedding = prompt_list[task["prompt_index"]].negative_prompt_embedding
+            negative_prompt_embedding = prompt_dataset.get_prompt_data(prompt_index).negative_prompt_embedding
             task['un_cond'] = torch.tensor(negative_prompt_embedding).cpu()
             del negative_prompt_embedding
 
@@ -379,7 +380,7 @@ def generate_images_from_prompt_list(num_images,
                                      force_cpu,
                                      num_datasets,
                                      image_batch_size,
-                                     prompt_list,
+                                     prompt_dataset,
                                      include_negative_prompt=False):
     model_name = os.path.basename(checkpoint_path)
 
@@ -423,7 +424,7 @@ def generate_images_from_prompt_list(num_images,
         os.makedirs(feature_dir, exist_ok=True)
         os.makedirs(image_dir, exist_ok=True)
 
-        batch_list = get_batch_list(num_images, prompt_list, seed_array, current_task_index, image_dir,
+        batch_list = get_batch_list(num_images, prompt_dataset, seed_array, current_task_index, image_dir,
                                     image_batch_size)
 
         current_batch_index = 0
@@ -431,7 +432,7 @@ def generate_images_from_prompt_list(num_images,
             batch_start_time = time.time()
             print("------ Batch " + str(current_batch_index + 1) + " out of " + str(len(batch_list)) + " ----------")
 
-            batch = get_embeddings(prompt_list, batch, current_batch_index, image_batch_size, num_images, include_negative_prompt)
+            batch = get_embeddings(prompt_dataset, batch, current_batch_index, image_batch_size, num_images, include_negative_prompt)
             batch = get_latents(batch, current_batch_index, image_batch_size, num_images, batch_size, cfg_strength,
                                 image_width, image_height, txt2img)
             batch = generate_images_from_latents(batch, current_batch_index, image_batch_size, num_images, txt2img)
@@ -500,10 +501,9 @@ def main():
     limit = num_images
     prompt_dataset = PromptListDataset()
     prompt_dataset.load_prompt_list(opt.prompt_list_dataset_path, limit)
-    prompt_list = prompt_dataset.prompt_list
 
     # raise error when prompt list is not enough
-    if len(prompt_list) != num_images:
+    if len(prompt_dataset.prompt_paths) != num_images:
         raise Exception("Number of prompts do not match number of image to generate")
 
     # generate images
@@ -522,7 +522,7 @@ def main():
                                      opt.force_cpu,
                                      opt.num_datasets,
                                      opt.image_batch_size,
-                                     prompt_list,
+                                     prompt_dataset,
                                      opt.include_negative_prompt)
 
 
