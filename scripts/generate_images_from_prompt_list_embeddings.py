@@ -10,6 +10,7 @@ import torch
 import random
 import shutil
 import json
+from tqdm import tqdm
 
 base_directory = "./"
 sys.path.insert(0, base_directory)
@@ -428,7 +429,7 @@ def generate_images_from_prompt_list(num_images,
                                     image_batch_size)
 
         current_batch_index = 0
-        for batch in batch_list:
+        for batch in tqdm(batch_list):
             batch_start_time = time.time()
             print("------ Batch " + str(current_batch_index + 1) + " out of " + str(len(batch_list)) + " ----------")
 
