@@ -109,16 +109,9 @@ def calculate_fitness_score(ga_instance, solution, solution_idx):
     if FIXED_SEED == True:
         SEED = 54846
 
-    
-    # Linear combination of the solution coefficients and the embedded prompts
-    # combined_embedding_np = np.dot(solution, embedded_prompts_array)
-    # print(combined_embedding_np.shape)
-
     combined_embedding_np = np.zeros((77, 768))
     for i, coeff in enumerate(solution):
         combined_embedding_np = combined_embedding_np + embedded_prompts_numpy[i] * coeff
-
-    print(combined_embedding_np.shape)
 
     # Convert the combined numpy array to a PyTorch tensor
     prompt_embedding = torch.tensor(combined_embedding_np, dtype=torch.float32)
@@ -204,22 +197,24 @@ def store_generation_images(ga_instance):
     generation = ga_instance.generations_completed
     print("Generation #", generation)
     print("Population size: ", len(ga_instance.population))
+
+
     file_dir = os.path.join(IMAGES_DIR, str(generation))
     os.makedirs(file_dir)
     for i, ind in enumerate(ga_instance.population):
         SEED = random.randint(0, 2 ** 24)
         if FIXED_SEED == True:
             SEED = 54846
-        prompt_embedding = torch.tensor(ind, dtype=torch.float32).to(DEVICE)
-        prompt_embedding = prompt_embedding.view(1, 77, 768)
 
-        print("prompt_embedding, tensor size= ", str(torch.Tensor.size(prompt_embedding)))
-        print("NULL_PROMPT, tensor size= ", str(torch.Tensor.size(NULL_PROMPT)))
+        combined_embedding_np = np.zeros((77, 768))
+        for i, coeff in enumerate(ind):
+            combined_embedding_np = combined_embedding_np + embedded_prompts_numpy[i] * coeff
+
 
         # WARNING: Is using autocast internally
         latent = sd.generate_images_latent_from_embeddings(
             seed=SEED,
-            embedded_prompt=prompt_embedding,
+            embedded_prompt=combined_embedding_np,
             null_prompt=NULL_PROMPT,
             uncond_scale=CFG_STRENGTH
         )
@@ -227,10 +222,6 @@ def store_generation_images(ga_instance):
         image = sd.get_image_from_latent(latent)
         del latent
         torch.cuda.empty_cache()
-
-        # move to gpu and cleanup
-        prompt_embedding.to("cpu") 
-        del prompt_embedding
 
         pil_image = to_pil(image[0])
         del image
