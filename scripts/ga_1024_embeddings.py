@@ -272,7 +272,7 @@ def clip_text_get_prompt_embedding_numpy(config, prompts: list):
         del prompt_embedding
         torch.cuda.empty_cache()
 
-        prompt_embedding_numpy_list.append(prompt_embedding_cpu.numpy())
+        prompt_embedding_numpy_list.append(prompt_embedding_cpu.detach().numpy())
 
 
     return prompt_embedding_numpy_list
