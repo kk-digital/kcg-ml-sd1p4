@@ -201,9 +201,9 @@ def combine_embeddings_numpy(embeddings_array_numpy, weight_array, device):
 
     return result_embedding
 
-def generate_image_from_embedding(embeddings_vector, index, seed, output, clip_text_embedder, txt2img, cfg_strength=12,
+def generate_image_from_embedding(embeddings_vector, null_prompt, index, seed, output, clip_text_embedder, txt2img, cfg_strength=12,
                           image_width=512, image_height=512):
-    null_prompt = clip_text_embedder('')
+
 
     latent = txt2img.generate_images_latent_from_embeddings(
         batch_size=1,
@@ -221,15 +221,13 @@ def generate_image_from_embedding(embeddings_vector, index, seed, output, clip_t
     image_list, image_hash_list = save_images(images, generation_dir + '/' + str(index + 1) + '.jpg')
 
 
-def embeddings_chad_score(device, embeddings_vector, generation, index, seed, output, chad_score_predictor, clip_text_embedder, txt2img, util_clip, cfg_strength=12,
+def embeddings_chad_score(device, embeddings_vector, negative_embeddings_vector, generation, index, seed, output, chad_score_predictor, clip_text_embedder, txt2img, util_clip, cfg_strength=12,
                           image_width=512, image_height=512):
-
-    null_prompt = clip_text_embedder('')
 
     latent = txt2img.generate_images_latent_from_embeddings(
         batch_size=1,
         embedded_prompt=embeddings_vector,
-        null_prompt=null_prompt,
+        null_prompt=negative_embeddings_vector,
         uncond_scale=cfg_strength,
         seed=seed,
         w=image_width,
@@ -286,6 +284,7 @@ def fitness_func(ga_instance, solution, solution_idx):
     chad_score_predictor = ga_instance.chad_score_predictor
     clip_text_embedder = ga_instance.clip_text_embedder
     embedded_prompts_array = ga_instance.embedded_prompts_array
+    negative_embedded_prompts_array = ga_instance.negative_embedded_prompts_array
     txt2img = ga_instance.txt2img
     weight_array = solution
     output_directory = ga_instance.output_directory
@@ -296,7 +295,8 @@ def fitness_func(ga_instance, solution, solution_idx):
     seed = 6789
 
     embedding_vector = combine_embeddings_numpy(embedded_prompts_array, weight_array, device)
-    chad_score, chad_score_scaled = embeddings_chad_score(device, embedding_vector, generation, solution_idx, seed, output_directory, chad_score_predictor, clip_text_embedder, txt2img, util_clip,
+    negative_embedding_vector = combine_embeddings_numpy(negative_embedded_prompts_array, weight_array, device)
+    chad_score, chad_score_scaled = embeddings_chad_score(device, embedding_vector, negative_embedding_vector, generation, solution_idx, seed, output_directory, chad_score_predictor, clip_text_embedder, txt2img, util_clip,
                                                           cfg_strength, image_width, image_height)
 
     return chad_score.item()
@@ -422,6 +422,8 @@ def main():
 
     # embeddings array
     embedded_prompts_array = []
+    negative_embedded_prompts_array = []
+
     # Get N Embeddings
 
     idx = 0
@@ -431,22 +433,29 @@ def main():
 
         prompt = prompt.flatten()[0]
         prompt_str = prompt['positive-prompt-str']
+        negative_prompt_str = prompt['negative-prompt-str']
         print(prompt_str)
 
         #prompt_str = prompt.positive_prompt_str
         embedded_prompts = clip_text_embedder(prompt_str)
+        negative_embedded_prompts = clip_text_embedder(negative_prompt_str)
 
         seed = 6789
 
-        generate_image_from_embedding(embedded_prompts, idx, seed, output_directory, clip_text_embedder, txt2img, cfg_strength, image_width, image_height)
+
+        generate_image_from_embedding(embedded_prompts, negative_embedded_prompts, idx, seed, output_directory, clip_text_embedder, txt2img, cfg_strength, image_width, image_height)
         idx = idx + 1
 
         embedded_prompts_numpy = embedded_prompts.detach().cpu().numpy()
+        negative_embedded_prompts_numpy = negative_embedded_prompts.detach().cpu().numpy()
 
         del embedded_prompts
+        del negative_embedded_prompts
+
         torch.cuda.empty_cache()
 
         embedded_prompts_array.append(embedded_prompts_numpy)
+        negative_embedded_prompts_array.append(negative_embedded_prompts_numpy)
 
     # Create a list to store the random population
     random_population = []
@@ -498,6 +507,7 @@ def main():
     ga_instance.chad_score_predictor = chad_score_predictor
     ga_instance.output_directory = output_directory
     ga_instance.embedded_prompts_array = embedded_prompts_array
+    ga_instance.negative_embedded_prompts_array = negative_embedded_prompts_array
     ga_instance.clip_text_embedder = clip_text_embedder
     ga_instance.txt2img = txt2img
     ga_instance.cfg_strength = cfg_strength
