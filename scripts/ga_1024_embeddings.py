@@ -2,6 +2,8 @@ import os
 import sys
 import time
 
+import torch
+
 base_dir = os.getcwd()
 sys.path.insert(0, base_dir)
 
@@ -210,11 +212,11 @@ def store_generation_images(ga_instance):
         for i, coeff in enumerate(ind):
             combined_embedding_np = combined_embedding_np + embedded_prompts_numpy[i] * coeff
 
-
+        combined_embedding = torch.Tensor(combined_embedding_np, device=get_device(), dtype=torch.float32)
         # WARNING: Is using autocast internally
         latent = sd.generate_images_latent_from_embeddings(
             seed=SEED,
-            embedded_prompt=combined_embedding_np,
+            embedded_prompt=combined_embedding,
             null_prompt=NULL_PROMPT,
             uncond_scale=CFG_STRENGTH
         )
