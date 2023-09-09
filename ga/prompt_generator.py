@@ -167,6 +167,8 @@ def initialize_prompt_list():
 def initialize_prompt_list_from_csv(csv_dataset_path, csv_phrase_limit=0):
     prompt_list = PromptList()
     phrase_token_size_list = []
+    positive_count_list = []
+    negative_count_list = []
     with open(csv_dataset_path) as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
         line_count = 0
@@ -174,8 +176,8 @@ def initialize_prompt_list_from_csv(csv_dataset_path, csv_phrase_limit=0):
             if line_count == 0:
                 line_count += 1
             else:
-                # index,count,token size,phrase str
-                phrase = row[3]
+                # index,total count,positive count,negative count,token size,phrase str
+                phrase = row[5]
 
                 index = len(prompt_list.Prompts)
                 new_prompt = PromptData(index, phrase)
@@ -183,15 +185,23 @@ def initialize_prompt_list_from_csv(csv_dataset_path, csv_phrase_limit=0):
                 prompt_list.Prompts.append(new_prompt)
 
                 # add token count
-                phrase_token_size = int(row[2])
+                phrase_token_size = int(row[4])
                 phrase_token_size_list.append(phrase_token_size)
+
+                # add positive count
+                positive_count = int(row[2])
+                positive_count_list.append(positive_count)
+
+                # add negative count
+                negative_count = int(row[3])
+                negative_count_list.append(negative_count)
 
                 line_count += 1
 
             if csv_phrase_limit != 0 and line_count > csv_phrase_limit:
                 break
 
-    return prompt_list.Prompts, phrase_token_size_list
+    return prompt_list.Prompts, phrase_token_size_list, positive_count_list, negative_count_list
 
 
 # Function to generate prompts
@@ -246,8 +256,14 @@ def generate_prompts_from_csv(csv_dataset_path,
                               prompt_count,
                               positive_prefix="",
                               save_embeddings=True,
-                              checkpoint_path=""):
-    phrases, phrases_token_size = initialize_prompt_list_from_csv(csv_dataset_path, csv_phrase_limit)
+                              checkpoint_path="",
+                              positive_ratio_threshold=3,
+                              negative_ratio_threshold=3,
+                              use_threshold=True):
+    phrases, \
+        phrases_token_size,\
+        positive_count_list,\
+        negative_count_list = initialize_prompt_list_from_csv(csv_dataset_path, csv_phrase_limit)
 
     if checkpoint_path == "":
         raise Exception("Invalid checkpoint path")
@@ -283,6 +299,13 @@ def generate_prompts_from_csv(csv_dataset_path,
                 [item for item in phrases if (prompt_vector[item.Index] == 0)])
             prompt_index = random_prompt.Index
 
+            # count ratio
+            if use_threshold is True and negative_count_list[prompt_index] != 0:
+                chosen_phrase_positive_ratio = positive_count_list[prompt_index]/negative_count_list[prompt_index]
+                if chosen_phrase_positive_ratio < positive_ratio_threshold:
+                    # then dont use this phrase
+                    continue
+
             chosen_phrase_size = phrases_token_size[prompt_index]
             sum_token_size = positive_prompt_total_token_size + chosen_phrase_size
             if sum_token_size < 77:
@@ -298,6 +321,13 @@ def generate_prompts_from_csv(csv_dataset_path,
             random_prompt = random.choice(
                 [item for item in phrases if (prompt_vector[item.Index] == 0)])
             prompt_index = random_prompt.Index
+
+            # count ratio
+            if use_threshold is True and positive_count_list[prompt_index] != 0:
+                chosen_phrase_negative_ratio = negative_count_list[prompt_index] / positive_count_list[prompt_index]
+                if chosen_phrase_negative_ratio < negative_ratio_threshold:
+                    # then dont use this phrase
+                    continue
 
             chosen_phrase_size = phrases_token_size[prompt_index]
             sum_token_size = negative_prompt_total_token_size + chosen_phrase_size
@@ -348,14 +378,24 @@ def count_number_of_digits(num):
     return  count
 
 def generate_prompts_and_save_to_npz(csv_dataset_path,
-                                      csv_phrase_limit,
-                                      prompt_count,
-                                      positive_prefix="",
-                                      save_embeddings=True,
-                                      checkpoint_path="",
-                                      dataset_output=""):
-    prompt_list = generate_prompts_from_csv(csv_dataset_path, csv_phrase_limit, prompt_count, positive_prefix,
-                                            save_embeddings, checkpoint_path)
+                                     csv_phrase_limit,
+                                     prompt_count,
+                                     positive_prefix="",
+                                     save_embeddings=True,
+                                     checkpoint_path="",
+                                     dataset_output="",
+                                     positive_ratio_threshold=3,
+                                     negative_ratio_threshold=3,
+                                     use_threshold=True):
+    prompt_list = generate_prompts_from_csv(csv_dataset_path,
+                                            csv_phrase_limit,
+                                            prompt_count,
+                                            positive_prefix,
+                                            save_embeddings,
+                                            checkpoint_path,
+                                            positive_ratio_threshold,
+                                            negative_ratio_threshold,
+                                            use_threshold)
 
     # Create the directory if it doesn't exist
     if not os.path.exists(dataset_output):
