@@ -212,7 +212,8 @@ def store_generation_images(ga_instance):
         for i, coeff in enumerate(ind):
             combined_embedding_np = combined_embedding_np + embedded_prompts_numpy[i] * coeff
 
-        combined_embedding = torch.Tensor(combined_embedding_np, device=get_device(), dtype=torch.float32)
+        combined_embedding = torch.from_numpy(combined_embedding_np)
+        combined_embedding = combined_embedding.to(device=get_device(), dtype=torch.float32)
         # WARNING: Is using autocast internally
         latent = sd.generate_images_latent_from_embeddings(
             seed=SEED,
