@@ -56,7 +56,7 @@ def parse_args():
     parser.add_argument("--output", type=str, default="./output/ga_affine_combination_embeddings/", help="Specifies the output folder")
     parser.add_argument("--use_random_images", type=bool, default=False)
     parser.add_argument("--num_prompts", type=int, default=1024)
-    parser.add_argument('--prompts_path', type=str, default='/input/prompt-list-civitai/prompt_list_civitai_2k_all_phrases_no_prefix.zip')
+    parser.add_argument('--prompts_path', type=str, default='/input/prompt-list-civitai/prompt_list_civitai_1k_all_phrases.zip')
 
     args = parser.parse_args()
 
@@ -471,7 +471,7 @@ def main():
                            mutation_probability=mutation_probability,
                            keep_elitism=keep_elitism,
                            crossover_type=crossover_type,
-                           mutation_type=mutation_type,
+                           mutation_type=None,
                            on_fitness=on_fitness,
                            on_mutation=on_mutation,
                            on_generation=store_generation_images,
