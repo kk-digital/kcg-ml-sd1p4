@@ -93,7 +93,6 @@ def get_batch_list(num_images, prompt_dataset, seed_array, current_task_index, i
     for i in range(num_images):
         print("Generating batches : image " + str(i) + " out of " + str(num_images));
 
-        prompt_dict = prompt_dataset.get_prompt_data(i).get_prompt_dict()
         this_seed = seed_array[(i + current_task_index * num_images) % len(seed_array)]
         timestamp = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
         total_digits = 4
@@ -104,7 +103,6 @@ def get_batch_list(num_images, prompt_dataset, seed_array, current_task_index, i
 
         current_batch.append({
             'prompt_index': i,
-            'prompt_dict': prompt_dict,
             'seed': this_seed,
             "image_name": image_name,
             "filename": filename,
@@ -267,7 +265,7 @@ def compute_image_chad_score(batch, current_batch_index, image_batch_size, num_i
     return batch
 
 
-def save_image_data(batch, current_batch_index, image_batch_size, num_images, feature_dir, image_dir, model_name,
+def save_image_data(prompt_dataset, batch, current_batch_index, image_batch_size, num_images, feature_dir, image_dir, model_name,
                     chad_score_model_name, cfg_strength, generation_task_result_list):
     processed_images = current_batch_index * image_batch_size
     tmp_start_time = time.time()
@@ -281,7 +279,9 @@ def save_image_data(batch, current_batch_index, image_batch_size, num_images, fe
         image_features = task['image_features']
         base_file_name = task['base_file_name']
         chad_score = task['chad_score']
-        prompt_dict = task['prompt_dict']
+
+        # get prompt dict
+        prompt_dict = prompt_dataset.get_prompt_data(task['prompt_index']).get_prompt_dict()
 
         image_name = task["image_name"]
         filename = task["filename"]
@@ -440,7 +440,7 @@ def generate_images_from_prompt_list(num_images,
             batch = compute_image_chad_score(batch, current_batch_index, image_batch_size, num_images,
                                              chad_score_predictor)
 
-            generation_task_result_list = save_image_data(batch, current_batch_index, image_batch_size, num_images,
+            generation_task_result_list = save_image_data(prompt_dataset, batch, current_batch_index, image_batch_size, num_images,
                                                           feature_dir, image_dir,
                                                           model_name, chad_score_model_name, cfg_strength,
                                                           generation_task_result_list)
