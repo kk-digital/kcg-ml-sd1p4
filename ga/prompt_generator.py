@@ -258,6 +258,7 @@ def generate_prompts_from_csv(csv_dataset_path,
                               positive_prefix="",
                               save_embeddings=True,
                               checkpoint_path="",
+                              dataset_output="",
                               positive_ratio_threshold=3,
                               negative_ratio_threshold=3,
                               use_threshold=True):
@@ -286,7 +287,7 @@ def generate_prompts_from_csv(csv_dataset_path,
         positive_prefix_token_size = len(positive_prefix_prompt_tokens)
 
     print("Generating {} prompts...".format(prompt_count))
-    prompt_list = []
+    count = 0
     for i in tqdm(range(0, prompt_count)):
         positive_prompt_total_token_size = positive_prefix_token_size
         negative_prompt_total_token_size = 0
@@ -360,15 +361,20 @@ def generate_prompts_from_csv(csv_dataset_path,
             negative_prompt_embedding = negative_prompt_embedding.detach().cpu().to(torch.float32)
             torch.cuda.empty_cache()
 
-        prompt_list.append(
-            GeneratedPrompt(positive_prompt_str, negative_prompt_str, num_topics, num_modifiers,
+        prompt = GeneratedPrompt(positive_prompt_str, negative_prompt_str, num_topics, num_modifiers,
                             num_styles, num_constraints, prompt_vector, positive_prompt_embedding,
-                            negative_prompt_embedding))
+                            negative_prompt_embedding)
+        # save prompt npz
+        prompt_json = prompt.to_json()
+        filename = "{num:0{digits}}.npz".format(num=count, digits=count_number_of_digits(prompt_count))
+        file_path = os.path.join(dataset_output, filename)
+
+        # save data
+        np.savez_compressed(file_path, data=prompt_json)
+        count += 1
 
     # unload model
     sd.unload_model()
-
-    return prompt_list
 
 
 def get_sorted_list_with_cumulative(phrases, phrases_token_size, count_list):
@@ -398,11 +404,14 @@ def generate_prompts_from_csv_proportional_selection(csv_dataset_path,
                                                      prompt_count,
                                                      positive_prefix="",
                                                      save_embeddings=True,
-                                                     checkpoint_path=""):
+                                                     checkpoint_path="",
+                                                     dataset_output=""):
     phrases, \
         phrases_token_size,\
         positive_count_list,\
         negative_count_list = initialize_prompt_list_from_csv(csv_dataset_path, csv_phrase_limit)
+
+    total_len_phrases = len(phrases)
 
     positive_phrases, \
         positive_token_size, \
@@ -418,6 +427,11 @@ def generate_prompts_from_csv_proportional_selection(csv_dataset_path,
 
     negative_total_cumulative = negative_cumulative_sum[-1]
 
+    # del unused var at this point
+    del phrases
+    del phrases_token_size
+    del positive_count_list
+    del negative_count_list
 
     if checkpoint_path == "":
         raise Exception("Invalid checkpoint path")
@@ -439,13 +453,13 @@ def generate_prompts_from_csv_proportional_selection(csv_dataset_path,
         positive_prefix_token_size = len(positive_prefix_prompt_tokens)
 
     print("Generating {} prompts...".format(prompt_count))
-    prompt_list = []
+    count = 0
     for i in tqdm(range(0, prompt_count)):
         positive_prompt_total_token_size = positive_prefix_token_size
         negative_prompt_total_token_size = 0
         positive_prompt = []
         negative_prompt = []
-        prompt_vector = [0] * len(phrases)
+        prompt_vector = [0] * total_len_phrases
 
         # positive prompt
         while positive_prompt_total_token_size < 77:
@@ -508,15 +522,22 @@ def generate_prompts_from_csv_proportional_selection(csv_dataset_path,
             negative_prompt_embedding = negative_prompt_embedding.detach().cpu().to(torch.float32)
             torch.cuda.empty_cache()
 
-        prompt_list.append(
-            GeneratedPrompt(positive_prompt_str, negative_prompt_str, num_topics, num_modifiers,
+        prompt = GeneratedPrompt(positive_prompt_str, negative_prompt_str, num_topics, num_modifiers,
                             num_styles, num_constraints, prompt_vector, positive_prompt_embedding,
-                            negative_prompt_embedding))
+                            negative_prompt_embedding)
+
+        # save prompt npz
+        prompt_json = prompt.to_json()
+        filename = "{num:0{digits}}.npz".format(num=count, digits=count_number_of_digits(prompt_count))
+        file_path = os.path.join(dataset_output, filename)
+
+        # save data
+        np.savez_compressed(file_path, data=prompt_json)
+        count += 1
+
 
     # unload model
     sd.unload_model()
-
-    return prompt_list
 
 
 # find the first element, whose cumulative total is more than the random number
@@ -567,37 +588,29 @@ def generate_prompts_and_save_to_npz(csv_dataset_path,
                                      negative_ratio_threshold=3,
                                      use_threshold=True,
                                      proportional_selection=False):
-    if proportional_selection is True:
-        prompt_list = generate_prompts_from_csv_proportional_selection(csv_dataset_path,
-                                                                       csv_phrase_limit,
-                                                                       prompt_count,
-                                                                       positive_prefix,
-                                                                       save_embeddings,
-                                                                       checkpoint_path)
-    else:
-        prompt_list = generate_prompts_from_csv(csv_dataset_path,
-                                                csv_phrase_limit,
-                                                prompt_count,
-                                                positive_prefix,
-                                                save_embeddings,
-                                                checkpoint_path,
-                                                positive_ratio_threshold,
-                                                negative_ratio_threshold,
-                                                use_threshold)
-
     # Create the directory if it doesn't exist
     if not os.path.exists(dataset_output):
         os.makedirs(dataset_output)
 
-    count = 0
-    for prompt in prompt_list:
-        prompt_json = prompt.to_json()
-        filename = "{num:0{digits}}.npz".format(num=count, digits=count_number_of_digits(prompt_count))
-        file_path = os.path.join(dataset_output, filename)
-
-        # save data
-        np.savez_compressed(file_path, data=prompt_json)
-        count += 1
+    if proportional_selection is True:
+        generate_prompts_from_csv_proportional_selection(csv_dataset_path,
+                                                        csv_phrase_limit,
+                                                        prompt_count,
+                                                        positive_prefix,
+                                                        save_embeddings,
+                                                        checkpoint_path,
+                                                        dataset_output)
+    else:
+        generate_prompts_from_csv(csv_dataset_path,
+                                csv_phrase_limit,
+                                prompt_count,
+                                positive_prefix,
+                                save_embeddings,
+                                checkpoint_path,
+                                dataset_output,
+                                positive_ratio_threshold,
+                                negative_ratio_threshold,
+                                use_threshold)
 
     shutil.make_archive(dataset_output, 'zip', dataset_output)
     print("Prompt list saved to {}".format(dataset_output))
