@@ -171,13 +171,18 @@ def on_mutation(ga_instance, offspring_mutation):
     print("Performing mutation at generation: ", ga_instance.generations_completed)
     log_to_file(f"Performing mutation at generation: {ga_instance.generations_completed}", output_directory)
 
+    num_prompts = ga_instance.num_prompts
     mutation_probability = ga_instance.mutation_probability
     mutation_percent_genes = ga_instance.mutation_percent_genes
 
 
     for i, ind in enumerate(ga_instance.population):
         # normalize numpy array
-        ga_instance.population[i] = (ind - ind.min()) / (ind.max() - ind.min())
+        # make sure sum is 1
+        ind /= ind.sum()
+        ga_instance.population[i] = ind
+
+
 
 
 
@@ -524,6 +529,7 @@ def main():
     ga_instance.image_height = image_height
     ga_instance.mutation_probability = mutation_probability
     ga_instance.mutation_percent_genes = mutation_percent_genes
+    ga_instance.num_prompts = num_prompts
 
     ga_instance.run()
 
