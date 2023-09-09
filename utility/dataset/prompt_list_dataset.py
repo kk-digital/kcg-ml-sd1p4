@@ -4,7 +4,7 @@ import zipfile
 import numpy as np
 from io import BytesIO
 import time
-
+from tqdm import tqdm
 sys.path.insert(0, os.getcwd())
 from ga.prompt_generator import GeneratedPrompt
 
@@ -22,7 +22,7 @@ class PromptListDataset:
         file_paths = zip_ref.namelist()
 
         prompt_count = 0
-        for file_path in file_paths:
+        for file_path in tqdm(file_paths):
             # break when number of prompts is achieved
             if num_prompts != 0 and prompt_count >= num_prompts:
                 break
