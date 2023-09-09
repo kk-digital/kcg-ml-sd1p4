@@ -22,6 +22,8 @@ from stable_diffusion.utils_backend import get_device
 from stable_diffusion.utils_image import *
 from ga.utils import get_next_ga_dir
 import ga
+from stable_diffusion import CLIPconfigs
+from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from ga.fitness_pixel_value import fitness_pixel_value
 from ga.fitness_white_background import white_background_fitness
 from ga.fitness_filesize import filesize_fitness
@@ -253,9 +255,44 @@ def store_generation_images(ga_instance):
     log_to_file(f"Images per second in Generation #{generation}: {images_per_second}")
 
 
+def clip_text_get_prompt_embedding(config, prompts: list):
+    #load model from memory
+    clip_text_embedder = CLIPTextEmbedder(device=get_device())
+    clip_text_embedder.load_submodels(
+        tokenizer_path=config.get_model_folder_path(CLIPconfigs.TXT_EMB_TOKENIZER),
+        transformer_path=config.get_model_folder_path(CLIPconfigs.TXT_EMB_TEXT_MODEL)
+    )
+
+    prompt_embedding_list = []
+    for prompt in prompts:
+        prompt_embedding = clip_text_embedder.forward(prompt)
+
+        prompt_embedding_cpu = prompt_embedding.cpu()
+
+        del prompt_embedding
+        torch.cuda.empty_cache()
+
+        prompt_embedding_list.append(prompt_embedding_cpu)
+        # Flattening tensor and appending
+        #print("clip_text_get_prompt_embedding, 1 embedding= ", str(torch.Tensor.size(prompt_embedding)))
+        #clip_text_get_prompt_embedding, 1 embedding=  torch.Size([1, 77, 768])
+        #prompt_embedding = prompt_embedding.view(-1)
+        #print("clip_text_get_prompt_embedding, 2 embedding= ", str(torch.Tensor.size(prompt_embedding)))
+        #clip_text_get_prompt_embedding, 2 embedding=  torch.Size([59136])
+
+
+    prompt_embedding_list = torch.stack(prompt_embedding_list)
+
+    ## Clear model from memory
+    clip_text_embedder.to("cpu")
+    del clip_text_embedder
+    torch.cuda.empty_cache()
+
+    return prompt_embedding_list
+
 def prompt_embedding_vectors(sd, prompt_array):
     # Generate embeddings for each prompt
-    embedded_prompts = ga.clip_text_get_prompt_embedding(config, prompts=prompt_array)
+    embedded_prompts = clip_text_get_prompt_embedding(config, prompts=prompt_array)
     # print("embedded_prompt, tensor shape= "+ str(torch.Tensor.size(embedded_prompts)))
     embedded_prompts.to("cpu")
     torch.cuda.empty_cache()
