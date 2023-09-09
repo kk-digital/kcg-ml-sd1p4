@@ -260,6 +260,7 @@ def clip_text_get_prompt_embedding_numpy(config, prompts: list):
 
     prompt_embedding_numpy_list = []
     for prompt in prompts:
+        print(prompt)
         prompt_embedding = clip_text_embedder.forward(prompt)
 
         prompt_embedding_cpu = prompt_embedding.cpu()
