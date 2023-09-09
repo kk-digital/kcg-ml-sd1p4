@@ -316,10 +316,12 @@ options:
                         Number of batches (default: 1)
   --prompt_list_dataset_path PROMPT_LIST_DATASET_PATH
                         The path to prompt list dataset zip
+  --include_negative_prompt INCLUDE_NEGATIVE_PROMPT
+                        True if negative prompt embedding will be used for generating images
 ```
 
 ``` shell
-python3 ./scripts/generate_images_from_prompt_list_embeddings.py --checkpoint_path "./input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors" --cfg_scale 7 --num_images 2 --output ./output/generated-dataset-from-prompt-list --prompt_list_dataset_path ./test/test_zip_files/prompt_list_civitai_2_test.zip 
+python3 ./scripts/generate_images_from_prompt_list_embeddings.py --checkpoint_path "./input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors" --cfg_scale 7 --num_images 2 --output ./output/generated-dataset-from-prompt-list --prompt_list_dataset_path ./test/test_zip_files/prompt_list_civitai_2_test.zip --include_negative_prompt True
 ```
 
 ### Chad Score
