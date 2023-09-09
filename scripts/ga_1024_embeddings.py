@@ -116,7 +116,7 @@ def calculate_fitness_score(ga_instance, solution, solution_idx):
 
     combined_embedding_np = np.zeros((77, 768))
     for i, coeff in enumerate(solution):
-        combined_embedding_np = combined_embedding_np + embedded_prompts_array[i] * coeff
+        combined_embedding_np = combined_embedding_np + embedded_prompts_numpy[i] * coeff
 
     print(combined_embedding_np.shape)
 
@@ -255,7 +255,7 @@ def store_generation_images(ga_instance):
     log_to_file(f"Images per second in Generation #{generation}: {images_per_second}")
 
 
-def clip_text_get_prompt_embedding(config, prompts: list):
+def clip_text_get_prompt_embedding_numpy(config, prompts: list):
     #load model from memory
     clip_text_embedder = CLIPTextEmbedder(device=get_device())
     clip_text_embedder.load_submodels(
@@ -263,7 +263,7 @@ def clip_text_get_prompt_embedding(config, prompts: list):
         transformer_path=config.get_model_folder_path(CLIPconfigs.TXT_EMB_TEXT_MODEL)
     )
 
-    prompt_embedding_list = []
+    prompt_embedding_numpy_list = []
     for prompt in prompts:
         prompt_embedding = clip_text_embedder.forward(prompt)
 
@@ -272,31 +272,14 @@ def clip_text_get_prompt_embedding(config, prompts: list):
         del prompt_embedding
         torch.cuda.empty_cache()
 
-        prompt_embedding_list.append(prompt_embedding_cpu)
-        # Flattening tensor and appending
-        #print("clip_text_get_prompt_embedding, 1 embedding= ", str(torch.Tensor.size(prompt_embedding)))
-        #clip_text_get_prompt_embedding, 1 embedding=  torch.Size([1, 77, 768])
-        #prompt_embedding = prompt_embedding.view(-1)
-        #print("clip_text_get_prompt_embedding, 2 embedding= ", str(torch.Tensor.size(prompt_embedding)))
-        #clip_text_get_prompt_embedding, 2 embedding=  torch.Size([59136])
+        prompt_embedding_numpy_list.append(prompt_embedding_cpu.numpy())
 
 
-    prompt_embedding_list = torch.stack(prompt_embedding_list)
-
-    ## Clear model from memory
-    clip_text_embedder.to("cpu")
-    del clip_text_embedder
-    torch.cuda.empty_cache()
-
-    return prompt_embedding_list
+    return prompt_embedding_numpy_list
 
 def prompt_embedding_vectors(sd, prompt_array):
     # Generate embeddings for each prompt
-    embedded_prompts = clip_text_get_prompt_embedding(config, prompts=prompt_array)
-    # print("embedded_prompt, tensor shape= "+ str(torch.Tensor.size(embedded_prompts)))
-    embedded_prompts.to("cpu")
-    torch.cuda.empty_cache()
-    return embedded_prompts
+    return clip_text_get_prompt_embedding_numpy(config, prompts=prompt_array)
 
 # Call the GA loop function with your initialized StableDiffusion model
 
@@ -341,22 +324,7 @@ for prompt in prompts_array:
     prompts_str_array.append(prompt_str)
 
 print(prompt_str)
-embedded_prompts = prompt_embedding_vectors(sd, prompt_array=prompts_str_array)
-
-
-print("genetic_algorithm_loop: population_size= ", population_size)
-
-# ERROR: REVIEW
-# TODO: What is this doing?
-# Move the 'embedded_prompts' tensor to CPU memory
-embedded_prompts_cpu = embedded_prompts.to("cpu")
-del embedded_prompts
-torch.cuda.empty_cache()
-embedded_prompts_array = embedded_prompts_cpu.detach().numpy()
-del embedded_prompts_cpu
-print(f"array shape: {embedded_prompts_array.shape}")
-embedded_prompts_list = embedded_prompts_array.reshape(num_genes, 77 * 768).tolist()
-del embedded_prompts_array
+embedded_prompts_numpy = prompt_embedding_vectors(sd, prompt_array=prompts_str_array)
 
 
 
