@@ -22,6 +22,7 @@ def parse_arguments():
     parser.add_argument('--positive-ratio-threshold', type=int, default=3, help='Threshold ratio of positive/negative to use a phrase for positive prompt')
     parser.add_argument('--negative-ratio-threshold', type=int, default=3, help='Threshold ratio of negative/positive to use a phrase for negative prompt')
     parser.add_argument('--use-threshold', type=bool, default=True, help='True if positive and negative ratio will be used')
+    parser.add_argument('--proportional-selection', type=bool, default=False, help='True if proportional selection will be used to get the phrases')
 
     return parser.parse_args()
 
@@ -41,7 +42,8 @@ def main():
                                      args.output,
                                      args.positive_ratio_threshold,
                                      args.negative_ratio_threshold,
-                                     args.use_threshold)
+                                     args.use_threshold,
+                                     args.proportional_selection)
 
     print("Total Elapsed Time: {0}s".format(time.time() - start_time))
 
