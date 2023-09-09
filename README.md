@@ -437,7 +437,7 @@ python scripts/prompt_gradient.py --input_path input/set_0000_v2.zip --model_pat
 Generates prompts and saves to a json file
 ```
 usage: prompt_generator.py [-h] [--positive-prefix POSITIVE_PREFIX] [--num-prompts NUM_PROMPTS] [--csv-phrase-limit CSV_PHRASE_LIMIT] [--csv-path CSV_PATH] [--save-embeddings SAVE_EMBEDDINGS] [--output OUTPUT] [--checkpoint-path CHECKPOINT_PATH] [--positive-ratio-threshold POSITIVE_RATIO_THRESHOLD]
-                           [--negative-ratio-threshold NEGATIVE_RATIO_THRESHOLD]
+                           [--negative-ratio-threshold NEGATIVE_RATIO_THRESHOLD] [--use-threshold USE_THRESHOLD]
 
 Prompt Generator CLI tool generates prompts from phrases inside a csv
 
@@ -459,11 +459,13 @@ options:
                         Threshold ratio of positive/negative to use a phrase for positive prompt
   --negative-ratio-threshold NEGATIVE_RATIO_THRESHOLD
                         Threshold ratio of negative/positive to use a phrase for negative prompt
+  --use-threshold USE_THRESHOLD
+                        True if positive and negative ratio will be used
 ```
 
 Example Usage:
 ```
-  python ./scripts/prompt_generator.py --num-prompts 50 --positive-prefix "environmental, concept art, side scrolling, video game" --csv-phrase-limit 512 --csv-path ./input/civit_ai_data_phrase_count_v5.csv --save-embeddings True --output ./output/prompt_list_civitai_50_test --checkpoint-path ./input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors --positive-ratio-threshold 3 --negative-ratio-threshold 3
+  python ./scripts/prompt_generator.py --num-prompts 50 --positive-prefix "environmental, concept art, side scrolling, video game" --csv-phrase-limit 512 --csv-path ./input/civit_ai_data_phrase_count_v6.csv --save-embeddings True --output ./output/prompt_list_civitai_50_test --checkpoint-path ./input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors --positive-ratio-threshold 3 --negative-ratio-threshold 3
 ```
 
 ### Image Ranker by Fitness Score

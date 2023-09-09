@@ -258,7 +258,8 @@ def generate_prompts_from_csv(csv_dataset_path,
                               save_embeddings=True,
                               checkpoint_path="",
                               positive_ratio_threshold=3,
-                              negative_ratio_threshold=3):
+                              negative_ratio_threshold=3,
+                              use_threshold=True):
     phrases, \
         phrases_token_size,\
         positive_count_list,\
@@ -299,7 +300,7 @@ def generate_prompts_from_csv(csv_dataset_path,
             prompt_index = random_prompt.Index
 
             # count ratio
-            if negative_count_list[prompt_index] != 0:
+            if use_threshold is True and negative_count_list[prompt_index] != 0:
                 chosen_phrase_positive_ratio = positive_count_list[prompt_index]/negative_count_list[prompt_index]
                 if chosen_phrase_positive_ratio < positive_ratio_threshold:
                     # then dont use this phrase
@@ -322,7 +323,7 @@ def generate_prompts_from_csv(csv_dataset_path,
             prompt_index = random_prompt.Index
 
             # count ratio
-            if positive_count_list[prompt_index] != 0:
+            if use_threshold is True and positive_count_list[prompt_index] != 0:
                 chosen_phrase_negative_ratio = negative_count_list[prompt_index] / positive_count_list[prompt_index]
                 if chosen_phrase_negative_ratio < negative_ratio_threshold:
                     # then dont use this phrase
@@ -384,10 +385,17 @@ def generate_prompts_and_save_to_npz(csv_dataset_path,
                                      checkpoint_path="",
                                      dataset_output="",
                                      positive_ratio_threshold=3,
-                                     negative_ratio_threshold=3):
-    prompt_list = generate_prompts_from_csv(csv_dataset_path, csv_phrase_limit, prompt_count, positive_prefix,
-                                            save_embeddings, checkpoint_path, positive_ratio_threshold,
-                                            negative_ratio_threshold)
+                                     negative_ratio_threshold=3,
+                                     use_threshold=True):
+    prompt_list = generate_prompts_from_csv(csv_dataset_path,
+                                            csv_phrase_limit,
+                                            prompt_count,
+                                            positive_prefix,
+                                            save_embeddings,
+                                            checkpoint_path,
+                                            positive_ratio_threshold,
+                                            negative_ratio_threshold,
+                                            use_threshold)
 
     # Create the directory if it doesn't exist
     if not os.path.exists(dataset_output):

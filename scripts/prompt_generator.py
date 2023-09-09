@@ -21,7 +21,7 @@ def parse_arguments():
     parser.add_argument('--checkpoint-path', type=str, help='Path to the model checkpoint')
     parser.add_argument('--positive-ratio-threshold', type=int, default=3, help='Threshold ratio of positive/negative to use a phrase for positive prompt')
     parser.add_argument('--negative-ratio-threshold', type=int, default=3, help='Threshold ratio of negative/positive to use a phrase for negative prompt')
-
+    parser.add_argument('--use-threshold', type=bool, default=True, help='True if positive and negative ratio will be used')
 
     return parser.parse_args()
 
@@ -40,7 +40,8 @@ def main():
                                      args.checkpoint_path,
                                      args.output,
                                      args.positive_ratio_threshold,
-                                     args.negative_ratio_threshold)
+                                     args.negative_ratio_threshold,
+                                     args.use_threshold)
 
     print("Total Elapsed Time: {0}s".format(time.time() - start_time))
 
