@@ -41,7 +41,7 @@ def parse_args():
     parser.add_argument('--mutation_probability', type=float, default=0.2, help="Probability of mutation.")
     parser.add_argument('--keep_elitism', type=int, default=1, help="1 to keep best individual, 0 otherwise.")
     parser.add_argument('--crossover_type', type=str, default="uniform", help="Type of crossover operation.")
-    parser.add_argument('--mutation_type', type=str, default="swap", help="Type of mutation operation.")
+    parser.add_argument('--mutation_type', type=str, default="random", help="Type of mutation operation.")
     parser.add_argument('--mutation_percent_genes', type=float, default=0.1,
                         help="The percentage of genes to be mutated.")
     parser.add_argument('--population', type=int, default=80, help="Starting population size")
@@ -170,6 +170,15 @@ def on_mutation(ga_instance, offspring_mutation):
     output_directory = ga_instance.output_directory
     print("Performing mutation at generation: ", ga_instance.generations_completed)
     log_to_file(f"Performing mutation at generation: {ga_instance.generations_completed}", output_directory)
+
+    mutation_probability = ga_instance.mutation_probability
+    mutation_percent_genes = ga_instance.mutation_percent_genes
+
+
+    for i, ind in enumerate(ga_instance.population):
+        # normalize numpy array
+        ga_instance.population[i] = (ind - ind.min()) / (ind.max() - ind.min())
+
 
 
 def sigmoid(x):
@@ -480,7 +489,7 @@ def main():
                            mutation_probability=mutation_probability,
                            keep_elitism=keep_elitism,
                            crossover_type=crossover_type,
-                           mutation_type=None,
+                           mutation_type=mutation_type,
                            on_fitness=on_fitness,
                            on_mutation=on_mutation,
                            on_generation=store_generation_images,
@@ -513,6 +522,8 @@ def main():
     ga_instance.cfg_strength = cfg_strength
     ga_instance.image_width = image_width
     ga_instance.image_height = image_height
+    ga_instance.mutation_probability = mutation_probability
+    ga_instance.mutation_percent_genes = mutation_percent_genes
 
     ga_instance.run()
 
