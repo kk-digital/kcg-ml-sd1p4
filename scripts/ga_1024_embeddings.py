@@ -330,7 +330,13 @@ embedded_prompts_numpy = prompt_embedding_vectors(sd, prompt_array=prompts_str_a
 
 # note: uniform is good, two_points"
 
-initial_population = np.random.uniform(low=-1, high=1, size=(population_size, num_genes)).tolist()
+initial_population = []
+
+for i in range(population_size):
+    random_weights = np.random.dirichlet(np.ones(num_genes), size=1).flatten()
+    #random_weights = np.full(num_prompts, 1.0 / num_prompts)
+    #normalized_weights = (random_weights - np.mean(random_weights)) / np.std(random_weights)
+    initial_population.append(random_weights)
 
 # Initialize the GA
 ga_instance = pygad.GA(initial_population=initial_population,
