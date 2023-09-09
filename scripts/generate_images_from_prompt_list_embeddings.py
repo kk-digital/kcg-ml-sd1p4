@@ -93,8 +93,7 @@ def get_batch_list(num_images, prompt_list, seed_array, current_task_index, imag
     for i in range(num_images):
         print("Generating batches : image " + str(i) + " out of " + str(num_images));
 
-        positive_prompt_embedding = prompt_list[i].positive_prompt_embedding
-        prompt_dict = prompt_list[i]
+        prompt_dict = prompt_list[i].get_prompt_dict()
         this_seed = seed_array[(i + current_task_index * num_images) % len(seed_array)]
         timestamp = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
         total_digits = 4
@@ -104,7 +103,7 @@ def get_batch_list(num_images, prompt_list, seed_array, current_task_index, imag
         filename = os.path.join(image_dir, image_name)
 
         current_batch.append({
-            'positive_prompt_embedding': positive_prompt_embedding,
+            'prompt_index': i,
             'prompt_dict': prompt_dict,
             'seed': this_seed,
             "image_name": image_name,
@@ -122,7 +121,7 @@ def get_batch_list(num_images, prompt_list, seed_array, current_task_index, imag
     return batch_list
 
 
-def get_embeddings(batch, current_batch_index, image_batch_size, num_images, batch_size, txt2img):
+def get_embeddings(prompt_list, batch, current_batch_index, image_batch_size, num_images, include_negative_prompt=False):
     # generate text embeddings in batches
     processed_images = current_batch_index * image_batch_size
     tmp_start_time = time.time()
@@ -130,12 +129,18 @@ def get_embeddings(batch, current_batch_index, image_batch_size, num_images, bat
         print("Get text embeddings " + str(processed_images + 1) + " out of " + str(num_images))
         processed_images = processed_images + 1
 
-        positive_prompt_embedding = task['positive_prompt_embedding']
+        positive_prompt_embedding = prompt_list[task["prompt_index"]].positive_prompt_embedding
         task['cond'] = torch.tensor(positive_prompt_embedding).cpu()
-
-        # no negative prompts for now
-        task['un_cond'] = None
         del positive_prompt_embedding
+
+        if include_negative_prompt is True:
+            negative_prompt_embedding = prompt_list[task["prompt_index"]].negative_prompt_embedding
+            task['un_cond'] = torch.tensor(negative_prompt_embedding).cpu()
+            del negative_prompt_embedding
+
+        else:
+            task['un_cond'] = None
+
 
     tmp_end_time = time.time()
     tmp_execution_time = tmp_end_time - tmp_start_time
@@ -310,11 +315,11 @@ def save_image_data(batch, current_batch_index, image_batch_size, num_images, fe
         prompt_dict_filepath = feature_dir + '/' + prompt_dict_filename
         json_filename = os.path.join(image_dir, base_file_name + '.json')
 
-        generation_task_result = GenerationTaskResult(prompt_dict.positive_prompt_str, model_name, image_name,
+        generation_task_result = GenerationTaskResult(prompt_dict["positive-prompt-str"], model_name, image_name,
                                                       embedding_vector_filename,
                                                       clip_features_filename, latent_filename,
                                                       image_hash, chad_score_model_name, chad_score, this_seed,
-                                                      cfg_strength)
+                                                      cfg_strength, negative_prompt=prompt_dict["negative-prompt-str"])
         # get numpy list from image_features
         with torch.no_grad():
             image_features_numpy = image_features.cpu().numpy()
@@ -331,13 +336,13 @@ def save_image_data(batch, current_batch_index, image_batch_size, num_images, fe
         np.savez_compressed(latent_filepath, data=latent)
         # save prompt dictionary to its own file
         np.savez_compressed(prompt_dict_filepath,
-                            positive_prompt_str=prompt_dict.positive_prompt_str,
-                            negative_prompt_str=prompt_dict.negative_prompt_str,
-                            prompt_vector=prompt_dict.prompt_vector,
-                            num_topics=prompt_dict.num_topics,
-                            num_modifiers=prompt_dict.num_modifiers,
-                            num_styles=prompt_dict.num_styles,
-                            num_constraints=prompt_dict.num_constraints)
+                            positive_prompt_str=prompt_dict["positive-prompt-str"],
+                            negative_prompt_str=prompt_dict["negative-prompt-str"],
+                            prompt_vector=prompt_dict["prompt-vector"],
+                            num_topics=prompt_dict["num-topics"],
+                            num_modifiers=prompt_dict["num-modifiers"],
+                            num_styles=prompt_dict["num-styles"],
+                            num_constraints=prompt_dict["num-constraints"])
 
         # Save the data to a JSON file
         with open(json_filename, 'w') as json_file:
@@ -359,10 +364,23 @@ def save_image_data(batch, current_batch_index, image_batch_size, num_images, fe
     return generation_task_result_list
 
 
-def generate_images_from_prompt_list(num_images, image_width, image_height, cfg_strength, batch_size,
-                                     checkpoint_path, output, seed, flash, device, sampler, steps, force_cpu,
+def generate_images_from_prompt_list(num_images,
+                                     image_width,
+                                     image_height,
+                                     cfg_strength,
+                                     batch_size,
+                                     checkpoint_path,
+                                     output,
+                                     seed,
+                                     flash,
+                                     device,
+                                     sampler,
+                                     steps,
+                                     force_cpu,
                                      num_datasets,
-                                     image_batch_size, prompt_list):
+                                     image_batch_size,
+                                     prompt_list,
+                                     include_negative_prompt=False):
     model_name = os.path.basename(checkpoint_path)
 
     seed_array = get_seed_array_from_string(seed, array_size=(num_images * num_datasets))
@@ -413,7 +431,7 @@ def generate_images_from_prompt_list(num_images, image_width, image_height, cfg_
             batch_start_time = time.time()
             print("------ Batch " + str(current_batch_index + 1) + " out of " + str(len(batch_list)) + " ----------")
 
-            batch = get_embeddings(batch, current_batch_index, image_batch_size, num_images, batch_size, txt2img)
+            batch = get_embeddings(prompt_list, batch, current_batch_index, image_batch_size, num_images, include_negative_prompt)
             batch = get_latents(batch, current_batch_index, image_batch_size, num_images, batch_size, cfg_strength,
                                 image_width, image_height, txt2img)
             batch = generate_images_from_latents(batch, current_batch_index, image_batch_size, num_images, txt2img)
@@ -473,6 +491,7 @@ def main():
         .num_datasets() \
         .image_batch_size() \
         .prompt_list_dataset_path() \
+        .include_negative_prompt() \
         .parse()
 
     num_images = opt.num_images
@@ -503,7 +522,8 @@ def main():
                                      opt.force_cpu,
                                      opt.num_datasets,
                                      opt.image_batch_size,
-                                     prompt_list)
+                                     prompt_list,
+                                     opt.include_negative_prompt)
 
 
 if __name__ == "__main__":

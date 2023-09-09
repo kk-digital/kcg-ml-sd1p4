@@ -55,6 +55,17 @@ class GeneratedPrompt:
                 'negative-prompt-embedding': self.negative_prompt_embedding,
                 }
 
+    def get_prompt_dict(self):
+        return {'positive-prompt-str': self.positive_prompt_str,
+                'negative-prompt-str': self.negative_prompt_str,
+                'prompt-vector': self.prompt_vector,
+                'num-topics': self.num_topics,
+                'num-modifiers': self.num_modifiers,
+                'num-styles': self.num_styles,
+                'num-constraints': self.num_constraints,
+                }
+
+
 
 class PromptData:
     def __init__(self, index: int, phrase: str):
