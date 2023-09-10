@@ -127,7 +127,7 @@ class CLIPTextEmbedder(nn.Module):
 
     def get_clip_embeddings(self, prompts):
         text_inputs = clip.tokenize(prompts).to(self.device)
-        text_features = self.tokenizer.encode_text(text_inputs)
+        text_features = self.transformer(text_inputs)
 
         return text_features
 
