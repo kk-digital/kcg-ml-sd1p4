@@ -55,7 +55,7 @@ class DDIMSampler(DiffusionSampler):
     model: LatentDiffusion
 
     def __init__(self, model: LatentDiffusion, n_steps: int, ddim_discretize: str = "uniform", ddim_eta: float = 0.):
-        """
+        r"""
         :param model: is the model to predict noise $\epsilon_\text{cond}(x_t, c)$
         :param n_steps: is the number of DDIM sampling steps, $S$
         :param ddim_discretize: specifies how to extract $\tau$ from $[1,2,\dots,T]$.
