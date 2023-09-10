@@ -182,8 +182,6 @@ def on_mutation(ga_instance, offspring_mutation):
         ind /= ind.sum()
         ga_instance.population[i] = ind
 
-        print(sum(ga_instance.population[i]))
-
 
 
 
@@ -282,6 +280,9 @@ def embeddings_chad_score(device, embeddings_vector, negative_embeddings_vector,
     image_features = image_features.to(torch.float32)
 
     # cleanup
+
+    #embedding_vector_normalized = embedding_vector / np.linalg.norm(embedding_vector)
+    #clip_image_vector_normalized = clip_image_vector / np.linalg.norm(clip_image_vector)
 
     chad_score = chad_score_predictor.get_chad_score_tensor(image_features)
     chad_score_scaled = torch.sigmoid(chad_score)
@@ -454,6 +455,7 @@ def main():
 
         #prompt_str = prompt.positive_prompt_str
         embedded_prompts = clip_text_embedder(prompt_str)
+        print(embedded_prompts.shape)
         negative_embedded_prompts = clip_text_embedder(negative_prompt_str)
 
         seed = 6789
