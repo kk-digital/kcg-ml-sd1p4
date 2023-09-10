@@ -71,7 +71,7 @@ class CLIPTextEmbedder(nn.Module):
     def load_submodels(self, tokenizer_path=CLIP_TOKENIZER_DIR_PATH, transformer_path=CLIP_TEXT_MODEL_DIR_PATH):
 
         with section("Loading tokenizer and transformer"):
-            self.tokenizer = CLIPTokenizer.from_pretrained(tokenizer_path, local_files_only=True)
+            self.tokenizer = CLIPTokenizer.from_pretrained(tokenizer_path, local_files_only=True, return_tensors="pt", padding=True, truncation=True)
             logger.debug(f"Tokenizer successfully loaded from : {tokenizer_path}")
             self.transformer = CLIPTextModel.from_pretrained(transformer_path, local_files_only=True,
                                                              use_safetensors=True).eval().to(self.device)
