@@ -126,8 +126,8 @@ class CLIPTextEmbedder(nn.Module):
         return self.transformer(input_ids=tokens).last_hidden_state
 
     def get_clip_embeddings(self, prompts):
-        text_inputs = clip.tokenize(prompts).to(self.device)
-        text_features = self.transformer.get_text_features(**text_inputs)
+        text_inputs = self.tokenizer(prompts).to(self.device)
+        text_features = self.transformer.get_text_features(text_inputs['input_ids'])
 
         return text_features
 
