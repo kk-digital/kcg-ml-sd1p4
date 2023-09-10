@@ -19,6 +19,7 @@ from typing import List
 
 import safetensors
 import torch
+import clip
 from torch import nn
 from transformers import CLIPTokenizer, CLIPTextModel, CLIPTextConfig
 
@@ -123,6 +124,13 @@ class CLIPTextEmbedder(nn.Module):
 
         # Get CLIP embeddings
         return self.transformer(input_ids=tokens).last_hidden_state
+
+    def get_clip_embeddings(self, prompts):
+        text_inputs = clip.tokenize(prompts).to(self.device)
+        text_features = self.tokenizer.encode_text(text_inputs)
+
+        return text_features
+
 # %%
 
 # if __name__ == "__main__":

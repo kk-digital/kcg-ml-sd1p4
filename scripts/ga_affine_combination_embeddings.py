@@ -455,7 +455,8 @@ def main():
 
         #prompt_str = prompt.positive_prompt_str
         embedded_prompts = clip_text_embedder(prompt_str)
-        print(embedded_prompts.shape)
+        clip_embeddings = clip_text_embedder.get_clip_embeddings(prompt_str)
+        print(clip_embeddings.shape)
         negative_embedded_prompts = clip_text_embedder(negative_prompt_str)
 
         seed = 6789
