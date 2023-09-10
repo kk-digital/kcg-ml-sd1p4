@@ -44,6 +44,8 @@ class CLIPTextEmbedder(nn.Module):
         """
         super().__init__()
 
+        self.model_name = "openai/clip-vit-L-14"
+
         self.path_tree = path_tree
         self.device = get_device(device)
 
@@ -76,7 +78,7 @@ class CLIPTextEmbedder(nn.Module):
             logger.debug(f"Tokenizer successfully loaded from : {tokenizer_path}")
             self.transformer = CLIPTextModel.from_pretrained(transformer_path, local_files_only=True,
                                                              use_safetensors=True).eval().to(self.device)
-            self.model = CLIPModel.from_pretrained(model_name).eval()
+            self.model = CLIPModel.from_pretrained(self.model_name).eval()
             # self.init_submodels(tokenizer_path = tokenizer_path, transformer_path = transformer_path)
             # safetensors.torch.load_model(self.transformer, os.path.join(transformer_path, '/model.safetensors'))
             logger.debug(f"CLIP text model successfully loaded from : {transformer_path}")
