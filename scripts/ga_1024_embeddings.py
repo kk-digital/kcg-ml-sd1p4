@@ -319,7 +319,6 @@ for prompt in prompts_array:
     prompts_str_array.append(prompt_str)
 
 print(prompt_str)
-embedded_prompts_numpy = prompt_embedding_vectors(sd, prompt_array=prompts_str_array)
 
 
 
