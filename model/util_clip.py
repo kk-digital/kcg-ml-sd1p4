@@ -27,6 +27,7 @@ class UtilClip():
         image_features = image_features.to(torch.float32)
         return image_features.to(self.device)
 
-    def get_text_features(self, tokens):
-        text_features = self.model.get_text_features(tokens['input_ids'])
+    def get_text_features(self, text):
+        tokens = clip.tokenize(text)
+        text_features = self.model.encode_text(tokens)
         return text_features
