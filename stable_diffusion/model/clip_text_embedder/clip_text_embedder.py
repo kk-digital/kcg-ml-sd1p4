@@ -129,12 +129,6 @@ class CLIPTextEmbedder(nn.Module):
         # Get CLIP embeddings
         return self.transformer(input_ids=tokens).last_hidden_state
 
-    def get_clip_embeddings(self, prompts):
-        text_inputs = self.tokenizer(prompts, return_tensors="pt", padding=True, truncation=True)
-        text_features = self.model.get_text_features(text_inputs['input_ids'])
-
-        return text_features
-
 # %%
 
 # if __name__ == "__main__":
