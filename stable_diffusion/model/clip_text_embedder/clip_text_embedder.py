@@ -21,7 +21,7 @@ import safetensors
 import torch
 import clip
 from torch import nn
-from transformers import CLIPTokenizer, CLIPTextModel, CLIPTextConfig
+from transformers import CLIPTokenizer, CLIPTextModel, CLIPTextConfig, CLIPModel
 
 from utility.labml.monit import section
 from utility.utils_logger import logger
@@ -49,6 +49,7 @@ class CLIPTextEmbedder(nn.Module):
 
         self.tokenizer = tokenizer
         self.transformer = transformer
+        self.model = None
 
         self.max_length = max_length
         self.to(self.device)
@@ -75,6 +76,7 @@ class CLIPTextEmbedder(nn.Module):
             logger.debug(f"Tokenizer successfully loaded from : {tokenizer_path}")
             self.transformer = CLIPTextModel.from_pretrained(transformer_path, local_files_only=True,
                                                              use_safetensors=True).eval().to(self.device)
+            self.model = CLIPModel.from_pretrained(CLIP_TEXT_EMBEDDER_PATH).eval()
             # self.init_submodels(tokenizer_path = tokenizer_path, transformer_path = transformer_path)
             # safetensors.torch.load_model(self.transformer, os.path.join(transformer_path, '/model.safetensors'))
             logger.debug(f"CLIP text model successfully loaded from : {transformer_path}")
@@ -127,7 +129,7 @@ class CLIPTextEmbedder(nn.Module):
 
     def get_clip_embeddings(self, prompts):
         text_inputs = self.tokenizer(prompts, return_tensors="pt", padding=True, truncation=True)
-        text_features = self.transformer.get_text_features(text_inputs['input_ids'])
+        text_features = self.model.get_text_features(text_inputs['input_ids'])
 
         return text_features
 
