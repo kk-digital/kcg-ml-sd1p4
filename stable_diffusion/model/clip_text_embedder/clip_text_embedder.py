@@ -27,7 +27,7 @@ from utility.labml.monit import section
 from utility.utils_logger import logger
 
 sys.path.insert(0, os.getcwd())
-from stable_diffusion.model_paths import CLIP_TEXT_EMBEDDER_PATH, CLIP_TOKENIZER_DIR_PATH, CLIP_TEXT_MODEL_DIR_PATH
+from stable_diffusion.model_paths import CLIP_TEXT_EMBEDDER_PATH, CLIP_TOKENIZER_DIR_PATH, CLIP_TEXT_MODEL_DIR_PATH, CLIP_MODEL_PATH
 from stable_diffusion.utils_backend import get_device
 
 
@@ -51,6 +51,7 @@ class CLIPTextEmbedder(nn.Module):
 
         self.tokenizer = tokenizer
         self.transformer = transformer
+        self.model = None
 
         self.max_length = max_length
         self.to(self.device)
@@ -77,6 +78,7 @@ class CLIPTextEmbedder(nn.Module):
             logger.debug(f"Tokenizer successfully loaded from : {tokenizer_path}")
             self.transformer = CLIPTextModel.from_pretrained(transformer_path, local_files_only=True,
                                                              use_safetensors=True).eval().to(self.device)
+            self.model = CLIPModel.from_pretrained("openai/clip-vit-large-patch14", local_files_only=True).eval()
             # self.init_submodels(tokenizer_path = tokenizer_path, transformer_path = transformer_path)
             # safetensors.torch.load_model(self.transformer, os.path.join(transformer_path, '/model.safetensors'))
             logger.debug(f"CLIP text model successfully loaded from : {transformer_path}")
@@ -126,6 +128,11 @@ class CLIPTextEmbedder(nn.Module):
 
         # Get CLIP embeddings
         return self.transformer(input_ids=tokens).last_hidden_state
+
+    def get_text_features(self, text):
+        text_inputs = self.tokenizer(text, return_tensors="pt", padding=True, truncation=True)
+        text_features_ = self.model.get_text_features(text_inputs['input_ids'])
+        return text_features_
 
 # %%
 
