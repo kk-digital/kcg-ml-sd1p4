@@ -10,6 +10,7 @@ import torch
 import random
 import shutil
 import json
+from tqdm import tqdm
 
 base_directory = "./"
 sys.path.insert(0, base_directory)
@@ -27,64 +28,7 @@ from cli_builder import CLI
 from utility.dataset.prompt_list_dataset import PromptListDataset
 
 
-class Txt2Img(StableDiffusionBaseScript):
-    """
-    ### Text to image class
-    """
-
-    @torch.no_grad()
-    def generate_images_latent_from_embeddings(self, *,
-                                               seed: int = 0,
-                                               batch_size: int = 1,
-                                               embedded_prompt: torch.Tensor,
-                                               null_prompt: torch.Tensor,
-                                               h: int = 512, w: int = 512,
-                                               uncond_scale: float = 7.5,
-                                               low_vram: bool = False,
-                                               noise_fn=torch.randn,
-                                               temperature: float = 1.0,
-                                               ):
-        """
-        :param seed: the seed to use when generating the images
-        :param dest_path: is the path to store the generated images
-        :param batch_size: is the number of images to generate in a batch
-        :param prompt: is the prompt to generate images with
-        :param h: is the height of the image
-        :param w: is the width of the image
-        :param uncond_scale: is the unconditional guidance scale $s$. This is used for
-            $\epsilon_\theta(x_t, c) = s\epsilon_\text{cond}(x_t, c) + (s - 1)\epsilon_\text{cond}(x_t, c_u)$
-        :param low_vram: whether to limit VRAM usage
-        """
-        # Number of channels in the image
-        c = 4
-        # Image to latent space resolution reduction
-        f = 8
-
-        if seed == 0:
-            seed = time.time_ns() % 2 ** 32
-
-        set_seed(seed)
-        # Adjust batch size based on VRAM availability
-        if low_vram:
-            batch_size = 1
-
-        # AMP auto casting
-        autocast = get_autocast()
-        with autocast:
-
-            # [Sample in the latent space](../sampler/index.html).
-            # `x` will be of shape `[batch_size, c, h / f, w / f]`
-            x = self.sampler.sample(cond=embedded_prompt,
-                                    shape=[batch_size, c, h // f, w // f],
-                                    uncond_scale=uncond_scale,
-                                    uncond_cond=null_prompt,
-                                    noise_fn=noise_fn,
-                                    temperature=temperature)
-
-            return x
-
-
-def get_batch_list(num_images, prompt_list, seed_array, current_task_index, image_dir, image_batch_size):
+def get_batch_list(num_images, prompt_dataset, seed_array, current_task_index, image_dir, image_batch_size):
     batch_list = []
     current_batch = []
     current_batch_index = 0
@@ -93,7 +37,6 @@ def get_batch_list(num_images, prompt_list, seed_array, current_task_index, imag
     for i in range(num_images):
         print("Generating batches : image " + str(i) + " out of " + str(num_images));
 
-        prompt_dict = prompt_list[i].get_prompt_dict()
         this_seed = seed_array[(i + current_task_index * num_images) % len(seed_array)]
         timestamp = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
         total_digits = 4
@@ -104,7 +47,6 @@ def get_batch_list(num_images, prompt_list, seed_array, current_task_index, imag
 
         current_batch.append({
             'prompt_index': i,
-            'prompt_dict': prompt_dict,
             'seed': this_seed,
             "image_name": image_name,
             "filename": filename,
@@ -121,7 +63,7 @@ def get_batch_list(num_images, prompt_list, seed_array, current_task_index, imag
     return batch_list
 
 
-def get_embeddings(prompt_list, batch, current_batch_index, image_batch_size, num_images, include_negative_prompt=False):
+def get_embeddings(prompt_dataset, batch, current_batch_index, image_batch_size, num_images, include_negative_prompt=False):
     # generate text embeddings in batches
     processed_images = current_batch_index * image_batch_size
     tmp_start_time = time.time()
@@ -129,15 +71,15 @@ def get_embeddings(prompt_list, batch, current_batch_index, image_batch_size, nu
         print("Get text embeddings " + str(processed_images + 1) + " out of " + str(num_images))
         processed_images = processed_images + 1
 
-        positive_prompt_embedding = prompt_list[task["prompt_index"]].positive_prompt_embedding
+        prompt_index = task["prompt_index"]
+        positive_prompt_embedding = prompt_dataset.get_prompt_data(prompt_index).positive_prompt_embedding
         task['cond'] = torch.tensor(positive_prompt_embedding).cpu()
         del positive_prompt_embedding
 
         if include_negative_prompt is True:
-            negative_prompt_embedding = prompt_list[task["prompt_index"]].negative_prompt_embedding
+            negative_prompt_embedding = prompt_dataset.get_prompt_data(prompt_index).negative_prompt_embedding
             task['un_cond'] = torch.tensor(negative_prompt_embedding).cpu()
             del negative_prompt_embedding
-
         else:
             task['un_cond'] = None
 
@@ -266,7 +208,7 @@ def compute_image_chad_score(batch, current_batch_index, image_batch_size, num_i
     return batch
 
 
-def save_image_data(batch, current_batch_index, image_batch_size, num_images, feature_dir, image_dir, model_name,
+def save_image_data(prompt_dataset, batch, current_batch_index, image_batch_size, num_images, feature_dir, image_dir, model_name,
                     chad_score_model_name, cfg_strength, generation_task_result_list):
     processed_images = current_batch_index * image_batch_size
     tmp_start_time = time.time()
@@ -280,7 +222,9 @@ def save_image_data(batch, current_batch_index, image_batch_size, num_images, fe
         image_features = task['image_features']
         base_file_name = task['base_file_name']
         chad_score = task['chad_score']
-        prompt_dict = task['prompt_dict']
+
+        # get prompt dict
+        prompt_dict = prompt_dataset.get_prompt_data(task['prompt_index']).get_prompt_dict()
 
         image_name = task["image_name"]
         filename = task["filename"]
@@ -379,7 +323,7 @@ def generate_images_from_prompt_list(num_images,
                                      force_cpu,
                                      num_datasets,
                                      image_batch_size,
-                                     prompt_list,
+                                     prompt_dataset,
                                      include_negative_prompt=False):
     model_name = os.path.basename(checkpoint_path)
 
@@ -400,7 +344,7 @@ def generate_images_from_prompt_list(num_images,
     chad_score_predictor.load_model(chad_score_model_path)
 
     # Initialize text2img
-    txt2img = Txt2Img(
+    txt2img = StableDiffusionBaseScript(
         sampler_name=sampler,
         n_steps=steps,
         force_cpu=force_cpu,
@@ -423,15 +367,15 @@ def generate_images_from_prompt_list(num_images,
         os.makedirs(feature_dir, exist_ok=True)
         os.makedirs(image_dir, exist_ok=True)
 
-        batch_list = get_batch_list(num_images, prompt_list, seed_array, current_task_index, image_dir,
+        batch_list = get_batch_list(num_images, prompt_dataset, seed_array, current_task_index, image_dir,
                                     image_batch_size)
 
         current_batch_index = 0
-        for batch in batch_list:
+        for batch in tqdm(batch_list):
             batch_start_time = time.time()
             print("------ Batch " + str(current_batch_index + 1) + " out of " + str(len(batch_list)) + " ----------")
 
-            batch = get_embeddings(prompt_list, batch, current_batch_index, image_batch_size, num_images, include_negative_prompt)
+            batch = get_embeddings(prompt_dataset, batch, current_batch_index, image_batch_size, num_images, include_negative_prompt)
             batch = get_latents(batch, current_batch_index, image_batch_size, num_images, batch_size, cfg_strength,
                                 image_width, image_height, txt2img)
             batch = generate_images_from_latents(batch, current_batch_index, image_batch_size, num_images, txt2img)
@@ -439,7 +383,7 @@ def generate_images_from_prompt_list(num_images,
             batch = compute_image_chad_score(batch, current_batch_index, image_batch_size, num_images,
                                              chad_score_predictor)
 
-            generation_task_result_list = save_image_data(batch, current_batch_index, image_batch_size, num_images,
+            generation_task_result_list = save_image_data(prompt_dataset, batch, current_batch_index, image_batch_size, num_images,
                                                           feature_dir, image_dir,
                                                           model_name, chad_score_model_name, cfg_strength,
                                                           generation_task_result_list)
@@ -500,10 +444,9 @@ def main():
     limit = num_images
     prompt_dataset = PromptListDataset()
     prompt_dataset.load_prompt_list(opt.prompt_list_dataset_path, limit)
-    prompt_list = prompt_dataset.prompt_list
 
     # raise error when prompt list is not enough
-    if len(prompt_list) != num_images:
+    if len(prompt_dataset.prompt_paths) != num_images:
         raise Exception("Number of prompts do not match number of image to generate")
 
     # generate images
@@ -522,7 +465,7 @@ def main():
                                      opt.force_cpu,
                                      opt.num_datasets,
                                      opt.image_batch_size,
-                                     prompt_list,
+                                     prompt_dataset,
                                      opt.include_negative_prompt)
 
 
