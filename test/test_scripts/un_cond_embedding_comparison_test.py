@@ -15,7 +15,7 @@ def test_un_cond_embedding():
     start_time = time.time()
 
     # initialize options
-    output_path = "./output/uncond_test"
+    output_path = Path("./output/uncond_test")
     cfg_strength = 7
     image_width = 512
     image_height = 512
