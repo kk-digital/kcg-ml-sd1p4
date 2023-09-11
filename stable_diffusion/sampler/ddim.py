@@ -27,7 +27,7 @@ from utility.labml import monit
 
 
 class DDIMSampler(DiffusionSampler):
-    """
+    r"""
     ## DDIM Sampler
 
     This extends the [`DiffusionSampler` base class](index.html).
@@ -55,7 +55,7 @@ class DDIMSampler(DiffusionSampler):
     model: LatentDiffusion
 
     def __init__(self, model: LatentDiffusion, n_steps: int, ddim_discretize: str = "uniform", ddim_eta: float = 0.):
-        """
+        r"""
         :param model: is the model to predict noise $\epsilon_\text{cond}(x_t, c)$
         :param n_steps: is the number of DDIM sampling steps, $S$
         :param ddim_discretize: specifies how to extract $\tau$ from $[1,2,\dots,T]$.
@@ -176,7 +176,7 @@ class DDIMSampler(DiffusionSampler):
                  uncond_scale: float = 1.,
                  uncond_cond: Optional[torch.Tensor] = None,
                  noise_fn=torch.randn):
-        """
+        r"""
         ### Sample $x_{\tau_{i-1}}$
 
         :param x: is $x_{\tau_i}$ of shape `[batch_size, channels, height, width]`
@@ -209,7 +209,7 @@ class DDIMSampler(DiffusionSampler):
                                temperature: float,
                                repeat_noise: bool,
                                noise_fn=torch.randn):
-        """
+        r"""
         ### Sample $x_{\tau_{i-1}}$ given $\epsilon_\theta(x_{\tau_i})$
         """
 
@@ -256,7 +256,7 @@ class DDIMSampler(DiffusionSampler):
 
     @torch.no_grad()
     def q_sample(self, x0: torch.Tensor, index: int, noise: Optional[torch.Tensor] = None):
-        """
+        r"""
         ### Sample from $q_{\sigma,\tau}(x_{\tau_i}|x_0)$
 
         $$q_{\sigma,\tau}(x_t|x_0) =
@@ -284,7 +284,7 @@ class DDIMSampler(DiffusionSampler):
               uncond_scale: float = 1.,
               uncond_cond: Optional[torch.Tensor] = None,
               ):
-        """
+        r"""
         ### Painting Loop
 
         :param x: is $x_{S'}$ of shape `[batch_size, channels, height, width]`
