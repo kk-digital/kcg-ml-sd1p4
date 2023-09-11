@@ -225,7 +225,7 @@ class StableDiffusionBaseScript:
         self.initialize_sampler()
 
     def initialize_latent_diffusion(self, autoencoder, clip_text_embedder, unet_model, force_submodels_init=False,
-                                    path=None):
+                                    path=None, batch_size=1):
         try:
             self.model = initialize_latent_diffusion(
                 path=path,
@@ -238,6 +238,10 @@ class StableDiffusionBaseScript:
             self.initialize_sampler()
             # Move the model to device
             # self.model.to(self.device)
+
+            # set empty embedding
+            self.cache_empty_embedding(batch_size)
+
         except EOFError:
             raise ModelLoadError(
                 "Stable Diffusion model couldn't be loaded. Check that the .ckpt file exists in the specified location (path), and that it is not corrupted.")
