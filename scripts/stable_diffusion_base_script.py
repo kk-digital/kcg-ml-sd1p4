@@ -185,7 +185,7 @@ class StableDiffusionBaseScript:
             self.model.eval()
 
             # set empty embedding
-            self.set_empty_embedding(batch_size)
+            self.cache_empty_embedding(batch_size)
 
     def unload_model(self):
         del self.model
@@ -250,7 +250,7 @@ class StableDiffusionBaseScript:
         elif self.sampler_name == 'ddpm':
             self.sampler = DDPMSampler(self.model)
 
-    def set_empty_embedding(self, batch_size: int = 1):
+    def cache_empty_embedding(self, batch_size: int = 1):
         self.empty_embedding = self.model.get_text_conditioning(batch_size * [""])
 
     def get_empty_embedding(self):
