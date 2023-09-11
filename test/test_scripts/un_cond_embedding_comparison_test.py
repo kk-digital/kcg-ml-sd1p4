@@ -53,7 +53,7 @@ def test_un_cond_embedding():
         # Iterate over two null_prompt conditions: un_cond and None
         for null_prompt, un_cond_name in zip([un_cond, None], ['""', "None"]):
             (output_path).mkdir(parents=True, exist_ok=True)
-            start_time = time.time()
+            iterate_start_time = time.time()
 
             # Generate the latent representations using the current null_prompt condition
             latent = txt2img.generate_images_latent_from_embeddings(
@@ -69,7 +69,7 @@ def test_un_cond_embedding():
             # Get the images from the latent representations
             images = txt2img.get_image_from_latent(latent)
             del latent
-            elapsed_time = time.time() - start_time
+            elapsed_time = time.time() - iterate_start_time
 
             image_path = output_path / f"seed_{seed}_{un_cond_name}.jpg"
             _, _ = save_images(images, image_path)
