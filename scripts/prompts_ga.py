@@ -241,7 +241,12 @@ def calculate_chad_score(ga_instance, solution, solution_idx):
 
 
 def cached_fitness_func(ga_instance, solution, solution_idx):
-    return ga_instance.population_fitness_list[solution_idx]
+    if FIXED_SEED == True:
+        # Use the cached score
+        return ga_instance.population_fitness_list[solution_idx]
+    else:
+        # Get a fresh score because the seed is not fixed
+        return calculate_chad_score(ga_instance, solution, solution_idx)
 
 
 def on_fitness(ga_instance, population_fitness):
