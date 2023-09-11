@@ -20,7 +20,7 @@ def test_un_cond_embedding():
     image_width = 512
     image_height = 512
     batch_size = 1
-    positive_prompt = "a painting of a virus monster playing guitar"
+    positive_prompt = "a dog holding a cup of tea"
     negative_prompt = ""
 
     # initialize sd model
