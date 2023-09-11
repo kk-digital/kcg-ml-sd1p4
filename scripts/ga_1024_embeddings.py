@@ -29,6 +29,7 @@ from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 #from ga.fitness_pixel_value import fitness_pixel_value
 #from ga.fitness_white_background import white_background_fitness
 from ga.fitness_filesize import filesize_fitness
+from ga.fitness_white_background import white_background_fitness
 
 
 random.seed()
@@ -146,7 +147,7 @@ def calculate_fitness_score(ga_instance, solution, solution_idx):
         pil_image = pil_image.convert("RGB")
 
     # Calculate fitness score
-    fitness_score = filesize_fitness(pil_image)
+    fitness_score = white_background_fitness(pil_image)
     return fitness_score
 
 
@@ -308,7 +309,7 @@ NULL_PROMPT = NULL_PROMPT.to(device=get_device(), dtype=torch.float32)
 # print("NULL_PROMPT size= ", str(torch.Tensor.size(NULL_PROMPT)))
 
 # generate prompts and get embeddings
-num_genes = 1024  # Each individual is 1024 floats
+num_genes = 800  # Each individual is 1024 floats
 prompt_phrase_length = 6  # number of words in prompt
 prompts_array = ga.generate_prompts(num_genes, prompt_phrase_length)
 
