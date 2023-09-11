@@ -232,7 +232,7 @@ def store_generation_images(ga_instance):
         pil_image = to_pil(image[0])
         del image
         torch.cuda.empty_cache()
-        filename = os.path.join(file_dir, f'g{generation:04}_{i:03}{i}.png')
+        filename = os.path.join(file_dir, f'g{generation:04}_{i:04}.png')
         pil_image.save(filename)
         del pil_image  # Delete the PIL image
         torch.cuda.empty_cache()
@@ -309,15 +309,15 @@ NULL_PROMPT = NULL_PROMPT.to(device=get_device(), dtype=torch.float32)
 # print("NULL_PROMPT size= ", str(torch.Tensor.size(NULL_PROMPT)))
 
 # generate prompts and get embeddings
-num_genes = 1022  # Each individual is 1024 floats
+num_genes = 1024  # Each individual is 1024 floats
 prompt_phrase_length = 6  # number of words in prompt
 prompts_array = ga.generate_prompts(num_genes, prompt_phrase_length)
 
 # get prompt_str array
 prompts_str_array = []
-prefix_prompt = " centered , white background, black object, black and white, no background,"
+#prefix_prompt = " centered , white background, black object, black and white, no background,"
 for prompt in prompts_array:
-    prompt_str = prefix_prompt + prompt.get_positive_prompt_str()
+    prompt_str = prompt.get_positive_prompt_str()
     prompts_str_array.append(prompt_str)
 
 print(prompt_str)
