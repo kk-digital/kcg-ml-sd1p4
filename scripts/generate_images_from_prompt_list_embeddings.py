@@ -28,63 +28,6 @@ from cli_builder import CLI
 from utility.dataset.prompt_list_dataset import PromptListDataset
 
 
-class Txt2Img(StableDiffusionBaseScript):
-    """
-    ### Text to image class
-    """
-
-    @torch.no_grad()
-    def generate_images_latent_from_embeddings(self, *,
-                                               seed: int = 0,
-                                               batch_size: int = 1,
-                                               embedded_prompt: torch.Tensor,
-                                               null_prompt: torch.Tensor,
-                                               h: int = 512, w: int = 512,
-                                               uncond_scale: float = 7.5,
-                                               low_vram: bool = False,
-                                               noise_fn=torch.randn,
-                                               temperature: float = 1.0,
-                                               ):
-        """
-        :param seed: the seed to use when generating the images
-        :param dest_path: is the path to store the generated images
-        :param batch_size: is the number of images to generate in a batch
-        :param prompt: is the prompt to generate images with
-        :param h: is the height of the image
-        :param w: is the width of the image
-        :param uncond_scale: is the unconditional guidance scale $s$. This is used for
-            $\epsilon_\theta(x_t, c) = s\epsilon_\text{cond}(x_t, c) + (s - 1)\epsilon_\text{cond}(x_t, c_u)$
-        :param low_vram: whether to limit VRAM usage
-        """
-        # Number of channels in the image
-        c = 4
-        # Image to latent space resolution reduction
-        f = 8
-
-        if seed == 0:
-            seed = time.time_ns() % 2 ** 32
-
-        set_seed(seed)
-        # Adjust batch size based on VRAM availability
-        if low_vram:
-            batch_size = 1
-
-        # AMP auto casting
-        autocast = get_autocast()
-        with autocast:
-
-            # [Sample in the latent space](../sampler/index.html).
-            # `x` will be of shape `[batch_size, c, h / f, w / f]`
-            x = self.sampler.sample(cond=embedded_prompt,
-                                    shape=[batch_size, c, h // f, w // f],
-                                    uncond_scale=uncond_scale,
-                                    uncond_cond=null_prompt,
-                                    noise_fn=noise_fn,
-                                    temperature=temperature)
-
-            return x
-
-
 def get_batch_list(num_images, prompt_dataset, seed_array, current_task_index, image_dir, image_batch_size):
     batch_list = []
     current_batch = []
@@ -137,7 +80,6 @@ def get_embeddings(prompt_dataset, batch, current_batch_index, image_batch_size,
             negative_prompt_embedding = prompt_dataset.get_prompt_data(prompt_index).negative_prompt_embedding
             task['un_cond'] = torch.tensor(negative_prompt_embedding).cpu()
             del negative_prompt_embedding
-
         else:
             task['un_cond'] = None
 
@@ -402,7 +344,7 @@ def generate_images_from_prompt_list(num_images,
     chad_score_predictor.load_model(chad_score_model_path)
 
     # Initialize text2img
-    txt2img = Txt2Img(
+    txt2img = StableDiffusionBaseScript(
         sampler_name=sampler,
         n_steps=steps,
         force_cpu=force_cpu,

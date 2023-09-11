@@ -49,6 +49,7 @@ class StableDiffusionBaseScript:
         self.cuda_device = cuda_device
         self.device_id = get_device(cuda_device)
         self.device = torch.device(self.device_id)
+        self.empty_embedding = None
 
         # Load [latent diffusion model](../latent_diffusion.html)
         # Get device or force CPU if requested
@@ -83,7 +84,7 @@ class StableDiffusionBaseScript:
     def get_text_conditioning(self, uncond_scale: float, prompts: list, negative_prompts: list, batch_size: int = 1):
         # In unconditional scaling is not $1$ get the embeddings for empty prompts (no conditioning).
         if uncond_scale != 1. and len(negative_prompts) == 0:
-            un_cond = self.model.get_text_conditioning(batch_size * [""])
+            un_cond = self.get_empty_embedding()
         elif len(negative_prompts) != 0:
             un_cond = self.model.get_text_conditioning(negative_prompts)
         else:
@@ -120,6 +121,11 @@ class StableDiffusionBaseScript:
             $\epsilon_\theta(x_t, c) = s\epsilon_\text{cond}(x_t, c) + (s - 1)\epsilon_\text{cond}(x_t, c_u)$
         :param low_vram: whether to limit VRAM usage
         """
+
+        # check null_prompt, raise exception if None
+        if null_prompt is None:
+            raise Exception("Null prompt cannot be None.")
+
         # Number of channels in the image
         c = 4
         # Image to latent space resolution reduction
@@ -173,10 +179,13 @@ class StableDiffusionBaseScript:
 
         return x
 
-    def load_model(self, model_path=LATENT_DIFFUSION_PATH):
+    def load_model(self, model_path=LATENT_DIFFUSION_PATH, batch_size: int = 1):
         with section(f'Latent Diffusion model loading, from {model_path}'):
             self.model = torch.load(model_path, map_location=self.device)
             self.model.eval()
+
+            # set empty embedding
+            self.cache_empty_embedding(batch_size)
 
     def unload_model(self):
         del self.model
@@ -216,7 +225,7 @@ class StableDiffusionBaseScript:
         self.initialize_sampler()
 
     def initialize_latent_diffusion(self, autoencoder, clip_text_embedder, unet_model, force_submodels_init=False,
-                                    path=None):
+                                    path=None, batch_size=1):
         try:
             self.model = initialize_latent_diffusion(
                 path=path,
@@ -229,6 +238,10 @@ class StableDiffusionBaseScript:
             self.initialize_sampler()
             # Move the model to device
             # self.model.to(self.device)
+
+            # set empty embedding
+            self.cache_empty_embedding(batch_size)
+
         except EOFError:
             raise ModelLoadError(
                 "Stable Diffusion model couldn't be loaded. Check that the .ckpt file exists in the specified location (path), and that it is not corrupted.")
@@ -240,3 +253,10 @@ class StableDiffusionBaseScript:
                                        ddim_eta=self.ddim_eta)
         elif self.sampler_name == 'ddpm':
             self.sampler = DDPMSampler(self.model)
+
+    def cache_empty_embedding(self, batch_size: int = 1):
+        self.empty_embedding = self.model.get_text_conditioning(batch_size * [""])
+
+    def get_empty_embedding(self):
+        return self.empty_embedding
+
