@@ -221,6 +221,7 @@ def initialize_prompt_list_from_csv(csv_dataset_path, csv_phrase_limit=0):
 # This only generates positive prompt
 # Still used in GA scripts
 def generate_prompts(prompt_count, prompt_phrase_length):
+    max_token_size = 75
     prompts = initialize_prompt_list()
     prompt_list = []
     enc = tiktoken.get_encoding("cl100k_base")
@@ -228,7 +229,7 @@ def generate_prompts(prompt_count, prompt_phrase_length):
     len_prompt_phrases = len(prompts)
     for i in range(0, prompt_count):
         num_tokens = 100
-        while num_tokens > 77:
+        while num_tokens > max_token_size:
             positive_prompt = []
             prompt_vector = [0] * len(prompts)
             for j in range(0, prompt_phrase_length):
@@ -246,8 +247,8 @@ def generate_prompts(prompt_count, prompt_phrase_length):
             positive_prompt_str = ', '.join([prompt.Phrase for prompt in positive_prompt])
 
             # check the length of prompt embedding.
-            # if it's more than 77, then regenerate/reroll
-            # (max token size is 77)
+            # if it's more than 75, then regenerate/reroll
+            # (max token size is 75)
             prompt_tokens = enc.encode(positive_prompt_str)
             num_tokens = len(prompt_tokens)
 
@@ -273,6 +274,9 @@ def generate_prompts_from_csv(csv_dataset_path,
                               positive_ratio_threshold=3,
                               negative_ratio_threshold=3,
                               use_threshold=True):
+    # max token size
+    max_token_size = 75
+
     phrases, \
         phrases_token_size,\
         positive_count_list,\
@@ -307,7 +311,7 @@ def generate_prompts_from_csv(csv_dataset_path,
         prompt_vector = [0] * len(phrases)
 
         # positive prompt
-        while positive_prompt_total_token_size < 77:
+        while positive_prompt_total_token_size < max_token_size:
             random_prompt = random.choice(
                 [item for item in phrases if (prompt_vector[item.Index] == 0)])
             prompt_index = random_prompt.Index
@@ -321,7 +325,7 @@ def generate_prompts_from_csv(csv_dataset_path,
 
             chosen_phrase_size = phrases_token_size[prompt_index]
             sum_token_size = positive_prompt_total_token_size + chosen_phrase_size
-            if sum_token_size < 77:
+            if sum_token_size < max_token_size:
                 # update used array
                 prompt_vector[prompt_index] = 1
                 positive_prompt.append(random_prompt)
@@ -330,7 +334,7 @@ def generate_prompts_from_csv(csv_dataset_path,
                 break
 
         # negative prompt
-        while negative_prompt_total_token_size < 77:
+        while negative_prompt_total_token_size < max_token_size:
             random_prompt = random.choice(
                 [item for item in phrases if (prompt_vector[item.Index] == 0)])
             prompt_index = random_prompt.Index
@@ -344,7 +348,7 @@ def generate_prompts_from_csv(csv_dataset_path,
 
             chosen_phrase_size = phrases_token_size[prompt_index]
             sum_token_size = negative_prompt_total_token_size + chosen_phrase_size
-            if sum_token_size < 77:
+            if sum_token_size < max_token_size:
                 # update used array
                 prompt_vector[prompt_index] = -1
                 negative_prompt.append(random_prompt)
@@ -417,6 +421,8 @@ def generate_prompts_from_csv_proportional_selection(csv_dataset_path,
                                                      save_embeddings=True,
                                                      checkpoint_path="",
                                                      dataset_output=""):
+    max_token_size = 75
+
     phrases, \
         phrases_token_size,\
         positive_count_list,\
@@ -473,7 +479,7 @@ def generate_prompts_from_csv_proportional_selection(csv_dataset_path,
         prompt_vector = [0] * total_len_phrases
 
         # positive prompt
-        while positive_prompt_total_token_size < 77:
+        while positive_prompt_total_token_size < max_token_size:
             random_int = random.randint(0, positive_total_cumulative)
             random_index = find_first_element_binary_search(positive_cumulative_sum, random_int)
             if prompt_vector[random_index] != 0:
@@ -484,7 +490,7 @@ def generate_prompts_from_csv_proportional_selection(csv_dataset_path,
 
             chosen_phrase_size = positive_token_size[prompt_index]
             sum_token_size = positive_prompt_total_token_size + chosen_phrase_size
-            if sum_token_size < 77:
+            if sum_token_size < max_token_size:
                 # update used array
                 prompt_vector[prompt_index] = 1
                 positive_prompt.append(random_prompt)
@@ -493,7 +499,7 @@ def generate_prompts_from_csv_proportional_selection(csv_dataset_path,
                 break
 
         # negative prompt
-        while negative_prompt_total_token_size < 77:
+        while negative_prompt_total_token_size < max_token_size:
             random_int = random.randint(0, negative_total_cumulative)
             random_index = find_first_element_binary_search(negative_cumulative_sum, random_int)
 
@@ -505,7 +511,7 @@ def generate_prompts_from_csv_proportional_selection(csv_dataset_path,
 
             chosen_phrase_size = negative_token_size[prompt_index]
             sum_token_size = negative_prompt_total_token_size + chosen_phrase_size
-            if sum_token_size < 77:
+            if sum_token_size < max_token_size:
                 # update used array
                 prompt_vector[prompt_index] = -1
                 negative_prompt.append(random_prompt)
