@@ -63,7 +63,7 @@ def get_batch_list(num_images, prompt_dataset, seed_array, current_task_index, i
     return batch_list
 
 
-def get_embeddings(prompt_dataset, batch, current_batch_index, image_batch_size, num_images, include_negative_prompt=False):
+def get_embeddings(txt2img, prompt_dataset, batch, current_batch_index, image_batch_size, num_images, include_negative_prompt=False):
     # generate text embeddings in batches
     processed_images = current_batch_index * image_batch_size
     tmp_start_time = time.time()
@@ -81,7 +81,7 @@ def get_embeddings(prompt_dataset, batch, current_batch_index, image_batch_size,
             task['un_cond'] = torch.tensor(negative_prompt_embedding).cpu()
             del negative_prompt_embedding
         else:
-            task['un_cond'] = None
+            task['un_cond'] = txt2img.get_empty_embedding()
 
 
     tmp_end_time = time.time()
@@ -375,7 +375,7 @@ def generate_images_from_prompt_list(num_images,
             batch_start_time = time.time()
             print("------ Batch " + str(current_batch_index + 1) + " out of " + str(len(batch_list)) + " ----------")
 
-            batch = get_embeddings(prompt_dataset, batch, current_batch_index, image_batch_size, num_images, include_negative_prompt)
+            batch = get_embeddings(txt2img, prompt_dataset, batch, current_batch_index, image_batch_size, num_images, include_negative_prompt)
             batch = get_latents(batch, current_batch_index, image_batch_size, num_images, batch_size, cfg_strength,
                                 image_width, image_height, txt2img)
             batch = generate_images_from_latents(batch, current_batch_index, image_batch_size, num_images, txt2img)
