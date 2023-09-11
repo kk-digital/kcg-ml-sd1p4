@@ -29,6 +29,7 @@ from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 #from ga.fitness_pixel_value import fitness_pixel_value
 #from ga.fitness_white_background import white_background_fitness
 from ga.fitness_filesize import filesize_fitness
+from ga.fitness_white_background import white_background_fitness
 
 
 random.seed()
@@ -146,7 +147,7 @@ def calculate_fitness_score(ga_instance, solution, solution_idx):
         pil_image = pil_image.convert("RGB")
 
     # Calculate fitness score
-    fitness_score = filesize_fitness(pil_image)
+    fitness_score = white_background_fitness(pil_image)
     return fitness_score
 
 
@@ -231,7 +232,7 @@ def store_generation_images(ga_instance):
         pil_image = to_pil(image[0])
         del image
         torch.cuda.empty_cache()
-        filename = os.path.join(file_dir, f'g{generation:04}_{i:03}{i}.png')
+        filename = os.path.join(file_dir, f'g{generation:04}_{i:04}.png')
         pil_image.save(filename)
         del pil_image  # Delete the PIL image
         torch.cuda.empty_cache()
@@ -314,9 +315,9 @@ prompts_array = ga.generate_prompts(num_genes, prompt_phrase_length)
 
 # get prompt_str array
 prompts_str_array = []
-prefix_prompt = " centered , white background, black object, black and white, no background,"
+#prefix_prompt = " centered , white background, black object, black and white, no background,"
 for prompt in prompts_array:
-    prompt_str = prefix_prompt + prompt.get_prompt_str()
+    prompt_str = prompt.get_positive_prompt_str()
     prompts_str_array.append(prompt_str)
 
 print(prompt_str)
