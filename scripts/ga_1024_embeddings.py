@@ -121,6 +121,8 @@ def calculate_fitness_score(ga_instance, solution, solution_idx):
     prompt_embedding = torch.tensor(combined_embedding_np, dtype=torch.float32)
     prompt_embedding = prompt_embedding.view(1, 77, 768).to(DEVICE)
     
+    print("Prompt embedding tensor:")
+    print(prompt_embedding.cpu().numpy())
     # Generate image from the new combined_embedding
     latent = sd.generate_images_latent_from_embeddings(
         seed=SEED,
@@ -129,6 +131,9 @@ def calculate_fitness_score(ga_instance, solution, solution_idx):
         uncond_scale=CFG_STRENGTH
     )
     
+    # Print the latent array
+    print("Latent array:")
+    print(latent)
     # Create image from latent
     image = sd.get_image_from_latent(latent)
 
