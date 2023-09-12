@@ -51,7 +51,6 @@ class CLIPTextEmbedder(nn.Module):
 
         self.tokenizer = tokenizer
         self.transformer = transformer
-        self.model = None
 
         self.max_length = max_length
         self.to(self.device)
@@ -78,7 +77,6 @@ class CLIPTextEmbedder(nn.Module):
             logger.debug(f"Tokenizer successfully loaded from : {tokenizer_path}")
             self.transformer = CLIPTextModel.from_pretrained(transformer_path, local_files_only=True,
                                                              use_safetensors=True).eval().to(self.device)
-            self.model = CLIPModel.from_pretrained("openai/clip-vit-large-patch14").eval()
             # self.init_submodels(tokenizer_path = tokenizer_path, transformer_path = transformer_path)
             # safetensors.torch.load_model(self.transformer, os.path.join(transformer_path, '/model.safetensors'))
             logger.debug(f"CLIP text model successfully loaded from : {transformer_path}")

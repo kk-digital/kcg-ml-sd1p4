@@ -280,7 +280,7 @@ def embeddings_chad_score(device, embeddings_vector, negative_embeddings_vector,
     image_features = image_features.to(torch.float32)
 
     # cleanup
-
+    #clip_embeddings = util_clip.get_text_features(prompt_str)
     #embedding_vector_normalized = embedding_vector / np.linalg.norm(embedding_vector)
     #clip_image_vector_normalized = clip_image_vector / np.linalg.norm(clip_image_vector)
 
@@ -294,6 +294,72 @@ def embeddings_chad_score(device, embeddings_vector, negative_embeddings_vector,
     return chad_score, chad_score_scaled
 
 
+
+def embeddings_similarity_score(device, embeddings_vector, clip_embeddings_vector, negative_embeddings_vector, generation, index, seed, output, chad_score_predictor, clip_text_embedder, txt2img, util_clip, cfg_strength=12,
+                          image_width=512, image_height=512):
+
+    latent = txt2img.generate_images_latent_from_embeddings(
+        batch_size=1,
+        embedded_prompt=embeddings_vector,
+        null_prompt=negative_embeddings_vector,
+        uncond_scale=cfg_strength,
+        seed=seed,
+        w=image_width,
+        h=image_height
+    )
+
+    images = txt2img.get_image_from_latent(latent)
+    print('save', ' generation ', generation, ' index : ', index + 1)
+    generation_dir = output + '/' + str(generation)
+    os.makedirs(generation_dir, exist_ok=True)
+    image_list, image_hash_list = save_images(images, generation_dir + '/' + str(index + 1) + '.jpg')
+
+    del latent
+    torch.cuda.empty_cache()
+
+    # Map images to `[0, 1]` space and clip
+    images = torch.clamp((images + 1.0) / 2.0, min=0.0, max=1.0)
+
+    images_cpu = images.cpu()
+
+    del images
+    torch.cuda.empty_cache()
+
+    images_cpu = images_cpu.permute(0, 2, 3, 1)
+    images_cpu = images_cpu.detach().float().numpy()
+
+    image_list = []
+    # Save images
+    for i, img in enumerate(images_cpu):
+        img = Image.fromarray((255. * img).astype(np.uint8))
+        image_list.append(img)
+
+    image = image_list[0]
+
+    image_features = util_clip.get_image_features(image)
+    image_features = image_features.to(torch.float32)
+
+    image_features_magnitude = torch.norm(image_features)
+    text_features_magnitude = torch.norm(clip_embeddings_vector)
+
+    image_features = image_features / image_features_magnitude
+    text_features = clip_embeddings_vector / text_features_magnitude
+
+    similarity = torch.dot(image_features, text_features)
+
+    # if similarity is more than 0.3 fitness is 1.0
+    fitness = similarity / 0.3
+    if fitness > 1.0:
+        fitness = 1.0
+    elif fitness <= 0.0:
+        fitness = 0
+
+    # cleanup
+    del image_features
+    torch.cuda.empty_cache()
+
+    return fitness
+
 def fitness_func(ga_instance, solution, solution_idx):
     sd = ga_instance.sd
     device = ga_instance.device
@@ -302,6 +368,7 @@ def fitness_func(ga_instance, solution, solution_idx):
     clip_text_embedder = ga_instance.clip_text_embedder
     embedded_prompts_array = ga_instance.embedded_prompts_array
     negative_embedded_prompts_array = ga_instance.negative_embedded_prompts_array
+    clip_embedded_prompts_array = ga_instance.clip_embedded_prompts_array
     txt2img = ga_instance.txt2img
     weight_array = solution
     output_directory = ga_instance.output_directory
@@ -312,8 +379,9 @@ def fitness_func(ga_instance, solution, solution_idx):
     seed = 6789
 
     embedding_vector = combine_embeddings_numpy(embedded_prompts_array, weight_array, device)
+    clip_embedding_vector = combine_embeddings_numpy(clip_embedded_prompts_array, weight_array, device)
     negative_embedding_vector = combine_embeddings_numpy(negative_embedded_prompts_array, weight_array, device)
-    chad_score, chad_score_scaled = embeddings_chad_score(device, embedding_vector, negative_embedding_vector, generation, solution_idx, seed, output_directory, chad_score_predictor, clip_text_embedder, txt2img, util_clip,
+    chad_score, chad_score_scaled = embeddings_similarity_score(device, embedding_vector, clip_embedding_vector, negative_embedding_vector, generation, solution_idx, seed, output_directory, chad_score_predictor, clip_text_embedder, txt2img, util_clip,
                                                           cfg_strength, image_width, image_height)
 
     return chad_score.item()
@@ -440,6 +508,7 @@ def main():
     # embeddings array
     embedded_prompts_array = []
     negative_embedded_prompts_array = []
+    clip_embedded_prompts_array = []
 
     # Get N Embeddings
 
@@ -467,14 +536,17 @@ def main():
 
         embedded_prompts_numpy = embedded_prompts.detach().cpu().numpy()
         negative_embedded_prompts_numpy = negative_embedded_prompts.detach().cpu().numpy()
+        clip_embedded_prompts_numpy = clip_embeddings.detach().cpu().numpy()
 
         del embedded_prompts
         del negative_embedded_prompts
+        del clip_embeddings
 
         torch.cuda.empty_cache()
 
         embedded_prompts_array.append(embedded_prompts_numpy)
         negative_embedded_prompts_array.append(negative_embedded_prompts_numpy)
+        clip_embedded_prompts_array.append(clip_embedded_prompts_numpy)
 
     # Create a list to store the random population
     random_population = []
@@ -527,6 +599,7 @@ def main():
     ga_instance.output_directory = output_directory
     ga_instance.embedded_prompts_array = embedded_prompts_array
     ga_instance.negative_embedded_prompts_array = negative_embedded_prompts_array
+    ga_instance.clip_embedded_prompts_array = clip_embedded_prompts_array
     ga_instance.clip_text_embedder = clip_text_embedder
     ga_instance.txt2img = txt2img
     ga_instance.cfg_strength = cfg_strength
