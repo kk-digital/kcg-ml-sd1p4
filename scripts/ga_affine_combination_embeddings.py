@@ -502,6 +502,7 @@ def main():
     # number of chromozome genes
     num_genes = num_prompts
 
+    print("zip path : ", prompts_path)
     prompt_list = read_prompts_from_zip(prompts_path, num_prompts)
     #prompt_list = generate_prompts(num_prompts, num_phrases)
 
