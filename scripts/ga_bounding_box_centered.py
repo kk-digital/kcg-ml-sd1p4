@@ -90,7 +90,7 @@ def log_to_file(message):
 
 
 # Function to calculate the chad score for batch of images
-def calculate_fitness_score(ga_instance, solution, solution_idx):
+def get_pil_image_from_solution(ga_instance, solution, solution_idx):
     # set seed
     SEED = random.randint(0, 2 ** 24)
     if FIXED_SEED == True:
@@ -99,7 +99,17 @@ def calculate_fitness_score(ga_instance, solution, solution_idx):
     # Convert the numpy array to a PyTorch tensor
     prompt_embedding = torch.tensor(solution, dtype=torch.float32)
     prompt_embedding = prompt_embedding.view(1, 77, 768).to(DEVICE)
+    # print("embedded_prompt, tensor size, after= ",str(torch.Tensor.size(embedded_prompt)) )
 
+    # print("Calculation Chad Score: sd.generate_images_from_embeddings")
+    # print("prompt_embedded_prompt= " + str(prompt_embedding.get_device()))
+    # print("null_prompt device= " + str(NULL_PROMPT.get_device()))
+    # print("embedded_prompt, tensor size= ",str(torch.Tensor.size(prompt_embedding)) )
+    # print("NULL_PROMPT, tensor size= ",str(torch.Tensor.size(NULL_PROMPT)) )
+    # TODO: why are we regenerating the image?
+
+    # NOTE: Is using NoGrad internally
+    # NOTE: Is using autocast internally
     latent = sd.generate_images_latent_from_embeddings(
         seed=SEED,
         embedded_prompt=prompt_embedding,
@@ -108,30 +118,51 @@ def calculate_fitness_score(ga_instance, solution, solution_idx):
     )
 
     image = sd.get_image_from_latent(latent)
+    del latent
+    torch.cuda.empty_cache()
 
     # move back to cpu
     prompt_embedding.to("cpu")
     del prompt_embedding
 
     pil_image = to_pil(image[0])  # Convert to (height, width, channels)
+    del image
+    torch.cuda.empty_cache()
 
     # convert to grey scale
     if CONVERT_GREY_SCALE_FOR_SCORING == True:
         pil_image = pil_image.convert("L")
         pil_image = pil_image.convert("RGB")
 
+    return pil_image
+
+# Function to calculate the chad score for batch of images
+def calculate_fitness_score(ga_instance, solution, solution_idx):
+    pil_image = get_pil_image_from_solution(ga_instance, solution, solution_idx)
+
     fitness_score = centered_fitness(pil_image)
+    
     return fitness_score
 
 
 def cached_fitness_func(ga_instance, solution, solution_idx):
-    solution_copy = solution.copy()  # flatten() is destructive operation
+    solution_copy = solution.copy()  # flatten() is a destructive operation
     solution_flattened = solution_copy.flatten()
-    if tuple(solution_flattened) in fitness_cache:
-        print('Returning cached score', fitness_cache[tuple(solution_flattened)])
-    if tuple(solution_flattened) not in fitness_cache:
-        fitness_cache[tuple(solution_flattened)] = calculate_fitness_score(ga_instance, solution, solution_idx)
-    return fitness_cache[tuple(solution_flattened)]
+    solution_tuple = tuple(solution_flattened)
+    
+    if FIXED_SEED == True:
+        # When FIXED_SEED is True, we try to get the score from the cache
+        if solution_tuple in fitness_cache:
+            print('Returning cached score', fitness_cache[solution_tuple])
+            return fitness_cache[solution_tuple]
+        else:
+            # If it is not in the cache, we calculate it and then store it in the cache
+            fitness_cache[solution_tuple] = calculate_fitness_score(ga_instance, solution, solution_idx)
+            return fitness_cache[solution_tuple]
+    else:
+        # When FIXED_SEED is False, we do not use the cache and calculate a fresh score every time
+        return calculate_fitness_score(ga_instance, solution, solution_idx)
+
 
 
 def on_fitness(ga_instance, population_fitness):

@@ -90,7 +90,7 @@ def log_to_file(message):
 
 
 # Function to calculate the chad score for batch of images
-def calculate_fitness_score(ga_instance, solution, solution_idx):
+def get_pil_image_from_solution(ga_instance, solution, solution_idx):
     # set seed
     SEED = random.randint(0, 2 ** 24)
     if FIXED_SEED == True:
@@ -100,7 +100,6 @@ def calculate_fitness_score(ga_instance, solution, solution_idx):
     prompt_embedding = torch.tensor(solution, dtype=torch.float32)
     prompt_embedding = prompt_embedding.view(1, 77, 768).to(DEVICE)
 
-
     latent = sd.generate_images_latent_from_embeddings(
         seed=SEED,
         embedded_prompt=prompt_embedding,
@@ -109,30 +108,50 @@ def calculate_fitness_score(ga_instance, solution, solution_idx):
     )
 
     image = sd.get_image_from_latent(latent)
-    
+    del latent
+    torch.cuda.empty_cache()
+
     # move back to cpu
     prompt_embedding.to("cpu")
     del prompt_embedding
 
     pil_image = to_pil(image[0])  # Convert to (height, width, channels)
+    del image
+    torch.cuda.empty_cache()
 
     # convert to grey scale
     if CONVERT_GREY_SCALE_FOR_SCORING == True:
         pil_image = pil_image.convert("L")
         pil_image = pil_image.convert("RGB")
 
+    return pil_image
+
+# Function to calculate the chad score for batch of images
+def calculate_fitness_score(ga_instance, solution, solution_idx):
+    pil_image = get_pil_image_from_solution(ga_instance, solution, solution_idx)
+
     fitness_score = size_fitness(pil_image)
+    
     return fitness_score
 
 
 def cached_fitness_func(ga_instance, solution, solution_idx):
-    solution_copy = solution.copy()  # flatten() is destructive operation
+    solution_copy = solution.copy()  # flatten() is a destructive operation
     solution_flattened = solution_copy.flatten()
-    if tuple(solution_flattened) in fitness_cache:
-        print('Returning cached score', fitness_cache[tuple(solution_flattened)])
-    if tuple(solution_flattened) not in fitness_cache:
-        fitness_cache[tuple(solution_flattened)] = calculate_fitness_score(ga_instance, solution, solution_idx)
-    return fitness_cache[tuple(solution_flattened)]
+    solution_tuple = tuple(solution_flattened)
+    
+    if FIXED_SEED == True:
+        # When FIXED_SEED is True, we try to get the score from the cache
+        if solution_tuple in fitness_cache:
+            print('Returning cached score', fitness_cache[solution_tuple])
+            return fitness_cache[solution_tuple]
+        else:
+            # If it is not in the cache, we calculate it and then store it in the cache
+            fitness_cache[solution_tuple] = calculate_fitness_score(ga_instance, solution, solution_idx)
+            return fitness_cache[solution_tuple]
+    else:
+        # When FIXED_SEED is False, we do not use the cache and calculate a fresh score every time
+        return calculate_fitness_score(ga_instance, solution, solution_idx)
 
 
 def on_fitness(ga_instance, population_fitness):
@@ -209,7 +228,6 @@ def store_generation_images(ga_instance):
 def prompt_embedding_vectors(sd, prompt_array):
     # Generate embeddings for each prompt
     embedded_prompts = ga.clip_text_get_prompt_embedding(config, prompts=prompt_array)
-    # print("embedded_prompt, tensor shape= "+ str(torch.Tensor.size(embedded_prompts)))
     embedded_prompts.to("cpu")
     return embedded_prompts
 
@@ -246,8 +264,6 @@ sd.model.load_unet(config.get_model(SDconfigs.UNET))
 
 # Get embedding of null prompt
 NULL_PROMPT = prompt_embedding_vectors(sd, [""])[0]
-# print("NULL_PROMPT= ", str(NULL_PROMPT))
-# print("NULL_PROMPT size= ", str(torch.Tensor.size(NULL_PROMPT)))
 
 # generate prompts and get embeddings
 prompt_phrase_length = 10  # number of words in prompt

@@ -349,6 +349,12 @@ for i in range(population_size):
     #normalized_weights = (random_weights - np.mean(random_weights)) / np.std(random_weights)
     initial_population.append(random_weights)
 
+
+# Printing out each individual in the initial population
+for i, individual in enumerate(initial_population):
+    print(f"Individual {i}:")
+    print(individual)
+
 # Initialize the GA
 ga_instance = pygad.GA(initial_population=initial_population,
                        num_generations=generations,
