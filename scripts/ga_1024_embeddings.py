@@ -135,8 +135,8 @@ def calculate_fitness_score(ga_instance, solution, solution_idx):
     latent_numpy = latent.cpu().numpy()  # Assuming `latent` is a torch tensor
 
     # Save the numpy arrays to individual .npz files
-    np.savez_compressed(os.path.join(OUTPUT_DIR, f'prompt_embedding_{solution_idx}.npz'), prompt_embedding=prompt_numpy)
-    np.savez_compressed(os.path.join(OUTPUT_DIR, f'latent_{solution_idx}.npz'), latent=latent_numpy)
+    np.savez_compressed(os.path.join(FEATURES_DIR, f'prompt_embedding_{solution_idx}.npz'), prompt_embedding=prompt_numpy)
+    np.savez_compressed(os.path.join(FEATURES_DIR, f'latent_{solution_idx}.npz'), latent=latent_numpy)
 
     # Create image from latent
     image = sd.get_image_from_latent(latent)
