@@ -37,7 +37,7 @@ random.seed()
 N_STEPS = 20  # 20, 12
 CFG_STRENGTH = 9
 
-FIXED_SEED = False
+FIXED_SEED = True
 CONVERT_GREY_SCALE_FOR_SCORING = False
 
 # Add argparse arguments
