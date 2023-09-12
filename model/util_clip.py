@@ -29,5 +29,5 @@ class UtilClip():
 
     def get_text_features(self, text):
         tokens = clip.tokenize(text)
-        text_features = self.model.encode_text(tokens)
+        text_features = self.model.encode_text(tokens).to(device=self.device, dtype=torch.float32)
         return text_features
