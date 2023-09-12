@@ -33,6 +33,8 @@ CLIP_IMAGE_PROCESSOR_DIR_PATH = config.get_model_folder_path(CLIPconfigs.IMG_ENC
 CLIP_VISION_MODEL_DIR_PATH = config.get_model_folder_path(CLIPconfigs.IMG_ENC_VISION)
 CLIP_IMAGE_ENCODER_PATH = config.get_model(CLIPconfigs.IMG_ENC)
 
+CLIP_MODEL_PATH = config.get_model(CLIPconfigs.CLIP_MODEL)
+
 SD_CHECKPOINT_PATH = config.get_model(SDconfigs.CHECKPOINT)
 UNET_PATH = config.get_model(SDconfigs.UNET)
 VAE_PATH = config.get_model(SDconfigs.VAE)
