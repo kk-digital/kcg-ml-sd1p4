@@ -276,6 +276,7 @@ def generate_prompts_from_csv(csv_dataset_path,
                               use_threshold=True):
     # max token size
     max_token_size = 75
+    comma_token_size = 1
 
     phrases, \
         phrases_token_size,\
@@ -324,7 +325,7 @@ def generate_prompts_from_csv(csv_dataset_path,
                     continue
 
             chosen_phrase_size = phrases_token_size[prompt_index]
-            sum_token_size = positive_prompt_total_token_size + chosen_phrase_size
+            sum_token_size = positive_prompt_total_token_size + chosen_phrase_size + comma_token_size
             if sum_token_size < max_token_size:
                 # update used array
                 prompt_vector[prompt_index] = 1
@@ -347,7 +348,7 @@ def generate_prompts_from_csv(csv_dataset_path,
                     continue
 
             chosen_phrase_size = phrases_token_size[prompt_index]
-            sum_token_size = negative_prompt_total_token_size + chosen_phrase_size
+            sum_token_size = negative_prompt_total_token_size + chosen_phrase_size + comma_token_size
             if sum_token_size < max_token_size:
                 # update used array
                 prompt_vector[prompt_index] = -1
@@ -422,6 +423,7 @@ def generate_prompts_from_csv_proportional_selection(csv_dataset_path,
                                                      checkpoint_path="",
                                                      dataset_output=""):
     max_token_size = 75
+    comma_token_size = 1
 
     phrases, \
         phrases_token_size,\
@@ -489,7 +491,7 @@ def generate_prompts_from_csv_proportional_selection(csv_dataset_path,
             random_prompt = positive_phrases[prompt_index]
 
             chosen_phrase_size = positive_token_size[prompt_index]
-            sum_token_size = positive_prompt_total_token_size + chosen_phrase_size
+            sum_token_size = positive_prompt_total_token_size + chosen_phrase_size + comma_token_size
             if sum_token_size < max_token_size:
                 # update used array
                 prompt_vector[prompt_index] = 1
@@ -497,6 +499,7 @@ def generate_prompts_from_csv_proportional_selection(csv_dataset_path,
                 positive_prompt_total_token_size = sum_token_size
             else:
                 break
+        print("positive token size={}".format(positive_prompt_total_token_size))
 
         # negative prompt
         while negative_prompt_total_token_size < max_token_size:
@@ -510,7 +513,7 @@ def generate_prompts_from_csv_proportional_selection(csv_dataset_path,
             random_prompt = negative_phrases[prompt_index]
 
             chosen_phrase_size = negative_token_size[prompt_index]
-            sum_token_size = negative_prompt_total_token_size + chosen_phrase_size
+            sum_token_size = negative_prompt_total_token_size + chosen_phrase_size + comma_token_size
             if sum_token_size < max_token_size:
                 # update used array
                 prompt_vector[prompt_index] = -1
@@ -518,6 +521,9 @@ def generate_prompts_from_csv_proportional_selection(csv_dataset_path,
                 negative_prompt_total_token_size = sum_token_size
             else:
                 break
+        print("negative token size={}".format( negative_prompt_total_token_size))
+
+
 
         positive_prompt_str = ', '.join([prompt.Phrase for prompt in positive_prompt])
         if positive_prefix != "":
