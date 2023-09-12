@@ -37,7 +37,7 @@ random.seed()
 N_STEPS = 20  # 20, 12
 CFG_STRENGTH = 9
 
-FIXED_SEED = True
+FIXED_SEED = False
 CONVERT_GREY_SCALE_FOR_SCORING = False
 
 # Add argparse arguments
@@ -153,13 +153,23 @@ def calculate_fitness_score(ga_instance, solution, solution_idx):
 
 
 def cached_fitness_func(ga_instance, solution, solution_idx):
-    solution_copy = solution.copy()  # flatten() is destructive operation
+    solution_copy = solution.copy()  # flatten() is a destructive operation
     solution_flattened = solution_copy.flatten()
-    if tuple(solution_flattened) in fitness_cache:
-        print('Returning cached score', fitness_cache[tuple(solution_flattened)])
-    if tuple(solution_flattened) not in fitness_cache:
-        fitness_cache[tuple(solution_flattened)] = calculate_fitness_score(ga_instance, solution, solution_idx)
-    return fitness_cache[tuple(solution_flattened)]
+    solution_tuple = tuple(solution_flattened)
+    
+    if FIXED_SEED == True:
+        # When FIXED_SEED is True, we try to get the score from the cache
+        if solution_tuple in fitness_cache:
+            print('Returning cached score', fitness_cache[solution_tuple])
+            return fitness_cache[solution_tuple]
+        else:
+            # If it is not in the cache, we calculate it and then store it in the cache
+            fitness_cache[solution_tuple] = calculate_fitness_score(ga_instance, solution, solution_idx)
+            return fitness_cache[solution_tuple]
+    else:
+        # When FIXED_SEED is False, we do not use the cache and calculate a fresh score every time
+        return calculate_fitness_score(ga_instance, solution, solution_idx)
+
 
 
 def on_fitness(ga_instance, population_fitness):
