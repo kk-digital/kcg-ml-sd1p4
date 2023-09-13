@@ -514,52 +514,14 @@ def read_prompts_from_zip(zip_file_path, num_prompts):
 
         return loaded_arrays
 
-def get_target_image_features(clip_text_embedder, txt2img, util_clip, output, positive_prompt, negative_prompt, cfg_strength, seed, image_width, image_height):
+def get_target_embeddings_features(util_clip, subject):
 
-    embedded_prompts = clip_text_embedder(positive_prompt)
-    negative_prompts = clip_text_embedder(negative_prompt)
+    features = util_clip.get_text_features(subject)
+    features = features.to(torch.float32)
 
-    latent = txt2img.generate_images_latent_from_embeddings(
-        batch_size=1,
-        embedded_prompt=embedded_prompts,
-        null_prompt=negative_prompts,
-        uncond_scale=cfg_strength,
-        seed=seed,
-        w=image_width,
-        h=image_height
-    )
+    features = features.squeeze(0)
 
-    images = txt2img.get_image_from_latent(latent)
-    generation_dir = output + '/target_image'
-    os.makedirs(generation_dir, exist_ok=True)
-    image_list, image_hash_list = save_images(images, generation_dir + '/target' + '.jpg')
-
-    # Map images to `[0, 1]` space and clip
-    images = torch.clamp((images + 1.0) / 2.0, min=0.0, max=1.0)
-    images_cpu = images.cpu()
-    images_cpu = images_cpu.permute(0, 2, 3, 1)
-    images_cpu = images_cpu.detach().float().numpy()
-
-    del latent
-    torch.cuda.empty_cache()
-
-    del images
-    torch.cuda.empty_cache()
-
-    image_list = []
-    # Save images
-    for i, img in enumerate(images_cpu):
-        img = Image.fromarray((255. * img).astype(np.uint8))
-        image_list.append(img)
-
-    image = image_list[0]
-
-    image_features = util_clip.get_image_features(image)
-    image_features = image_features.to(torch.float32)
-
-    image_features = image_features.squeeze(0)
-
-    return image_features
+    return features
 
 def main():
 
@@ -652,11 +614,7 @@ def main():
                                         path=checkpoint_path, force_submodels_init=True)
 
 
-    fixed_taget_image_features = get_target_image_features(clip_text_embedder, txt2img, util_clip, output_directory,
-                                                           "white box, symmetrical_docking, blush, 1girl, heart-shaped pupils, blue hair, (bloom), sharp focus, japanese, (ecstasy of flower: 1.2)concept art, thigh straps, dress, looking at me, fujifilm x-t3, detached collar, ambient lighting",
-                                                           "disfigured, nsfw, ((extra limbs)), (long body :1.3), ((missing legs)), ((monochrome)), ((poorly drawn face)), multiple legs, missing arms, extra arms, (hair between eyes:2.0), (low quality:2), geometry, dof",
-                                                           cfg_strength, seed, image_width, image_height)
-
+    fixed_taget_image_features = get_target_embeddings_features(util_clip, "chibi, anime, waifu, side scrolling")
     # number of chromozome genes
     num_genes = num_prompts
 
