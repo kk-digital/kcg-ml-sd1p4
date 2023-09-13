@@ -171,19 +171,6 @@ def on_mutation(ga_instance, offspring_mutation):
     print("Performing mutation at generation: ", ga_instance.generations_completed)
     log_to_file(f"Performing mutation at generation: {ga_instance.generations_completed}", output_directory)
 
-    num_prompts = ga_instance.num_prompts
-    mutation_probability = ga_instance.mutation_probability
-    mutation_percent_genes = ga_instance.mutation_percent_genes
-
-
-    for i, ind in enumerate(ga_instance.population):
-        # normalize numpy array
-        # make sure sum is 1
-        ind /= ind.sum()
-        ga_instance.population[i] = ind
-
-
-
 
 
 def sigmoid(x):
@@ -281,11 +268,7 @@ def embeddings_chad_score(device, embeddings_vector, negative_embeddings_vector,
     image_features = util_clip.get_image_features(image)
     image_features = image_features.to(torch.float32)
 
-    # cleanup
-    #clip_embeddings = util_clip.get_text_features(prompt_str)
-    #embedding_vector_normalized = embedding_vector / np.linalg.norm(embedding_vector)
-    #clip_image_vector_normalized = clip_image_vector / np.linalg.norm(clip_image_vector)
-
+    # get chad score
     chad_score = chad_score_predictor.get_chad_score_tensor(image_features)
     chad_score_scaled = torch.sigmoid(chad_score)
 
@@ -393,6 +376,18 @@ def fitness_func(ga_instance, solution, solution_idx):
     return chad_score.item()
 
 def store_generation_images(ga_instance):
+
+    num_prompts = ga_instance.num_prompts
+    mutation_probability = ga_instance.mutation_probability
+    mutation_percent_genes = ga_instance.mutation_percent_genes
+
+
+    for i, ind in enumerate(ga_instance.population):
+        # normalize numpy array
+        # make sure sum is 1
+        ind /= ind.sum()
+        ga_instance.population[i] = ind
+
     return 0
 
 def read_prompts_from_zip(zip_file_path, num_prompts):
