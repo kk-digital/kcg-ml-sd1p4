@@ -352,7 +352,7 @@ def embeddings_similarity_score(device, embeddings_vector, clip_embeddings_vecto
     image_features = image_features / image_features_magnitude
     text_features = clip_embeddings_vector / text_features_magnitude
 
-    image_features = image_features.unsqueeze(0)
+    image_features = image_features.squeeze(0)
     print("*********************")
     print(image_features.shape)
     print(text_features.shape)
