@@ -1,3 +1,5 @@
+import sys
+
 import numpy as np
 import torch
 from torch.mps import current_allocated_memory as mps_current_allocated_memory
@@ -70,3 +72,28 @@ def set_seed(seed):
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
+
+
+def get_cuda_device_string():
+    # if shared.cmd_opts.device_id is not None:
+    #     return f"cuda:{shared.cmd_opts.device_id}"
+
+    return "cuda"
+
+
+def has_mps() -> bool:
+    if sys.platform != "darwin":
+        return False
+    else:
+        return torch.backends.mps.is_available() and torch.backends.mps.is_built()
+
+
+def torch_gc():
+    if torch.cuda.is_available():
+        with torch.cuda.device(get_cuda_device_string()):
+            torch.cuda.empty_cache()
+            torch.cuda.ipc_collect()
+
+    if has_mps():
+        from torch.mps import empty_cache
+        empty_cache()
