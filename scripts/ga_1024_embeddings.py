@@ -8,7 +8,7 @@ base_dir = os.getcwd()
 sys.path.insert(0, base_dir)
 
 import random
-from os.path import join
+from os.path import join, abspath
 
 import clip
 import pygad
@@ -61,19 +61,23 @@ image_features_clip_model, preprocess = clip.load("ViT-L/14", device=DEVICE)
 # Why are you using this prompt generator?
 EMBEDDED_PROMPTS_DIR = os.path.abspath(join(base_dir, 'input', 'embedded_prompts'))
 
-OUTPUT_DIR = os.path.abspath(join(base_dir, 'output', 'ga'))
-IMAGES_ROOT_DIR = os.path.abspath(join(OUTPUT_DIR, "images/"))
-FEATURES_DIR = os.path.abspath(join(OUTPUT_DIR, "features/"))
+OUTPUT_DIR = abspath(join(base_dir, 'output', 'ga'))
 
 os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
-os.makedirs(FEATURES_DIR, exist_ok=True)
-os.makedirs(IMAGES_ROOT_DIR, exist_ok=True)
 
-# Creating new subdirectory for this run of the GA (e.g. output/ga/images/ga001)
-IMAGES_DIR = get_next_ga_dir(IMAGES_ROOT_DIR)
-os.makedirs(IMAGES_DIR, exist_ok=True)
-csv_filename = os.path.join(IMAGES_DIR, "fitness_data.csv")
+# Creating a new directory for this run of the GA (e.g. output/ga/ga001)
+GA_RUN_DIR = get_next_ga_dir(OUTPUT_DIR)
+os.makedirs(GA_RUN_DIR, exist_ok=True)
+
+# Here we define IMAGES_ROOT_DIR and FEATURES_DIR based on the new GA_RUN_DIR
+IMAGES_ROOT_DIR = os.path.join(GA_RUN_DIR, "images")
+FEATURES_DIR = os.path.join(GA_RUN_DIR, "features")
+
+os.makedirs(IMAGES_ROOT_DIR, exist_ok=True)
+os.makedirs(FEATURES_DIR, exist_ok=True)
+
+csv_filename = os.path.join(GA_RUN_DIR, "fitness_data.csv")
 
 # Write the headers to the CSV file
 if not os.path.exists(csv_filename):
@@ -93,13 +97,12 @@ config = ModelPathConfig()
 print(EMBEDDED_PROMPTS_DIR)
 print(OUTPUT_DIR)
 print(IMAGES_ROOT_DIR)
-print(IMAGES_DIR)
 print(FEATURES_DIR)
 
 # Initialize logger
 def log_to_file(message):
     
-    log_path = os.path.join(IMAGES_DIR, "log.txt")
+    log_path = os.path.join(IMAGES_ROOT_DIR, "log.txt")
 
     with open(log_path, "a") as log_file:
         log_file.write(message + "\n")
@@ -128,13 +131,11 @@ def calculate_fitness_score(ga_instance, solution, solution_idx):
         null_prompt=NULL_PROMPT,
         uncond_scale=CFG_STRENGTH
     )
-    
 
     # Convert the PyTorch tensors to numpy arrays
     prompt_numpy = prompt_embedding.cpu().numpy()
     latent_numpy = latent.cpu().numpy()  # Assuming `latent` is a torch tensor
 
-    # Save the numpy arrays to individual .npz files
     np.savez_compressed(os.path.join(FEATURES_DIR, f'prompt_embedding_{solution_idx}.npz'), prompt_embedding=prompt_numpy)
     np.savez_compressed(os.path.join(FEATURES_DIR, f'latent_{solution_idx}.npz'), latent=latent_numpy)
 
@@ -222,7 +223,7 @@ def store_generation_images(ga_instance):
     print("Population size: ", len(ga_instance.population))
 
 
-    file_dir = os.path.join(IMAGES_DIR, str(generation))
+    file_dir = os.path.join(IMAGES_ROOT_DIR, str(generation))
     os.makedirs(file_dir)
     for i, ind in enumerate(ga_instance.population):
         print(i)
