@@ -71,7 +71,8 @@ class GeneratedImageDataset:
                             if json_content["image_hash"] == score_json["image_hash"]:
                                 is_score_exist = True
                     except Exception as e:
-                        print("No score json found: {0}".format(e))
+                        # print("No score json found: {0}".format(e))
+                        pass
 
 
                     # get embedding
