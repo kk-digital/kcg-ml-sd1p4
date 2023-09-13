@@ -557,6 +557,8 @@ def get_target_image_features(clip_text_embedder, txt2img, util_clip, output, po
     image_features = util_clip.get_image_features(image)
     image_features = image_features.to(torch.float32)
 
+    image_features = image_features.squeeze(0)
+
     return image_features
 
 def main():
