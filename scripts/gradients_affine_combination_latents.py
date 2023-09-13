@@ -132,33 +132,19 @@ def read_prompts_from_zip(zip_file_path, num_prompts):
         return loaded_arrays
 
 
-# Now, loaded_arrays contains the loaded NumPy arrays from the first 100 .npz files
+def combine_latents(latents_array, weight_array, device):
 
-def combine_embeddings(embeddings_array, weight_array, device):
-
-    # empty embedding filled with zeroes
-    result_embedding = torch.zeros(1, 77, 768, device=device, dtype=torch.float32)
+    # empty latent filled with zeroes
+    result_latents = torch.zeros(1, 4, 64, 64, device=device, dtype=torch.float32)
 
     # Multiply each tensor by its corresponding float and sum up
-    for embedding, weight in zip(embeddings_array, weight_array):
-        result_embedding += embedding * weight
+    for latent, weight in zip(latents_array, weight_array):
+        result_latents += latent * weight
 
-    return result_embedding
+    return result_latents
 
 
-def embeddings_chad_score(embeddings_vector, seed, index, output, chad_score_predictor):
-
-    null_prompt = clip_text_embedder('')
-
-    latent = txt2img.generate_images_latent_from_embeddings(
-        batch_size=1,
-        embedded_prompt=embeddings_vector,
-        null_prompt=null_prompt,
-        uncond_scale=cfg_strength,
-        seed=seed,
-        w=image_width,
-        h=image_height
-    )
+def latents_chad_score(latent, index, output, chad_score_predictor):
 
     images = txt2img.get_image_from_latent(latent)
     image_list, image_hash_list = save_images(images, output + '/image' + str(index + 1) + '.jpg')
@@ -251,21 +237,47 @@ if __name__ == "__main__":
     txt2img.initialize_latent_diffusion(autoencoder=None, clip_text_embedder=None, unet_model=None,
                                         path=checkpoint_path, force_submodels_init=True)
 
-    embedded_prompts_array = []
+
+    latent_array = []
     # Get N Embeddings
     for prompt in prompt_list:
         # get the embedding from positive text prompt
         # prompt_str = prompt.positive_prompt_str
         prompt = prompt.flatten()[0]
-        prompt_str = prompt['positive-prompt-str']
-        embedded_prompts = clip_text_embedder(prompt_str)
 
-        embedded_prompts_array.append(embedded_prompts)
+        prompt_str = prompt['positive-prompt-str']
+        negative_prompt_str = prompt['negative-prompt-str']
+
+        embedded_prompts = clip_text_embedder(prompt_str)
+        negative_embedded_prompts = clip_text_embedder(negative_prompt_str)
+
+        latent = txt2img.generate_images_latent_from_embeddings(
+            batch_size=1,
+            embedded_prompt=embedded_prompts,
+            null_prompt=negative_embedded_prompts,
+            uncond_scale=cfg_strength,
+            seed=seed,
+            w=image_width,
+            h=image_height
+        )
+
+        latent_array.append(latent)
+
+    # Create a list to store the random population
+    weight_array = []
+
+    for i in range(weight_array):
+        # Parameters for the Gaussian distribution
+        mean = 0  # mean (center) of the distribution
+        std_dev = 1  # standard deviation (spread or width) of the distribution
+        shape = (num_prompts)  # shape of the resulting array
+
+        # Create the random array
+        random_weights = np.random.normal(mean, std_dev, shape)
+        weight_array.append(random_weights)
 
     # array of  weights
-    weight_array = np.full(num_prompts, 1.0 / num_prompts)
     weight_array = torch.tensor(weight_array, device=device, dtype=torch.float32, requires_grad=True)
-    # Combinate into one Embedding
 
     optimizer = optim.Adam([weight_array], lr=learning_rate)
     mse_loss = nn.MSELoss(reduction='sum')
@@ -277,9 +289,9 @@ if __name__ == "__main__":
         # Zero the gradients
         optimizer.zero_grad()
 
-        embedding_vector = combine_embeddings(embedded_prompts_array, weight_array, device)
+        combined_latent = combine_latents(latent_array, weight_array, device)
 
-        chad_score, chad_score_scaled = embeddings_chad_score(embedding_vector, seed, i, output, chad_score_predictor)
+        chad_score, chad_score_scaled = latents_chad_score(combined_latent, i, output, chad_score_predictor)
 
         input = chad_score_scaled
         loss = mse_loss(input, target)
