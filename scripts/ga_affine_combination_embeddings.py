@@ -652,7 +652,9 @@ def main():
                                         path=checkpoint_path, force_submodels_init=True)
 
 
-    fixed_taget_image_features = get_target_image_features(clip_text_embedder, txt2img, util_clip, output_directory, "body inside gelatinous cube, [:highly detailed eyes, (award winning digital artwork:1.3) of (ultra detailed:1.3) (award winning digital artwork:1.3) of (masterpiece:1.3), dark hallway, large american flag background, twins  detailed face, ((front of computer)), lower lip bite, k-idol", "",
+    fixed_taget_image_features = get_target_image_features(clip_text_embedder, txt2img, util_clip, output_directory,
+                                                           "finely detailed eyes, full body, mikasa ackerman, real human skin, white box, shy, makeup, blue hair, highres, (award winning photograph:1.2), photorealistic painting by ed blinkey, [perfect body], looking at viewer, complicated machine, unreal_engine, intricate",
+                                                           "",
                                                            cfg_strength, seed, image_width, image_height)
 
     # number of chromozome genes
