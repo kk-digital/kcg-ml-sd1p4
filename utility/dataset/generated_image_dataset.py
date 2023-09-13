@@ -13,7 +13,7 @@ import time
 class GeneratedImageFeatures:
     def __init__(self, prompt: str, model: str, file_name: str, file_hash: str, chad_score_model: str,
                  chad_score: float, seed: int, cfg_strength: int, embedding: [], clip_feature_vector: [],
-                 latent_feature: [], prompt_dict: dict):
+                 latent_feature: [], prompt_dict: dict, is_score_exist=False, score=0):
         self.prompt = prompt
         self.model = model
         self.file_name = file_name
@@ -27,6 +27,9 @@ class GeneratedImageFeatures:
         self.clip_feature_vector = clip_feature_vector
         self.latent_feature = latent_feature
         self.prompt_dict = prompt_dict
+
+        self.is_score_exist = is_score_exist
+        self.score = score
 
 
 class GeneratedImageDataset:
@@ -55,6 +58,21 @@ class GeneratedImageDataset:
                     file_path_json = file_path_no_extension + ".json"
                     with zip_ref.open(file_path_json) as file:
                         json_content = json.load(file)
+
+                    score_json = ""
+                    is_score_exist = False
+                    # get score json if exist
+                    try:
+                        file_path_score_json = file_path_no_extension + ".score.json"
+                        with zip_ref.open(file_path_score_json) as file:
+                            score_json = json.load(file)
+
+                            # check first if hashes match
+                            if json_content["image_hash"] == score_json["image_hash"]:
+                                is_score_exist = True
+                    except Exception as e:
+                        print("No score json found: {0}".format(e))
+
 
                     # get embedding
                     file_path_embedding = os.path.join(features_dir_path, file_base_name + ".embedding.npz")
@@ -88,7 +106,6 @@ class GeneratedImageDataset:
                                                 "prompt_vector": prompt_dict["prompt_vector"].tolist()}
                     except Exception as e:
                         print("No prompt dict found: {0}".format(e))
-
                     image_features = GeneratedImageFeatures(json_content["prompt"],
                                                             json_content["model"],
                                                             json_content["image_name"],
@@ -100,7 +117,10 @@ class GeneratedImageDataset:
                                                             embedding_data,
                                                             clip_data,
                                                             latent_data,
-                                                            prompt_dict_data)
+                                                            prompt_dict_data,
+                                                            is_score_exist=is_score_exist)
+                    if is_score_exist:
+                        image_features.score = score_json['score']
 
                     # add image features to dataset
                     self.dataset.append(image_features)
@@ -166,3 +186,13 @@ class GeneratedImageDataset:
             chad_scores.append(data.chad_score)
 
         return chad_scores
+
+    def get_scores(self):
+        scores = []
+
+        for data in self.dataset:
+            if not data.is_score_exist:
+                raise Exception("Scores doesnt exist in dataset")
+            scores.append(data.score)
+
+        return scores

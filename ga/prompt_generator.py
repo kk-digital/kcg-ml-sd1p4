@@ -499,7 +499,6 @@ def generate_prompts_from_csv_proportional_selection(csv_dataset_path,
                 positive_prompt_total_token_size = sum_token_size
             else:
                 break
-        print("positive token size={}".format(positive_prompt_total_token_size))
 
         # negative prompt
         while negative_prompt_total_token_size < max_token_size:
@@ -521,9 +520,6 @@ def generate_prompts_from_csv_proportional_selection(csv_dataset_path,
                 negative_prompt_total_token_size = sum_token_size
             else:
                 break
-        print("negative token size={}".format( negative_prompt_total_token_size))
-
-
 
         positive_prompt_str = ', '.join([prompt.Phrase for prompt in positive_prompt])
         if positive_prefix != "":
