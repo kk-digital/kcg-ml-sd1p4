@@ -353,9 +353,6 @@ def embeddings_similarity_score(device, embeddings_vector, clip_embeddings_vecto
     text_features = clip_embeddings_vector / text_features_magnitude
 
     image_features = image_features.squeeze(0)
-    print("*********************")
-    print(image_features.shape)
-    print(text_features.shape)
 
     similarity = torch.dot(image_features, text_features)
 
@@ -389,9 +386,6 @@ def fitness_func(ga_instance, solution, solution_idx):
     embedding_vector = combine_embeddings_numpy(embedded_prompts_array, weight_array, device)
     clip_embedding_vector = combine_clip_embeddings_numpy(clip_embedded_prompts_array, weight_array, device)
 
-    print("embedding_vector : ", embedding_vector.shape)
-    print("clip_embedding_vector : ", clip_embedding_vector.shape)
-
     negative_embedding_vector = combine_embeddings_numpy(negative_embedded_prompts_array, weight_array, device)
     fitness = embeddings_similarity_score(device,
                                                 embedding_vector,
@@ -421,7 +415,11 @@ def store_generation_images(ga_instance):
     for i, ind in enumerate(ga_instance.population):
         # normalize numpy array
         # make sure sum is 1
-        ind /= ind.sum()
+        #ind /= ind.sum()
+
+        magnitude = np.linalg.norm(ind)
+        ind = ind / magnitude
+
         ga_instance.population[i] = ind
 
     return 0
@@ -590,9 +588,13 @@ def main():
     random_population = []
 
     for i in range(population_size):
-        random_weights = np.random.dirichlet(np.ones(num_prompts), size=1).flatten()
-        #random_weights = np.full(num_prompts, 1.0 / num_prompts)
-        #normalized_weights = (random_weights - np.mean(random_weights)) / np.std(random_weights)
+        # Parameters for the Gaussian distribution
+        mean = 0  # mean (center) of the distribution
+        std_dev = 1  # standard deviation (spread or width) of the distribution
+        shape = (num_prompts)  # shape of the resulting array
+
+        # Create the random array
+        random_weights = np.random.normal(mean, std_dev, shape)
         random_population.append(random_weights)
 
 
