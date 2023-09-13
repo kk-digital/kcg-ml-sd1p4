@@ -397,7 +397,7 @@ def fitness_func(ga_instance, solution, solution_idx):
     print("clip_embedding_vector : ", clip_embedding_vector.shape)
 
     negative_embedding_vector = combine_embeddings_numpy(negative_embedded_prompts_array, weight_array, device)
-    chad_score, chad_score_scaled = embeddings_similarity_score(device,
+    fitness = embeddings_similarity_score(device,
                                                                 embedding_vector,
                                                                 clip_embedding_vector,
                                                                 negative_embedding_vector,
@@ -409,11 +409,11 @@ def fitness_func(ga_instance, solution, solution_idx):
                                                                 clip_text_embedder,
                                                                 txt2img,
                                                                 util_clip,
-                                                            cfg_strength,
+                                                                cfg_strength,
                                                                 image_width,
                                                                 image_height)
 
-    return chad_score.item()
+    return fitness
 
 def store_generation_images(ga_instance):
 
