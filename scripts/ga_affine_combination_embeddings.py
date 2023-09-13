@@ -652,7 +652,7 @@ def main():
                                         path=checkpoint_path, force_submodels_init=True)
 
 
-    fixed_taget_image_features = get_target_image_features(clip_text_embedder, txt2img, util_clip, output_directory, "body inside gelatinous cube, [:highly detailed eyes, (award winning digital artwork:1.3) of (ultra detailed:1.3) (award winning digital artwork:1.3) of (masterpiece:1.3), dark hallway, large american flag background, twins  detailed face, ((front of computer)), lower lip bite, k-idol", "person, environment",
+    fixed_taget_image_features = get_target_image_features(clip_text_embedder, txt2img, util_clip, output_directory, "body inside gelatinous cube, [:highly detailed eyes, (award winning digital artwork:1.3) of (ultra detailed:1.3) (award winning digital artwork:1.3) of (masterpiece:1.3), dark hallway, large american flag background, twins  detailed face, ((front of computer)), lower lip bite, k-idol", "",
                                                            cfg_strength, seed, image_width, image_height)
 
     # number of chromozome genes
