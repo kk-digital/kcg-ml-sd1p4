@@ -622,8 +622,8 @@ def main():
                            # fitness_func=calculate_chad_score,
                            # on_parents=on_parents,
                            # on_crossover=on_crossover,
-                           random_mutation_min_val=0,
-                           random_mutation_max_val=(1/num_prompts) * 2,
+                           random_mutation_min_val=-(1/num_prompts),
+                           random_mutation_max_val=(1/num_prompts),
                            on_start=store_generation_images,
                            )
     print(f"Batch Size: {population_size}")
