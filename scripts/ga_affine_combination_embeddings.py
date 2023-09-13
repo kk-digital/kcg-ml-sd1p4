@@ -679,7 +679,8 @@ def main():
         prompt = prompt.flatten()[0]
         prompt_str = prompt['positive-prompt-str']
         negative_prompt_str = prompt['negative-prompt-str']
-        print(prompt_str)
+        print("positive : ", prompt_str)
+        print("negative : ", negative_prompt_str)
 
         #prompt_str = prompt.positive_prompt_str
         embedded_prompts = clip_text_embedder(prompt_str)
