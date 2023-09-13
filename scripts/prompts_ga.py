@@ -61,7 +61,7 @@ base_dir = os.getcwd()
 sys.path.insert(0, base_dir)
 
 import random
-from os.path import join
+from os.path import join, abspath
 
 import clip
 import pygad
@@ -115,20 +115,23 @@ chad_score_predictor.load_model(chad_score_model_path)
 # Why are you using this prompt generator?
 EMBEDDED_PROMPTS_DIR = os.path.abspath(join(base_dir, 'input', 'embedded_prompts'))
 
-OUTPUT_DIR = os.path.abspath(join(base_dir, 'output', 'ga'))
-IMAGES_ROOT_DIR = os.path.abspath(join(OUTPUT_DIR, "images/"))
-FEATURES_DIR = os.path.abspath(join(OUTPUT_DIR, "features/"))
+OUTPUT_DIR = abspath(join(base_dir, 'output', 'ga_bounding_box'))
 
 os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
-os.makedirs(FEATURES_DIR, exist_ok=True)
+
+# Creating a new directory for this run of the GA (e.g. output/ga/ga001)
+GA_RUN_DIR = get_next_ga_dir(OUTPUT_DIR)
+os.makedirs(GA_RUN_DIR, exist_ok=True)
+
+# Here we define IMAGES_ROOT_DIR and FEATURES_DIR based on the new GA_RUN_DIR
+IMAGES_ROOT_DIR = os.path.join(GA_RUN_DIR, "images")
+FEATURES_DIR = os.path.join(GA_RUN_DIR, "features")
+
 os.makedirs(IMAGES_ROOT_DIR, exist_ok=True)
+os.makedirs(FEATURES_DIR, exist_ok=True)
 
-# Creating new subdirectory for this run of the GA (e.g. output/ga/images/ga001)
-IMAGES_DIR = get_next_ga_dir(IMAGES_ROOT_DIR)
-os.makedirs(IMAGES_DIR, exist_ok=True)
-
-csv_filename = os.path.join(IMAGES_DIR, "fitness_data.csv")
+csv_filename = os.path.join(GA_RUN_DIR, "fitness_data.csv")
 
 # Write the headers to the CSV file
 if not os.path.exists(csv_filename):
@@ -147,7 +150,6 @@ config = ModelPathConfig()
 print(EMBEDDED_PROMPTS_DIR)
 print(OUTPUT_DIR)
 print(IMAGES_ROOT_DIR)
-print(IMAGES_DIR)
 print(FEATURES_DIR)
 
 # TODO: wtf is this function
@@ -179,7 +181,7 @@ clip_start_time = time.time()
 # Initialize logger
 def log_to_file(message):
     
-    log_path = os.path.join(IMAGES_DIR, "log.txt")
+    log_path = os.path.join(IMAGES_ROOT_DIR, "log.txt")
 
     with open(log_path, "a") as log_file:
         log_file.write(message + "\n")
@@ -292,7 +294,7 @@ def store_generation_images(ga_instance):
     population_image_list = []
     print("Generation #", generation)
     print("Population size: ", len(ga_instance.population))
-    file_dir = os.path.join(IMAGES_DIR, str(generation))
+    file_dir = os.path.join(IMAGES_ROOT_DIR, str(generation))
     os.makedirs(file_dir)
     for i, ind in enumerate(ga_instance.population):
         SEED = random.randint(0, 2 ** 24)

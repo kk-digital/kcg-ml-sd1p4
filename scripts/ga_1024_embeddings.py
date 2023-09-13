@@ -8,7 +8,7 @@ base_dir = os.getcwd()
 sys.path.insert(0, base_dir)
 
 import random
-from os.path import join
+from os.path import join, abspath
 
 import clip
 import pygad
@@ -61,19 +61,23 @@ image_features_clip_model, preprocess = clip.load("ViT-L/14", device=DEVICE)
 # Why are you using this prompt generator?
 EMBEDDED_PROMPTS_DIR = os.path.abspath(join(base_dir, 'input', 'embedded_prompts'))
 
-OUTPUT_DIR = os.path.abspath(join(base_dir, 'output', 'ga'))
-IMAGES_ROOT_DIR = os.path.abspath(join(OUTPUT_DIR, "images/"))
-FEATURES_DIR = os.path.abspath(join(OUTPUT_DIR, "features/"))
+OUTPUT_DIR = abspath(join(base_dir, 'output', 'ga'))
 
 os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
-os.makedirs(FEATURES_DIR, exist_ok=True)
-os.makedirs(IMAGES_ROOT_DIR, exist_ok=True)
 
-# Creating new subdirectory for this run of the GA (e.g. output/ga/images/ga001)
-IMAGES_DIR = get_next_ga_dir(IMAGES_ROOT_DIR)
-os.makedirs(IMAGES_DIR, exist_ok=True)
-csv_filename = os.path.join(IMAGES_DIR, "fitness_data.csv")
+# Creating a new directory for this run of the GA (e.g. output/ga/ga001)
+GA_RUN_DIR = get_next_ga_dir(OUTPUT_DIR)
+os.makedirs(GA_RUN_DIR, exist_ok=True)
+
+# Here we define IMAGES_ROOT_DIR and FEATURES_DIR based on the new GA_RUN_DIR
+IMAGES_ROOT_DIR = os.path.join(GA_RUN_DIR, "images")
+FEATURES_DIR = os.path.join(GA_RUN_DIR, "features")
+
+os.makedirs(IMAGES_ROOT_DIR, exist_ok=True)
+os.makedirs(FEATURES_DIR, exist_ok=True)
+
+csv_filename = os.path.join(GA_RUN_DIR, "fitness_data.csv")
 
 # Write the headers to the CSV file
 if not os.path.exists(csv_filename):
@@ -93,13 +97,12 @@ config = ModelPathConfig()
 print(EMBEDDED_PROMPTS_DIR)
 print(OUTPUT_DIR)
 print(IMAGES_ROOT_DIR)
-print(IMAGES_DIR)
 print(FEATURES_DIR)
 
 # Initialize logger
 def log_to_file(message):
     
-    log_path = os.path.join(IMAGES_DIR, "log.txt")
+    log_path = os.path.join(IMAGES_ROOT_DIR, "log.txt")
 
     with open(log_path, "a") as log_file:
         log_file.write(message + "\n")
@@ -128,7 +131,14 @@ def calculate_fitness_score(ga_instance, solution, solution_idx):
         null_prompt=NULL_PROMPT,
         uncond_scale=CFG_STRENGTH
     )
-    
+
+    # Convert the PyTorch tensors to numpy arrays
+    prompt_numpy = prompt_embedding.cpu().numpy()
+    latent_numpy = latent.cpu().numpy()  # Assuming `latent` is a torch tensor
+
+    np.savez_compressed(os.path.join(FEATURES_DIR, f'prompt_embedding_{solution_idx}.npz'), prompt_embedding=prompt_numpy)
+    np.savez_compressed(os.path.join(FEATURES_DIR, f'latent_{solution_idx}.npz'), latent=latent_numpy)
+
     # Create image from latent
     image = sd.get_image_from_latent(latent)
 
@@ -153,13 +163,23 @@ def calculate_fitness_score(ga_instance, solution, solution_idx):
 
 
 def cached_fitness_func(ga_instance, solution, solution_idx):
-    solution_copy = solution.copy()  # flatten() is destructive operation
+    solution_copy = solution.copy()  # flatten() is a destructive operation
     solution_flattened = solution_copy.flatten()
-    if tuple(solution_flattened) in fitness_cache:
-        print('Returning cached score', fitness_cache[tuple(solution_flattened)])
-    if tuple(solution_flattened) not in fitness_cache:
-        fitness_cache[tuple(solution_flattened)] = calculate_fitness_score(ga_instance, solution, solution_idx)
-    return fitness_cache[tuple(solution_flattened)]
+    solution_tuple = tuple(solution_flattened)
+    
+    if FIXED_SEED == True:
+        # When FIXED_SEED is True, we try to get the score from the cache
+        if solution_tuple in fitness_cache:
+            print('Returning cached score', fitness_cache[solution_tuple])
+            return fitness_cache[solution_tuple]
+        else:
+            # If it is not in the cache, we calculate it and then store it in the cache
+            fitness_cache[solution_tuple] = calculate_fitness_score(ga_instance, solution, solution_idx)
+            return fitness_cache[solution_tuple]
+    else:
+        # When FIXED_SEED is False, we do not use the cache and calculate a fresh score every time
+        return calculate_fitness_score(ga_instance, solution, solution_idx)
+
 
 
 def on_fitness(ga_instance, population_fitness):
@@ -203,7 +223,7 @@ def store_generation_images(ga_instance):
     print("Population size: ", len(ga_instance.population))
 
 
-    file_dir = os.path.join(IMAGES_DIR, str(generation))
+    file_dir = os.path.join(IMAGES_ROOT_DIR, str(generation))
     os.makedirs(file_dir)
     for i, ind in enumerate(ga_instance.population):
         print(i)
@@ -338,6 +358,12 @@ for i in range(population_size):
     #random_weights = np.full(num_prompts, 1.0 / num_prompts)
     #normalized_weights = (random_weights - np.mean(random_weights)) / np.std(random_weights)
     initial_population.append(random_weights)
+
+
+# Printing out each individual in the initial population
+for i, individual in enumerate(initial_population):
+    print(f"Individual {i}:")
+    print(individual)
 
 # Initialize the GA
 ga_instance = pygad.GA(initial_population=initial_population,
