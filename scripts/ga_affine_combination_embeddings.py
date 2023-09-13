@@ -206,6 +206,26 @@ def combine_embeddings_numpy(embeddings_array_numpy, weight_array, device):
 
     return result_embedding
 
+def combine_clip_embeddings_numpy(embeddings_array_numpy, weight_array, device):
+
+    # empty embedding filled with zeroes
+    result_embedding_numpy = np.zeros((768))
+
+    # Multiply each tensor by its corresponding float and sum up
+    #for i in range(embeddings_array_numpy):
+        #embedding = embeddings_array_numpy[i]
+        #weight = weight_array[i]
+        #result_embedding_numpy += embedding * weight
+
+    for embedding, weight in zip(embeddings_array_numpy, weight_array):
+        result_embedding_numpy += embedding * weight
+
+    result_embedding = torch.from_numpy(result_embedding_numpy)
+    result_embedding = result_embedding.to(device)
+    result_embedding = result_embedding.to(torch.float32)
+
+    return result_embedding
+
 def generate_image_from_embedding(embeddings_vector, null_prompt, index, seed, output, clip_text_embedder, txt2img, cfg_strength=12,
                           image_width=512, image_height=512):
 
@@ -332,6 +352,7 @@ def embeddings_similarity_score(device, embeddings_vector, clip_embeddings_vecto
     image_features = image_features / image_features_magnitude
     text_features = clip_embeddings_vector / text_features_magnitude
 
+    image_features = image_features.unsqueeze(0)
     print("*********************")
     print(image_features.shape)
     print(text_features.shape)
@@ -339,7 +360,7 @@ def embeddings_similarity_score(device, embeddings_vector, clip_embeddings_vecto
     similarity = torch.dot(image_features, text_features)
 
     # if similarity is more than 0.3 fitness is 1.0
-    fitness = similarity / 0.3
+    fitness = similarity.item() / 0.3
     if fitness > 1.0:
         fitness = 1.0
     elif fitness <= 0.0:
@@ -370,7 +391,7 @@ def fitness_func(ga_instance, solution, solution_idx):
     seed = 6789
 
     embedding_vector = combine_embeddings_numpy(embedded_prompts_array, weight_array, device)
-    clip_embedding_vector = combine_embeddings_numpy(clip_embedded_prompts_array, weight_array, device)
+    clip_embedding_vector = combine_clip_embeddings_numpy(clip_embedded_prompts_array, weight_array, device)
 
     print("embedding_vector : ", embedding_vector)
     print("clip_embedding_vector : ", clip_embedding_vector)
