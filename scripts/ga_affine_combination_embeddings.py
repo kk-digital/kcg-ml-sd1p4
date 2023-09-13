@@ -56,7 +56,7 @@ def parse_args():
     parser.add_argument("--output", type=str, default="./output/ga_affine_combination_embeddings/", help="Specifies the output folder")
     parser.add_argument("--use_random_images", type=bool, default=False)
     parser.add_argument("--num_prompts", type=int, default=1024)
-    parser.add_argument('--prompts_path', type=str, default='/input/prompt-list-civitai/prompt_list_civitai_1000_test.zip')
+    parser.add_argument('--prompts_path', type=str, default='/input/prompt-list-civitai/prompt_list_civitai_1000_new.zip')
 
     args = parser.parse_args()
 
@@ -397,8 +397,21 @@ def fitness_func(ga_instance, solution, solution_idx):
     print("clip_embedding_vector : ", clip_embedding_vector.shape)
 
     negative_embedding_vector = combine_embeddings_numpy(negative_embedded_prompts_array, weight_array, device)
-    chad_score, chad_score_scaled = embeddings_similarity_score(device, embedding_vector, clip_embedding_vector, negative_embedding_vector, generation, solution_idx, seed, output_directory, chad_score_predictor, clip_text_embedder, txt2img, util_clip,
-                                                          cfg_strength, image_width, image_height)
+    chad_score, chad_score_scaled = embeddings_similarity_score(device,
+                                                                embedding_vector,
+                                                                clip_embedding_vector,
+                                                                negative_embedding_vector,
+                                                                generation,
+                                                                solution_idx,
+                                                                seed,
+                                                                output_directory,
+                                                                chad_score_predictor,
+                                                                clip_text_embedder,
+                                                                txt2img,
+                                                                util_clip,
+                                                            cfg_strength,
+                                                                image_width,
+                                                                image_height)
 
     return chad_score.item()
 
