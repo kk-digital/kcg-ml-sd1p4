@@ -345,6 +345,9 @@ def embeddings_similarity_score(device, embeddings_vector, clip_embeddings_vecto
     image_features = image_features / image_features_magnitude
     text_features = clip_embeddings_vector / text_features_magnitude
 
+    print(image_features.shape)
+    print(text_features.shape)
+
     similarity = torch.dot(image_features, text_features)
 
     # if similarity is more than 0.3 fitness is 1.0
@@ -380,6 +383,7 @@ def fitness_func(ga_instance, solution, solution_idx):
 
     embedding_vector = combine_embeddings_numpy(embedded_prompts_array, weight_array, device)
     clip_embedding_vector = combine_embeddings_numpy(clip_embedded_prompts_array, weight_array, device)
+
     negative_embedding_vector = combine_embeddings_numpy(negative_embedded_prompts_array, weight_array, device)
     chad_score, chad_score_scaled = embeddings_similarity_score(device, embedding_vector, clip_embedding_vector, negative_embedding_vector, generation, solution_idx, seed, output_directory, chad_score_predictor, clip_text_embedder, txt2img, util_clip,
                                                           cfg_strength, image_width, image_height)
