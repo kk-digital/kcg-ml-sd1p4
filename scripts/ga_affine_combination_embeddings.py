@@ -56,7 +56,7 @@ def parse_args():
     parser.add_argument("--output", type=str, default="./output/ga_affine_combination_embeddings/", help="Specifies the output folder")
     parser.add_argument("--use_random_images", type=bool, default=False)
     parser.add_argument("--num_prompts", type=int, default=1024)
-    parser.add_argument('--prompts_path', type=str, default='/input/prompt-list-civitai/prompt_list_civitai_1000_test.zip')
+    parser.add_argument('--prompts_path', type=str, default='/input/prompt-list-civitai/prompt_list_civitai_1000_new.zip')
 
     args = parser.parse_args()
 
@@ -171,20 +171,6 @@ def on_mutation(ga_instance, offspring_mutation):
     print("Performing mutation at generation: ", ga_instance.generations_completed)
     log_to_file(f"Performing mutation at generation: {ga_instance.generations_completed}", output_directory)
 
-    num_prompts = ga_instance.num_prompts
-    mutation_probability = ga_instance.mutation_probability
-    mutation_percent_genes = ga_instance.mutation_percent_genes
-
-
-    for i, ind in enumerate(ga_instance.population):
-        # normalize numpy array
-        # make sure sum is 1
-        ind /= ind.sum()
-        ga_instance.population[i] = ind
-
-
-
-
 
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
@@ -206,6 +192,31 @@ def combine_embeddings_numpy(embeddings_array_numpy, weight_array, device):
     result_embedding_numpy = np.zeros((1, 77, 768))
 
     # Multiply each tensor by its corresponding float and sum up
+    #for i in range(embeddings_array_numpy):
+        #embedding = embeddings_array_numpy[i]
+        #weight = weight_array[i]
+        #result_embedding_numpy += embedding * weight
+
+    for embedding, weight in zip(embeddings_array_numpy, weight_array):
+        result_embedding_numpy += embedding * weight
+
+    result_embedding = torch.from_numpy(result_embedding_numpy)
+    result_embedding = result_embedding.to(device)
+    result_embedding = result_embedding.to(torch.float32)
+
+    return result_embedding
+
+def combine_clip_embeddings_numpy(embeddings_array_numpy, weight_array, device):
+
+    # empty embedding filled with zeroes
+    result_embedding_numpy = np.zeros(768)
+
+    # Multiply each tensor by its corresponding float and sum up
+    #for i in range(embeddings_array_numpy):
+        #embedding = embeddings_array_numpy[i]
+        #weight = weight_array[i]
+        #result_embedding_numpy += embedding * weight
+
     for embedding, weight in zip(embeddings_array_numpy, weight_array):
         result_embedding_numpy += embedding * weight
 
@@ -279,11 +290,7 @@ def embeddings_chad_score(device, embeddings_vector, negative_embeddings_vector,
     image_features = util_clip.get_image_features(image)
     image_features = image_features.to(torch.float32)
 
-    # cleanup
-    #clip_embeddings = util_clip.get_text_features(prompt_str)
-    #embedding_vector_normalized = embedding_vector / np.linalg.norm(embedding_vector)
-    #clip_image_vector_normalized = clip_image_vector / np.linalg.norm(clip_image_vector)
-
+    # get chad score
     chad_score = chad_score_predictor.get_chad_score_tensor(image_features)
     chad_score_scaled = torch.sigmoid(chad_score)
 
@@ -345,14 +352,80 @@ def embeddings_similarity_score(device, embeddings_vector, clip_embeddings_vecto
     image_features = image_features / image_features_magnitude
     text_features = clip_embeddings_vector / text_features_magnitude
 
+    image_features = image_features.squeeze(0)
+
     similarity = torch.dot(image_features, text_features)
 
     # if similarity is more than 0.3 fitness is 1.0
-    fitness = similarity / 0.3
-    if fitness > 1.0:
-        fitness = 1.0
-    elif fitness <= 0.0:
-        fitness = 0
+    fitness = similarity.item()
+
+    # cleanup
+    del image_features
+    torch.cuda.empty_cache()
+
+    return fitness
+
+
+def embeddings_similarity_and_chad_score(device, embeddings_vector, clip_embeddings_vector, negative_embeddings_vector, generation, index, seed, output, chad_score_predictor, clip_text_embedder, txt2img, util_clip, cfg_strength=12,
+                          image_width=512, image_height=512):
+
+    latent = txt2img.generate_images_latent_from_embeddings(
+        batch_size=1,
+        embedded_prompt=embeddings_vector,
+        null_prompt=negative_embeddings_vector,
+        uncond_scale=cfg_strength,
+        seed=seed,
+        w=image_width,
+        h=image_height
+    )
+
+    images = txt2img.get_image_from_latent(latent)
+    print('save', ' generation ', generation, ' index : ', index + 1)
+    generation_dir = output + '/' + str(generation)
+    os.makedirs(generation_dir, exist_ok=True)
+    image_list, image_hash_list = save_images(images, generation_dir + '/' + str(index + 1) + '.jpg')
+
+    del latent
+    torch.cuda.empty_cache()
+
+    # Map images to `[0, 1]` space and clip
+    images = torch.clamp((images + 1.0) / 2.0, min=0.0, max=1.0)
+
+    images_cpu = images.cpu()
+
+    del images
+    torch.cuda.empty_cache()
+
+    images_cpu = images_cpu.permute(0, 2, 3, 1)
+    images_cpu = images_cpu.detach().float().numpy()
+
+    image_list = []
+    # Save images
+    for i, img in enumerate(images_cpu):
+        img = Image.fromarray((255. * img).astype(np.uint8))
+        image_list.append(img)
+
+    image = image_list[0]
+
+    image_features = util_clip.get_image_features(image)
+    image_features = image_features.to(torch.float32)
+
+    # get chad score
+    chad_score = chad_score_predictor.get_chad_score_tensor(image_features)
+    chad_score_scaled = torch.sigmoid(chad_score)
+
+    image_features_magnitude = torch.norm(image_features)
+    text_features_magnitude = torch.norm(clip_embeddings_vector)
+
+    image_features = image_features / image_features_magnitude
+    text_features = clip_embeddings_vector / text_features_magnitude
+
+    image_features = image_features.squeeze(0)
+
+    similarity = torch.dot(image_features, text_features)
+
+    # if similarity is more than 0.3 fitness is 1.0
+    fitness = similarity.item() * 0.5 + chad_score_scaled.item() * 0.5
 
     # cleanup
     del image_features
@@ -379,14 +452,44 @@ def fitness_func(ga_instance, solution, solution_idx):
     seed = 6789
 
     embedding_vector = combine_embeddings_numpy(embedded_prompts_array, weight_array, device)
-    clip_embedding_vector = combine_embeddings_numpy(clip_embedded_prompts_array, weight_array, device)
-    negative_embedding_vector = combine_embeddings_numpy(negative_embedded_prompts_array, weight_array, device)
-    chad_score, chad_score_scaled = embeddings_similarity_score(device, embedding_vector, clip_embedding_vector, negative_embedding_vector, generation, solution_idx, seed, output_directory, chad_score_predictor, clip_text_embedder, txt2img, util_clip,
-                                                          cfg_strength, image_width, image_height)
+    clip_embedding_vector = combine_clip_embeddings_numpy(clip_embedded_prompts_array, weight_array, device)
 
-    return chad_score.item()
+    negative_embedding_vector = combine_embeddings_numpy(negative_embedded_prompts_array, weight_array, device)
+    fitness = embeddings_similarity_and_chad_score(device,
+                                                embedding_vector,
+                                                clip_embedding_vector,
+                                                negative_embedding_vector,
+                                                generation,
+                                                solution_idx,
+                                                seed,
+                                                output_directory,
+                                                chad_score_predictor,
+                                                clip_text_embedder,
+                                                txt2img,
+                                                util_clip,
+                                                cfg_strength,
+                                                image_width,
+                                                image_height)
+
+    return fitness
 
 def store_generation_images(ga_instance):
+
+    num_prompts = ga_instance.num_prompts
+    mutation_probability = ga_instance.mutation_probability
+    mutation_percent_genes = ga_instance.mutation_percent_genes
+
+
+    for i, ind in enumerate(ga_instance.population):
+        # normalize numpy array
+        # make sure sum is 1
+        #ind /= ind.sum()
+
+        magnitude = np.linalg.norm(ind)
+        ind = ind / magnitude
+
+        ga_instance.population[i] = ind
+
     return 0
 
 def read_prompts_from_zip(zip_file_path, num_prompts):
@@ -526,11 +629,11 @@ def main():
         #prompt_str = prompt.positive_prompt_str
         embedded_prompts = clip_text_embedder(prompt_str)
         clip_embeddings = util_clip.get_text_features(prompt_str)
+        clip_embeddings = clip_embeddings.squeeze(0)
         print(clip_embeddings.shape)
         negative_embedded_prompts = clip_text_embedder(negative_prompt_str)
 
         seed = 6789
-
 
         generate_image_from_embedding(embedded_prompts, negative_embedded_prompts, idx, seed, output_directory, clip_text_embedder, txt2img, cfg_strength, image_width, image_height)
         idx = idx + 1
@@ -553,9 +656,13 @@ def main():
     random_population = []
 
     for i in range(population_size):
-        random_weights = np.random.dirichlet(np.ones(num_prompts), size=1).flatten()
-        #random_weights = np.full(num_prompts, 1.0 / num_prompts)
-        #normalized_weights = (random_weights - np.mean(random_weights)) / np.std(random_weights)
+        # Parameters for the Gaussian distribution
+        mean = 0  # mean (center) of the distribution
+        std_dev = 1  # standard deviation (spread or width) of the distribution
+        shape = (num_prompts)  # shape of the resulting array
+
+        # Create the random array
+        random_weights = np.random.normal(mean, std_dev, shape)
         random_population.append(random_weights)
 
 
@@ -583,8 +690,8 @@ def main():
                            # fitness_func=calculate_chad_score,
                            # on_parents=on_parents,
                            # on_crossover=on_crossover,
-                           random_mutation_min_val=0,
-                           random_mutation_max_val=(1/num_prompts) * 2,
+                           random_mutation_min_val=-(1/num_prompts),
+                           random_mutation_max_val=(1/num_prompts),
                            on_start=store_generation_images,
                            )
     print(f"Batch Size: {population_size}")
