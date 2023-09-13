@@ -120,8 +120,13 @@ def calculate_fitness_score(ga_instance, solution, solution_idx):
     for i, coeff in enumerate(solution):
         combined_embedding_np = combined_embedding_np + embedded_prompts_numpy[i] * coeff
 
-    np.savez_compressed(os.path.join(FEATURES_DIR, f'combined_embedding_{solution_idx}.npz'), combined_embedding=combined_embedding_np)
-    
+    try:
+        filepath = os.path.join(FEATURES_DIR, f'combined_embedding_{solution_idx}.npz')
+        np.savez_compressed(filepath, combined_embedding=combined_embedding_np)
+        print(f"Successfully saved to {filepath}")
+    except Exception as e:
+        print(f"Could not save file due to: {e}")
+        print(f"Filepath: {filepath}")    
     # Convert the combined numpy array to a PyTorch tensor
     prompt_embedding = torch.tensor(combined_embedding_np, dtype=torch.float32)
     prompt_embedding = prompt_embedding.view(1, 77, 768).to(DEVICE)
