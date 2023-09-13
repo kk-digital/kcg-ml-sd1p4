@@ -190,6 +190,8 @@ def cached_fitness_func(ga_instance, solution, solution_idx):
 
 
 def on_fitness(ga_instance, population_fitness):
+    current_generation = ga_instance.generations_completed
+    prompt_str = prompts_str_array[current_generation]
     population_fitness_np = np.array(population_fitness)
     print("Generation #", ga_instance.generations_completed)
     print("Population Size= ", len(population_fitness_np))
@@ -206,7 +208,7 @@ def on_fitness(ga_instance, population_fitness):
     log_to_file(f"Prompt: {prompt_str}")
     log_to_file(f"Fitness array= {str(population_fitness_np)}")
 
-        # Append the current generation data to the CSV file
+    # Append the current generation data to the CSV file
     with open(csv_filename, 'a', newline='') as csvfile:
         csvwriter = csv.writer(csvfile)
         csvwriter.writerow([
