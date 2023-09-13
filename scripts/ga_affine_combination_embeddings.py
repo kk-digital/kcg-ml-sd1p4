@@ -192,9 +192,12 @@ def combine_embeddings_numpy(embeddings_array_numpy, weight_array, device):
     result_embedding_numpy = np.zeros((1, 77, 768))
 
     # Multiply each tensor by its corresponding float and sum up
-    for i in range(embeddings_array_numpy):
-        embedding = embeddings_array_numpy[i]
-        weight = weight_array[i]
+    #for i in range(embeddings_array_numpy):
+        #embedding = embeddings_array_numpy[i]
+        #weight = weight_array[i]
+        #result_embedding_numpy += embedding * weight
+
+    for embedding, weight in zip(embeddings_array_numpy, weight_array):
         result_embedding_numpy += embedding * weight
 
     result_embedding = torch.from_numpy(result_embedding_numpy)
