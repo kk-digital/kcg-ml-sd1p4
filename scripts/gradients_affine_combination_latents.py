@@ -251,7 +251,6 @@ if __name__ == "__main__":
     txt2img.initialize_latent_diffusion(autoencoder=None, clip_text_embedder=None, unet_model=None,
                                         path=checkpoint_path, force_submodels_init=True)
 
-
     embedded_prompts_array = []
     # Get N Embeddings
     for prompt in prompt_list:
