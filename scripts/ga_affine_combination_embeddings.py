@@ -653,8 +653,8 @@ def main():
 
 
     fixed_taget_image_features = get_target_image_features(clip_text_embedder, txt2img, util_clip, output_directory,
-                                                           "finely detailed eyes, full body, mikasa ackerman, real human skin, white box, shy, makeup, blue hair, highres, (award winning photograph:1.2), photorealistic painting by ed blinkey, [perfect body], looking at viewer, complicated machine, unreal_engine, intricate",
-                                                           "",
+                                                           "white box, symmetrical_docking, blush, 1girl, heart-shaped pupils, blue hair, (bloom), sharp focus, japanese, (ecstasy of flower: 1.2)concept art, thigh straps, dress, looking at me, fujifilm x-t3, detached collar, ambient lighting",
+                                                           "disfigured, nsfw, ((extra limbs)), (long body :1.3), ((missing legs)), ((monochrome)), ((poorly drawn face)), multiple legs, missing arms, extra arms, (hair between eyes:2.0), (low quality:2), geometry, dof",
                                                            cfg_strength, seed, image_width, image_height)
 
     # number of chromozome genes
