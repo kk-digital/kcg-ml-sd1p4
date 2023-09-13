@@ -365,6 +365,74 @@ def embeddings_similarity_score(device, embeddings_vector, clip_embeddings_vecto
 
     return fitness
 
+
+def embeddings_similarity_and_chad_score(device, embeddings_vector, clip_embeddings_vector, negative_embeddings_vector, generation, index, seed, output, chad_score_predictor, clip_text_embedder, txt2img, util_clip, cfg_strength=12,
+                          image_width=512, image_height=512):
+
+    latent = txt2img.generate_images_latent_from_embeddings(
+        batch_size=1,
+        embedded_prompt=embeddings_vector,
+        null_prompt=negative_embeddings_vector,
+        uncond_scale=cfg_strength,
+        seed=seed,
+        w=image_width,
+        h=image_height
+    )
+
+    images = txt2img.get_image_from_latent(latent)
+    print('save', ' generation ', generation, ' index : ', index + 1)
+    generation_dir = output + '/' + str(generation)
+    os.makedirs(generation_dir, exist_ok=True)
+    image_list, image_hash_list = save_images(images, generation_dir + '/' + str(index + 1) + '.jpg')
+
+    del latent
+    torch.cuda.empty_cache()
+
+    # Map images to `[0, 1]` space and clip
+    images = torch.clamp((images + 1.0) / 2.0, min=0.0, max=1.0)
+
+    images_cpu = images.cpu()
+
+    del images
+    torch.cuda.empty_cache()
+
+    images_cpu = images_cpu.permute(0, 2, 3, 1)
+    images_cpu = images_cpu.detach().float().numpy()
+
+    image_list = []
+    # Save images
+    for i, img in enumerate(images_cpu):
+        img = Image.fromarray((255. * img).astype(np.uint8))
+        image_list.append(img)
+
+    image = image_list[0]
+
+    image_features = util_clip.get_image_features(image)
+    image_features = image_features.to(torch.float32)
+
+    # get chad score
+    chad_score = chad_score_predictor.get_chad_score_tensor(image_features)
+    chad_score_scaled = torch.sigmoid(chad_score)
+
+    image_features_magnitude = torch.norm(image_features)
+    text_features_magnitude = torch.norm(clip_embeddings_vector)
+
+    image_features = image_features / image_features_magnitude
+    text_features = clip_embeddings_vector / text_features_magnitude
+
+    image_features = image_features.squeeze(0)
+
+    similarity = torch.dot(image_features, text_features)
+
+    # if similarity is more than 0.3 fitness is 1.0
+    fitness = similarity.item() * 0.5 + chad_score_scaled.item() * 0.5
+
+    # cleanup
+    del image_features
+    torch.cuda.empty_cache()
+
+    return fitness
+
 def fitness_func(ga_instance, solution, solution_idx):
     sd = ga_instance.sd
     device = ga_instance.device
@@ -387,7 +455,7 @@ def fitness_func(ga_instance, solution, solution_idx):
     clip_embedding_vector = combine_clip_embeddings_numpy(clip_embedded_prompts_array, weight_array, device)
 
     negative_embedding_vector = combine_embeddings_numpy(negative_embedded_prompts_array, weight_array, device)
-    fitness = embeddings_similarity_score(device,
+    fitness = embeddings_similarity_and_chad_score(device,
                                                 embedding_vector,
                                                 clip_embedding_vector,
                                                 negative_embedding_vector,
