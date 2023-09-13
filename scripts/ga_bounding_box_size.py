@@ -185,6 +185,8 @@ def store_generation_images(ga_instance):
     generation = ga_instance.generations_completed
     print("Generation #", generation)
     print("Population size: ", len(ga_instance.population))
+    file_dir = os.path.join(IMAGES_ROOT_DIR, str(generation))
+    os.makedirs(file_dir)
     for i, ind in enumerate(ga_instance.population):
         SEED = random.randint(0, 2 ** 24)
         if FIXED_SEED == True:
@@ -210,7 +212,7 @@ def store_generation_images(ga_instance):
         del prompt_embedding
 
         pil_image = to_pil(image[0])
-        filename = os.path.join(IMAGES_ROOT_DIR, f'g{generation:04}_{i:03}.png')
+        filename = os.path.join(file_dir, f'g{generation:04}_{i:03}.png')
         pil_image.save(filename)
 
     end_time = time.time()  # End timing for generation
