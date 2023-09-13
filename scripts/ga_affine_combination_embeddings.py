@@ -360,11 +360,7 @@ def embeddings_similarity_score(device, embeddings_vector, clip_embeddings_vecto
     similarity = torch.dot(image_features, text_features)
 
     # if similarity is more than 0.3 fitness is 1.0
-    fitness = similarity.item() / 0.3
-    if fitness > 1.0:
-        fitness = 1.0
-    elif fitness <= 0.0:
-        fitness = 0
+    fitness = similarity.item()
 
     # cleanup
     del image_features
@@ -398,20 +394,20 @@ def fitness_func(ga_instance, solution, solution_idx):
 
     negative_embedding_vector = combine_embeddings_numpy(negative_embedded_prompts_array, weight_array, device)
     fitness = embeddings_similarity_score(device,
-                                                                embedding_vector,
-                                                                clip_embedding_vector,
-                                                                negative_embedding_vector,
-                                                                generation,
-                                                                solution_idx,
-                                                                seed,
-                                                                output_directory,
-                                                                chad_score_predictor,
-                                                                clip_text_embedder,
-                                                                txt2img,
-                                                                util_clip,
-                                                                cfg_strength,
-                                                                image_width,
-                                                                image_height)
+                                                embedding_vector,
+                                                clip_embedding_vector,
+                                                negative_embedding_vector,
+                                                generation,
+                                                solution_idx,
+                                                seed,
+                                                output_directory,
+                                                chad_score_predictor,
+                                                clip_text_embedder,
+                                                txt2img,
+                                                util_clip,
+                                                cfg_strength,
+                                                image_width,
+                                                image_height)
 
     return fitness
 
