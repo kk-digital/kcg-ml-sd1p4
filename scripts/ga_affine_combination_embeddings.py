@@ -172,7 +172,6 @@ def on_mutation(ga_instance, offspring_mutation):
     log_to_file(f"Performing mutation at generation: {ga_instance.generations_completed}", output_directory)
 
 
-
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
@@ -330,6 +329,7 @@ def embeddings_similarity_score(device, embeddings_vector, clip_embeddings_vecto
     image_features = image_features / image_features_magnitude
     text_features = clip_embeddings_vector / text_features_magnitude
 
+    print("*********************")
     print(image_features.shape)
     print(text_features.shape)
 
@@ -368,6 +368,9 @@ def fitness_func(ga_instance, solution, solution_idx):
 
     embedding_vector = combine_embeddings_numpy(embedded_prompts_array, weight_array, device)
     clip_embedding_vector = combine_embeddings_numpy(clip_embedded_prompts_array, weight_array, device)
+
+    print("embedding_vector : ", embedding_vector)
+    print("clip_embedding_vector : ", clip_embedding_vector)
 
     negative_embedding_vector = combine_embeddings_numpy(negative_embedded_prompts_array, weight_array, device)
     chad_score, chad_score_scaled = embeddings_similarity_score(device, embedding_vector, clip_embedding_vector, negative_embedding_vector, generation, solution_idx, seed, output_directory, chad_score_predictor, clip_text_embedder, txt2img, util_clip,
@@ -532,7 +535,6 @@ def main():
         negative_embedded_prompts = clip_text_embedder(negative_prompt_str)
 
         seed = 6789
-
 
         generate_image_from_embedding(embedded_prompts, negative_embedded_prompts, idx, seed, output_directory, clip_text_embedder, txt2img, cfg_strength, image_width, image_height)
         idx = idx + 1
