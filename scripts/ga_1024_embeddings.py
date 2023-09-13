@@ -223,8 +223,6 @@ def store_generation_images(ga_instance):
     print("Population size: ", len(ga_instance.population))
 
 
-    file_dir = os.path.join(IMAGES_ROOT_DIR, str(generation))
-    os.makedirs(file_dir)
     for i, ind in enumerate(ga_instance.population):
         print(i)
         SEED = random.randint(0, 2 ** 24)
@@ -252,7 +250,7 @@ def store_generation_images(ga_instance):
         pil_image = to_pil(image[0])
         del image
         torch.cuda.empty_cache()
-        filename = os.path.join(file_dir, f'g{generation:04}_{i:04}.png')
+        filename = os.path.join(IMAGES_ROOT_DIR, f'g{generation:04}_{i:04}.png')
         pil_image.save(filename)
         del pil_image  # Delete the PIL image
         torch.cuda.empty_cache()
