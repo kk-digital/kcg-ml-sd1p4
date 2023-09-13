@@ -526,6 +526,7 @@ def main():
         #prompt_str = prompt.positive_prompt_str
         embedded_prompts = clip_text_embedder(prompt_str)
         clip_embeddings = util_clip.get_text_features(prompt_str)
+        clip_embeddings = clip_embeddings.squeeze(0)
         print(clip_embeddings.shape)
         negative_embedded_prompts = clip_text_embedder(negative_prompt_str)
 
