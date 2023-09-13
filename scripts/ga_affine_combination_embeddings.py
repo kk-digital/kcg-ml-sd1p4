@@ -209,7 +209,7 @@ def combine_embeddings_numpy(embeddings_array_numpy, weight_array, device):
 def combine_clip_embeddings_numpy(embeddings_array_numpy, weight_array, device):
 
     # empty embedding filled with zeroes
-    result_embedding_numpy = np.zeros((768))
+    result_embedding_numpy = np.zeros(768)
 
     # Multiply each tensor by its corresponding float and sum up
     #for i in range(embeddings_array_numpy):
@@ -393,8 +393,8 @@ def fitness_func(ga_instance, solution, solution_idx):
     embedding_vector = combine_embeddings_numpy(embedded_prompts_array, weight_array, device)
     clip_embedding_vector = combine_clip_embeddings_numpy(clip_embedded_prompts_array, weight_array, device)
 
-    print("embedding_vector : ", embedding_vector)
-    print("clip_embedding_vector : ", clip_embedding_vector)
+    print("embedding_vector : ", embedding_vector.shape)
+    print("clip_embedding_vector : ", clip_embedding_vector.shape)
 
     negative_embedding_vector = combine_embeddings_numpy(negative_embedded_prompts_array, weight_array, device)
     chad_score, chad_score_scaled = embeddings_similarity_score(device, embedding_vector, clip_embedding_vector, negative_embedding_vector, generation, solution_idx, seed, output_directory, chad_score_predictor, clip_text_embedder, txt2img, util_clip,
