@@ -146,6 +146,66 @@ def combine_latents(latents_array, weight_array, device):
     return result_latents
 
 
+def get_similarity_score(image_features, target_features):
+
+    image_features_magnitude = torch.norm(image_features)
+    target_features_magnitude = torch.norm(target_features)
+
+    image_features = image_features / image_features_magnitude
+    target_features = target_features / target_features_magnitude
+
+    image_features = image_features.squeeze(0)
+
+    similarity = torch.dot(image_features, target_features)
+
+    fitness = similarity
+
+    return fitness
+
+def latents_similarity_score(latent, index, output, target_features):
+
+    images = txt2img.get_image_from_latent(latent)
+    image_list, image_hash_list = save_images(images, output + '/image' + str(index + 1) + '.jpg')
+
+    del latent
+    torch.cuda.empty_cache()
+
+    # Map images to `[0, 1]` space and clip
+    images = torch.clamp((images + 1.0) / 2.0, min=0.0, max=1.0)
+
+
+    ## Normalize the image tensor
+    mean = torch.tensor([0.48145466, 0.4578275, 0.40821073], device=device).view(-1, 1, 1)
+    std = torch.tensor([0.26862954, 0.26130258, 0.27577711], device=device).view(-1, 1, 1)
+
+    normalized_image_tensor = (images - mean) / std
+
+    # Resize the image to [N, C, 224, 224]
+    transform = transforms.Compose([transforms.Resize((224, 224))])
+    resized_image_tensor = transform(normalized_image_tensor)
+
+    # Get the CLIP features
+    image_features = util_clip.model.encode_image(resized_image_tensor)
+    image_features = image_features.squeeze(0)
+
+    image_features = image_features.to(torch.float32)
+
+    # cleanup
+    del images
+    torch.cuda.empty_cache()
+
+    chad_score = chad_score_predictor.get_chad_score_tensor(image_features)
+    chad_score_scaled = torch.sigmoid(chad_score)
+
+    fitness = get_similarity_score(image_features, target_features)
+    print("fitness : ", fitness)
+
+    # cleanup
+    del image_features
+    torch.cuda.empty_cache()
+
+    return fitness
+
 def latents_chad_score(latent, index, output, chad_score_predictor):
 
     images = txt2img.get_image_from_latent(latent)
@@ -189,6 +249,15 @@ def latents_chad_score(latent, index, output, chad_score_predictor):
 
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
+
+def get_target_embeddings_features(util_clip, subject):
+
+    features = util_clip.get_text_features(subject)
+    features = features.to(torch.float32)
+
+    features = features.squeeze(0)
+
+    return features
 
 if __name__ == "__main__":
     args = parse_arguments()
@@ -248,6 +317,7 @@ if __name__ == "__main__":
     txt2img.initialize_latent_diffusion(autoencoder=None, clip_text_embedder=None, unet_model=None,
                                         path=checkpoint_path, force_submodels_init=True)
 
+    fixed_taget_features = get_target_embeddings_features(util_clip, "chibi, anime, waifu, side scrolling")
 
     latent_array = []
     # Get N Embeddings
@@ -258,6 +328,9 @@ if __name__ == "__main__":
 
         prompt_str = prompt['positive-prompt-str']
         negative_prompt_str = prompt['negative-prompt-str']
+
+        print("positive : " + prompt_str)
+        print("negative : " + negative_prompt_str)
 
         embedded_prompts = clip_text_embedder(prompt_str)
         negative_embedded_prompts = clip_text_embedder(negative_prompt_str)
@@ -285,7 +358,7 @@ if __name__ == "__main__":
     # array of  weights
     weight_array = torch.tensor(weight_array, device=device, dtype=torch.float32, requires_grad=True)
 
-    optimizer = optim.Adam([weight_array], lr=learning_rate)
+    optimizer = optim.AdamW([weight_array], lr=learning_rate)
     mse_loss = nn.MSELoss(reduction='sum')
 
     target = torch.tensor([1.0], device=device, dtype=torch.float32, requires_grad=True)
@@ -297,9 +370,10 @@ if __name__ == "__main__":
 
         combined_latent = combine_latents(latent_array, weight_array, device)
 
-        chad_score, chad_score_scaled = latents_chad_score(combined_latent, i, output, chad_score_predictor)
+        #chad_score, chad_score_scaled = latents_chad_score(combined_latent, i, output, chad_score_predictor)
+        fitness = latents_similarity_score(combined_latent, i, output, fixed_taget_features)
 
-        input = chad_score_scaled
+        input = fitness
         loss = mse_loss(input, target)
 
         print(f'Iteration #{i + 1}, loss {loss}')
