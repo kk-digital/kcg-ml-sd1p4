@@ -198,7 +198,7 @@ def latents_similarity_score(latent, index, output, target_features):
     chad_score_scaled = torch.sigmoid(chad_score)
 
     fitness = get_similarity_score(image_features, target_features)
-    print("fitness : ", fitness)
+    print("fitness : ", fitness.item())
 
     # cleanup
     del image_features
