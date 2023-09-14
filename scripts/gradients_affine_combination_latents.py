@@ -45,7 +45,7 @@ def parse_arguments():
     parser.add_argument('--iterations', type=int, default=1000)
     parser.add_argument('--learning_rate', type=float, default=0.0001)
     parser.add_argument('--num_images', type=int, default=1)
-    parser.add_argument('--prompts_path', type=str, default='/input/prompt-list-civitai/prompt_list_civitai_10k_512_phrases.zip')
+    parser.add_argument('--prompts_path', type=str, default='/input/prompt-list-civitai/prompt_list_civitai_1000_new.zip')
 
     return parser.parse_args()
 

@@ -591,7 +591,7 @@ def main():
 
     parent_selection_type = "tournament"  # "sss", rws, sus, rank, tournament
     # num_parents_mating = int(population_size *.80)
-    num_parents_mating = int(population_size * 0.3)
+    num_parents_mating = int(population_size * 0.6)
     # mutation_type = "adaptive" #try adaptive mutation
     # note: uniform is good, two_points"
 
