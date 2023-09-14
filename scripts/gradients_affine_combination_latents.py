@@ -140,6 +140,7 @@ def combine_latents(latents_array, weight_array, device):
 
     # Multiply each tensor by its corresponding float and sum up
     for latent, weight in zip(latents_array, weight_array):
+        print(latent.shape)
         result_latents += latent * weight
 
     return result_latents
