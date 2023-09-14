@@ -358,7 +358,7 @@ if __name__ == "__main__":
     # array of  weights
     weight_array = torch.tensor(weight_array, device=device, dtype=torch.float32, requires_grad=True)
 
-    optimizer = optim.AdamW([weight_array], lr=learning_rate)
+    optimizer = optim.AdamW([weight_array], lr=learning_rate, weight_decay=0.01)
     mse_loss = nn.MSELoss(reduction='sum')
 
     target = torch.tensor([1.0], device=device, dtype=torch.float32, requires_grad=True)
@@ -367,6 +367,7 @@ if __name__ == "__main__":
     for i in range(0, iterations):
         # Zero the gradients
         optimizer.zero_grad()
+        fixed_taget_features.grad = None
 
         combined_latent = combine_latents(latent_array, weight_array, device)
 
