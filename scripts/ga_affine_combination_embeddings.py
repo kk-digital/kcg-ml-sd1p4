@@ -1,24 +1,19 @@
 import os
 import sys
 import time
-import torch
 import random
 from os.path import join
 import shutil
-import clip
 import pygad
 import argparse
 import csv
 import zipfile
-import torch.nn.functional as F
-import torchvision.transforms as transforms
 
 
 base_dir = os.getcwd()
 sys.path.insert(0, base_dir)
 
 from chad_score.chad_score import ChadScorePredictor
-from ga.prompt_generator import generate_prompts
 from model.util_clip import UtilClip
 from configs.model_config import ModelPathConfig
 from stable_diffusion import StableDiffusion, SDconfigs
@@ -28,9 +23,7 @@ from stable_diffusion.utils_backend import get_autocast, set_seed
 from stable_diffusion.utils_backend import get_device
 from stable_diffusion.utils_image import *
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
-from ga.utils import get_next_ga_dir
-import ga
-from ga.fitness_chad_score import compute_chad_score_from_pil
+from ga.similarity_score import get_similarity_score
 
 
 def parse_args():
@@ -342,24 +335,13 @@ def embeddings_similarity_score(device, embeddings_vector, target_features, nega
     image_features = util_clip.get_image_features(image)
     image_features = image_features.to(torch.float32)
 
-    image_features_magnitude = torch.norm(image_features)
-    target_features_magnitude = torch.norm(target_features)
-
-    image_features = image_features / image_features_magnitude
-    target_features = target_features / target_features_magnitude
-
-    image_features = image_features.squeeze(0)
-
-    similarity = torch.dot(image_features, target_features)
-
-    # if similarity is more than 0.3 fitness is 1.0
-    fitness = similarity.item()
+    fitness = get_similarity_score(image_features, target_features)
 
     # cleanup
     del image_features
     torch.cuda.empty_cache()
 
-    return fitness
+    return fitness.item()
 
 
 def embeddings_similarity_and_chad_score(device, embeddings_vector, clip_embeddings_vector, negative_embeddings_vector, generation, index, seed, output, chad_score_predictor, clip_text_embedder, txt2img, util_clip, cfg_strength=12,
