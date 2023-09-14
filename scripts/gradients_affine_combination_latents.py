@@ -366,6 +366,8 @@ if __name__ == "__main__":
     magnitude = np.linalg.norm(weight_array)
     weight_array = weight_array / magnitude
 
+    weight_array = [1.0]
+
     # array of  weights
     weight_array = torch.tensor(weight_array, device=device, dtype=torch.float32, requires_grad=True)
 
@@ -382,9 +384,7 @@ if __name__ == "__main__":
         optimizer.zero_grad()
         fixed_taget_features = get_target_embeddings_features(util_clip, "chibi, anime, waifu, side scrolling")
 
-        save_image = False
-        if i % (iterations / 100) == 0:
-            save_image = True
+        save_image = True
 
         combined_latent = combine_latents(latent_array, weight_array, device)
 
