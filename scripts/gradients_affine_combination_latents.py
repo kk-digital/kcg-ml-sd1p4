@@ -143,7 +143,7 @@ def combine_latents(latents_array, weight_array, device):
         weighted_latent = latent[:, 0, :, :] * weight
         result_latents += weighted_latent
 
-    return result_latents
+    return latents_array[0]
 
 
 def get_similarity_score(image_features, target_features):
