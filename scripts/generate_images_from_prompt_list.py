@@ -28,7 +28,7 @@ from cli_builder import CLI
 from utility.dataset.prompt_list_dataset import PromptListDataset
 
 
-def get_batch_list(num_images, prompt_dataset, seed_array, current_task_index, image_dir, image_batch_size):
+def get_batch_list(num_images, seed_array, current_task_index, image_dir, image_batch_size):
     batch_list = []
     current_batch = []
     current_batch_index = 0
@@ -63,7 +63,8 @@ def get_batch_list(num_images, prompt_dataset, seed_array, current_task_index, i
     return batch_list
 
 
-def get_embeddings(txt2img, prompt_dataset, batch, current_batch_index, image_batch_size, num_images, include_negative_prompt=False):
+def get_embeddings(txt2img, prompt_dataset, batch, current_batch_index, image_batch_size, num_images, cfg_strength,
+                   include_negative_prompt=False):
     # generate text embeddings in batches
     processed_images = current_batch_index * image_batch_size
     tmp_start_time = time.time()
@@ -72,17 +73,17 @@ def get_embeddings(txt2img, prompt_dataset, batch, current_batch_index, image_ba
         processed_images = processed_images + 1
 
         prompt_index = task["prompt_index"]
-        positive_prompt_embedding = prompt_dataset.get_prompt_data(prompt_index).positive_prompt_embedding
-        task['cond'] = torch.tensor(positive_prompt_embedding).cpu()
-        del positive_prompt_embedding
+        positive_prompt_str = prompt_dataset.get_prompt_data(prompt_index).positive_prompt_str
+        negative_prompt_str = None
 
         if include_negative_prompt is True:
-            negative_prompt_embedding = prompt_dataset.get_prompt_data(prompt_index).negative_prompt_embedding
-            task['un_cond'] = torch.tensor(negative_prompt_embedding).cpu()
-            del negative_prompt_embedding
-        else:
-            task['un_cond'] = txt2img.get_empty_embedding()
+            negative_prompt_str = prompt_dataset.get_prompt_data(prompt_index).negative_prompt_str
 
+        un_cond, cond = txt2img.get_text_conditioning(cfg_strength, positive_prompt_str, negative_prompt_str)
+        task['cond'] = cond
+        task['un_cond'] = un_cond
+        del un_cond
+        del cond
 
     tmp_end_time = time.time()
     tmp_execution_time = tmp_end_time - tmp_start_time
@@ -208,7 +209,8 @@ def compute_image_chad_score(batch, current_batch_index, image_batch_size, num_i
     return batch
 
 
-def save_image_data(prompt_dataset, batch, current_batch_index, image_batch_size, num_images, feature_dir, image_dir, model_name,
+def save_image_data(prompt_dataset, batch, current_batch_index, image_batch_size, num_images, feature_dir, image_dir,
+                    model_name,
                     chad_score_model_name, cfg_strength, generation_task_result_list):
     processed_images = current_batch_index * image_batch_size
     tmp_start_time = time.time()
@@ -224,7 +226,7 @@ def save_image_data(prompt_dataset, batch, current_batch_index, image_batch_size
         chad_score = task['chad_score']
 
         # get prompt dict
-        prompt_dict = prompt_dataset.get_prompt_data(task['prompt_index']).get_prompt_dict()
+        prompt_dict = prompt_dataset.get_prompt_data(task['prompt_index'], include_prompt_vector=True).to_json()
 
         image_name = task["image_name"]
         filename = task["filename"]
@@ -367,7 +369,7 @@ def generate_images_from_prompt_list(num_images,
         os.makedirs(feature_dir, exist_ok=True)
         os.makedirs(image_dir, exist_ok=True)
 
-        batch_list = get_batch_list(num_images, prompt_dataset, seed_array, current_task_index, image_dir,
+        batch_list = get_batch_list(num_images, seed_array, current_task_index, image_dir,
                                     image_batch_size)
 
         current_batch_index = 0
@@ -375,7 +377,8 @@ def generate_images_from_prompt_list(num_images,
             batch_start_time = time.time()
             print("------ Batch " + str(current_batch_index + 1) + " out of " + str(len(batch_list)) + " ----------")
 
-            batch = get_embeddings(txt2img, prompt_dataset, batch, current_batch_index, image_batch_size, num_images, include_negative_prompt)
+            batch = get_embeddings(txt2img, prompt_dataset, batch, current_batch_index, image_batch_size, num_images,
+                                   cfg_strength, include_negative_prompt)
             batch = get_latents(batch, current_batch_index, image_batch_size, num_images, batch_size, cfg_strength,
                                 image_width, image_height, txt2img)
             batch = generate_images_from_latents(batch, current_batch_index, image_batch_size, num_images, txt2img)
@@ -383,7 +386,8 @@ def generate_images_from_prompt_list(num_images,
             batch = compute_image_chad_score(batch, current_batch_index, image_batch_size, num_images,
                                              chad_score_predictor)
 
-            generation_task_result_list = save_image_data(prompt_dataset, batch, current_batch_index, image_batch_size, num_images,
+            generation_task_result_list = save_image_data(prompt_dataset, batch, current_batch_index, image_batch_size,
+                                                          num_images,
                                                           feature_dir, image_dir,
                                                           model_name, chad_score_model_name, cfg_strength,
                                                           generation_task_result_list)
@@ -391,7 +395,6 @@ def generate_images_from_prompt_list(num_images,
             current_batch_index += 1
             batch_execution_time = time.time() - batch_start_time
             print("Batch duration: {0:0.02f} seconds".format(batch_execution_time))
-
 
         for generation_task_result_item in generation_task_result_list:
             generation_task_result = generation_task_result_item['generation_task_result']

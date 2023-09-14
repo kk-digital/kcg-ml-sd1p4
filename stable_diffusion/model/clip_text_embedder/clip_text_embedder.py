@@ -19,14 +19,15 @@ from typing import List
 
 import safetensors
 import torch
+import clip
 from torch import nn
-from transformers import CLIPTokenizer, CLIPTextModel, CLIPTextConfig
+from transformers import CLIPTokenizer, CLIPTextModel, CLIPTextConfig, CLIPModel
 
 from utility.labml.monit import section
 from utility.utils_logger import logger
 
 sys.path.insert(0, os.getcwd())
-from stable_diffusion.model_paths import CLIP_TEXT_EMBEDDER_PATH, CLIP_TOKENIZER_DIR_PATH, CLIP_TEXT_MODEL_DIR_PATH
+from stable_diffusion.model_paths import CLIP_TEXT_EMBEDDER_PATH, CLIP_TOKENIZER_DIR_PATH, CLIP_TEXT_MODEL_DIR_PATH, CLIP_MODEL_PATH
 from stable_diffusion.utils_backend import get_device
 
 
@@ -42,6 +43,8 @@ class CLIPTextEmbedder(nn.Module):
         :param max_length: is the max length of the tokenized prompt
         """
         super().__init__()
+
+        self.model_name = "openai/clip-vit-L-14"
 
         self.path_tree = path_tree
         self.device = get_device(device)
@@ -70,7 +73,7 @@ class CLIPTextEmbedder(nn.Module):
     def load_submodels(self, tokenizer_path=CLIP_TOKENIZER_DIR_PATH, transformer_path=CLIP_TEXT_MODEL_DIR_PATH):
 
         with section("Loading tokenizer and transformer"):
-            self.tokenizer = CLIPTokenizer.from_pretrained(tokenizer_path, local_files_only=True)
+            self.tokenizer = CLIPTokenizer.from_pretrained(tokenizer_path, local_files_only=True, return_tensors="pt", padding=True, truncation=True)
             logger.debug(f"Tokenizer successfully loaded from : {tokenizer_path}")
             self.transformer = CLIPTextModel.from_pretrained(transformer_path, local_files_only=True,
                                                              use_safetensors=True).eval().to(self.device)
@@ -123,6 +126,7 @@ class CLIPTextEmbedder(nn.Module):
 
         # Get CLIP embeddings
         return self.transformer(input_ids=tokens).last_hidden_state
+
 # %%
 
 # if __name__ == "__main__":
