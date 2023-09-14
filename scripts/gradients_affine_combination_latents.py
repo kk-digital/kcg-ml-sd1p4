@@ -164,7 +164,6 @@ def get_similarity_score(image_features, target_features):
 
 def latents_similarity_score(latent, index, output, target_features, device):
 
-    return torch.tensor([0.5], device=device)
     images = txt2img.get_image_from_latent(latent)
     image_list, image_hash_list = save_images(images, output + '/image' + str(index + 1) + '.jpg')
 
