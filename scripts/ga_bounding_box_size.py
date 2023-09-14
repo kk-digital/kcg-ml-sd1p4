@@ -88,6 +88,8 @@ print(OUTPUT_DIR)
 print(IMAGES_ROOT_DIR)
 print(FEATURES_DIR)
 
+image_generation_counter = 0
+
 # Initialize logger
 def log_to_file(message):
     
@@ -99,6 +101,9 @@ def log_to_file(message):
 
 # Function to calculate the chad score for batch of images
 def get_pil_image_from_solution(ga_instance, solution, solution_idx):
+
+    global image_generation_counter
+    image_generation_counter += 1
     # set seed
     SEED = random.randint(0, 2 ** 24)
     if FIXED_SEED == True:
@@ -197,6 +202,7 @@ def on_mutation(ga_instance, offspring_mutation):
 
 
 def store_generation_images(ga_instance):
+    global image_generation_counter
     start_time = time.time()
     generation = ga_instance.generations_completed
     print("Generation #", generation)
@@ -204,6 +210,7 @@ def store_generation_images(ga_instance):
     file_dir = os.path.join(IMAGES_ROOT_DIR, str(generation))
     os.makedirs(file_dir)
     for i, ind in enumerate(ga_instance.population):
+        image_generation_counter += 1
         SEED = random.randint(0, 2 ** 24)
         if FIXED_SEED == True:
             SEED = 54846
@@ -359,5 +366,5 @@ Notes:
 - population size 16
 - with uniform cross over
 '''
-
+print(f"Image generation happened: {image_generation_counter} times")
 del sd
