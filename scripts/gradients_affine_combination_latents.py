@@ -212,6 +212,8 @@ if __name__ == "__main__":
     random.seed(time.time())
     seed = 6789
 
+    # make sure the directories are created
+    os.makedirs(output, exist_ok=True)
 
     # Remove the directory and its contents recursively
     shutil.rmtree(output)
