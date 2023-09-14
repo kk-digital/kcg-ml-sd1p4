@@ -210,7 +210,6 @@ def store_generation_images(ga_instance):
     file_dir = os.path.join(IMAGES_ROOT_DIR, str(generation))
     os.makedirs(file_dir)
     for i, ind in enumerate(ga_instance.population):
-        image_generation_counter += 1
         SEED = random.randint(0, 2 ** 24)
         if FIXED_SEED == True:
             SEED = 54846
@@ -237,7 +236,7 @@ def store_generation_images(ga_instance):
         pil_image = to_pil(image[0])
         filename = os.path.join(file_dir, f'g{generation:04}_{i:03}.png')
         pil_image.save(filename)
-
+    print(f"Image generation triggered: {image_generation_counter} times in generation #{ga_instance.generations_completed}")
     end_time = time.time()  # End timing for generation
     total_time = end_time - start_time
     log_to_file(f"----------------------------------" )
