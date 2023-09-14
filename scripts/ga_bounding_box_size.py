@@ -103,7 +103,7 @@ def log_to_file(message):
 def store_generation_images(ga_instance):
     global image_generation_counter
     start_time = time.time()
-    
+    print(f"Running store_generation_images for generation #{generation}")
     # Fetch the current generation number and population size
     generation = ga_instance.generations_completed
     population_size = len(ga_instance.population)
@@ -150,7 +150,6 @@ def store_generation_images(ga_instance):
         del latent, prompt_embedding, image
         torch.cuda.empty_cache()
 
-    print(f"Image generation triggered: {image_generation_counter} times in generation #{ga_instance.generations_completed}")    
     print(f"Image generation triggered: {image_generation_counter} times in generation #{ga_instance.generations_completed}")
     end_time = time.time()  # End timing for generation
     total_time = end_time - start_time
@@ -178,7 +177,7 @@ def get_pil_image_from_solution(ga_instance, solution, solution_idx):
         # If there is no pre-generated image, print an error message
         print(f"No image pre-generated for generation {generation}, solution {solution_idx}")
         return None
-
+    print(f"Fetched image for generation {generation}, solution {solution_idx}")
     # Increase the image generation counter
     image_generation_counter += 1
     return pil_image
