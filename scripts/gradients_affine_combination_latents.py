@@ -381,18 +381,20 @@ if __name__ == "__main__":
 
     start_time = time.time()
 
+    fixed_taget_features = get_target_embeddings_features(util_clip, "chibi, anime, waifu, side scrolling")
 
     for i in range(0, iterations):
         # Zero the gradients
         optimizer.zero_grad()
-        fixed_taget_features = get_target_embeddings_features(util_clip, "chibi, anime, waifu, side scrolling")
+
+        fixed_taget = fixed_taget_features.clone()
 
         save_image = True
 
         combined_latent = combine_latents(latent_array, weight_array, device)
 
         #chad_score, chad_score_scaled = latents_chad_score(combined_latent, i, output, chad_score_predictor)
-        fitness = latents_similarity_score(combined_latent, i, output, fixed_taget_features, device, save_image)
+        fitness = latents_similarity_score(combined_latent, i, output, fixed_taget, device, save_image)
 
         input = fitness
         loss = mse_loss(input, target)
