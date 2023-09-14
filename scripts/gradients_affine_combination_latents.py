@@ -355,6 +355,10 @@ if __name__ == "__main__":
     # Create the random array
     weight_array = np.random.normal(mean, std_dev, shape)
 
+    # normalize the array
+    magnitude = np.linalg.norm(weight_array)
+    weight_array = weight_array / magnitude
+
     # array of  weights
     weight_array = torch.tensor(weight_array, device=device, dtype=torch.float32, requires_grad=True)
 
