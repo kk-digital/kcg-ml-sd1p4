@@ -103,11 +103,11 @@ def log_to_file(message):
 def store_generation_images(ga_instance):
     global image_generation_counter
     start_time = time.time()
-    print(f"Running store_generation_images for generation #{generation}")
     # Fetch the current generation number and population size
     generation = ga_instance.generations_completed
     population_size = len(ga_instance.population)
-    
+    print(f"Running store_generation_images for generation #{generation}")
+
     print("Generation #", generation)
     print("Population size: ", population_size)
     
