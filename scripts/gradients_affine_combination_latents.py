@@ -162,10 +162,11 @@ def get_similarity_score(image_features, target_features):
 
     return fitness
 
-def latents_similarity_score(latent, index, output, target_features, device):
+def latents_similarity_score(latent, index, output, target_features, device, save_image):
 
     images = txt2img.get_image_from_latent(latent)
-    image_list, image_hash_list = save_images(images, output + '/image' + str(index + 1) + '.jpg')
+    if save_image:
+        image_list, image_hash_list = save_images(images, output + '/image' + str(index + 1) + '.jpg')
 
     del latent
     torch.cuda.empty_cache()
@@ -258,6 +259,12 @@ def get_target_embeddings_features(util_clip, subject):
     features = features.squeeze(0)
 
     return features
+
+def log_to_file(message, output_directory):
+    log_path = os.path.join(output_directory, "log.txt")
+
+    with open(log_path, "a") as log_file:
+        log_file.write(message + "\n")
 
 if __name__ == "__main__":
     args = parse_arguments()
@@ -368,20 +375,27 @@ if __name__ == "__main__":
     target = torch.tensor([1.0], device=device, dtype=torch.float32, requires_grad=True)
 
     start_time = time.time()
+
+
     for i in range(0, iterations):
         # Zero the gradients
         optimizer.zero_grad()
         fixed_taget_features = get_target_embeddings_features(util_clip, "chibi, anime, waifu, side scrolling")
 
+        save_image = False
+        if i % (iterations / 100) == 0:
+            save_image = True
+
         combined_latent = combine_latents(latent_array, weight_array, device)
 
         #chad_score, chad_score_scaled = latents_chad_score(combined_latent, i, output, chad_score_predictor)
-        fitness = latents_similarity_score(combined_latent, i, output, fixed_taget_features, device)
+        fitness = latents_similarity_score(combined_latent, i, output, fixed_taget_features, device, save_image)
 
         input = fitness
         loss = mse_loss(input, target)
 
         print(f'Iteration #{i + 1}, loss {loss}')
+        log_to_file(f'Iteration #{i + 1}, loss {loss}', output)
 
         loss.backward()
         optimizer.step()
