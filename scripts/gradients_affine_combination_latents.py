@@ -385,7 +385,6 @@ if __name__ == "__main__":
 
     for i in range(0, iterations):
         # Zero the gradients
-        optimizer.zero_grad()
 
         fixed_taget = fixed_taget_features.clone()
 
@@ -404,6 +403,7 @@ if __name__ == "__main__":
 
         loss.backward()
         optimizer.step()
+        optimizer.zero_grad()
 
     end_time = time.time()
 
