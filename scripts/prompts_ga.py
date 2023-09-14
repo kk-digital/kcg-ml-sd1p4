@@ -78,7 +78,7 @@ from stable_diffusion.utils_backend import get_device
 from stable_diffusion.utils_image import *
 from ga.utils import get_next_ga_dir
 import ga
-from ga.fitness_chad_score import compute_chad_score_from_pil
+from ga.fitness_chad_score import compute_chad_score_from_features
 
 
 random.seed()
@@ -233,11 +233,34 @@ def get_pil_image_from_solution(ga_instance, solution, solution_idx):
 
     return pil_image
 
+def get_clip_features_from_pil(pil_image):
+    '''
+    Get CLIP features for a given PIL image.
+
+    Args:
+    - pil_image (PIL.Image.Image): Image for which CLIP features are to be computed.
+
+    Returns:
+    - feature_vector (torch.Tensor): CLIP feature vector for the input image.
+    '''
+    
+    # Ensure the image is in RGB mode
+    assert pil_image.mode == "RGB", "The image should be in RGB mode"
+
+    # Preprocess the image and unsqueeze to add a batch dimension
+    unsqueezed_image = preprocess(pil_image).unsqueeze(0).to(DEVICE)
+
+    # Get CLIP encoding of the image
+    with torch.no_grad():
+        feature_vector = image_features_clip_model.encode_image(unsqueezed_image)
+    
+    return feature_vector
+
 # Function to calculate the chad score for batch of images
 def calculate_chad_score(ga_instance, solution, solution_idx):
     pil_image = get_pil_image_from_solution(ga_instance, solution, solution_idx)
 
-    _, chad_score = compute_chad_score_from_pil(pil_image)
+    _, chad_score = compute_chad_score_from_features(pil_image)
     
     return chad_score
 
