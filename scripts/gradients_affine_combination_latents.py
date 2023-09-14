@@ -281,6 +281,8 @@ if __name__ == "__main__":
     num_images = args.num_images
     prompts_path = args.prompts_path
 
+    starting_images_directory = output + '/' + 'starting_images'
+
     # Seed the random number generator with the current time
     random.seed(time.time())
     seed = 6789
@@ -293,6 +295,7 @@ if __name__ == "__main__":
 
     # make sure the directories are created
     os.makedirs(output, exist_ok=True)
+    os.makedirs(starting_images_directory, exist_ok=True)
 
     clip_text_embedder = CLIPTextEmbedder(device=get_device())
     clip_text_embedder.load_submodels()
@@ -324,8 +327,10 @@ if __name__ == "__main__":
     fixed_taget_features = get_target_embeddings_features(util_clip, "chibi, anime, waifu, side scrolling")
 
     latent_array = []
+    index = 0
     # Get N Embeddings
     for prompt in prompt_list:
+        index = index + 1
         # get the embedding from positive text prompt
         # prompt_str = prompt.positive_prompt_str
         prompt = prompt.flatten()[0]
@@ -349,6 +354,9 @@ if __name__ == "__main__":
             h=image_height
         )
 
+        images = txt2img.get_image_from_latent(latent)
+        image_list, image_hash_list = save_images(images, starting_images_directory + '/image' + str(index + 1) + '.jpg')
+
         latent_array.append(latent)
 
     # Parameters for the Gaussian distribution
@@ -356,14 +364,14 @@ if __name__ == "__main__":
     std_dev = 1  # standard deviation (spread or width) of the distribution
     shape = (num_prompts)  # shape of the resulting array
 
-    # Create the random array
+    # Create the random weights
     weight_array = np.random.normal(mean, std_dev, shape)
 
     # normalize the array
     magnitude = np.linalg.norm(weight_array)
     weight_array = weight_array / magnitude
 
-    # array of  weights
+    # convert to tensor
     weight_array = torch.tensor(weight_array, device=device, dtype=torch.float32, requires_grad=True)
 
     optimizer = optim.AdamW([weight_array], lr=learning_rate, weight_decay=0.01)
