@@ -363,8 +363,6 @@ if __name__ == "__main__":
     magnitude = np.linalg.norm(weight_array)
     weight_array = weight_array / magnitude
 
-    weight_array = [1.0]
-
     # array of  weights
     weight_array = torch.tensor(weight_array, device=device, dtype=torch.float32, requires_grad=True)
 
