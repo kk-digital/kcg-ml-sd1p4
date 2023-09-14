@@ -77,6 +77,8 @@ if not os.path.exists(csv_filename):
 
 fitness_cache = {}
 
+image_storage = {}
+
 # TODO: NULL_PROMPT is completely wrong
 NULL_PROMPT = None  # assign later
 
@@ -101,42 +103,20 @@ def log_to_file(message):
 
 # Function to calculate the chad score for batch of images
 def get_pil_image_from_solution(ga_instance, solution, solution_idx):
-
     global image_generation_counter
+    # Fetch the current generation number
+    generation = ga_instance.generations_completed
+    
+    try:
+        # Fetch the pre-generated image from the storage
+        pil_image = image_storage[generation][solution_idx]
+    except KeyError:
+        # If there is no pre-generated image, print an error message
+        print(f"No image pre-generated for generation {generation}, solution {solution_idx}")
+        return None
+
+    # Increase the image generation counter
     image_generation_counter += 1
-    # set seed
-    SEED = random.randint(0, 2 ** 24)
-    if FIXED_SEED == True:
-        SEED = 54846
-
-    # Convert the numpy array to a PyTorch tensor
-    prompt_embedding = torch.tensor(solution, dtype=torch.float32)
-    prompt_embedding = prompt_embedding.view(1, 77, 768).to(DEVICE)
-
-    latent = sd.generate_images_latent_from_embeddings(
-        seed=SEED,
-        embedded_prompt=prompt_embedding,
-        null_prompt=NULL_PROMPT,
-        uncond_scale=CFG_STRENGTH
-    )
-
-    image = sd.get_image_from_latent(latent)
-    del latent
-    torch.cuda.empty_cache()
-
-    # move back to cpu
-    prompt_embedding.to("cpu")
-    del prompt_embedding
-
-    pil_image = to_pil(image[0])  # Convert to (height, width, channels)
-    del image
-    torch.cuda.empty_cache()
-
-    # convert to grey scale
-    if CONVERT_GREY_SCALE_FOR_SCORING == True:
-        pil_image = pil_image.convert("L")
-        pil_image = pil_image.convert("RGB")
-
     return pil_image
 
 # Function to calculate the chad score for batch of images
@@ -204,38 +184,54 @@ def on_mutation(ga_instance, offspring_mutation):
 def store_generation_images(ga_instance):
     global image_generation_counter
     start_time = time.time()
+    
+    # Fetch the current generation number and population size
     generation = ga_instance.generations_completed
+    population_size = len(ga_instance.population)
+    
     print("Generation #", generation)
-    print("Population size: ", len(ga_instance.population))
+    print("Population size: ", population_size)
+    
+    # Set up the directory to store the generation images
     file_dir = os.path.join(IMAGES_ROOT_DIR, str(generation))
-    os.makedirs(file_dir)
+    os.makedirs(file_dir, exist_ok=True)
+    
+    # Initialize a dictionary to store the images for the current generation
+    image_storage[generation] = {}
+    
+    # Loop over each individual in the population
     for i, ind in enumerate(ga_instance.population):
         SEED = random.randint(0, 2 ** 24)
-        if FIXED_SEED == True:
+        if FIXED_SEED:
             SEED = 54846
-        prompt_embedding = torch.tensor(ind, dtype=torch.float32).to(DEVICE)
-        prompt_embedding = prompt_embedding.view(1, 77, 768)
-
-        print("prompt_embedding, tensor size= ", str(torch.Tensor.size(prompt_embedding)))
-        print("NULL_PROMPT, tensor size= ", str(torch.Tensor.size(NULL_PROMPT)))
-
-        # WARNING: Is using autocast internally
+        
+        # Convert the solution to a PyTorch tensor and reshape it
+        prompt_embedding = torch.tensor(ind, dtype=torch.float32).to(DEVICE).view(1, 77, 768)
+        
+        # Generate the latent representation and the image
         latent = sd.generate_images_latent_from_embeddings(
             seed=SEED,
             embedded_prompt=prompt_embedding,
             null_prompt=NULL_PROMPT,
             uncond_scale=CFG_STRENGTH
         )
-
         image = sd.get_image_from_latent(latent)
-
-        # move to gpu and cleanup
-        prompt_embedding.to("cpu")
-        del prompt_embedding
-
+        
+        # Convert the image to PIL format and save it to the storage
         pil_image = to_pil(image[0])
+        if CONVERT_GREY_SCALE_FOR_SCORING:
+            pil_image = pil_image.convert("L").convert("RGB")
+        image_storage[generation][i] = pil_image
+        
+        # Save the image to a file
         filename = os.path.join(file_dir, f'g{generation:04}_{i:03}.png')
         pil_image.save(filename)
+        
+        # Clean up the CUDA cache to free up memory
+        del latent, prompt_embedding, image
+        torch.cuda.empty_cache()
+
+    print(f"Image generation triggered: {image_generation_counter} times in generation #{ga_instance.generations_completed}")    
     print(f"Image generation triggered: {image_generation_counter} times in generation #{ga_instance.generations_completed}")
     end_time = time.time()  # End timing for generation
     total_time = end_time - start_time
