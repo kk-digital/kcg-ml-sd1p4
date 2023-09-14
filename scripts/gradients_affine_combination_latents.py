@@ -114,7 +114,7 @@ def read_prompts_from_zip(zip_file_path, num_prompts):
     with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
         # Get a list of all file names in the zip archive
         file_list = zip_ref.namelist()
-
+        random.shuffle(file_list)
         # Initialize a list to store loaded arrays
         loaded_arrays = []
 
