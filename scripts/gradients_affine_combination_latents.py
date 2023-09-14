@@ -6,6 +6,7 @@ import sys
 import numpy as np
 import torch
 import time
+import shutil
 import torch.nn as nn
 import torch.optim as optim
 import random
@@ -32,7 +33,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser(
         description="Affine combination of embeddings.")
 
-    parser.add_argument('--output', type=str, default='./output')
+    parser.add_argument('--output', type=str, default='./output/gradients_affine_combination_latents')
     parser.add_argument('--image_width', type=int, default=512)
     parser.add_argument('--image_height', type=int, default=512)
     parser.add_argument('--cfg_strength', type=float, default=12)
@@ -209,6 +210,11 @@ if __name__ == "__main__":
     # Seed the random number generator with the current time
     random.seed(time.time())
     seed = 6789
+
+    # make sure the directories are created
+    os.makedirs(output, exist_ok=True)
+    # Remove the directory and its contents recursively
+    shutil.rmtree(output)
 
     clip_text_embedder = CLIPTextEmbedder(device=get_device())
     clip_text_embedder.load_submodels()
