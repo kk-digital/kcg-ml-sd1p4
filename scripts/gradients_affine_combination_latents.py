@@ -272,7 +272,7 @@ if __name__ == "__main__":
     # Create a list to store the random population
     weight_array = []
 
-    for i in range(weight_array):
+    for i in range(num_prompts):
         # Parameters for the Gaussian distribution
         mean = 0  # mean (center) of the distribution
         std_dev = 1  # standard deviation (spread or width) of the distribution
