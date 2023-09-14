@@ -318,7 +318,7 @@ ga_instance = pygad.GA(initial_population=embedded_prompts_list,
                        mutation_type=mutation_type,
                        on_fitness=on_fitness,
                        on_mutation=on_mutation,
-                       on_generation=store_generation_images,
+                       on_generation=get_pil_image_from_solution,
                        on_stop=on_fitness,
                        parent_selection_type=parent_selection_type,
                        keep_parents=0,
@@ -328,7 +328,7 @@ ga_instance = pygad.GA(initial_population=embedded_prompts_list,
                        # fitness_func=calculate_fitness_score,
                        # on_parents=on_parents,
                        # on_crossover=on_crossover,
-                       on_start=store_generation_images,
+                       on_start=get_pil_image_from_solution,
                        )
 
 log_to_file(f"Batch Size: {population_size}")
