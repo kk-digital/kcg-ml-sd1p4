@@ -1,16 +1,11 @@
 import os
 import sys
-import random
-import clip
 import torch
 from chad_score.chad_score import ChadScorePredictor
 from stable_diffusion.utils_backend import get_device
-from stable_diffusion.utils_image import to_pil
 
 DEVICE = get_device()
 
-# Load CLIP
-image_features_clip_model, preprocess = clip.load("ViT-L/14", device=DEVICE)
 
 # Load Chad Score
 chad_score_model_path = os.path.join('input', 'model', 'chad_score', 'chad-score-v1.pth')

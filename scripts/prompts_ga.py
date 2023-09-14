@@ -107,10 +107,6 @@ DEVICE = get_device()
 # get clip preprocessor
 image_features_clip_model, preprocess = clip.load("ViT-L/14", device=DEVICE)
 
-# load chad score
-chad_score_model_path = os.path.join('input', 'model', 'chad_score', 'chad-score-v1.pth')
-chad_score_predictor = ChadScorePredictor(device=DEVICE)
-chad_score_predictor.load_model(chad_score_model_path)
 
 # Why are you using this prompt generator?
 EMBEDDED_PROMPTS_DIR = os.path.abspath(join(base_dir, 'input', 'embedded_prompts'))
@@ -152,29 +148,6 @@ print(OUTPUT_DIR)
 print(IMAGES_ROOT_DIR)
 print(FEATURES_DIR)
 
-# TODO: wtf is this function
-'''
-def normalized(a, axis=-1, order=2):
-    import numpy as np
-
-    l2 = np.atleast_1d(np.linalg.norm(a, order, axis))
-    l2[l2 == 0] = 1
-    return a / np.expand_dims(l2, axis)
-'''
-
-'''
-def generate_images_from_embeddings(embedded_prompts_array, null_prompt):
-    # print(embedded_prompts_array.to('cuda0'))
-    SEED = random.randint(0, 2**24)
-    
-    if FIXED_SEED == True:
-        SEED = 54846
-    #print("max_seed= ", 2**24)
-
-    embedded_prompt = embedded_prompts_array.to('cuda').view(1, 77, 768)
-    return sd.generate_images_from_embeddings(
-        seed=SEED, embedded_prompt=embedded_prompt, null_prompt=null_prompt)
-'''
 
 clip_start_time = time.time()
 

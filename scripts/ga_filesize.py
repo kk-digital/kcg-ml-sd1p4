@@ -47,9 +47,6 @@ args = parser.parse_args()
 
 DEVICE = get_device()
 
-# load clip
-# get clip preprocessor
-image_features_clip_model, preprocess = clip.load("ViT-L/14", device=DEVICE)
 
 # Why are you using this prompt generator?
 EMBEDDED_PROMPTS_DIR = os.path.abspath(join(base_dir, 'input', 'embedded_prompts'))
@@ -371,4 +368,4 @@ Notes:
 - with uniform cross over
 '''
 
-del preprocess, image_features_clip_model, sd
+del sd
