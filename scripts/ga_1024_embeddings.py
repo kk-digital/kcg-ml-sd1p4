@@ -120,6 +120,13 @@ def calculate_fitness_score(ga_instance, solution, solution_idx):
     for i, coeff in enumerate(solution):
         combined_embedding_np = combined_embedding_np + embedded_prompts_numpy[i] * coeff
 
+    try:
+        filepath = os.path.join(FEATURES_DIR, f'combined_embedding_{solution_idx}.npz')
+        np.savez_compressed(filepath, combined_embedding=combined_embedding_np)
+        print(f"Successfully saved to {filepath}")
+    except Exception as e:
+        print(f"Could not save file due to: {e}")
+        print(f"Filepath: {filepath}")    
     # Convert the combined numpy array to a PyTorch tensor
     prompt_embedding = torch.tensor(combined_embedding_np, dtype=torch.float32)
     prompt_embedding = prompt_embedding.view(1, 77, 768).to(DEVICE)
@@ -183,6 +190,8 @@ def cached_fitness_func(ga_instance, solution, solution_idx):
 
 
 def on_fitness(ga_instance, population_fitness):
+    current_generation = ga_instance.generations_completed
+    prompt_str = prompts_str_array[current_generation]
     population_fitness_np = np.array(population_fitness)
     print("Generation #", ga_instance.generations_completed)
     print("Population Size= ", len(population_fitness_np))
@@ -199,7 +208,7 @@ def on_fitness(ga_instance, population_fitness):
     log_to_file(f"Prompt: {prompt_str}")
     log_to_file(f"Fitness array= {str(population_fitness_np)}")
 
-        # Append the current generation data to the CSV file
+    # Append the current generation data to the CSV file
     with open(csv_filename, 'a', newline='') as csvfile:
         csvwriter = csv.writer(csvfile)
         csvwriter.writerow([
