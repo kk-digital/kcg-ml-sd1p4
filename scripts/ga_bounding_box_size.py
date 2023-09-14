@@ -101,7 +101,7 @@ def log_to_file(message):
 
 # Function to calculate the chad score for batch of images
 def get_pil_image_from_solution(ga_instance, solution, solution_idx):
-    
+    start_time = time.time()
     global image_generation_counter
     image_generation_counter += 1
 
@@ -145,7 +145,26 @@ def get_pil_image_from_solution(ga_instance, solution, solution_idx):
     filename = os.path.join(file_dir, f'g{generation:04}_{solution_idx:03}.png')
     pil_image.save(filename)
 
+    # Check if it is the last solution in this generation to log details
+    if image_generation_counter == len(ga_instance.population):
+        end_time = time.time()  # End timing for generation
+        total_time = end_time - start_time
+        log_to_file(f"----------------------------------" )
+        log_to_file(f"Total time taken for Generation #{generation}: {total_time} seconds")
+        
+        # Log images per generation
+        num_images = len(ga_instance.population)
+        log_to_file(f"Images generated in Generation #{generation}: {num_images}")
+
+        # Log images/sec
+        images_per_second = num_images / total_time
+        log_to_file(f"Images per second in Generation #{generation}: {images_per_second}")
+
+        # Reset the counter for the next generation
+        image_generation_counter = 0
+
     return pil_image
+
 
 
 # Function to calculate the chad score for batch of images
@@ -209,26 +228,6 @@ def on_fitness(ga_instance, population_fitness):
 def on_mutation(ga_instance, offspring_mutation):
     print("Performing mutation at generation: ", ga_instance.generations_completed)
     log_to_file(f"Performing mutation at generation: {ga_instance.generations_completed}")
-
-
-def store_generation_images(ga_instance):
-    global image_generation_counter
-    image_generation_counter = 0 
-    start_time = time.time()
-    generation = ga_instance.generations_completed
-
-    end_time = time.time()  # End timing for generation
-    total_time = end_time - start_time
-    log_to_file(f"----------------------------------" )
-    log_to_file(f"Total time taken for Generation #{generation}: {total_time} seconds")
-
-    # Log images per generation
-    num_images = len(ga_instance.population)
-    log_to_file(f"Images generated in Generation #{generation}: {num_images}")
-
-    # Log images/sec
-    images_per_second = num_images / total_time
-    log_to_file(f"Images per second in Generation #{generation}: {images_per_second}")
 
 
 
