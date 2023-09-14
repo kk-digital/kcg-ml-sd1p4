@@ -367,7 +367,7 @@ if __name__ == "__main__":
     for i in range(0, iterations):
         # Zero the gradients
         optimizer.zero_grad()
-        fixed_taget_features.grad = None
+        fixed_taget_features = get_target_embeddings_features(util_clip, "chibi, anime, waifu, side scrolling")
 
         combined_latent = combine_latents(latent_array, weight_array, device)
 
