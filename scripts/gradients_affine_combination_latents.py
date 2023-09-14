@@ -270,18 +270,13 @@ if __name__ == "__main__":
 
         latent_array.append(latent)
 
-    # Create a list to store the random population
-    weight_array = []
+    # Parameters for the Gaussian distribution
+    mean = 0  # mean (center) of the distribution
+    std_dev = 1  # standard deviation (spread or width) of the distribution
+    shape = (num_prompts)  # shape of the resulting array
 
-    for i in range(num_prompts):
-        # Parameters for the Gaussian distribution
-        mean = 0  # mean (center) of the distribution
-        std_dev = 1  # standard deviation (spread or width) of the distribution
-        shape = (num_prompts)  # shape of the resulting array
-
-        # Create the random array
-        random_weights = np.random.normal(mean, std_dev, shape)
-        weight_array.append(random_weights)
+    # Create the random array
+    weight_array = np.random.normal(mean, std_dev, shape)
 
     # array of  weights
     weight_array = torch.tensor(weight_array, device=device, dtype=torch.float32, requires_grad=True)
