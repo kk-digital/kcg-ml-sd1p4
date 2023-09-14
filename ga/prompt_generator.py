@@ -14,13 +14,10 @@ import numpy as np
 base_directory = "./"
 sys.path.insert(0, base_directory)
 
-from scripts.stable_diffusion_base_script import StableDiffusionBaseScript
-
 
 class GeneratedPrompt:
     def __init__(self, positive_prompt_str: str, negative_prompt_str: str, num_topics: int, num_modifiers: int,
-                 num_styles: int, num_constraints: int, prompt_vector: [], positive_prompt_embedding=None,
-                 negative_prompt_embedding=None):
+                 num_styles: int, num_constraints: int, prompt_vector: []):
         self.positive_prompt_str = positive_prompt_str
         self.negative_prompt_str = negative_prompt_str
         self.num_topics = num_topics
@@ -33,9 +30,6 @@ class GeneratedPrompt:
         # 0 - unused phrase
         # -1 - used for negative prompt
         self.prompt_vector = prompt_vector
-
-        self.positive_prompt_embedding = positive_prompt_embedding
-        self.negative_prompt_embedding = negative_prompt_embedding
 
     def get_positive_prompt_str(self):
         return self.positive_prompt_str
@@ -51,20 +45,7 @@ class GeneratedPrompt:
                 'num-modifiers': self.num_modifiers,
                 'num-styles': self.num_styles,
                 'num-constraints': self.num_constraints,
-                'positive-prompt-embedding': self.positive_prompt_embedding,
-                'negative-prompt-embedding': self.negative_prompt_embedding,
                 }
-
-    def get_prompt_dict(self):
-        return {'positive-prompt-str': self.positive_prompt_str,
-                'negative-prompt-str': self.negative_prompt_str,
-                'prompt-vector': self.prompt_vector,
-                'num-topics': self.num_topics,
-                'num-modifiers': self.num_modifiers,
-                'num-styles': self.num_styles,
-                'num-constraints': self.num_constraints,
-                }
-
 
 
 class PromptData:
@@ -268,8 +249,6 @@ def generate_prompts_from_csv(csv_dataset_path,
                               csv_phrase_limit,
                               prompt_count,
                               positive_prefix="",
-                              save_embeddings=True,
-                              checkpoint_path="",
                               dataset_output="",
                               positive_ratio_threshold=3,
                               negative_ratio_threshold=3,
@@ -282,18 +261,6 @@ def generate_prompts_from_csv(csv_dataset_path,
         phrases_token_size,\
         positive_count_list,\
         negative_count_list = initialize_prompt_list_from_csv(csv_dataset_path, csv_phrase_limit)
-
-    if checkpoint_path == "":
-        raise Exception("Invalid checkpoint path")
-
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    if save_embeddings is True:
-        cfg_strength = 12
-        sd = StableDiffusionBaseScript(
-            cuda_device=device,
-        )
-        sd.initialize_latent_diffusion(autoencoder=None, clip_text_embedder=None, unet_model=None,
-                                       path=checkpoint_path, force_submodels_init=True)
 
     positive_prefix_token_size = 0
     if positive_prefix != "":
@@ -367,30 +334,18 @@ def generate_prompts_from_csv(csv_dataset_path,
         num_styles = len([prompt.Phrase for prompt in positive_prompt if "style" in prompt.Types])
         num_constraints = len([prompt.Phrase for prompt in positive_prompt if "constraint" in prompt.Types])
 
-        if save_embeddings is True:
-            negative_prompt_embedding, positive_prompt_embedding = sd.get_text_conditioning(cfg_strength,
-                                                                                            positive_prompt_str,
-                                                                                            negative_prompt_str)
-
-            # convert to fp32
-            positive_prompt_embedding = positive_prompt_embedding.detach().cpu().to(torch.float32)
-            negative_prompt_embedding = negative_prompt_embedding.detach().cpu().to(torch.float32)
-            torch.cuda.empty_cache()
-
         prompt = GeneratedPrompt(positive_prompt_str, negative_prompt_str, num_topics, num_modifiers,
-                            num_styles, num_constraints, prompt_vector, positive_prompt_embedding,
-                            negative_prompt_embedding)
-        # save prompt npz
+                            num_styles, num_constraints, prompt_vector)
+        # save prompt json
         prompt_json = prompt.to_json()
-        filename = "{num:0{digits}}.npz".format(num=count, digits=count_number_of_digits(prompt_count))
+        filename = "{num:0{digits}}.json".format(num=count, digits=count_number_of_digits(prompt_count))
         file_path = os.path.join(dataset_output, filename)
 
-        # save data
-        np.savez_compressed(file_path, data=prompt_json)
-        count += 1
+        # Save the data to a JSON file
+        with open(file_path, 'w') as json_file:
+            json.dump(prompt_json, json_file)
 
-    # unload model
-    sd.unload_model()
+        count += 1
 
 
 def get_sorted_list_with_cumulative(phrases, phrases_token_size, count_list):
@@ -419,8 +374,6 @@ def generate_prompts_from_csv_proportional_selection(csv_dataset_path,
                                                      csv_phrase_limit,
                                                      prompt_count,
                                                      positive_prefix="",
-                                                     save_embeddings=True,
-                                                     checkpoint_path="",
                                                      dataset_output=""):
     max_token_size = 75
     comma_token_size = 1
@@ -451,18 +404,6 @@ def generate_prompts_from_csv_proportional_selection(csv_dataset_path,
     del phrases_token_size
     del positive_count_list
     del negative_count_list
-
-    if checkpoint_path == "":
-        raise Exception("Invalid checkpoint path")
-
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    if save_embeddings is True:
-        cfg_strength = 12
-        sd = StableDiffusionBaseScript(
-            cuda_device=device,
-        )
-        sd.initialize_latent_diffusion(autoencoder=None, clip_text_embedder=None, unet_model=None,
-                                       path=checkpoint_path, force_submodels_init=True)
 
     positive_prefix_token_size = 0
     if positive_prefix != "":
@@ -531,32 +472,19 @@ def generate_prompts_from_csv_proportional_selection(csv_dataset_path,
         num_styles = len([prompt.Phrase for prompt in positive_prompt if "style" in prompt.Types])
         num_constraints = len([prompt.Phrase for prompt in positive_prompt if "constraint" in prompt.Types])
 
-        if save_embeddings is True:
-            negative_prompt_embedding, positive_prompt_embedding = sd.get_text_conditioning(cfg_strength,
-                                                                                            positive_prompt_str,
-                                                                                            negative_prompt_str)
-
-            # convert to fp32
-            positive_prompt_embedding = positive_prompt_embedding.detach().cpu().to(torch.float32)
-            negative_prompt_embedding = negative_prompt_embedding.detach().cpu().to(torch.float32)
-            torch.cuda.empty_cache()
-
         prompt = GeneratedPrompt(positive_prompt_str, negative_prompt_str, num_topics, num_modifiers,
-                            num_styles, num_constraints, prompt_vector, positive_prompt_embedding,
-                            negative_prompt_embedding)
+                            num_styles, num_constraints, prompt_vector)
 
-        # save prompt npz
+        # save prompt json
         prompt_json = prompt.to_json()
-        filename = "{num:0{digits}}.npz".format(num=count, digits=count_number_of_digits(prompt_count))
+        filename = "{num:0{digits}}.json".format(num=count, digits=count_number_of_digits(prompt_count))
         file_path = os.path.join(dataset_output, filename)
 
-        # save data
-        np.savez_compressed(file_path, data=prompt_json)
+        # Save the data to a JSON file
+        with open(file_path, 'w') as json_file:
+            json.dump(prompt_json, json_file)
+
         count += 1
-
-
-    # unload model
-    sd.unload_model()
 
 
 # find the first element, whose cumulative total is more than the random number
@@ -596,12 +524,10 @@ def count_number_of_digits(num):
     return count
 
 
-def generate_prompts_and_save_to_npz(csv_dataset_path,
+def generate_prompts_and_save_to_json(csv_dataset_path,
                                      csv_phrase_limit,
                                      prompt_count,
                                      positive_prefix="",
-                                     save_embeddings=True,
-                                     checkpoint_path="",
                                      dataset_output="",
                                      positive_ratio_threshold=3,
                                      negative_ratio_threshold=3,
@@ -616,16 +542,12 @@ def generate_prompts_and_save_to_npz(csv_dataset_path,
                                                         csv_phrase_limit,
                                                         prompt_count,
                                                         positive_prefix,
-                                                        save_embeddings,
-                                                        checkpoint_path,
                                                         dataset_output)
     else:
         generate_prompts_from_csv(csv_dataset_path,
                                 csv_phrase_limit,
                                 prompt_count,
                                 positive_prefix,
-                                save_embeddings,
-                                checkpoint_path,
                                 dataset_output,
                                 positive_ratio_threshold,
                                 negative_ratio_threshold,
