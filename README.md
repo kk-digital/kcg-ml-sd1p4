@@ -283,9 +283,9 @@ options:
 python3 ./scripts/generate_images_from_prompt_generator.py --checkpoint_path "./input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors" --cfg_scale 7 --num_images 10 --num_phrases 12 --output "./output/"
 ```
 
-### Generate Images From Prompt List Dataset Embeddings
+### Generate Images From Prompt List Dataset 
 
-To generate images from prompt list dataset embeddings, these are the available CLI arguments:
+To generate images from prompt list dataset, these are the available CLI arguments:
 
 ```
 options:
@@ -321,7 +321,7 @@ options:
 ```
 
 ``` shell
-python3 ./scripts/generate_images_from_prompt_list_embeddings.py --checkpoint_path "./input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors" --cfg_scale 7 --num_images 2 --output ./output/generated-dataset-from-prompt-list --prompt_list_dataset_path ./test/test_zip_files/prompt_list_civitai_2_test.zip --include_negative_prompt True
+python3 ./scripts/generate_images_from_prompt_list.py --checkpoint_path "./input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors" --cfg_scale 7 --num_images 2 --output ./output/generated-dataset-from-prompt-list --prompt_list_dataset_path ./test/test_zip_files/prompt_list_civitai_2_test.zip --include_negative_prompt True
 ```
 
 ### Chad Score
@@ -438,8 +438,8 @@ python scripts/prompt_gradient.py --input_path input/set_0000_v2.zip --model_pat
 ### Prompt Generator
 Generates prompts and saves to a json file
 ```
-usage: prompt_generator.py [-h] [--positive-prefix POSITIVE_PREFIX] [--num-prompts NUM_PROMPTS] [--csv-phrase-limit CSV_PHRASE_LIMIT] [--csv-path CSV_PATH] [--save-embeddings SAVE_EMBEDDINGS] [--output OUTPUT] [--checkpoint-path CHECKPOINT_PATH] [--positive-ratio-threshold POSITIVE_RATIO_THRESHOLD]
-                           [--negative-ratio-threshold NEGATIVE_RATIO_THRESHOLD] [--use-threshold USE_THRESHOLD] [--proportional-selection PROPORTIONAL_SELECTION]
+usage: prompt_generator.py [-h] [--positive-prefix POSITIVE_PREFIX] [--num-prompts NUM_PROMPTS] [--csv-phrase-limit CSV_PHRASE_LIMIT] [--csv-path CSV_PATH] [--output OUTPUT] [--positive-ratio-threshold POSITIVE_RATIO_THRESHOLD] [--negative-ratio-threshold NEGATIVE_RATIO_THRESHOLD]
+                           [--use-threshold USE_THRESHOLD] [--proportional-selection PROPORTIONAL_SELECTION]
 
 Prompt Generator CLI tool generates prompts from phrases inside a csv
 
@@ -452,11 +452,7 @@ options:
   --csv-phrase-limit CSV_PHRASE_LIMIT
                         Number of phrases to use from the csv data
   --csv-path CSV_PATH   Full path to the csv path
-  --save-embeddings SAVE_EMBEDDINGS
-                        True if prompt embeddings will be saved
   --output OUTPUT       Output path for dataset zip containing prompt list npz
-  --checkpoint-path CHECKPOINT_PATH
-                        Path to the model checkpoint
   --positive-ratio-threshold POSITIVE_RATIO_THRESHOLD
                         Threshold ratio of positive/negative to use a phrase for positive prompt
   --negative-ratio-threshold NEGATIVE_RATIO_THRESHOLD
@@ -469,11 +465,13 @@ options:
 
 Example Usage:
 ```
-python ./scripts/prompt_generator.py --num-prompts 50 --positive-prefix "environmental, concept art, side scrolling, video game" --csv-phrase-limit 512 --csv-path ./input/civit_ai_data_phrase_count_v6.csv --save-embeddings True --output ./output/prompt_list_civitai_50_test --checkpoint-path ./input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors --positive-ratio-threshold 3 --negative-ratio-threshold 3
+python ./scripts/prompt_generator.py --num-prompts 50 --positive-prefix "environmental, concept art, side scrolling, video game" --csv-phrase-limit 512 --csv-path ./input/civit_ai_data_phrase_count_v6.csv --output ./output/prompt_list_civitai_50_test --positive-ratio-threshold 3 --negative-ratio-threshold 3
 ```
+
 ```
-python ./scripts/prompt_generator.py --num-prompts 50 --positive-prefix "environmental, concept art, side scrolling, video game" --csv-phrase-limit 512 --csv-path ./input/civit_ai_data_phrase_count_v6.csv --save-embeddings True --output ./output/prompt_list_civitai_50_test --checkpoint-path ./input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors --proportional-selection True      
+python ./scripts/prompt_generator.py --num-prompts 50 --positive-prefix "environmental, concept art, side scrolling, video game" --csv-phrase-limit 512 --csv-path ./input/civit_ai_data_phrase_count_v6.csv --output ./output/prompt_list_civitai_50_test --proportional-selection True      
 ```
+
 ### Image Ranker by Fitness Score
 script will rank images according spedicif fitness functoin
 
