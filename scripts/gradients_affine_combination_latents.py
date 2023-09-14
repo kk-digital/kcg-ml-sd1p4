@@ -386,7 +386,7 @@ if __name__ == "__main__":
     for i in range(0, iterations):
         # Zero the gradients
 
-        fixed_taget = fixed_taget_features.clone()
+        fixed_taget = fixed_taget_features.detach().clone()
 
         save_image = True
 
