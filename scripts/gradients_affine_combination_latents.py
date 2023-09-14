@@ -162,7 +162,7 @@ def get_similarity_score(image_features, target_features):
 
     return fitness
 
-def latents_similarity_score(latent, index, output, target_features):
+def latents_similarity_score(latent, index, output, target_features, device):
 
     return torch.tensor([0.5])
     images = txt2img.get_image_from_latent(latent, device=device)
@@ -373,7 +373,7 @@ if __name__ == "__main__":
         combined_latent = combine_latents(latent_array, weight_array, device)
 
         #chad_score, chad_score_scaled = latents_chad_score(combined_latent, i, output, chad_score_predictor)
-        fitness = latents_similarity_score(combined_latent, i, output, fixed_taget_features)
+        fitness = latents_similarity_score(combined_latent, i, output, fixed_taget_features, device)
 
         input = fitness
         loss = mse_loss(input, target)
