@@ -140,14 +140,10 @@ def combine_latents(latents_array, weight_array, device):
 
     # Multiply each tensor by its corresponding float and sum up
     for latent, weight in zip(latents_array, weight_array):
-        print(latent.shape)
-        print(latent)
-        weighted_latent = latent * 1.0
-        print(weighted_latent.shape)
-        print(weighted_latent)
+        weighted_latent = latent * weight
         result_latents += weighted_latent
 
-    return latents_array
+    return result_latents
 
 
 def get_similarity_score(image_features, target_features):
