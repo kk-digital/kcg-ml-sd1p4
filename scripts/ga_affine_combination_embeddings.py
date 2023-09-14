@@ -176,7 +176,7 @@ def combine_embeddings(embeddings_array, weight_array, device):
 
     # Multiply each tensor by its corresponding float and sum up
     for embedding, weight in zip(embeddings_array, weight_array):
-        result_embedding += embedding * weight
+        result_embedding += embedding
 
     return result_embedding
 
