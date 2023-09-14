@@ -24,6 +24,7 @@ from stable_diffusion.utils_backend import get_device
 from stable_diffusion.utils_image import *
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from ga.similarity_score import get_similarity_score
+from ga.chad_score import get_chad_score
 
 
 def parse_args():
@@ -282,14 +283,17 @@ def embeddings_chad_score(device, embeddings_vector, negative_embeddings_vector,
     image_features = image_features.to(torch.float32)
 
     # get chad score
-    chad_score = chad_score_predictor.get_chad_score_tensor(image_features)
+
+    chad_score = get_chad_score(chad_score_predictor, image_features)
     chad_score_scaled = torch.sigmoid(chad_score)
+
+    fitness = chad_score_scaled
 
     # cleanup
     del image_features
     torch.cuda.empty_cache()
 
-    return chad_score, chad_score_scaled
+    return fitness
 
 
 
@@ -344,7 +348,7 @@ def embeddings_similarity_score(device, embeddings_vector, target_features, nega
     return fitness.item()
 
 
-def embeddings_similarity_and_chad_score(device, embeddings_vector, clip_embeddings_vector, negative_embeddings_vector, generation, index, seed, output, chad_score_predictor, clip_text_embedder, txt2img, util_clip, cfg_strength=12,
+def embeddings_similarity_and_chad_score(device, embeddings_vector, target_features, negative_embeddings_vector, generation, index, seed, output, chad_score_predictor, clip_text_embedder, txt2img, util_clip, cfg_strength=12,
                           image_width=512, image_height=512):
 
     latent = txt2img.generate_images_latent_from_embeddings(
@@ -388,18 +392,10 @@ def embeddings_similarity_and_chad_score(device, embeddings_vector, clip_embeddi
     image_features = image_features.to(torch.float32)
 
     # get chad score
-    chad_score = chad_score_predictor.get_chad_score_tensor(image_features)
+    chad_score = get_chad_score(chad_score_predictor, image_features)
     chad_score_scaled = torch.sigmoid(chad_score)
 
-    image_features_magnitude = torch.norm(image_features)
-    text_features_magnitude = torch.norm(clip_embeddings_vector)
-
-    image_features = image_features / image_features_magnitude
-    text_features = clip_embeddings_vector / text_features_magnitude
-
-    image_features = image_features.squeeze(0)
-
-    similarity = torch.dot(image_features, text_features)
+    similarity = get_similarity_score(image_features, target_features)
 
     # if similarity is more than 0.3 fitness is 1.0
     fitness = similarity.item() * 0.5 + chad_score_scaled.item() * 0.5
