@@ -296,7 +296,7 @@ if __name__ == "__main__":
     # Create a random latent tensor of shape (1, 4, 64, 64)
     #random_latent = torch.rand((1, 4, 64, 64), device=device, dtype=torch.float32)
 
-    optimizer = optim.Adam([latent], lr=learning_rate)
+    optimizer = optim.AdamW([latent], lr=learning_rate, weight_decay=0.01)
     mse_loss = nn.MSELoss(reduction='sum')
 
     target = torch.tensor([1.0], device=device, dtype=torch.float32, requires_grad=True)
