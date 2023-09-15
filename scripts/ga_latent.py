@@ -18,7 +18,7 @@ import torch.nn.functional as F
 
 from chad_score.chad_score import ChadScorePredictor
 from ga.prompt_generator import generate_prompts
-from model.util_clip import UtilClip
+from model.util_clip import ClipModelHuggingface
 from configs.model_config import ModelPathConfig
 from stable_diffusion import StableDiffusion, SDconfigs
 from stable_diffusion_base_script import StableDiffusionBaseScript
@@ -306,7 +306,7 @@ def main():
     output_image_directory = join(output_directory, "images/")
     output_feature_directory = join(output_directory, "features/")
 
-    util_clip = UtilClip(device=device)
+    util_clip = ClipModelHuggingface(device=device)
     util_clip.load_model()
 
     chad_score_model_path = "input/model/chad_score/chad-score-v1.pth"

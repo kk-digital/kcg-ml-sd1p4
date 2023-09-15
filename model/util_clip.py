@@ -6,7 +6,7 @@ from stable_diffusion.utils_backend import get_device
 
 
 
-class UtilClip():
+class ClipModelHuggingface():
     def __init__(self, device=None):
         self.device = get_device(device)
 
@@ -24,7 +24,7 @@ class UtilClip():
             raise NotImplementedError
 
         image_input = self.preprocess(image).unsqueeze(0).to(self.device)
-        
+
         with torch.no_grad():
             image_features = self.model.encode_image(image_input)
 

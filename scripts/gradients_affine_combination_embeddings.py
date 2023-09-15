@@ -24,7 +24,7 @@ from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion_base_script import StableDiffusionBaseScript
 from stable_diffusion.utils_backend import get_autocast, set_seed
 from chad_score.chad_score import ChadScorePredictor
-from model.util_clip import UtilClip
+from model.util_clip import ClipModelHuggingface
 from stable_diffusion.utils_image import save_images
 
 def parse_arguments():
@@ -235,7 +235,7 @@ if __name__ == "__main__":
     chad_score_predictor.load_model(chad_score_model_path)
 
     # Load the clip model
-    util_clip = UtilClip(device=device)
+    util_clip = ClipModelHuggingface(device=device)
     util_clip.load_model()
 
     prompt_list = read_prompts_from_zip(prompts_path, num_prompts)
