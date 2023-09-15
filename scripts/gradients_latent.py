@@ -110,19 +110,11 @@ class Txt2Img(StableDiffusionBaseScript):
 
 def get_similarity_score(image_features, target_features):
 
-    image_features_magnitude = torch.norm(image_features)
-    target_features_magnitude = torch.norm(target_features)
-
-    image_features = image_features / image_features_magnitude
-    target_features = target_features / target_features_magnitude
-
     image_features = image_features.squeeze(0)
 
-    similarity = torch.dot(image_features, target_features)
+    similarity = torch.nn.functional.cosine_similarity(image_features, target_features, dim=1, eps=1e-8)
 
-    fitness = similarity
-
-    return fitness
+    return similarity
 
 
 def preprocess_image(images):
@@ -163,50 +155,6 @@ def latents_similarity_score(latent, index, output, target_features, device, sav
     print("fitness : ", fitness.item())
 
     return fitness
-
-def latents_chad_score(latent, index, output, chad_score_predictor):
-
-    images = txt2img.get_image_from_latent(latent)
-    image_list, image_hash_list = save_images(images, output + '/image' + str(index + 1) + '.jpg')
-
-    del latent
-    torch.cuda.empty_cache()
-
-    # Map images to `[0, 1]` space and clip
-    images = torch.clamp((images + 1.0) / 2.0, min=0.0, max=1.0)
-
-
-    ## Normalize the image tensor
-    mean = torch.tensor([0.48145466, 0.4578275, 0.40821073], device=device).view(-1, 1, 1)
-    std = torch.tensor([0.26862954, 0.26130258, 0.27577711], device=device).view(-1, 1, 1)
-
-    normalized_image_tensor = (images - mean) / std
-
-    # Resize the image to [N, C, 224, 224]
-    transform = transforms.Compose([transforms.Resize((224, 224))])
-    resized_image_tensor = transform(normalized_image_tensor)
-
-    # Get the CLIP features
-    image_features = util_clip.model.encode_image(resized_image_tensor)
-    image_features = image_features.squeeze(0)
-
-    image_features = image_features.to(torch.float32)
-
-    # cleanup
-    del images
-    torch.cuda.empty_cache()
-
-    chad_score = chad_score_predictor.get_chad_score_tensor(image_features)
-    chad_score_scaled = torch.sigmoid(chad_score)
-
-    # cleanup
-    del image_features
-    torch.cuda.empty_cache()
-
-    return chad_score, chad_score_scaled
-
-def sigmoid(x):
-    return 1 / (1 + np.exp(-x))
 
 def get_target_embeddings_features(util_clip, subject):
 
