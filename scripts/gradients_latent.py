@@ -290,6 +290,9 @@ if __name__ == "__main__":
         h=image_height
     )
 
+    images = txt2img.get_image_from_latent(latent)
+    image_list, image_hash_list = save_images(images, starting_images_directory + '/image' + '.jpg')
+
     # Create a random latent tensor of shape (1, 4, 64, 64)
     #random_latent = torch.rand((1, 4, 64, 64), device=device, dtype=torch.float32)
 
