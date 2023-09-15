@@ -223,23 +223,32 @@ if __name__ == "__main__":
     txt2img.initialize_latent_diffusion(autoencoder=None, clip_text_embedder=None, unet_model=None,
                                         path=checkpoint_path, force_submodels_init=True)
 
-    # initial latent
-    prompt_str = "accurate, short hair, (huge breasts), wide-eyed, (8k), witch, (((huge fangs))), sugar painting, 1girl, white box, lens flare, cowboy shot, full body, hairband, shirakami fubuki, photorealistic painting art by midjourney and greg rutkowski"
-    negative_prompt_str = "(deformed iris, deformed pupils, semi-realistic, cgi, 3d, render, sketch, cartoon, drawing, anime:1.4), text, close up, cropped, out of frame, worst quality, low quality, jpeg artifacts, ugly, duplicate, morbid, mutilated, extra fingers, mutated hands, poorly drawn hands, poorly drawn face, mutation, deformed, blurry, dehydrated, bad anatomy, bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers, long neck,  (low quality:2), normal quality, bad-hands-5, huge eyes, (variations:1.2), extra arms, extra fingers, lowres, edwigef, testicles, mutated, ((missing legs)), bad proportions, malformed limbs, low quality lowres black tongue, mutated hands, loli"
+    random_latent = True
+
+    latent = None
+    if random_latent:
+        latent = torch.rand((1, 4, 64, 64), device=device, dtype=torch.float32)
+
+    else:
+        # initial latent
+        prompt_str = "accurate, short hair, (huge breasts), wide-eyed, (8k), witch, (((huge fangs))), sugar painting, 1girl, white box, lens flare, cowboy shot, full body, hairband, shirakami fubuki, photorealistic painting art by midjourney and greg rutkowski"
+        negative_prompt_str = "(deformed iris, deformed pupils, semi-realistic, cgi, 3d, render, sketch, cartoon, drawing, anime:1.4), text, close up, cropped, out of frame, worst quality, low quality, jpeg artifacts, ugly, duplicate, morbid, mutilated, extra fingers, mutated hands, poorly drawn hands, poorly drawn face, mutation, deformed, blurry, dehydrated, bad anatomy, bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers, long neck,  (low quality:2), normal quality, bad-hands-5, huge eyes, (variations:1.2), extra arms, extra fingers, lowres, edwigef, testicles, mutated, ((missing legs)), bad proportions, malformed limbs, low quality lowres black tongue, mutated hands, loli"
 
 
-    embedded_prompts = clip_text_embedder(prompt_str)
-    negative_embedded_prompts = clip_text_embedder(negative_prompt_str)
+        embedded_prompts = clip_text_embedder(prompt_str)
+        negative_embedded_prompts = clip_text_embedder(negative_prompt_str)
 
-    latent = txt2img.generate_images_latent_from_embeddings(
-        batch_size=1,
-        embedded_prompt=embedded_prompts,
-        null_prompt=negative_embedded_prompts,
-        uncond_scale=cfg_strength,
-        seed=seed,
-        w=image_width,
-        h=image_height
-    )
+        latent = txt2img.generate_images_latent_from_embeddings(
+            batch_size=1,
+            embedded_prompt=embedded_prompts,
+            null_prompt=negative_embedded_prompts,
+            uncond_scale=cfg_strength,
+            seed=seed,
+            w=image_width,
+            h=image_height
+        )
+
+
 
     latent_tmp = latent
     latent = latent.clone().requires_grad_()
@@ -252,7 +261,7 @@ if __name__ == "__main__":
     # Create a random latent tensor of shape (1, 4, 64, 64)
     #random_latent = torch.rand((1, 4, 64, 64), device=device, dtype=torch.float32)
 
-    optimizer = optim.AdamW([latent], lr=learning_rate)
+    optimizer = optim.AdamW([latent], lr=learning_rate, weight_decay=0.01)
     mse_loss = nn.MSELoss()
 
     target = torch.tensor([1.0], device=device, dtype=torch.float32, requires_grad=True)
