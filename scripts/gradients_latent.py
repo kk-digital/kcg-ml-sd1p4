@@ -272,10 +272,28 @@ if __name__ == "__main__":
 
     fixed_taget_features = get_target_embeddings_features(util_clip, "chibi, anime, waifu, side scrolling")
 
-    # Create a random latent tensor of shape (1, 4, 64, 64)
-    random_latent = torch.rand((1, 4, 64, 64), device=device, dtype=torch.float32)
+    # initial latent
+    prompt_str = "accurate, short hair, (huge breasts), wide-eyed, (8k), witch, (((huge fangs))), sugar painting, 1girl, white box, lens flare, cowboy shot, full body, hairband, shirakami fubuki, photorealistic painting art by midjourney and greg rutkowski"
+    negative_prompt_str = "(deformed iris, deformed pupils, semi-realistic, cgi, 3d, render, sketch, cartoon, drawing, anime:1.4), text, close up, cropped, out of frame, worst quality, low quality, jpeg artifacts, ugly, duplicate, morbid, mutilated, extra fingers, mutated hands, poorly drawn hands, poorly drawn face, mutation, deformed, blurry, dehydrated, bad anatomy, bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers, long neck,  (low quality:2), normal quality, bad-hands-5, huge eyes, (variations:1.2), extra arms, extra fingers, lowres, edwigef, testicles, mutated, ((missing legs)), bad proportions, malformed limbs, low quality lowres black tongue, mutated hands, loli"
 
-    optimizer = optim.AdamW([random_latent], lr=learning_rate, weight_decay=0.01)
+
+    embedded_prompts = clip_text_embedder(prompt_str)
+    negative_embedded_prompts = clip_text_embedder(negative_prompt_str)
+
+    latent = txt2img.generate_images_latent_from_embeddings(
+        batch_size=1,
+        embedded_prompt=embedded_prompts,
+        null_prompt=negative_embedded_prompts,
+        uncond_scale=cfg_strength,
+        seed=seed,
+        w=image_width,
+        h=image_height
+    )
+
+    # Create a random latent tensor of shape (1, 4, 64, 64)
+    #random_latent = torch.rand((1, 4, 64, 64), device=device, dtype=torch.float32)
+
+    optimizer = optim.AdamW([latent], lr=learning_rate, weight_decay=0.01)
     mse_loss = nn.MSELoss(reduction='sum')
 
     target = torch.tensor([1.0], device=device, dtype=torch.float32, requires_grad=True)
@@ -291,7 +309,7 @@ if __name__ == "__main__":
 
         save_image = True
 
-        fitness = latents_similarity_score(random_latent, i, output, fixed_taget, device, save_image)
+        fitness = latents_similarity_score(latent, i, output, fixed_taget, device, save_image)
 
         input = fitness
         loss = mse_loss(input, target)
