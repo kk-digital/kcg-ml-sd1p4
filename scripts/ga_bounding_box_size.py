@@ -184,7 +184,6 @@ def on_fitness(ga_instance, population_fitness):
     print("Fitness (variance): ", np.var(population_fitness_np))
     print("Fitness (best): ", np.max(population_fitness_np))
     print("fitness array= ", str(population_fitness_np))
-    print(f"Image generation happened: {image_generation_counter} times in generation #{ga_instance.generations_completed}")
 
     log_to_file(f"Generation #{ga_instance.generations_completed}")
     log_to_file(f"Population Size= {len(population_fitness_np)}")
@@ -346,5 +345,4 @@ Notes:
 - population size 16
 - with uniform cross over
 '''
-print(f"Image generation happened: {image_generation_counter} times")
 del sd
