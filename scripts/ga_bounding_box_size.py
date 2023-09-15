@@ -76,6 +76,7 @@ if not os.path.exists(csv_filename):
         csvwriter.writerow(['Generation #', 'Population Size', 'Fitness (mean)', 'Fitness (variance)', 'Fitness (best)', 'Fitness array'])
 
 fitness_cache = {}
+start_time = time.time()
 
 # TODO: NULL_PROMPT is completely wrong
 NULL_PROMPT = None  # assign later
