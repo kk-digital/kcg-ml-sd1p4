@@ -33,7 +33,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser(
         description="Affine combination of embeddings.")
 
-    parser.add_argument('--output', type=str, default='./output/gradients_affine_combination_latents')
+    parser.add_argument('--output', type=str, default='./output/gradients_latent')
     parser.add_argument('--image_width', type=int, default=512)
     parser.add_argument('--image_height', type=int, default=512)
     parser.add_argument('--cfg_strength', type=float, default=12)
