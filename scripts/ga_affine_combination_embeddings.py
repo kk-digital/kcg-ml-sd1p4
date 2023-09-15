@@ -14,7 +14,7 @@ base_dir = os.getcwd()
 sys.path.insert(0, base_dir)
 
 from chad_score.chad_score import ChadScorePredictor
-from model.util_clip import UtilClip
+from model.util_clip import ClipModelHuggingface
 from configs.model_config import ModelPathConfig
 from stable_diffusion import StableDiffusion, SDconfigs
 from stable_diffusion_base_script import StableDiffusionBaseScript
@@ -529,7 +529,7 @@ def main():
 
     seed = 6789
 
-    util_clip = UtilClip(device=device)
+    util_clip = ClipModelHuggingface(device=device)
     util_clip.load_model()
 
     clip_text_embedder = CLIPTextEmbedder(device=get_device())
