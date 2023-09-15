@@ -122,7 +122,7 @@ def calculate_and_store_images(ga_instance, solution, solution_idx):
     combined_embedding_np = np.zeros((77, 768))
     for i, coeff in enumerate(solution):
         combined_embedding_np += embedded_prompts_numpy[i] * coeff
-
+        print("Shape of one embedded_prompts_numpy object at index", i, ":", embedded_prompts_numpy[i].shape)
     # Save the combined embedding
     try:
         filepath = os.path.join(FEATURES_DIR, f'combined_embedding_{solution_idx}.npz')
@@ -312,7 +312,7 @@ for prompt in prompts_array:
 print(prompt_str)
 
 embedded_prompts_numpy = np.array(clip_text_get_prompt_embedding_numpy(config, prompts_str_array))
-print(embedded_prompts_numpy.shape)
+
 
 
 # random_mutation_min_val=5,
