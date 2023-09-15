@@ -26,7 +26,7 @@ from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion_base_script import StableDiffusionBaseScript
 from stable_diffusion.utils_backend import get_autocast, set_seed
 from chad_score.chad_score import ChadScorePredictor
-from model.util_clip import UtilClip
+from model.util_clip import ClipOpenAi
 from stable_diffusion.utils_image import save_images
 
 def parse_arguments():
@@ -210,7 +210,7 @@ if __name__ == "__main__":
     chad_score_predictor.load_model(chad_score_model_path)
 
     # Load the clip model
-    util_clip = UtilClip(device=device)
+    util_clip = ClipOpenAi(device=device)
     util_clip.load_model()
 
     # Starts the text2img
@@ -261,7 +261,7 @@ if __name__ == "__main__":
     # Create a random latent tensor of shape (1, 4, 64, 64)
     #random_latent = torch.rand((1, 4, 64, 64), device=device, dtype=torch.float32)
 
-    optimizer = optim.AdamW([latent], lr=learning_rate, weight_decay=0.01)
+    optimizer = optim.AdamW([latent], lr=learning_rate)
     mse_loss = nn.MSELoss()
 
     target = torch.tensor([1.0], device=device, dtype=torch.float32, requires_grad=True)
