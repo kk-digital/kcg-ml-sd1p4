@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Union, Optional
 
 import torch
-
+import time
 sys.path.append(os.path.abspath(''))
 
 from stable_diffusion.utils_backend import get_device
@@ -16,7 +16,7 @@ from stable_diffusion.latent_diffusion import LatentDiffusion
 from stable_diffusion.sampler.diffusion import DiffusionSampler
 from stable_diffusion.model_paths import LATENT_DIFFUSION_PATH
 from utility.labml.monit import section
-
+from stable_diffusion.utils_backend import get_autocast, set_seed
 
 class ModelLoadError(Exception):
     pass
@@ -49,6 +49,7 @@ class StableDiffusionBaseScript:
         self.cuda_device = cuda_device
         self.device_id = get_device(cuda_device)
         self.device = torch.device(self.device_id)
+        self.empty_embedding = None
 
         # Load [latent diffusion model](../latent_diffusion.html)
         # Get device or force CPU if requested
@@ -83,7 +84,7 @@ class StableDiffusionBaseScript:
     def get_text_conditioning(self, uncond_scale: float, prompts: list, negative_prompts: list, batch_size: int = 1):
         # In unconditional scaling is not $1$ get the embeddings for empty prompts (no conditioning).
         if uncond_scale != 1. and len(negative_prompts) == 0:
-            un_cond = self.model.get_text_conditioning(batch_size * [""])
+            un_cond = self.get_empty_embedding()
         elif len(negative_prompts) != 0:
             un_cond = self.model.get_text_conditioning(negative_prompts)
         else:
@@ -96,6 +97,62 @@ class StableDiffusionBaseScript:
 
     def get_image_from_latent(self, x: torch.Tensor):
         return self.model.autoencoder_decode(x)
+
+    @torch.no_grad()
+    def generate_images_latent_from_embeddings(self, *,
+                                               seed: int = 0,
+                                               batch_size: int = 1,
+                                               embedded_prompt: torch.Tensor,
+                                               null_prompt: torch.Tensor,
+                                               h: int = 512, w: int = 512,
+                                               uncond_scale: float = 7.5,
+                                               low_vram: bool = False,
+                                               noise_fn=torch.randn,
+                                               temperature: float = 1.0,
+                                               ):
+        """
+        :param seed: the seed to use when generating the images
+        :param dest_path: is the path to store the generated images
+        :param batch_size: is the number of images to generate in a batch
+        :param prompt: is the prompt to generate images with
+        :param h: is the height of the image
+        :param w: is the width of the image
+        :param uncond_scale: is the unconditional guidance scale $s$. This is used for
+            $\epsilon_\theta(x_t, c) = s\epsilon_\text{cond}(x_t, c) + (s - 1)\epsilon_\text{cond}(x_t, c_u)$
+        :param low_vram: whether to limit VRAM usage
+        """
+
+        # check null_prompt, raise exception if None
+        if null_prompt is None:
+            raise Exception("Null prompt cannot be None.")
+
+        # Number of channels in the image
+        c = 4
+        # Image to latent space resolution reduction
+        f = 8
+
+        if seed == 0:
+            seed = time.time_ns() % 2 ** 32
+
+        set_seed(seed)
+        # Adjust batch size based on VRAM availability
+        if low_vram:
+            batch_size = 1
+
+        # AMP auto casting
+        autocast = get_autocast()
+        with autocast:
+
+            # [Sample in the latent space](../sampler/index.html).
+            # `x` will be of shape `[batch_size, c, h / f, w / f]`
+            x = self.sampler.sample(cond=embedded_prompt,
+                                    shape=[batch_size, c, h // f, w // f],
+                                    uncond_scale=uncond_scale,
+                                    uncond_cond=null_prompt,
+                                    noise_fn=noise_fn,
+                                    temperature=temperature)
+
+            return x
 
     def paint(self,
               orig: torch.Tensor,
@@ -122,10 +179,13 @@ class StableDiffusionBaseScript:
 
         return x
 
-    def load_model(self, model_path=LATENT_DIFFUSION_PATH):
+    def load_model(self, model_path=LATENT_DIFFUSION_PATH, batch_size: int = 1):
         with section(f'Latent Diffusion model loading, from {model_path}'):
             self.model = torch.load(model_path, map_location=self.device)
             self.model.eval()
+
+            # set empty embedding
+            self.cache_empty_embedding(batch_size)
 
     def unload_model(self):
         del self.model
@@ -165,7 +225,7 @@ class StableDiffusionBaseScript:
         self.initialize_sampler()
 
     def initialize_latent_diffusion(self, autoencoder, clip_text_embedder, unet_model, force_submodels_init=False,
-                                    path=None):
+                                    path=None, batch_size=1):
         try:
             self.model = initialize_latent_diffusion(
                 path=path,
@@ -178,6 +238,10 @@ class StableDiffusionBaseScript:
             self.initialize_sampler()
             # Move the model to device
             # self.model.to(self.device)
+
+            # set empty embedding
+            self.cache_empty_embedding(batch_size)
+
         except EOFError:
             raise ModelLoadError(
                 "Stable Diffusion model couldn't be loaded. Check that the .ckpt file exists in the specified location (path), and that it is not corrupted.")
@@ -189,3 +253,10 @@ class StableDiffusionBaseScript:
                                        ddim_eta=self.ddim_eta)
         elif self.sampler_name == 'ddpm':
             self.sampler = DDPMSampler(self.model)
+
+    def cache_empty_embedding(self, batch_size: int = 1):
+        self.empty_embedding = self.model.get_text_conditioning(batch_size * [""])
+
+    def get_empty_embedding(self):
+        return self.empty_embedding
+
