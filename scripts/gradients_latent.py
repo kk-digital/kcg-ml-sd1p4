@@ -276,10 +276,10 @@ if __name__ == "__main__":
         #loss = mse_loss(input, target)
 
         print(f'Iteration #{i + 1}, loss {loss}')
-        print("grad : ", latent.grad)
         log_to_file(f'Iteration #{i + 1}, loss {loss}', output)
 
         loss.backward()
+        print("grad : ", latent.grad)
         optimizer.step()
         optimizer.zero_grad()
 
