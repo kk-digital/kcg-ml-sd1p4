@@ -339,7 +339,7 @@ for i, individual in enumerate(initial_population):
 ga_instance = pygad.GA(initial_population=initial_population,
                        num_generations=generations,
                        num_parents_mating=num_parents_mating,
-                       fitness_func=cached_fitness_func,
+                       fitness_func=calculate_and_store_images,
                        sol_per_pop=population_size,
                        num_genes=num_genes, 
                        # Pygad uses 0-100 range for percentage
