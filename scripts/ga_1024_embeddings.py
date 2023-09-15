@@ -314,7 +314,8 @@ for prompt in prompts_array:
 print(prompt_str)
 
 embedded_prompts_numpy = np.array(clip_text_get_prompt_embedding_numpy(config, prompts_str_array))
-
+file_path = os.path.join(IMAGES_ROOT_DIR, 'embedded_prompts_numpy.npy')
+np.save(file_path, embedded_prompts_numpy)
 
 
 # random_mutation_min_val=5,
