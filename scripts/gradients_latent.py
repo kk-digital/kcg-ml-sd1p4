@@ -241,7 +241,10 @@ if __name__ == "__main__":
         h=image_height
     )
 
+    latent_tmp = latent
     latent = latent.clone()
+
+    del latent_tmp
 
     images = txt2img.get_image_from_latent(latent)
     image_list, image_hash_list = save_images(images, starting_images_directory + '/image' + '.jpg')
