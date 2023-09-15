@@ -8,7 +8,7 @@ import torchvision.transforms as transforms
 import numpy as np
 
 sys.path.insert(0, os.getcwd())
-from model.util_clip import UtilClip
+from model.util_clip import ClipModelHuggingface
 from chad_score.chad_score import ChadScorePredictor
 
 
@@ -17,7 +17,7 @@ def test_clip_vector():
     device = 'cuda:0'
 
     # Load the clip model
-    util_clip = UtilClip(device=device)
+    util_clip = ClipModelHuggingface(device=device)
     util_clip.load_model()
 
     # Create a random tensor with dimensions (1, 3, 512, 512)
