@@ -259,7 +259,7 @@ if __name__ == "__main__":
     for i in range(0, iterations):
         # Zero the gradients
 
-        fixed_taget = get_target_embeddings_features(util_clip, "chibi, anime, waifu, side scrolling")
+        fixed_taget = fixed_taget_features
 
         save_image = True
 
