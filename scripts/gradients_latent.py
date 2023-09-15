@@ -275,7 +275,9 @@ if __name__ == "__main__":
     for i in range(0, iterations):
         # Zero the gradients
 
-        save_image = True
+        save_image = False
+        if i % (iterations / 100) == 0:
+            save_image = True
 
         fitness = latents_similarity_score(latent, i, output, fixed_target, device, save_image)
 
