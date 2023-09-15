@@ -41,12 +41,9 @@ def parse_arguments():
     parser.add_argument('--sampler', type=str, default='ddim')
     parser.add_argument('--steps', type=int, default=20)
     parser.add_argument('--checkpoint_path',type=str, default=SD_CHECKPOINT_PATH)
-    parser.add_argument('--num_prompts', type=int, default=12)
-    parser.add_argument('--num_phrases', type=int, default=12)
     parser.add_argument('--iterations', type=int, default=1000)
     parser.add_argument('--learning_rate', type=float, default=0.0001)
     parser.add_argument('--num_images', type=int, default=1)
-    parser.add_argument('--prompts_path', type=str, default='/input/prompt-list-civitai/prompt_list_civitai_1000_new.zip')
 
     return parser.parse_args()
 
@@ -108,42 +105,6 @@ class Txt2Img(StableDiffusionBaseScript):
 
             return x
 
-
-def read_prompts_from_zip(zip_file_path, num_prompts):
-    # Open the zip file for reading
-    with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
-        # Get a list of all file names in the zip archive
-        file_list = zip_ref.namelist()
-        random.shuffle(file_list)
-        # Initialize a list to store loaded arrays
-        loaded_arrays = []
-
-        # Iterate over the file list and load the first 100 .npz files
-        for file_name in file_list:
-            if file_name.endswith('.npz'):
-                with zip_ref.open(file_name) as npz_file:
-                    npz_data = np.load(npz_file, allow_pickle=True)
-                    # Assuming you have a specific array name you want to load from the .npz file
-                    loaded_array = npz_data['data']
-                    loaded_arrays.append(loaded_array)
-
-            if len(loaded_arrays) >= num_prompts:
-                break  # Stop after loading the first 100 .npz files
-
-        return loaded_arrays
-
-
-def combine_latents(latents_array, weight_array, device):
-
-    # empty latent filled with zeroes
-    result_latents = torch.zeros(1, 4, 64, 64, device=device, dtype=torch.float32)
-
-    # Multiply each tensor by its corresponding float and sum up
-    for latent, weight in zip(latents_array, weight_array):
-        weighted_latent = latent * weight
-        result_latents += weighted_latent
-
-    return result_latents
 
 
 def get_similarity_score(image_features, target_features):
@@ -275,12 +236,9 @@ if __name__ == "__main__":
     steps = args.steps
     sampler = args.sampler
     checkpoint_path = args.checkpoint_path
-    num_prompts = args.num_prompts
-    num_phrases = args.num_phrases
     iterations = args.iterations
     learning_rate = args.learning_rate
     num_images = args.num_images
-    prompts_path = args.prompts_path
 
     starting_images_directory = output + '/' + 'starting_images'
 
