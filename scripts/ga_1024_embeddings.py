@@ -111,7 +111,6 @@ def log_to_file(message):
 
 # Function to calculate the chad score for batch of images
 def calculate_and_store_images(ga_instance, solution, solution_idx):
-    generation = ga_instance.generations_completed
 
     # Set seed
     SEED = random.randint(0, 2**24)
