@@ -110,7 +110,6 @@ def log_to_file(message):
 # Function to calculate the chad score for batch of images
 def calculate_and_store_images(ga_instance, solution, solution_idx):
     generation = ga_instance.generations_completed	
-    print(f"Generation {generation}, Solution {solution_idx}: {solution}")
     # Set seed
     SEED = random.randint(0, 2**24)
     if FIXED_SEED == True:
@@ -120,6 +119,12 @@ def calculate_and_store_images(ga_instance, solution, solution_idx):
     combined_embedding_np = np.zeros((1, 77, 768))
     for i, coeff in enumerate(solution):
         combined_embedding_np += embedded_prompts_numpy[i] * coeff
+
+    print(f"Generation {generation}, Solution {solution_idx}:")
+    print(f"    Max value: {np.max(combined_embedding_np)}")
+    print(f"    Min value: {np.max(combined_embedding_np)}")
+    print(f"    Mean value: {np.mean(combined_embedding_np)}")
+    print(f"    Standard deviation: {np.std(combined_embedding_np)}")    
     # Save the combined embedding
     try:
         filepath = os.path.join(FEATURES_DIR, f'combined_embedding_{solution_idx}.npz')
