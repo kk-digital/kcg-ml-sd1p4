@@ -111,14 +111,14 @@ def log_to_file(message):
 
 # Function to calculate the chad score for batch of images
 def calculate_and_store_images(ga_instance, solution, solution_idx):
-
+    generation = ga_instance.generations_completed	
     # Set seed
     SEED = random.randint(0, 2**24)
     if FIXED_SEED == True:
         SEED = 54846
 
     # Calculate combined embedding
-    combined_embedding_np = np.zeros((77, 768))
+    combined_embedding_np = np.zeros((1, 77, 768))
     for i, coeff in enumerate(solution):
         combined_embedding_np += embedded_prompts_numpy[i] * coeff
         print("Shape of one embedded_prompts_numpy object at index", i, ":", embedded_prompts_numpy[i].shape)
