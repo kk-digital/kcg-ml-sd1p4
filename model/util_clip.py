@@ -20,12 +20,11 @@ class UtilClip():
         del self.processor
 
     def get_image_features(self, image, needs_grad=False):
-        if not needs_grad:
-            torch.no_grad()
+        if needs_grad:
+            raise NotImplementedError
 
         image_input = self.preprocess(image).unsqueeze(0).to(self.device)
-
-        # Encode the image
+        
         with torch.no_grad():
             image_features = self.model.encode_image(image_input)
 
@@ -59,5 +58,13 @@ class UtilClip():
 
         return resized_image_tensor
 
+    def get_text_features(self, text, needs_grad=False):
+        if needs_grad:
+            raise NotImplementedError
 
+        tokens = clip.tokenize(text).to(device=self.device)
+        with torch.no_grad():
+            text_features = self.model.encode_text(tokens).to(device=self.device, dtype=torch.float32)
+
+        return text_features
 
