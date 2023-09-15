@@ -10,6 +10,7 @@ import shutil
 import torch.nn as nn
 import torch.optim as optim
 import random
+import torchvision
 import zipfile
 import torchvision.transforms as transforms
 
@@ -124,6 +125,23 @@ def get_similarity_score(image_features, target_features):
     return fitness
 
 
+def preprocess_image(images):
+    image_mean = [0.48145466, 0.4578275, 0.40821073]
+    image_std = [0.26862954, 0.26130258, 0.27577711]
+    normalize = torchvision.transforms.Normalize(
+        image_mean,
+        image_std
+    )
+    resize = torchvision.transforms.Resize(224)
+    center_crop = torchvision.transforms.CenterCrop(224)
+
+    images = center_crop(images)
+    images = resize(images)
+    images = center_crop(images)
+    images = normalize(images)
+
+    return images
+
 def latents_similarity_score(latent, index, output, target_features, device, save_image):
 
     images = txt2img.get_image_from_latent(latent)
@@ -133,19 +151,10 @@ def latents_similarity_score(latent, index, output, target_features, device, sav
     # Map images to `[0, 1]` space and clip
     images = torch.clamp((images + 1.0) / 2.0, min=0.0, max=1.0)
 
-
-    ## Normalize the image tensor
-    mean = torch.tensor([0.48145466, 0.4578275, 0.40821073], device=device).view(-1, 1, 1)
-    std = torch.tensor([0.26862954, 0.26130258, 0.27577711], device=device).view(-1, 1, 1)
-
-    normalized_image_tensor = (images - mean) / std
-
-    # Resize the image to [N, C, 224, 224]
-    transform = transforms.Compose([transforms.Resize((224, 224))])
-    resized_image_tensor = transform(normalized_image_tensor)
+    images = preprocess_image(images)
 
     # Get the CLIP features
-    image_features = util_clip.model.encode_image(resized_image_tensor)
+    image_features = util_clip.model.encode_image(images)
     image_features = image_features.squeeze(0)
 
     image_features = image_features.to(torch.float32)
@@ -269,8 +278,6 @@ if __name__ == "__main__":
     )
     txt2img.initialize_latent_diffusion(autoencoder=None, clip_text_embedder=None, unet_model=None,
                                         path=checkpoint_path, force_submodels_init=True)
-
-    fixed_taget_features = get_target_embeddings_features(util_clip, "chibi, anime, waifu, side scrolling")
 
     # initial latent
     prompt_str = "accurate, short hair, (huge breasts), wide-eyed, (8k), witch, (((huge fangs))), sugar painting, 1girl, white box, lens flare, cowboy shot, full body, hairband, shirakami fubuki, photorealistic painting art by midjourney and greg rutkowski"
