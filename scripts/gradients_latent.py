@@ -279,7 +279,6 @@ if __name__ == "__main__":
         log_to_file(f'Iteration #{i + 1}, loss {loss}', output)
 
         loss.backward()
-        print("grad : ", latent.grad)
         optimizer.step()
         optimizer.zero_grad()
 
