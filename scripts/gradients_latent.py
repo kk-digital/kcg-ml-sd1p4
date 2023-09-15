@@ -149,6 +149,7 @@ def latents_similarity_score(latent, index, output, target_features, device, sav
     image_features = image_features.to(torch.float32)
 
     fitness = compute_clip_similarity_cosine_distance(image_features, target_features)
+
     print("fitness : ", fitness.item())
 
     return fitness
@@ -258,7 +259,7 @@ if __name__ == "__main__":
     for i in range(0, iterations):
         # Zero the gradients
 
-        fixed_taget = fixed_taget_features.detach().clone()
+        fixed_taget = get_target_embeddings_features(util_clip, "chibi, anime, waifu, side scrolling")
 
         save_image = True
 
