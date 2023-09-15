@@ -312,6 +312,7 @@ for prompt in prompts_array:
 print(prompt_str)
 
 embedded_prompts_numpy = np.array(clip_text_get_prompt_embedding_numpy(config, prompts_str_array))
+print(embedded_prompts_numpy.shape)
 
 
 # random_mutation_min_val=5,
