@@ -312,13 +312,6 @@ for prompt in prompts_array:
     prompt_str = prompt.get_positive_prompt_str()
     prompts_str_array.append(prompt_str)
 
-file_path = os.path.join(IMAGES_ROOT_DIR, 'prompts_str_array.json')
-
-# Save the array as a JSON file
-with open(file_path, 'w') as file:
-    json.dump(prompts_str_array, file, indent=4)
-
-print(f'Prompts string array saved at {file_path}')
 
 embedded_prompts_numpy = np.array(clip_text_get_prompt_embedding_numpy(config, prompts_str_array))
 
@@ -333,11 +326,10 @@ embedded_prompts_numpy = np.array(clip_text_get_prompt_embedding_numpy(config, p
 initial_population = []
 
 for i in range(population_size):
-    random_weights = np.random.dirichlet(np.ones(num_genes), size=1).flatten()
-    #random_weights = np.full(num_prompts, 1.0 / num_prompts)
-    #normalized_weights = (random_weights - np.mean(random_weights)) / np.std(random_weights)
+    random_weights = np.random.normal(loc=0.0, scale=1.0, size=num_genes)
+    random_weights = np.abs(random_weights)  # Making sure weights are non-negative
+    random_weights /= random_weights.sum()  # Normalizing the weights to sum to 1
     initial_population.append(random_weights)
-
 
 # Printing out each individual in the initial population
 for i, individual in enumerate(initial_population):
