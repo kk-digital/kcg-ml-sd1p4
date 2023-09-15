@@ -253,7 +253,7 @@ if __name__ == "__main__":
     #random_latent = torch.rand((1, 4, 64, 64), device=device, dtype=torch.float32)
 
     optimizer = optim.AdamW([latent], lr=learning_rate)
-    mse_loss = nn.MSELoss(reduction='sum')
+    mse_loss = nn.MSELoss()
 
     target = torch.tensor([1.0], device=device, dtype=torch.float32, requires_grad=True)
 
@@ -274,6 +274,7 @@ if __name__ == "__main__":
         loss = mse_loss(input, target)
 
         print(f'Iteration #{i + 1}, loss {loss}')
+        print("grad : ", latent.grad)
         log_to_file(f'Iteration #{i + 1}, loss {loss}', output)
 
         loss.backward()
