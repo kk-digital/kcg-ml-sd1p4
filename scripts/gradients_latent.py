@@ -301,7 +301,7 @@ if __name__ == "__main__":
 
         save_image = True
 
-        fitness = latents_similarity_score(fixed_taget_features, i, output, fixed_taget, device, save_image)
+        fitness = latents_similarity_score(random_latent, i, output, fixed_taget, device, save_image)
 
         input = fitness
         loss = mse_loss(input, target)
