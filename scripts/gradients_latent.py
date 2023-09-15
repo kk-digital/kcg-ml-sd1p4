@@ -108,7 +108,7 @@ class Txt2Img(StableDiffusionBaseScript):
 
 
 
-def get_similarity_score(image_features, target_features):
+def compute_clip_similarity_cosine_distance(image_features, target_features):
 
     similarity = torch.nn.functional.cosine_similarity(image_features, target_features, dim=1, eps=1e-8)
 
@@ -148,7 +148,7 @@ def latents_similarity_score(latent, index, output, target_features, device, sav
 
     image_features = image_features.to(torch.float32)
 
-    fitness = get_similarity_score(image_features, target_features)
+    fitness = compute_clip_similarity_cosine_distance(image_features, target_features)
     print("fitness : ", fitness.item())
 
     return fitness
