@@ -110,8 +110,6 @@ class Txt2Img(StableDiffusionBaseScript):
 
 def get_similarity_score(image_features, target_features):
 
-    image_features = image_features.squeeze(0)
-
     similarity = torch.nn.functional.cosine_similarity(image_features, target_features, dim=1, eps=1e-8)
 
     return similarity
@@ -147,7 +145,6 @@ def latents_similarity_score(latent, index, output, target_features, device, sav
 
     # Get the CLIP features
     image_features = util_clip.model.encode_image(images)
-    image_features = image_features.squeeze(0)
 
     image_features = image_features.to(torch.float32)
 
@@ -160,8 +157,6 @@ def get_target_embeddings_features(util_clip, subject):
 
     features = util_clip.get_text_features(subject)
     features = features.to(torch.float32)
-
-    features = features.squeeze(0)
 
     return features
 
