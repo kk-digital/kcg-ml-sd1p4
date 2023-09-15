@@ -259,11 +259,11 @@ if __name__ == "__main__":
     for i in range(0, iterations):
         # Zero the gradients
 
-        fixed_taget = fixed_taget_features
+        fixed_target = fixed_taget_features.detach()
 
         save_image = True
 
-        fitness = latents_similarity_score(latent, i, output, fixed_taget, device, save_image)
+        fitness = latents_similarity_score(latent, i, output, fixed_target, device, save_image)
 
         input = fitness
         loss = mse_loss(input, target)
