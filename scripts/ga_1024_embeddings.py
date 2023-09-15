@@ -14,6 +14,7 @@ import clip
 import pygad
 import argparse
 import csv
+import json
 
 # import safetensors as st
 
@@ -311,6 +312,13 @@ for prompt in prompts_array:
     prompt_str = prompt.get_positive_prompt_str()
     prompts_str_array.append(prompt_str)
 
+file_path = os.path.join(IMAGES_ROOT_DIR, 'prompts_str_array.json')
+
+# Save the array as a JSON file
+with open(file_path, 'w') as file:
+    json.dump(prompts_str_array, file, indent=4)
+
+print(f'Prompts string array saved at {file_path}')
 
 embedded_prompts_numpy = np.array(clip_text_get_prompt_embedding_numpy(config, prompts_str_array))
 
