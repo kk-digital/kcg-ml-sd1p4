@@ -123,14 +123,12 @@ def get_similarity_score(image_features, target_features):
 
     return fitness
 
+
 def latents_similarity_score(latent, index, output, target_features, device, save_image):
 
     images = txt2img.get_image_from_latent(latent)
     if save_image:
         image_list, image_hash_list = save_images(images, output + '/image' + str(index + 1) + '.jpg')
-
-    del latent
-    torch.cuda.empty_cache()
 
     # Map images to `[0, 1]` space and clip
     images = torch.clamp((images + 1.0) / 2.0, min=0.0, max=1.0)
@@ -152,16 +150,8 @@ def latents_similarity_score(latent, index, output, target_features, device, sav
 
     image_features = image_features.to(torch.float32)
 
-    # cleanup
-    del images
-    torch.cuda.empty_cache()
-
     fitness = get_similarity_score(image_features, target_features)
     print("fitness : ", fitness.item())
-
-    # cleanup
-    del image_features
-    torch.cuda.empty_cache()
 
     return fitness
 
