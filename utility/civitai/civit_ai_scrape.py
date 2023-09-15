@@ -5,7 +5,7 @@ import tiktoken
 # source civitai json
 data_json = "./input/civitai_data.json"
 # full path of output csv file
-output_csv = "./input/civit_ai_data_phrase_count_v5.csv"
+output_csv = "./input/civit_ai_data_phrase_count_v6.csv"
 
 
 # initialize tokenizer
@@ -16,7 +16,9 @@ f = open(data_json)
 json_content = json.load(f)
 
 phrase_id = {}
-phrase_count = {}
+phrase_total_count = {}
+phrase_positive_count = {}
+phrase_negative_count = {}
 
 i = 0
 x = 0
@@ -45,8 +47,8 @@ for item in json_content:
     negative_prompt = negative_prompt.replace(', ', ',')
     negative_phrases = negative_prompt.split(',')
 
-    phrases = positive_phrases + negative_phrases
-    for phrase in phrases:
+    # positive
+    for phrase in positive_phrases:
         # lowercase
         phrase = phrase.lower()
         # remove leading and trailing space
@@ -55,7 +57,7 @@ for item in json_content:
         if phrase.count('(') != phrase.count(')'):
             continue
 
-        if "<" in phrase or ">" in positive_phrases:
+        if "<" in phrase or ">" in phrase:
             continue
 
         if "lora" in phrase:
@@ -64,12 +66,53 @@ for item in json_content:
         if phrase not in phrase_id:
             phrase_id[phrase] = len(phrase_id)
 
-        if phrase in phrase_count:
-            count = phrase_count[phrase]
+        if phrase in phrase_total_count:
+            count = phrase_total_count[phrase]
             count += 1
-            phrase_count[phrase] = count
+            phrase_total_count[phrase] = count
         else:
-            phrase_count[phrase] = 0
+            phrase_total_count[phrase] = 1
+
+        if phrase in phrase_positive_count:
+            count = phrase_positive_count[phrase]
+            count += 1
+            phrase_positive_count[phrase] = count
+        else:
+            phrase_positive_count[phrase] = 1
+
+    # negative
+    for phrase in negative_phrases:
+        # lowercase
+        phrase = phrase.lower()
+        # remove leading and trailing space
+        phrase = phrase.strip()
+
+        if phrase.count('(') != phrase.count(')'):
+            continue
+
+        if "<" in phrase or ">" in phrase:
+            continue
+
+        if "lora" in phrase:
+            continue
+
+        if phrase not in phrase_id:
+            phrase_id[phrase] = len(phrase_id)
+
+        if phrase in phrase_total_count:
+            count = phrase_total_count[phrase]
+            count += 1
+            phrase_total_count[phrase] = count
+        else:
+            phrase_total_count[phrase] = 1
+
+        if phrase in phrase_negative_count:
+            count = phrase_negative_count[phrase]
+            count += 1
+            phrase_negative_count[phrase] = count
+        else:
+            phrase_negative_count[phrase] = 1
+
 
 print("Total positive prompts: {}".format(i))
 print("Total neg prompts: {}".format(x))
@@ -77,13 +120,13 @@ print("Total phrases: {}".format(len(phrase_id)))
 
 # sort
 sorted_dict = {}
-sorted_keys = sorted(phrase_count, key=phrase_count.get, reverse=True)
+sorted_keys = sorted(phrase_total_count, key=phrase_total_count.get, reverse=True)
 for w in sorted_keys:
-    sorted_dict[w] = phrase_count[w]
+    sorted_dict[w] = phrase_total_count[w]
 
 # save csv
 # field names
-fields = ['index', 'count', 'token size', 'phrase str']
+fields = ['index', 'total count', 'positive count', 'negative count', 'token size', 'phrase str']
 
 # writing to csv file
 with open(output_csv, 'w') as csvfile:
@@ -100,8 +143,9 @@ with open(output_csv, 'w') as csvfile:
         # compute token size
         phrase_tokens = enc.encode(key, allowed_special={'<|endoftext|>'})
         num_tokens = len(phrase_tokens)
-
-        row = [phrase_id[key], val, num_tokens, key]
+        positive_count = phrase_positive_count[key] if key in phrase_positive_count else 0
+        negative_count = phrase_negative_count[key] if key in phrase_negative_count else 0
+        row = [phrase_id[key], val, positive_count, negative_count, num_tokens, key]
         csvwriter.writerow(row)
 
 # # write list of phrases to text files

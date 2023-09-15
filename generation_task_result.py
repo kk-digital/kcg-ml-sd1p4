@@ -5,8 +5,9 @@ import numpy as np
 
 class GenerationTaskResult:
     def __init__(self, prompt, model, image_name, embedding_name, clip_name, latent_name, image_hash, chad_score_model,
-                 chad_score, seed, cfg_strength):
+                 chad_score, seed, cfg_strength, negative_prompt=""):
         self.prompt = prompt
+        self.negative_prompt = negative_prompt
         self.model = model
         self.image_name = image_name
         self.embedding_name = embedding_name
@@ -21,6 +22,7 @@ class GenerationTaskResult:
     def to_dict(self):
         return {
             "prompt": self.prompt,
+            "negative_prompt": self.negative_prompt,
             "model": self.model,
             "image_name": self.image_name,
             "embedding_name": self.embedding_name,

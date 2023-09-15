@@ -361,3 +361,13 @@ class CLI:
         )
 
         return self
+
+    def include_negative_prompt(self):
+        self.parser.add_argument(
+            '--include_negative_prompt',
+            type=bool,
+            help='True if negative prompt embedding will be used for generating images'
+        )
+
+        return self
+

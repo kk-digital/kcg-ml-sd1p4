@@ -1,7 +1,9 @@
 import clip
 import torch
+import torchvision.transforms as transforms
 
 from stable_diffusion.utils_backend import get_device
+
 
 
 class ClipModelHuggingface():
@@ -23,7 +25,6 @@ class ClipModelHuggingface():
 
         image_input = self.preprocess(image).unsqueeze(0).to(self.device)
 
-        # Encode the image
         with torch.no_grad():
             image_features = self.model.encode_image(image_input)
 
@@ -66,3 +67,4 @@ class ClipModelHuggingface():
             text_features = self.model.encode_text(tokens).to(device=self.device, dtype=torch.float32)
 
         return text_features
+
