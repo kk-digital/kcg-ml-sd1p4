@@ -311,7 +311,7 @@ for prompt in prompts_array:
     prompt_str = prompt.get_positive_prompt_str()
     prompts_str_array.append(prompt_str)
 
-print(prompt_str)
+print(prompts_str_array)
 
 embedded_prompts_numpy = np.array(clip_text_get_prompt_embedding_numpy(config, prompts_str_array))
 file_path = os.path.join(IMAGES_ROOT_DIR, 'embedded_prompts_numpy.npy')
