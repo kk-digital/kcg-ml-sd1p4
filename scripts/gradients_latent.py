@@ -242,7 +242,7 @@ if __name__ == "__main__":
     )
 
     latent_tmp = latent
-    latent = latent.clone()
+    latent = latent.clone().requires_grad_()
 
     del latent_tmp
 
