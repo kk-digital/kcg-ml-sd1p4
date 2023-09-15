@@ -349,7 +349,7 @@ ga_instance = pygad.GA(initial_population=initial_population,
                        mutation_type=mutation_type,
                        on_fitness=on_fitness,
                        on_mutation=on_mutation,
-                       on_generation=store_generation_images,
+                       on_generation=on_generation,
                        on_stop=on_fitness,
                        parent_selection_type=parent_selection_type,
                        keep_parents=0,
@@ -359,7 +359,7 @@ ga_instance = pygad.GA(initial_population=initial_population,
                        # fitness_func=calculate_fitness_score,
                        # on_parents=on_parents,
                        # on_crossover=on_crossover,
-                       on_start=store_generation_images,
+                       on_start=on_start,
                        )
 
 log_to_file(f"Batch Size: {population_size}")
