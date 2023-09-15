@@ -181,8 +181,6 @@ def get_target_embeddings_features(util_clip, subject):
     features = util_clip.get_text_features(subject, needs_grad=True)
     features = features.to(torch.float32)
 
-    features = features.squeeze(0)
-
     return features
 
 
@@ -248,8 +246,6 @@ if __name__ == "__main__":
     txt2img.initialize_latent_diffusion(autoencoder=None, clip_text_embedder=None, unet_model=None,
                                         path=checkpoint_path, force_submodels_init=True)
 
-    fixed_taget_features = get_target_embeddings_features(util_clip, "chibi, anime, waifu, side scrolling")
-
     # initial latent
     prompt_str = "accurate, short hair, (huge breasts), wide-eyed, (8k), witch, (((huge fangs))), sugar painting, 1girl, white box, lens flare, cowboy shot, full body, hairband, shirakami fubuki, photorealistic painting art by midjourney and greg rutkowski"
     negative_prompt_str = "(deformed iris, deformed pupils, semi-realistic, cgi, 3d, render, sketch, cartoon, drawing, anime:1.4), text, close up, cropped, out of frame, worst quality, low quality, jpeg artifacts, ugly, duplicate, morbid, mutilated, extra fingers, mutated hands, poorly drawn hands, poorly drawn face, mutation, deformed, blurry, dehydrated, bad anatomy, bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers, long neck,  (low quality:2), normal quality, bad-hands-5, huge eyes, (variations:1.2), extra arms, extra fingers, lowres, edwigef, testicles, mutated, ((missing legs)), bad proportions, malformed limbs, low quality lowres black tongue, mutated hands, loli"
@@ -267,13 +263,18 @@ if __name__ == "__main__":
         h=image_height
     )
 
+    latent_tmp = latent
+    latent = latent.clone()
+
+    del latent_tmp
+
     images = txt2img.get_image_from_latent(latent)
     image_list, image_hash_list = save_images(images, starting_images_directory + '/image' + '.jpg')
 
     # Create a random latent tensor of shape (1, 4, 64, 64)
     # random_latent = torch.rand((1, 4, 64, 64), device=device, dtype=torch.float32)
 
-    optimizer = optim.AdamW([latent], lr=learning_rate, weight_decay=0.01)
+    optimizer = optim.AdamW([latent], lr=learning_rate)
     mse_loss = nn.MSELoss(reduction='sum')
 
     target = torch.tensor([1.0], device=device, dtype=torch.float32, requires_grad=True)
@@ -281,6 +282,8 @@ if __name__ == "__main__":
     start_time = time.time()
 
     fixed_taget_features = get_target_embeddings_features(util_clip, "chibi, anime, waifu, side scrolling")
+
+    fixed_target = fixed_taget_features.detach()
 
     for i in range(0, iterations):
         # Get the image from the latent
