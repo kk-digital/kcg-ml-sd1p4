@@ -1,6 +1,7 @@
 import hashlib
 import logging
 import os
+import random
 import sys
 from contextlib import closing
 from dataclasses import dataclass, field
@@ -11,8 +12,12 @@ import cv2
 import numpy as np
 import torch
 from PIL import Image, ImageOps
+from blendmodes.blend import blendLayers
+from blendmodes.blendtype import BlendType
+from skimage import exposure
 
-from utility import masking, images
+from utility import masking, images, rng, prompt_parser
+from utility.rng import ImageRNG
 
 base_dir = os.getcwd()
 sys.path.append(base_dir)
@@ -21,8 +26,7 @@ from stable_diffusion.sampler.ddim import DDIMSampler
 from stable_diffusion.sampler.ddpm import DDPMSampler
 from stable_diffusion.sampler.diffusion import DiffusionSampler
 from stable_diffusion.latent_diffusion import LatentDiffusion
-from stable_diffusion.utils_backend import get_device, torch_gc
-from stable_diffusion.utils_image import to_pil
+from stable_diffusion.utils_backend import get_device, torch_gc, without_autocast, get_autocast
 from stable_diffusion import StableDiffusion
 from stable_diffusion.model_paths import (SDconfigs)
 
@@ -52,6 +56,11 @@ opts.img2img_background_color = '#ffffff'
 opts.initial_noise_multiplier = 1.0
 opts.outdir_init_images = 'output/init-images'
 opts.sd_vae_encode_method = 'Full'
+opts.sd_vae_decode_method = 'Full'
+opts.CLIP_stop_at_last_layers = 1
+opts.sdxl_crop_left = 0
+opts.sdxl_crop_top = 0
+opts.use_old_scheduling = False
 
 approximation_indexes = {"Full": 0, "Approx NN": 1, "Approx cheap": 2, "TAESD": 3}
 
@@ -88,6 +97,54 @@ def setup_color_correction(image):
     return correction_target
 
 
+def get_fixed_seed(seed):
+    if seed == '' or seed is None:
+        seed = -1
+    elif isinstance(seed, str):
+        try:
+            seed = int(seed)
+        except Exception:
+            seed = -1
+
+    if seed == -1:
+        return int(random.randrange(4294967294))
+
+    return seed
+
+
+class DecodedSamples(list):
+    already_decoded = True
+
+
+def samples_to_images_tensor(sample, approximation=None, model=None):
+    """Transforms 4-channel latent space images into 3-channel RGB image tensors, with values in range [-1, 1]."""
+
+    with without_autocast():  # fixes an issue with unstable VAEs that are flaky even in fp32
+        x_sample = model.autoencoder_decode(sample.to(torch.float32))
+
+    return x_sample
+
+
+def decode_first_stage(model, x):
+    x = x.to(torch.float32)
+    approx_index = approximation_indexes.get(opts.sd_vae_decode_method, 0)
+    return samples_to_images_tensor(x, approx_index, model)
+
+
+def decode_latent_batch(model, batch, target_device=None, check_for_nans=False):
+    samples = DecodedSamples()
+
+    for i in range(batch.shape[0]):
+        sample = decode_first_stage(model, batch[i:i + 1])[0]
+
+        if target_device is not None:
+            sample = sample.to(target_device)
+
+        samples.append(sample)
+
+    return samples
+
+
 @dataclass(repr=False)
 class StableDiffusionProcessing:
     sd_model: object = None
@@ -120,6 +177,7 @@ class StableDiffusionProcessing:
     c: tuple = field(default=None, init=False)
     uc: tuple = field(default=None, init=False)
 
+    rng: ImageRNG | None = field(default=None, init=False)
     color_corrections: list = field(default=None, init=False)
 
     all_prompts: list = field(default=None, init=False)
@@ -197,6 +255,63 @@ class StableDiffusionProcessing:
 
         self.main_prompt = self.all_prompts[0]
         self.main_negative_prompt = self.all_negative_prompts[0]
+
+    def cached_params(self, required_prompts, steps, extra_network_data, hires_steps=None, use_old_scheduling=False):
+        """Returns parameters that invalidate the cond cache if changed"""
+
+        return (
+            required_prompts,
+            steps,
+            hires_steps,
+            use_old_scheduling,
+            opts.CLIP_stop_at_last_layers,
+            '',
+            extra_network_data,
+            opts.sdxl_crop_left,
+            opts.sdxl_crop_top,
+            self.width,
+            self.height,
+        )
+
+    def get_conds_with_caching(self, function, required_prompts, steps, caches, extra_network_data, hires_steps=None):
+        """
+        Returns the result of calling function(shared.sd_model, required_prompts, steps)
+        using a cache to store the result if the same arguments have been used before.
+
+        cache is an array containing two elements. The first element is a tuple
+        representing the previously used arguments, or None if no arguments
+        have been used before. The second element is where the previously
+        computed result is stored.
+
+        caches is a list with items described above.
+        """
+
+        cached_params = self.cached_params(required_prompts, steps, extra_network_data, hires_steps,
+                                           opts.use_old_scheduling)
+
+        for cache in caches:
+            if cache[0] is not None and cached_params == cache[0]:
+                return cache[1]
+
+        cache = caches[0]
+
+        with get_autocast():
+            cache[1] = function(self.model, required_prompts, steps, hires_steps, opts.use_old_scheduling)
+
+        cache[0] = cached_params
+        return cache[1]
+
+    def setup_conds(self):
+        # prompts = prompt_parser.SdConditioning(self.prompts, width=self.width, height=self.height)
+        # negative_prompts = prompt_parser.SdConditioning(self.negative_prompts, width=self.width, height=self.height,
+        #                                                 is_negative_prompt=True)
+        # self.uc = self.get_conds_with_caching(prompt_parser.get_learned_conditioning, negative_prompts, self.steps,
+        #                                       [self.cached_uc], {})
+        # self.c = self.get_conds_with_caching(prompt_parser.get_multicond_learned_conditioning, prompts, self.steps,
+        #                                      [self.cached_c], {})
+
+        # p.c = p.c.batch[0][0].schedules[0].cond
+        # p.uc = p.uc[0][0].cond
 
         embedded_prompts = self.prompt_embedding_vectors(prompt_array=self.all_prompts)
         embedded_prompts_cpu = embedded_prompts.to("cpu")
@@ -450,6 +565,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
         t_start = 35
         uncond_scale = 0.1
+
         x = self.sampler.q_sample(self.init_latent, t_start, noise=orig_noise)
 
         samples = self.sampler.paint(x=x,
@@ -459,14 +575,50 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                                      orig_noise=orig_noise,
                                      uncond_scale=uncond_scale,
                                      uncond_cond=unconditional_conditioning,
-                                     mask=mask
+                                     mask=self.mask,
                                      )
         torch_gc()
 
         return samples
 
 
-def process_images(p: StableDiffusionProcessing):
+def apply_color_correction(correction, original_image):
+    logging.info("Applying color correction.")
+    image = Image.fromarray(cv2.cvtColor(exposure.match_histograms(
+        cv2.cvtColor(
+            np.asarray(original_image),
+            cv2.COLOR_RGB2LAB
+        ),
+        correction,
+        channel_axis=2
+    ), cv2.COLOR_LAB2RGB).astype("uint8"))
+
+    image = blendLayers(image, original_image, BlendType.LUMINOSITY)
+
+    return image.convert('RGB')
+
+
+def apply_overlay(image, paste_loc, index, overlays):
+    if overlays is None or index >= len(overlays):
+        return image
+
+    overlay = overlays[index]
+
+    if paste_loc is not None:
+        x, y, w, h = paste_loc
+        base_image = Image.new('RGBA', (overlay.width, overlay.height))
+        image = images.resize_image(1, image, w, h)
+        base_image.paste(image, (x, y))
+        image = base_image
+
+    image = image.convert('RGBA')
+    image.alpha_composite(overlay)
+    image = image.convert('RGB')
+
+    return image
+
+
+def process_images(p: StableDiffusionProcessingImg2Img):
     if isinstance(p.prompt, list):
         assert (len(p.prompt) > 0)
     else:
@@ -474,9 +626,10 @@ def process_images(p: StableDiffusionProcessing):
 
     torch_gc()
 
-    seed = 123
-    subseed = 456
+    seed = get_fixed_seed(p.seed)
+    subseed = get_fixed_seed(p.subseed)
 
+    # Check if is correct
     p.setup_prompts()
 
     if isinstance(seed, list):
@@ -500,15 +653,42 @@ def process_images(p: StableDiffusionProcessing):
             p.seeds = p.all_seeds[n * p.batch_size:(n + 1) * p.batch_size]
             p.subseeds = p.all_subseeds[n * p.batch_size:(n + 1) * p.batch_size]
 
+            p.rng = rng.ImageRNG((opt_C, p.height // opt_f, p.width // opt_f), p.seeds, subseeds=p.subseeds,
+                                 subseed_strength=p.subseed_strength, seed_resize_from_h=p.seed_resize_from_h,
+                                 seed_resize_from_w=p.seed_resize_from_w)
             if len(p.prompts) == 0:
                 break
 
-            samples_ddim = p.sample(conditioning=p.c, unconditional_conditioning=p.uc, seeds=p.seeds,
-                                    subseeds=p.subseeds, subseed_strength=p.subseed_strength, prompts=p.prompts)
+            # May we need to configure this part to get the propaly conds
+            p.setup_conds()
 
-            images = p.sd.get_image_from_latent(samples_ddim)
-            pil_image = to_pil(images[0])
-            pil_image.save('output/inpainting/result.png')
+            with without_autocast():
+                samples_ddim = p.sample(conditioning=p.c, unconditional_conditioning=p.uc, seeds=p.seeds,
+                                        subseeds=p.subseeds, subseed_strength=p.subseed_strength, prompts=p.prompts)
+
+            if getattr(samples_ddim, 'already_decoded', False):
+                x_samples_ddim = samples_ddim
+            else:
+                if opts.sd_vae_decode_method != 'Full':
+                    p.extra_generation_params['VAE Decoder'] = opts.sd_vae_decode_method
+
+                x_samples_ddim = decode_latent_batch(p.model, samples_ddim, target_device=torch.device('cpu'),
+                                                     check_for_nans=True)
+
+            x_samples_ddim = torch.stack(x_samples_ddim).float()
+            x_samples_ddim = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
+
+            for i, x_sample in enumerate(x_samples_ddim):
+                p.batch_index = i
+
+                x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
+                x_sample = x_sample.astype(np.uint8)
+
+                image = Image.fromarray(x_sample)
+
+                image = apply_overlay(image, p.paste_to, i, p.overlay_images)
+                image.save(join(p.outpath_samples, f"result{i}.png"))
+                # images.save_image(image, p.outpath_samples, "", p.seeds[i], p.prompts[i], opts.samples_format, info=infotext(i), p=p)
 
             del samples_ddim
 
@@ -559,8 +739,7 @@ def img2img(prompt: str, negative_prompt: str, sampler_name: str, batch_size: in
 init_image = Image.open("test.png")
 init_maks = Image.open("mask.png")
 
-
-img2img(prompt="A cat",
+img2img(prompt="character, chibi, waifu, side scrolling, white background, centered",
         negative_prompt="",
         sampler_name="ddim",
         batch_size=1,
@@ -570,5 +749,5 @@ img2img(prompt="A cat",
         width=512,
         height=512,
         mask_blur=4,
-        inpainting_fill=4,
+        inpainting_fill=1,
         init_img=init_image)

@@ -1,3 +1,4 @@
+import contextlib
 import sys
 
 import numpy as np
@@ -5,6 +6,7 @@ import torch
 from torch.mps import current_allocated_memory as mps_current_allocated_memory
 
 from utility.utils_logger import logger
+
 
 
 def get_device(device=None):
@@ -63,6 +65,8 @@ def get_autocast(force_cpu: bool = False):
     logger.warning("You are running this script without CUDA. It may be very slow.")
     return torch.autocast(device_type='cpu')
 
+def without_autocast(disable=False):
+    return torch.autocast("cuda", enabled=False) if torch.is_autocast_enabled() and not disable else contextlib.nullcontext()
 
 def set_seed(seed):
     """

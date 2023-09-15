@@ -4,11 +4,14 @@ from PIL import Image
 
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
 
+
 class Options:
     outdir_samples: str
     save_init_img: bool
     img2img_color_correction: bool
     img2img_background_color: str
+
+
 opts = Options()
 opts.upscaler_for_img2img = None
 
@@ -37,7 +40,8 @@ def resize_image(resize_mode, im, width, height, upscaler_name=None):
 
         scale = max(w / im.width, h / im.height)
 
-        # if scale > 1.0:
+        if scale > 1.0:
+            print(f"image is smaller than target size, using {upscaler_name} to upscale")
         #     upscalers = [x for x in shared.sd_upscalers if x.name == upscaler_name]
         #     if len(upscalers) == 0:
         #         upscaler = shared.sd_upscalers[0]
@@ -47,9 +51,9 @@ def resize_image(resize_mode, im, width, height, upscaler_name=None):
         #         upscaler = upscalers[0]
         #
         #     im = upscaler.scaler.upscale(im, scale, upscaler.data_path)
-        #
-        # if im.width != w or im.height != h:
-        im = im.resize((w, h), resample=LANCZOS)
+
+        if im.width != w or im.height != h:
+            im = im.resize((w, h), resample=LANCZOS)
 
         return im
 
@@ -92,6 +96,7 @@ def resize_image(resize_mode, im, width, height, upscaler_name=None):
                           box=(fill_width + src_w, 0))
 
     return res
+
 
 def flatten(img, bgcolor):
     """replaces transparency with bgcolor (example: "#ffffff"), returning an RGB mode image with no transparency"""
