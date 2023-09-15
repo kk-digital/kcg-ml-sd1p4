@@ -270,8 +270,10 @@ if __name__ == "__main__":
 
         fitness = latents_similarity_score(latent, i, output, fixed_target, device, save_image)
 
-        input = fitness
-        loss = mse_loss(input, target)
+        loss = torch.subtract(1.0, fitness)
+
+        #input = fitness
+        #loss = mse_loss(input, target)
 
         print(f'Iteration #{i + 1}, loss {loss}')
         print("grad : ", latent.grad)
