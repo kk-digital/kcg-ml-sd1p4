@@ -25,6 +25,7 @@ import ga
 from ga.fitness_bounding_box_size import size_fitness
 
 
+
 random.seed()
 
 N_STEPS = 20  # 20, 12
@@ -89,7 +90,6 @@ print(OUTPUT_DIR)
 print(IMAGES_ROOT_DIR)
 print(FEATURES_DIR)
 
-image_generation_counter = 0
 
 # Initialize logger
 def log_to_file(message):
@@ -103,9 +103,6 @@ def log_to_file(message):
 # Function to calculate the chad score for batch of images
 def get_pil_image_from_solution(ga_instance, solution, solution_idx):
     
-    global image_generation_counter
-    image_generation_counter += 1
-
     # set seed
     SEED = random.randint(0, 2 ** 24)
     if FIXED_SEED == True:
