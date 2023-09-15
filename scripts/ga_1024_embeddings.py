@@ -26,9 +26,6 @@ from ga.utils import get_next_ga_dir
 import ga
 from stable_diffusion import CLIPconfigs
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
-#from ga.fitness_pixel_value import fitness_pixel_value
-#from ga.fitness_white_background import white_background_fitness
-from ga.fitness_filesize import filesize_fitness
 from ga.fitness_white_background import white_background_fitness
 
 
@@ -338,7 +335,7 @@ for i, individual in enumerate(initial_population):
 ga_instance = pygad.GA(initial_population=initial_population,
                        num_generations=generations,
                        num_parents_mating=num_parents_mating,
-                       fitness_func=calculate_and_store_images,
+                       fitness_func=cached_fitness_func,
                        sol_per_pop=population_size,
                        num_genes=num_genes, 
                        # Pygad uses 0-100 range for percentage
