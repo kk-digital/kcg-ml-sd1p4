@@ -6,6 +6,7 @@ import sys
 import numpy as np
 import torch
 import time
+import shutil
 import torch.nn as nn
 import torch.optim as optim
 import random
@@ -32,7 +33,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser(
         description="Affine combination of embeddings.")
 
-    parser.add_argument('--output', type=str, default='./output')
+    parser.add_argument('--output', type=str, default='./output/gradients_affine_combination_latents')
     parser.add_argument('--image_width', type=int, default=512)
     parser.add_argument('--image_height', type=int, default=512)
     parser.add_argument('--cfg_strength', type=float, default=12)
@@ -45,7 +46,7 @@ def parse_arguments():
     parser.add_argument('--iterations', type=int, default=1000)
     parser.add_argument('--learning_rate', type=float, default=0.0001)
     parser.add_argument('--num_images', type=int, default=1)
-    parser.add_argument('--prompts_path', type=str, default='/input/prompt-list-civitai/prompt_list_civitai_10k_512_phrases.zip')
+    parser.add_argument('--prompts_path', type=str, default='/input/prompt-list-civitai/prompt_list_civitai_1000_new.zip')
 
     return parser.parse_args()
 
@@ -113,7 +114,7 @@ def read_prompts_from_zip(zip_file_path, num_prompts):
     with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
         # Get a list of all file names in the zip archive
         file_list = zip_ref.namelist()
-
+        random.shuffle(file_list)
         # Initialize a list to store loaded arrays
         loaded_arrays = []
 
@@ -132,33 +133,78 @@ def read_prompts_from_zip(zip_file_path, num_prompts):
         return loaded_arrays
 
 
-# Now, loaded_arrays contains the loaded NumPy arrays from the first 100 .npz files
+def combine_latents(latents_array, weight_array, device):
 
-def combine_embeddings(embeddings_array, weight_array, device):
-
-    # empty embedding filled with zeroes
-    result_embedding = torch.zeros(1, 77, 768, device=device, dtype=torch.float32)
+    # empty latent filled with zeroes
+    result_latents = torch.zeros(1, 4, 64, 64, device=device, dtype=torch.float32)
 
     # Multiply each tensor by its corresponding float and sum up
-    for embedding, weight in zip(embeddings_array, weight_array):
-        result_embedding += embedding * weight
+    for latent, weight in zip(latents_array, weight_array):
+        weighted_latent = latent * weight
+        result_latents += weighted_latent
 
-    return result_embedding
+    return result_latents
 
 
-def embeddings_chad_score(embeddings_vector, seed, index, output, chad_score_predictor):
+def get_similarity_score(image_features, target_features):
 
-    null_prompt = clip_text_embedder('')
+    image_features_magnitude = torch.norm(image_features)
+    target_features_magnitude = torch.norm(target_features)
 
-    latent = txt2img.generate_images_latent_from_embeddings(
-        batch_size=1,
-        embedded_prompt=embeddings_vector,
-        null_prompt=null_prompt,
-        uncond_scale=cfg_strength,
-        seed=seed,
-        w=image_width,
-        h=image_height
-    )
+    image_features = image_features / image_features_magnitude
+    target_features = target_features / target_features_magnitude
+
+    image_features = image_features.squeeze(0)
+
+    similarity = torch.dot(image_features, target_features)
+
+    fitness = similarity
+
+    return fitness
+
+def latents_similarity_score(latent, index, output, target_features, device, save_image):
+
+    images = txt2img.get_image_from_latent(latent)
+    if save_image:
+        image_list, image_hash_list = save_images(images, output + '/image' + str(index + 1) + '.jpg')
+
+    del latent
+    torch.cuda.empty_cache()
+
+    # Map images to `[0, 1]` space and clip
+    images = torch.clamp((images + 1.0) / 2.0, min=0.0, max=1.0)
+
+
+    ## Normalize the image tensor
+    mean = torch.tensor([0.48145466, 0.4578275, 0.40821073], device=device).view(-1, 1, 1)
+    std = torch.tensor([0.26862954, 0.26130258, 0.27577711], device=device).view(-1, 1, 1)
+
+    normalized_image_tensor = (images - mean) / std
+
+    # Resize the image to [N, C, 224, 224]
+    transform = transforms.Compose([transforms.Resize((224, 224))])
+    resized_image_tensor = transform(normalized_image_tensor)
+
+    # Get the CLIP features
+    image_features = util_clip.model.encode_image(resized_image_tensor)
+    image_features = image_features.squeeze(0)
+
+    image_features = image_features.to(torch.float32)
+
+    # cleanup
+    del images
+    torch.cuda.empty_cache()
+
+    fitness = get_similarity_score(image_features, target_features)
+    print("fitness : ", fitness.item())
+
+    # cleanup
+    del image_features
+    torch.cuda.empty_cache()
+
+    return fitness
+
+def latents_chad_score(latent, index, output, chad_score_predictor):
 
     images = txt2img.get_image_from_latent(latent)
     image_list, image_hash_list = save_images(images, output + '/image' + str(index + 1) + '.jpg')
@@ -202,6 +248,21 @@ def embeddings_chad_score(embeddings_vector, seed, index, output, chad_score_pre
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
+def get_target_embeddings_features(util_clip, subject):
+
+    features = util_clip.get_text_features(subject)
+    features = features.to(torch.float32)
+
+    features = features.squeeze(0)
+
+    return features
+
+def log_to_file(message, output_directory):
+    log_path = os.path.join(output_directory, "log.txt")
+
+    with open(log_path, "a") as log_file:
+        log_file.write(message + "\n")
+
 if __name__ == "__main__":
     args = parse_arguments()
 
@@ -220,9 +281,21 @@ if __name__ == "__main__":
     num_images = args.num_images
     prompts_path = args.prompts_path
 
+    starting_images_directory = output + '/' + 'starting_images'
+
     # Seed the random number generator with the current time
     random.seed(time.time())
     seed = 6789
+
+    # make sure the directories are created
+    os.makedirs(output, exist_ok=True)
+
+    # Remove the directory and its contents recursively
+    shutil.rmtree(output)
+
+    # make sure the directories are created
+    os.makedirs(output, exist_ok=True)
+    os.makedirs(starting_images_directory, exist_ok=True)
 
     clip_text_embedder = CLIPTextEmbedder(device=get_device())
     clip_text_embedder.load_submodels()
@@ -251,44 +324,88 @@ if __name__ == "__main__":
     txt2img.initialize_latent_diffusion(autoencoder=None, clip_text_embedder=None, unet_model=None,
                                         path=checkpoint_path, force_submodels_init=True)
 
+    fixed_taget_features = get_target_embeddings_features(util_clip, "chibi, anime, waifu, side scrolling")
 
-    embedded_prompts_array = []
+    latent_array = []
+    index = 0
     # Get N Embeddings
     for prompt in prompt_list:
+        index = index + 1
         # get the embedding from positive text prompt
         # prompt_str = prompt.positive_prompt_str
         prompt = prompt.flatten()[0]
+
         prompt_str = prompt['positive-prompt-str']
+        negative_prompt_str = prompt['negative-prompt-str']
+
+        print("positive : " + prompt_str)
+        print("negative : " + negative_prompt_str)
+
         embedded_prompts = clip_text_embedder(prompt_str)
+        negative_embedded_prompts = clip_text_embedder(negative_prompt_str)
 
-        embedded_prompts_array.append(embedded_prompts)
+        latent = txt2img.generate_images_latent_from_embeddings(
+            batch_size=1,
+            embedded_prompt=embedded_prompts,
+            null_prompt=negative_embedded_prompts,
+            uncond_scale=cfg_strength,
+            seed=seed,
+            w=image_width,
+            h=image_height
+        )
 
-    # array of  weights
-    weight_array = np.full(num_prompts, 1.0 / num_prompts)
+        latent = latent.clone()
+
+        images = txt2img.get_image_from_latent(latent)
+        image_list, image_hash_list = save_images(images, starting_images_directory + '/image' + str(index + 1) + '.jpg')
+
+        latent_array.append(latent)
+
+    # Parameters for the Gaussian distribution
+    mean = 0  # mean (center) of the distribution
+    std_dev = 1  # standard deviation (spread or width) of the distribution
+    shape = (num_prompts)  # shape of the resulting array
+
+    # Create the random weights
+    weight_array = np.random.normal(mean, std_dev, shape)
+
+    # normalize the array
+    magnitude = np.linalg.norm(weight_array)
+    weight_array = weight_array / magnitude
+
+    # convert to tensor
     weight_array = torch.tensor(weight_array, device=device, dtype=torch.float32, requires_grad=True)
-    # Combinate into one Embedding
 
-    optimizer = optim.Adam([weight_array], lr=learning_rate)
+    optimizer = optim.AdamW([weight_array], lr=learning_rate, weight_decay=0.01)
     mse_loss = nn.MSELoss(reduction='sum')
 
     target = torch.tensor([1.0], device=device, dtype=torch.float32, requires_grad=True)
 
     start_time = time.time()
+
+    fixed_taget_features = get_target_embeddings_features(util_clip, "chibi, anime, waifu, side scrolling")
+
     for i in range(0, iterations):
         # Zero the gradients
-        optimizer.zero_grad()
 
-        embedding_vector = combine_embeddings(embedded_prompts_array, weight_array, device)
+        fixed_taget = fixed_taget_features.detach().clone()
 
-        chad_score, chad_score_scaled = embeddings_chad_score(embedding_vector, seed, i, output, chad_score_predictor)
+        save_image = True
 
-        input = chad_score_scaled
+        combined_latent = combine_latents(latent_array, weight_array, device)
+
+        #chad_score, chad_score_scaled = latents_chad_score(combined_latent, i, output, chad_score_predictor)
+        fitness = latents_similarity_score(combined_latent, i, output, fixed_taget, device, save_image)
+
+        input = fitness
         loss = mse_loss(input, target)
 
         print(f'Iteration #{i + 1}, loss {loss}')
+        log_to_file(f'Iteration #{i + 1}, loss {loss}', output)
 
         loss.backward()
         optimizer.step()
+        optimizer.zero_grad()
 
     end_time = time.time()
 
