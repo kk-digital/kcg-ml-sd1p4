@@ -1,27 +1,33 @@
+from PIL import Image
+
 import argparse
 import os
-import random
-import shutil
 import sys
-import time
-
+import numpy as np
 import torch
+import time
+import shutil
 import torch.nn as nn
 import torch.optim as optim
+import random
+import torchvision
+import zipfile
+import torchvision.transforms as transforms
 
 base_dir = "./"
 sys.path.insert(0, base_dir)
 sys.path.insert(0, os.getcwd())
 
+
 from stable_diffusion.model_paths import SD_CHECKPOINT_PATH
 from stable_diffusion.utils_backend import get_device
+from ga.prompt_generator import generate_prompts
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion_base_script import StableDiffusionBaseScript
 from stable_diffusion.utils_backend import get_autocast, set_seed
 from chad_score.chad_score import ChadScorePredictor
-from model.util_clip import ClipModelHuggingface
+from model.util_clip import ClipOpenAi
 from stable_diffusion.utils_image import save_images
-
 
 def parse_arguments():
     """Command-line arguments"""
@@ -35,12 +41,13 @@ def parse_arguments():
     parser.add_argument('--device', type=str, default='cuda')
     parser.add_argument('--sampler', type=str, default='ddim')
     parser.add_argument('--steps', type=int, default=20)
-    parser.add_argument('--checkpoint_path', type=str, default=SD_CHECKPOINT_PATH)
+    parser.add_argument('--checkpoint_path',type=str, default=SD_CHECKPOINT_PATH)
     parser.add_argument('--iterations', type=int, default=1000)
     parser.add_argument('--learning_rate', type=float, default=0.0001)
     parser.add_argument('--num_images', type=int, default=1)
 
     return parser.parse_args()
+
 
 
 class Txt2Img(StableDiffusionBaseScript):
@@ -50,16 +57,16 @@ class Txt2Img(StableDiffusionBaseScript):
 
     @torch.no_grad()
     def generate_images_latent_from_embeddings(self, *,
-                                               seed: int = 0,
-                                               batch_size: int = 1,
-                                               embedded_prompt: torch.Tensor,
-                                               null_prompt: torch.Tensor,
-                                               h: int = 512, w: int = 512,
-                                               uncond_scale: float = 7.5,
-                                               low_vram: bool = False,
-                                               noise_fn=torch.randn,
-                                               temperature: float = 1.0,
-                                               ):
+                                        seed: int = 0,
+                                        batch_size: int = 1,
+                                        embedded_prompt: torch.Tensor,
+                                        null_prompt: torch.Tensor,
+                                        h: int = 512, w: int = 512,
+                                        uncond_scale: float = 7.5,
+                                        low_vram: bool = False,
+                                        noise_fn=torch.randn,
+                                        temperature: float = 1.0,
+                                        ):
         """
         :param seed: the seed to use when generating the images
         :param dest_path: is the path to store the generated images
@@ -100,88 +107,59 @@ class Txt2Img(StableDiffusionBaseScript):
             return x
 
 
-def compute_clip_similarity_cosine_distance(image_features, target_features):
-    # Assert that both tensors are 1-dimensional and of size 768
-    assert image_features.dim() == 1 and image_features.size(
-        0) == 768, f"Expected image_features to be of shape [768], but got {image_features.shape}"
-    assert target_features.dim() == 1 and target_features.size(
-        0) == 768, f"Expected target_features to be of shape [768], but got {target_features.shape}"
 
-    # Use torch.nn.CosineSimilarity for computing the similarity
-    cos_similarity = nn.CosineSimilarity(dim=0, eps=1e-6)  # Using dim=0 since the tensors are 1-dimensional
-    similarity = cos_similarity(image_features, target_features)
+def compute_clip_similarity_cosine_distance(image_features, target_features):
+
+    similarity = torch.nn.functional.cosine_similarity(image_features, target_features, dim=1, eps=1e-8)
 
     return similarity
 
 
+def preprocess_image(images):
+    image_mean = [0.48145466, 0.4578275, 0.40821073]
+    image_std = [0.26862954, 0.26130258, 0.27577711]
+    normalize = torchvision.transforms.Normalize(
+        image_mean,
+        image_std
+    )
+    resize = torchvision.transforms.Resize(224)
+    center_crop = torchvision.transforms.CenterCrop(224)
+
+    images = center_crop(images)
+    images = resize(images)
+    images = center_crop(images)
+    images = normalize(images)
+
+    return images
+
 def latents_similarity_score(latent, index, output, target_features, device, save_image):
-    # Assert that target_features tensor is 1-dimensional and of size 768
-    assert target_features.dim() == 1 and target_features.size(
-        0) == 768, f"Expected target_features to be of shape [768], but got {target_features.shape}"
 
     images = txt2img.get_image_from_latent(latent)
-
     if save_image:
         image_list, image_hash_list = save_images(images, output + '/image' + str(index + 1) + '.jpg')
 
-    resized_image_tensor = util_clip.preprocess_image_tensor(images)
+    # Map images to `[0, 1]` space and clip
+    images = torch.clamp((images + 1.0) / 2.0, min=0.0, max=1.0)
+
+    images = preprocess_image(images)
 
     # Get the CLIP features
-    image_features = util_clip.model.encode_image(resized_image_tensor, needs_grad=True)
-
-    # Assert that image_features tensor is 1-dimensional and of size 768
-    assert image_features.dim() == 1 and image_features.size(
-        0) == 768, f"Expected image_features to be of shape [768], but got {image_features.shape}"
+    image_features = util_clip.model.encode_image(images)
 
     image_features = image_features.to(torch.float32)
 
     fitness = compute_clip_similarity_cosine_distance(image_features, target_features)
+
     print("fitness : ", fitness.item())
 
     return fitness
 
-
-def latents_chad_score(latent, index, output, chad_score_predictor):
-    images = txt2img.get_image_from_latent(latent)
-    image_list, image_hash_list = save_images(images, output + '/image' + str(index + 1) + '.jpg')
-
-    resized_image_tensor = util_clip.preprocess_image_tensor(images)
-
-    # Get the CLIP features
-    image_features = util_clip.model.encode_image(resized_image_tensor)
-    image_features = image_features.squeeze(0)
-
-    image_features = image_features.to(torch.float32)
-
-    # TODO: Chadscore should take in clip vector, it should be taking in the latent vector
-    chad_score = chad_score_predictor.get_chad_score_tensor(image_features)
-    chad_score_scaled = torch.sigmoid(chad_score)
-
-    # cleanup
-    del images
-    del image_features
-    del latent
-    torch.cuda.empty_cache()
-
-    return chad_score, chad_score_scaled
-
-
-def sigmoid(tensor: torch.Tensor, needs_grad=False):
-    if not needs_grad:
-        with torch.no_grad():
-            return torch.sigmoid(tensor)
-    else:
-        return torch.sigmoid(tensor)
-
-
 def get_target_embeddings_features(util_clip, subject):
-    features = util_clip.get_text_features(subject, needs_grad=True)
+
+    features = util_clip.get_text_features(subject)
     features = features.to(torch.float32)
 
-    features = features.squeeze(0)
-
     return features
-
 
 def log_to_file(message, output_directory):
     log_path = os.path.join(output_directory, "log.txt")
@@ -232,7 +210,7 @@ if __name__ == "__main__":
     chad_score_predictor.load_model(chad_score_model_path)
 
     # Load the clip model
-    util_clip = ClipModelHuggingface(device=device)
+    util_clip = ClipOpenAi(device=device)
     util_clip.load_model()
 
     # Starts the text2img
@@ -245,33 +223,46 @@ if __name__ == "__main__":
     txt2img.initialize_latent_diffusion(autoencoder=None, clip_text_embedder=None, unet_model=None,
                                         path=checkpoint_path, force_submodels_init=True)
 
-    fixed_taget_features = get_target_embeddings_features(util_clip, "chibi, anime, waifu, side scrolling")
+    random_latent = True
 
-    # initial latent
-    prompt_str = "accurate, short hair, (huge breasts), wide-eyed, (8k), witch, (((huge fangs))), sugar painting, 1girl, white box, lens flare, cowboy shot, full body, hairband, shirakami fubuki, photorealistic painting art by midjourney and greg rutkowski"
-    negative_prompt_str = "(deformed iris, deformed pupils, semi-realistic, cgi, 3d, render, sketch, cartoon, drawing, anime:1.4), text, close up, cropped, out of frame, worst quality, low quality, jpeg artifacts, ugly, duplicate, morbid, mutilated, extra fingers, mutated hands, poorly drawn hands, poorly drawn face, mutation, deformed, blurry, dehydrated, bad anatomy, bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers, long neck,  (low quality:2), normal quality, bad-hands-5, huge eyes, (variations:1.2), extra arms, extra fingers, lowres, edwigef, testicles, mutated, ((missing legs)), bad proportions, malformed limbs, low quality lowres black tongue, mutated hands, loli"
+    latent = None
+    if random_latent:
+        latent = torch.rand((1, 4, 64, 64), device=device, dtype=torch.float32)
 
-    embedded_prompts = clip_text_embedder(prompt_str)
-    negative_embedded_prompts = clip_text_embedder(negative_prompt_str)
+    else:
+        # initial latent
+        prompt_str = "accurate, short hair, (huge breasts), wide-eyed, (8k), witch, (((huge fangs))), sugar painting, 1girl, white box, lens flare, cowboy shot, full body, hairband, shirakami fubuki, photorealistic painting art by midjourney and greg rutkowski"
+        negative_prompt_str = "(deformed iris, deformed pupils, semi-realistic, cgi, 3d, render, sketch, cartoon, drawing, anime:1.4), text, close up, cropped, out of frame, worst quality, low quality, jpeg artifacts, ugly, duplicate, morbid, mutilated, extra fingers, mutated hands, poorly drawn hands, poorly drawn face, mutation, deformed, blurry, dehydrated, bad anatomy, bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers, long neck,  (low quality:2), normal quality, bad-hands-5, huge eyes, (variations:1.2), extra arms, extra fingers, lowres, edwigef, testicles, mutated, ((missing legs)), bad proportions, malformed limbs, low quality lowres black tongue, mutated hands, loli"
 
-    latent = txt2img.generate_images_latent_from_embeddings(
-        batch_size=1,
-        embedded_prompt=embedded_prompts,
-        null_prompt=negative_embedded_prompts,
-        uncond_scale=cfg_strength,
-        seed=seed,
-        w=image_width,
-        h=image_height
-    )
+
+        embedded_prompts = clip_text_embedder(prompt_str)
+        negative_embedded_prompts = clip_text_embedder(negative_prompt_str)
+
+        latent = txt2img.generate_images_latent_from_embeddings(
+            batch_size=1,
+            embedded_prompt=embedded_prompts,
+            null_prompt=negative_embedded_prompts,
+            uncond_scale=cfg_strength,
+            seed=seed,
+            w=image_width,
+            h=image_height
+        )
+
+
+
+    latent_tmp = latent
+    latent = latent.clone().requires_grad_()
+
+    del latent_tmp
 
     images = txt2img.get_image_from_latent(latent)
     image_list, image_hash_list = save_images(images, starting_images_directory + '/image' + '.jpg')
 
     # Create a random latent tensor of shape (1, 4, 64, 64)
-    # random_latent = torch.rand((1, 4, 64, 64), device=device, dtype=torch.float32)
+    #random_latent = torch.rand((1, 4, 64, 64), device=device, dtype=torch.float32)
 
-    optimizer = optim.AdamW([latent], lr=learning_rate, weight_decay=0.01)
-    mse_loss = nn.MSELoss(reduction='sum')
+    optimizer = optim.AdamW([latent], lr=learning_rate)
+    mse_loss = nn.MSELoss()
 
     target = torch.tensor([1.0], device=device, dtype=torch.float32, requires_grad=True)
 
@@ -279,30 +270,24 @@ if __name__ == "__main__":
 
     fixed_taget_features = get_target_embeddings_features(util_clip, "chibi, anime, waifu, side scrolling")
 
+    fixed_target = fixed_taget_features.detach()
+
     for i in range(0, iterations):
-        # Get the image from the latent
-        images = txt2img.get_image_from_latent(latent)
+        # Zero the gradients
 
-        # Preprocess the image tensor
-        resized_image_tensor = util_clip.preprocess_image_tensor(images, needs_grad=True)
+        save_image = False
+        if i % 100 == 0:
+            save_image = True
 
-        # Compute the CLIP score of the image tensor
-        image_features = util_clip.model.encode_image(resized_image_tensor)
-        image_features = image_features.squeeze(0)
-        image_features = image_features.to(torch.float32)
+        fitness = latents_similarity_score(latent, i, output, fixed_target, device, save_image)
 
-        # Save the image
-        if i % num_images == 0:  # Assuming you might not want to save on every iteration
-            image_list, image_hash_list = save_images(images, output + '/image' + str(i + 1) + '.jpg')
+        loss = torch.subtract(1.0, fitness)
 
-        # Compute the fitness function
-        fitness = compute_clip_similarity_cosine_distance(image_features, fixed_taget_features)
+        #input = fitness
+        #loss = mse_loss(input, target)
 
-        print(f'Iteration #{i + 1}, loss {fitness}')
-        log_to_file(f'Iteration #{i + 1}, loss {fitness}', output)
-
-        # Loss computation
-        loss = mse_loss(fitness, target)
+        print(f'Iteration #{i + 1}, loss {loss}')
+        log_to_file(f'Iteration #{i + 1}, loss {loss}', output)
 
         loss.backward()
         optimizer.step()
