@@ -65,6 +65,12 @@ os.makedirs(IMAGES_ROOT_DIR, exist_ok=True)
 IMAGES_DIR = get_next_ga_dir(IMAGES_ROOT_DIR)
 os.makedirs(IMAGES_DIR, exist_ok=True)
 
+print(EMBEDDED_PROMPTS_DIR)
+print(OUTPUT_DIR)
+print(FEATURES_DIR)
+print(IMAGES_ROOT_DIR)
+print(IMAGES_DIR)
+
 # load clip
 image_features_clip_model, preprocess = clip.load("ViT-L/14", device=DEVICE)
 
