@@ -84,101 +84,6 @@ sd.model.load_unet(config.get_model(SDconfigs.UNET))
 fitness_cache = {}
 
 
-def count_contiguous_high_intensity_pixels(image, start_row, start_col, threshold):
-    width, height = image.size
-    visited = set()
-    queue = [(start_row, start_col)]
-    high_intensity_pixel_count = 0
-
-    while queue:
-        row, col = queue.pop(0)
-        if (row, col) in visited or not (0 <= row < height and 0 <= col < width):
-            continue
-
-        visited.add((row, col))
-        pixel = image.getpixel((col, row))  # Get the pixel value at (x, y)
-        intensity = sum(pixel) / 3  # Calculate average intensity (assuming RGB image)
-        if intensity > threshold:
-            high_intensity_pixel_count += 1
-            neighbors = [
-                (row + 1, col),
-                (row - 1, col),
-                (row, col + 1),
-                (row, col - 1)
-            ]
-            queue.extend(neighbors)
-
-    return high_intensity_pixel_count
-
-def find_largest_contiguous_high_intensity_area(image, threshold):
-    width, height = image.size
-    corner_high_intensity_counts = [
-        count_contiguous_high_intensity_pixels(image, 0, 0, threshold),
-        count_contiguous_high_intensity_pixels(image, 0, width - 1, threshold),
-        count_contiguous_high_intensity_pixels(image, height - 1, 0, threshold),
-        count_contiguous_high_intensity_pixels(image, height - 1, width - 1, threshold)
-    ]
-    max_high_intensity_count = max(corner_high_intensity_counts)
-    winning_corner = corner_high_intensity_counts.index(max_high_intensity_count)
-    proportion = max_high_intensity_count / (width * height)
-
-    return proportion
-
-def calculate_distance_from_white(pixel_value, max_distance):
-    return np.linalg.norm(pixel_value - 255) / max_distance
-
-def sigmoid(x, alpha=10):
-    return 1 / (1 + np.exp(-alpha * (x - 0.5)))
-
-
-def calculate_white_border_score(image):
-    # Convert image to grayscale
-    gray_image = image.convert("L")
-
-    # Get image dimensions
-    width, height = image.size
-
-    # Define the central area bounds
-    center_x1 = (width - 64) // 2
-    center_y1 = (height - 64) // 2
-    center_x2 = center_x1 + 64
-    center_y2 = center_y1 + 64
-
-    # Initialize variable for sum of pixel distances
-    sum_distances = 0
-
-    # Iterate through each pixel in the image
-    for y in range(height):
-        for x in range(width):
-            # Check if the pixel is outside the central area
-            if center_x1 <= x < center_x2 and center_y1 <= y < center_y2:
-                continue
-
-            # Calculate the average distance from white for the pixel and its neighbors
-            neighbor_distances = []
-            for dx in range(-1, 2):
-                for dy in range(-1, 2):
-                    if dx == 0 and dy == 0:
-                        continue
-
-                    neighbor_x = x + dx
-                    neighbor_y = y + dy
-
-                    # Check if the neighbor pixel is within the image bounds
-                    if 0 <= neighbor_x < width and 0 <= neighbor_y < height:
-                        pixel_value = gray_image.getpixel((neighbor_x, neighbor_y))
-                        distance = abs(pixel_value - 255)
-                        neighbor_distances.append(distance)
-
-            # Calculate the average distance from white for the pixel and its neighbors
-            avg_distance = sum(neighbor_distances) / len(neighbor_distances)
-            sum_distances += avg_distance
-
-    # Calculate the mean of pixel distances
-    mean_distance = sum_distances / (width * height)
-
-    return mean_distance
-
 def calculate_white_background_fitness(solution):
     # set seed
     SEED = random.randint(0, 2 ** 24)
@@ -206,7 +111,7 @@ def calculate_white_background_fitness(solution):
 
     pil_image = to_pil(image[0])  # Convert to (height, width, channels)
 
-    return calculate_white_border_score(pil_image)
+    return size_fitness(pil_image)
 
 class Decoder(leapDecoder):
     def __init__(self):
@@ -420,6 +325,7 @@ generation_counter = util.inc_generation(context=context)
 store_generation_images(parents, 0)
 
 while generation_counter.generation() < generations:
+    print("Starting new generation...")
     offspring = pipe(parents,
                      ops.tournament_selection,
                      ops.clone,
@@ -432,9 +338,12 @@ while generation_counter.generation() < generations:
     parents = offspring
 
     # Storing images
+    print("Before calling store_generation_images")
     store_generation_images(parents, generation_counter.generation() + 1)
+    print("After calling store_generation_images")
+    print("Before calling on_fitness")
     on_fitness(generation_counter.generation(), parents)
-
+    print("After calling on_fitness")
     generation_counter()  # increment to the next generation
 
     util.print_population(parents, context['leap']['generation'])
