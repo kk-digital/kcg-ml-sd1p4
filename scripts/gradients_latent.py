@@ -268,7 +268,7 @@ if __name__ == "__main__":
 
     start_time = time.time()
 
-    fixed_taget_features = get_target_embeddings_features(util_clip, "chibi, anime, waifu, side scrolling")
+    fixed_taget_features = get_target_embeddings_features(util_clip, "cat")
 
     fixed_target = fixed_taget_features.detach()
 
