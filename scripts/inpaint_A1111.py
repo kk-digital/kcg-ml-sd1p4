@@ -302,26 +302,26 @@ class StableDiffusionProcessing:
         return cache[1]
 
     def setup_conds(self):
-        # prompts = prompt_parser.SdConditioning(self.prompts, width=self.width, height=self.height)
-        # negative_prompts = prompt_parser.SdConditioning(self.negative_prompts, width=self.width, height=self.height,
-        #                                                 is_negative_prompt=True)
+        prompts = prompt_parser.SdConditioning(self.prompts, width=self.width, height=self.height)
+        negative_prompts = prompt_parser.SdConditioning(self.negative_prompts, width=self.width, height=self.height,
+                                                        is_negative_prompt=True)
         # self.uc = self.get_conds_with_caching(prompt_parser.get_learned_conditioning, negative_prompts, self.steps,
         #                                       [self.cached_uc], {})
         # self.c = self.get_conds_with_caching(prompt_parser.get_multicond_learned_conditioning, prompts, self.steps,
         #                                      [self.cached_c], {})
+        #
+        # self.c = self.c.batch[0][0].schedules[0].cond
+        # self.uc = self.uc[0][0].cond
 
-        # p.c = p.c.batch[0][0].schedules[0].cond
-        # p.uc = p.uc[0][0].cond
+        # embedded_prompts = self.prompt_embedding_vectors(prompt_array=self.prompts)
+        # embedded_prompts_cpu = embedded_prompts.to("cpu")
+        # embedded_prompts_list = embedded_prompts_cpu.detach().numpy()
+        #
+        # prompt_embedding = torch.tensor(embedded_prompts_list[0], dtype=torch.float32)
+        # prompt_embedding = prompt_embedding.view(1, 77, 768).to(DEVICE)
 
-        embedded_prompts = self.prompt_embedding_vectors(prompt_array=self.all_prompts)
-        embedded_prompts_cpu = embedded_prompts.to("cpu")
-        embedded_prompts_list = embedded_prompts_cpu.detach().numpy()
-
-        prompt_embedding = torch.tensor(embedded_prompts_list[0], dtype=torch.float32)
-        prompt_embedding = prompt_embedding.view(1, 77, 768).to(DEVICE)
-
-        self.uc = self.prompt_embedding_vectors([""])[0]
-        self.c = prompt_embedding
+        self.uc = self.prompt_embedding_vectors(negative_prompts)[0]
+        self.c = self.prompt_embedding_vectors(prompts)[0]
 
 
 @dataclass(repr=False)
@@ -545,28 +545,17 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         self.image_conditioning = self.init_latent.new_zeros(self.init_latent.shape[0], 5, 1, 1)
 
     def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
-        x = create_random_tensors(shape=(1, 4, 64, 64))
+        orig_noise = self.rng.next()
+        x = self.rng.next()
 
-        # mask = torch.zeros_like(x, device=self.device)
-        # mask[:, :, mask.shape[2] // 2:, :] = 1.
+        if self.initial_noise_multiplier != 1.0:
+            self.extra_generation_params["Noise multiplier"] = self.initial_noise_multiplier
+            x *= self.initial_noise_multiplier
 
-        mask_np = np.zeros((64, 64), dtype=np.uint8)
-        square_size = 8
-        for i in range(0, 64, square_size * 2):
-            for j in range(0, 64, square_size * 2):
-                mask_np[i:i + square_size, j:j + square_size] = 1
-
-        mask_np = np.tile(mask_np, (4, 1, 1))
-
-        mask = torch.tensor(mask_np, dtype=torch.float32, device=DEVICE)
-        mask = mask.unsqueeze(0)  # Adding batch dimension
-
-        orig_noise = torch.randn(self.init_latent.shape, device=DEVICE)
+        # orig_noise = torch.randn(self.init_latent.shape, device=self.device)
 
         t_start = 35
-        uncond_scale = 0.1
-
-        x = self.sampler.q_sample(self.init_latent, t_start, noise=orig_noise)
+        uncond_scale = 100
 
         samples = self.sampler.paint(x=x,
                                      orig=self.init_latent,
@@ -577,6 +566,9 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                                      uncond_cond=unconditional_conditioning,
                                      mask=self.mask,
                                      )
+        if self.mask is not None:
+            samples = samples * self.nmask + self.init_latent * self.mask
+
         torch_gc()
 
         return samples
@@ -678,6 +670,8 @@ def process_images(p: StableDiffusionProcessingImg2Img):
             x_samples_ddim = torch.stack(x_samples_ddim).float()
             x_samples_ddim = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
 
+            del samples_ddim
+
             for i, x_sample in enumerate(x_samples_ddim):
                 p.batch_index = i
 
@@ -686,11 +680,11 @@ def process_images(p: StableDiffusionProcessingImg2Img):
 
                 image = Image.fromarray(x_sample)
 
-                image = apply_overlay(image, p.paste_to, i, p.overlay_images)
-                image.save(join(p.outpath_samples, f"result{i}.png"))
-                # images.save_image(image, p.outpath_samples, "", p.seeds[i], p.prompts[i], opts.samples_format, info=infotext(i), p=p)
+                # if opts.img2img_color_correction:
+                #     image = apply_color_correction(p.color_corrections[i], image)
 
-            del samples_ddim
+                image = apply_overlay(image, p.paste_to, i, p.overlay_images)
+                image.save(join(p.outpath_samples, f"result_{i}.png"))
 
             # with torch.cuda.device('cpu'):
             #     torch.cuda.empty_cache()
@@ -740,7 +734,7 @@ init_image = Image.open("test.png")
 init_maks = Image.open("mask.png")
 
 img2img(prompt="character, chibi, waifu, side scrolling, white background, centered",
-        negative_prompt="",
+        negative_prompt="realistic, anime, manga, black background, centered",
         sampler_name="ddim",
         batch_size=1,
         n_iter=1,
@@ -750,4 +744,5 @@ img2img(prompt="character, chibi, waifu, side scrolling, white background, cente
         height=512,
         mask_blur=4,
         inpainting_fill=1,
-        init_img=init_image)
+        init_img=init_image,
+        )
