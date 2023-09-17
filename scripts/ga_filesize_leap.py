@@ -241,6 +241,9 @@ class Individual(leapIndividual):
     def set_individual_seed(self, individual_seed):
         self.individual_seed = individual_seed
 
+    def get_fitness(self):
+        return self.problem.evaluate(self.decoder.decode(self.genome))
+
     def set_genome(self, genome):
         self.genome = genome
 
@@ -264,7 +267,7 @@ class Individual(leapIndividual):
 # Initialize logger
 def log_to_file(message):
     
-    log_path = os.path.join(OUTPUT_DIR, "log.txt")
+    log_path = os.path.join(IMAGES_ROOT_DIR, "log.txt")
 
     with open(log_path, "a") as log_file:
         log_file.write(message + "\n")
@@ -325,6 +328,20 @@ def store_generation_images(population, generation):
     # Log images/sec
     images_per_second = num_images / total_time
     log_to_file(f"Images per second in Generation #{generation}: {images_per_second}")
+
+def on_fitness(generation, population):
+    population_fitness = [ind.get_fitness() for ind in population]
+    population_fitness_np = np.array(population_fitness)
+    
+    # You can log the fitness values here. For example:
+    log_to_file(f"Generation #{generation}")
+    log_to_file(f"Population Size= {len(population_fitness_np)}")
+    log_to_file(f"Fitness (mean): {np.mean(population_fitness_np)}")
+    log_to_file(f"Fitness (variance): {np.var(population_fitness_np)}")
+    log_to_file(f"Fitness (best): {np.max(population_fitness_np)}")
+    log_to_file(f"Fitness (worst): {np.min(population_fitness_np)}")
+    log_to_file(f"Fitness array= {str(population_fitness_np)}")
+
 
 
 def prompt_embedding_vectors(sd, prompt_array):
@@ -415,6 +432,7 @@ while generation_counter.generation() < generations:
 
     # Storing images
     store_generation_images(parents, generation_counter.generation() + 1)
+    on_fitness(generation_counter.generation(), parents)
 
     generation_counter()  # increment to the next generation
 
