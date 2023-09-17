@@ -83,7 +83,7 @@ sd.model.load_unet(config.get_model(SDconfigs.UNET))
 
 fitness_cache = {}
 generation = 0
-
+solution_idx = 0
 def calculate_white_background_fitness(solution, generation, solution_idx):
     """Calculates the fitness of a solution and saves the image."""
     
@@ -196,7 +196,7 @@ def cached_fitness_func(solution):
         print('Returning cached score', fitness_cache[tuple(solution)])
     if tuple(solution) not in fitness_cache:
         # fitness_cache[tuple(solution)] = calculate_chad_score(solution)
-        fitness_cache[tuple(solution)] = calculate_white_background_fitness(solution)
+        fitness_cache[tuple(solution)] = calculate_white_background_fitness(solution, generation, solution_idx)
         # fitness_cache[tuple(solution)] = calculate_white_border_fitness(solution)
     return fitness_cache[tuple(solution)]
 def store_generation_images(population, generation):
