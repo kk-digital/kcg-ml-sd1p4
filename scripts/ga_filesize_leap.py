@@ -330,6 +330,7 @@ def store_generation_images(population, generation):
     log_to_file(f"Images per second in Generation #{generation}: {images_per_second}")
 
 def on_fitness(generation, population):
+    print(f"On_fitness called with generation {generation}")  # Add this line
     population_fitness = [ind.get_fitness() for ind in population]
     population_fitness_np = np.array(population_fitness)
     
