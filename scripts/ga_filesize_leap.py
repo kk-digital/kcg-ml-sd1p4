@@ -82,34 +82,47 @@ sd.quick_initialize().load_autoencoder(config.get_model(SDconfigs.VAE)).load_dec
 sd.model.load_unet(config.get_model(SDconfigs.UNET))
 
 fitness_cache = {}
+generation = 0
 
-
-def calculate_white_background_fitness(solution):
-    # set seed
+def calculate_white_background_fitness(solution, generation, solution_idx):
+    """Calculates the fitness of a solution and saves the image."""
+    
+    # Set the random seed for reproducibility
     SEED = random.randint(0, 2 ** 24)
-    if FIXED_SEED == True:
+    if FIXED_SEED:
         SEED = 54846
 
     # Convert the numpy array to a PyTorch tensor
     prompt_embedding = torch.tensor(solution, dtype=torch.float32)
     prompt_embedding = prompt_embedding.view(1, 77, 768).to(DEVICE)
 
-    # NOTE: Is using NoGrad internally
-    # NOTE: Is using autocast internally
+    # Generate the latent representation and the image
     latent = sd.generate_images_latent_from_embeddings(
         seed=SEED,
         embedded_prompt=prompt_embedding,
         null_prompt=NULL_PROMPT,
         uncond_scale=CFG_STRENGTH
     )
-
     image = sd.get_image_from_latent(latent)
-
-    # move back to cpu
+    
+    # Cleanup
+    del latent
+    torch.cuda.empty_cache()
     prompt_embedding.to("cpu")
     del prompt_embedding
 
-    pil_image = to_pil(image[0])  # Convert to (height, width, channels)
+    # Convert to PIL image
+    pil_image = to_pil(image[0])
+    
+    # More cleanup
+    del image
+    torch.cuda.empty_cache()
+
+    # Save the image
+    file_dir = os.path.join(IMAGES_ROOT_DIR, str(generation))
+    os.makedirs(file_dir, exist_ok=True)
+    filename = os.path.join(file_dir, f'g{generation:04}_{solution_idx:03}.png')
+    pil_image.save(filename)
 
     return size_fitness(pil_image)
 
@@ -186,53 +199,27 @@ def cached_fitness_func(solution):
         fitness_cache[tuple(solution)] = calculate_white_background_fitness(solution)
         # fitness_cache[tuple(solution)] = calculate_white_border_fitness(solution)
     return fitness_cache[tuple(solution)]
-
 def store_generation_images(population, generation):
-    start_time = time.time()
+    start_time = time.time()  # Start the timer as the function begins
+
     print("Generation #", generation)
     print("Population size: ", len(population))
-    file_dir = os.path.join(IMAGES_ROOT_DIR, str(generation))
-    os.makedirs(file_dir)
-    for i, ind in enumerate(population):
-        SEED = random.randint(0, 2 ** 24)
-        if FIXED_SEED == True:
-            SEED = 54846
-        prompt_embedding = torch.tensor(ind.get_genome(), dtype=torch.float32).to(DEVICE)
-        prompt_embedding = prompt_embedding.view(1, 77, 768)
 
-        print("prompt_embedding, tensor size= ", str(torch.Tensor.size(prompt_embedding)))
-        print("NULL_PROMPT, tensor size= ", str(torch.Tensor.size(NULL_PROMPT)))
+    end_time = time.time()  # Get the end time immediately after getting the population size to calculate the total time
 
-        # WARNING: Is using autocast internally
-        latent = sd.generate_images_latent_from_embeddings(
-            seed=SEED,
-            embedded_prompt=prompt_embedding,
-            null_prompt=NULL_PROMPT,
-            uncond_scale=CFG_STRENGTH
-        )
-
-        image = sd.get_image_from_latent(latent)
-
-        # move to gpu and cleanup
-        prompt_embedding.to("cpu")
-        del prompt_embedding
-
-        pil_image = to_pil(image[0])
-        filename = os.path.join(file_dir, f'g{generation:04}_{i:03}.png')
-        pil_image.save(filename)
-
-    end_time = time.time()  # End timing for generation
+    # Calculate and log the total time for this generation
     total_time = end_time - start_time
+    log_to_file(f"----------------------------------")
     log_to_file(f"Total time taken for Generation #{generation}: {total_time} seconds")
-    
-    # Log images per generation
+
+    # Log the number of images generated in this generation
     num_images = len(population)
-    
     log_to_file(f"Images generated in Generation #{generation}: {num_images}")
-    
-    # Log images/sec
+
+    # Calculate and log the generation speed in images per second
     images_per_second = num_images / total_time
     log_to_file(f"Images per second in Generation #{generation}: {images_per_second}")
+
 
 def on_fitness(generation, population):
     print(f"On_fitness called with generation {generation}")  # Add this line
@@ -338,12 +325,8 @@ while generation_counter.generation() < generations:
     parents = offspring
 
     # Storing images
-    print("Before calling store_generation_images")
     store_generation_images(parents, generation_counter.generation() + 1)
-    print("After calling store_generation_images")
-    print("Before calling on_fitness")
     on_fitness(generation_counter.generation(), parents)
-    print("After calling on_fitness")
     generation_counter()  # increment to the next generation
 
     util.print_population(parents, context['leap']['generation'])
