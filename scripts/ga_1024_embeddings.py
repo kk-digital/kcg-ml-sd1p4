@@ -120,6 +120,14 @@ def calculate_and_store_images(ga_instance, solution, solution_idx):
     combined_embedding_np = np.zeros((1, 77, 768))
     for i, coeff in enumerate(solution):
         combined_embedding_np += embedded_prompts_numpy[i] * coeff
+                # Save individual embedded_prompt_numpy
+        try:
+            individual_filepath = os.path.join(FEATURES_DIR, f'embedded_prompt_{solution_idx}_{i}.npz')
+            np.savez_compressed(individual_filepath, embedded_prompt=embedded_prompts_numpy[i])
+            print(f"Successfully saved individual embedded prompt to {individual_filepath}")
+        except Exception as e:
+            print(f"Could not save individual embedded prompt due to: {e}")
+            print(f"Filepath: {individual_filepath}")
 
     print(f"Generation {generation}, Solution {solution_idx}:")
     print(f"    Max value: {np.max(combined_embedding_np)}")
@@ -305,7 +313,7 @@ NULL_PROMPT = NULL_PROMPT.to(device=get_device(), dtype=torch.float32)
 # print("NULL_PROMPT size= ", str(torch.Tensor.size(NULL_PROMPT)))
 
 # generate prompts and get embeddings
-num_genes = 4  # Each individual is 1024 floats
+num_genes = 1024  # Each individual is 1024 floats
 prompt_phrase_length = 6  # number of words in prompt
 prompts_array = ga.generate_prompts(num_genes, prompt_phrase_length)
 
