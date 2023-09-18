@@ -242,25 +242,30 @@ def on_generation(ga_instance):
 
     start_time = time.time()  # Reset the start time for the next generation
 
-def clip_text_get_prompt_embedding_numpy(config, prompts: list):	
-    #load model from memory	
-    clip_text_embedder = CLIPTextEmbedder(device=get_device())	
-    clip_text_embedder.load_submodels()	
+def clip_text_get_prompt_embedding_numpy(config, prompts: list):
+    # Load model from memory
+    clip_text_embedder = CLIPTextEmbedder(device=get_device())
+    clip_text_embedder.load_submodels(
+        tokenizer_path=config.get_model_folder_path(CLIPconfigs.TXT_EMB_TOKENIZER),
+        transformer_path=config.get_model_folder_path(CLIPconfigs.TXT_EMB_TEXT_MODEL)
+    )
 
-    prompt_embedding_numpy_list = []	
-    for prompt in prompts:	
-        print(prompt)	
-        prompt_embedding = clip_text_embedder(prompt)	
+    prompt_embedding_numpy_list = []
+    for prompt in prompts:
+        prompt_embedding = clip_text_embedder.forward(prompt)
+        prompt_embedding_cpu = prompt_embedding.cpu()
+        prompt_embedding_numpy_list.append(prompt_embedding_cpu.detach().numpy())
 
-        prompt_embedding_cpu = prompt_embedding.cpu()	
+        del prompt_embedding
+        torch.cuda.empty_cache()
 
-        del prompt_embedding	
-        torch.cuda.empty_cache()	
-
-        prompt_embedding_numpy_list.append(prompt_embedding_cpu.detach().numpy())	
-
+    # Clear model from memory
+    clip_text_embedder.to("cpu")
+    del clip_text_embedder
+    torch.cuda.empty_cache()
 
     return prompt_embedding_numpy_list
+
 
 
 def prompt_embedding_vectors(sd, prompt_array):
