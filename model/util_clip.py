@@ -54,7 +54,7 @@ class ClipOpenAi():
 
         # Resize the image tensor to [N, C, 224, 224] using torch.nn.functional.interpolate
         resized_image_tensor = torch.nn.functional.interpolate(normalized_image_tensor.unsqueeze(0), size=(224, 224),
-                                                               mode='bilinear', align_corners=False).squeeze(0)
+                                                               mode='bicubic', align_corners=False).squeeze(0)
 
         return resized_image_tensor
 

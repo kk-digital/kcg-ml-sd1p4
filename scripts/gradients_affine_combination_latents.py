@@ -168,12 +168,8 @@ def latents_similarity_score(latent, index, output, target_features, device, sav
     if save_image:
         image_list, image_hash_list = save_images(images, output + '/image' + str(index + 1) + '.jpg')
 
-    del latent
-    torch.cuda.empty_cache()
-
     # Map images to `[0, 1]` space and clip
     images = torch.clamp((images + 1.0) / 2.0, min=0.0, max=1.0)
-
 
     ## Normalize the image tensor
     mean = torch.tensor([0.48145466, 0.4578275, 0.40821073], device=device).view(-1, 1, 1)
@@ -191,16 +187,8 @@ def latents_similarity_score(latent, index, output, target_features, device, sav
 
     image_features = image_features.to(torch.float32)
 
-    # cleanup
-    del images
-    torch.cuda.empty_cache()
-
     fitness = get_similarity_score(image_features, target_features)
     print("fitness : ", fitness.item())
-
-    # cleanup
-    del image_features
-    torch.cuda.empty_cache()
 
     return fitness
 
