@@ -259,8 +259,6 @@ if __name__ == "__main__":
     images = txt2img.get_image_from_latent(latent)
     image_list, image_hash_list = save_images(images, starting_images_directory + '/image' + '.jpg')
 
-
-
     optimizer = optim.AdamW([latent], lr=learning_rate)
     mse_loss = nn.MSELoss()
 
