@@ -5,6 +5,7 @@ import sys
 import os
 import shutil
 import json
+import math
 import csv
 import torch
 from tqdm import tqdm
@@ -13,13 +14,10 @@ import numpy as np
 base_directory = "./"
 sys.path.insert(0, base_directory)
 
-from scripts.stable_diffusion_base_script import StableDiffusionBaseScript
-
 
 class GeneratedPrompt:
     def __init__(self, positive_prompt_str: str, negative_prompt_str: str, num_topics: int, num_modifiers: int,
-                 num_styles: int, num_constraints: int, prompt_vector: [], positive_prompt_embedding=None,
-                 negative_prompt_embedding=None):
+                 num_styles: int, num_constraints: int, prompt_vector: []):
         self.positive_prompt_str = positive_prompt_str
         self.negative_prompt_str = negative_prompt_str
         self.num_topics = num_topics
@@ -32,9 +30,6 @@ class GeneratedPrompt:
         # 0 - unused phrase
         # -1 - used for negative prompt
         self.prompt_vector = prompt_vector
-
-        self.positive_prompt_embedding = positive_prompt_embedding
-        self.negative_prompt_embedding = negative_prompt_embedding
 
     def get_positive_prompt_str(self):
         return self.positive_prompt_str
@@ -50,8 +45,6 @@ class GeneratedPrompt:
                 'num-modifiers': self.num_modifiers,
                 'num-styles': self.num_styles,
                 'num-constraints': self.num_constraints,
-                'positive-prompt-embedding': self.positive_prompt_embedding,
-                'negative-prompt-embedding': self.negative_prompt_embedding,
                 }
 
 
@@ -167,6 +160,8 @@ def initialize_prompt_list():
 def initialize_prompt_list_from_csv(csv_dataset_path, csv_phrase_limit=0):
     prompt_list = PromptList()
     phrase_token_size_list = []
+    positive_count_list = []
+    negative_count_list = []
     with open(csv_dataset_path) as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
         line_count = 0
@@ -174,8 +169,8 @@ def initialize_prompt_list_from_csv(csv_dataset_path, csv_phrase_limit=0):
             if line_count == 0:
                 line_count += 1
             else:
-                # index,count,token size,phrase str
-                phrase = row[3]
+                # index,total count,positive count,negative count,token size,phrase str
+                phrase = row[5]
 
                 index = len(prompt_list.Prompts)
                 new_prompt = PromptData(index, phrase)
@@ -183,15 +178,23 @@ def initialize_prompt_list_from_csv(csv_dataset_path, csv_phrase_limit=0):
                 prompt_list.Prompts.append(new_prompt)
 
                 # add token count
-                phrase_token_size = int(row[2])
+                phrase_token_size = int(row[4])
                 phrase_token_size_list.append(phrase_token_size)
+
+                # add positive count
+                positive_count = int(row[2])
+                positive_count_list.append(positive_count)
+
+                # add negative count
+                negative_count = int(row[3])
+                negative_count_list.append(negative_count)
 
                 line_count += 1
 
             if csv_phrase_limit != 0 and line_count > csv_phrase_limit:
                 break
 
-    return prompt_list.Prompts, phrase_token_size_list
+    return prompt_list.Prompts, phrase_token_size_list, positive_count_list, negative_count_list
 
 
 # Function to generate prompts
@@ -199,6 +202,7 @@ def initialize_prompt_list_from_csv(csv_dataset_path, csv_phrase_limit=0):
 # This only generates positive prompt
 # Still used in GA scripts
 def generate_prompts(prompt_count, prompt_phrase_length):
+    max_token_size = 75
     prompts = initialize_prompt_list()
     prompt_list = []
     enc = tiktoken.get_encoding("cl100k_base")
@@ -206,7 +210,7 @@ def generate_prompts(prompt_count, prompt_phrase_length):
     len_prompt_phrases = len(prompts)
     for i in range(0, prompt_count):
         num_tokens = 100
-        while num_tokens > 77:
+        while num_tokens > max_token_size:
             positive_prompt = []
             prompt_vector = [0] * len(prompts)
             for j in range(0, prompt_phrase_length):
@@ -224,8 +228,8 @@ def generate_prompts(prompt_count, prompt_phrase_length):
             positive_prompt_str = ', '.join([prompt.Phrase for prompt in positive_prompt])
 
             # check the length of prompt embedding.
-            # if it's more than 77, then regenerate/reroll
-            # (max token size is 77)
+            # if it's more than 75, then regenerate/reroll
+            # (max token size is 75)
             prompt_tokens = enc.encode(positive_prompt_str)
             num_tokens = len(prompt_tokens)
 
@@ -245,21 +249,18 @@ def generate_prompts_from_csv(csv_dataset_path,
                               csv_phrase_limit,
                               prompt_count,
                               positive_prefix="",
-                              save_embeddings=True,
-                              checkpoint_path=""):
-    phrases, phrases_token_size = initialize_prompt_list_from_csv(csv_dataset_path, csv_phrase_limit)
+                              dataset_output="",
+                              positive_ratio_threshold=3,
+                              negative_ratio_threshold=3,
+                              use_threshold=True):
+    # max token size
+    max_token_size = 75
+    comma_token_size = 1
 
-    if checkpoint_path == "":
-        raise Exception("Invalid checkpoint path")
-
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    if save_embeddings is True:
-        cfg_strength = 12
-        sd = StableDiffusionBaseScript(
-            cuda_device=device,
-        )
-        sd.initialize_latent_diffusion(autoencoder=None, clip_text_embedder=None, unet_model=None,
-                                       path=checkpoint_path, force_submodels_init=True)
+    phrases, \
+        phrases_token_size,\
+        positive_count_list,\
+        negative_count_list = initialize_prompt_list_from_csv(csv_dataset_path, csv_phrase_limit)
 
     positive_prefix_token_size = 0
     if positive_prefix != "":
@@ -269,7 +270,7 @@ def generate_prompts_from_csv(csv_dataset_path,
         positive_prefix_token_size = len(positive_prefix_prompt_tokens)
 
     print("Generating {} prompts...".format(prompt_count))
-    prompt_list = []
+    count = 0
     for i in tqdm(range(0, prompt_count)):
         positive_prompt_total_token_size = positive_prefix_token_size
         negative_prompt_total_token_size = 0
@@ -278,14 +279,21 @@ def generate_prompts_from_csv(csv_dataset_path,
         prompt_vector = [0] * len(phrases)
 
         # positive prompt
-        while positive_prompt_total_token_size < 77:
+        while positive_prompt_total_token_size < max_token_size:
             random_prompt = random.choice(
                 [item for item in phrases if (prompt_vector[item.Index] == 0)])
             prompt_index = random_prompt.Index
 
+            # count ratio
+            if use_threshold is True and negative_count_list[prompt_index] != 0:
+                chosen_phrase_positive_ratio = positive_count_list[prompt_index]/negative_count_list[prompt_index]
+                if chosen_phrase_positive_ratio < positive_ratio_threshold:
+                    # then dont use this phrase
+                    continue
+
             chosen_phrase_size = phrases_token_size[prompt_index]
-            sum_token_size = positive_prompt_total_token_size + chosen_phrase_size
-            if sum_token_size < 77:
+            sum_token_size = positive_prompt_total_token_size + chosen_phrase_size + comma_token_size
+            if sum_token_size < max_token_size:
                 # update used array
                 prompt_vector[prompt_index] = 1
                 positive_prompt.append(random_prompt)
@@ -294,14 +302,21 @@ def generate_prompts_from_csv(csv_dataset_path,
                 break
 
         # negative prompt
-        while negative_prompt_total_token_size < 77:
+        while negative_prompt_total_token_size < max_token_size:
             random_prompt = random.choice(
                 [item for item in phrases if (prompt_vector[item.Index] == 0)])
             prompt_index = random_prompt.Index
 
+            # count ratio
+            if use_threshold is True and positive_count_list[prompt_index] != 0:
+                chosen_phrase_negative_ratio = negative_count_list[prompt_index] / positive_count_list[prompt_index]
+                if chosen_phrase_negative_ratio < negative_ratio_threshold:
+                    # then dont use this phrase
+                    continue
+
             chosen_phrase_size = phrases_token_size[prompt_index]
-            sum_token_size = negative_prompt_total_token_size + chosen_phrase_size
-            if sum_token_size < 77:
+            sum_token_size = negative_prompt_total_token_size + chosen_phrase_size + comma_token_size
+            if sum_token_size < max_token_size:
                 # update used array
                 prompt_vector[prompt_index] = -1
                 negative_prompt.append(random_prompt)
@@ -319,25 +334,186 @@ def generate_prompts_from_csv(csv_dataset_path,
         num_styles = len([prompt.Phrase for prompt in positive_prompt if "style" in prompt.Types])
         num_constraints = len([prompt.Phrase for prompt in positive_prompt if "constraint" in prompt.Types])
 
-        if save_embeddings is True:
-            negative_prompt_embedding, positive_prompt_embedding = sd.get_text_conditioning(cfg_strength,
-                                                                                            positive_prompt_str,
-                                                                                            negative_prompt_str)
+        prompt = GeneratedPrompt(positive_prompt_str, negative_prompt_str, num_topics, num_modifiers,
+                            num_styles, num_constraints, prompt_vector)
+        # save prompt json
+        prompt_json = prompt.to_json()
+        filename = "{num:0{digits}}.json".format(num=count, digits=count_number_of_digits(prompt_count))
+        file_path = os.path.join(dataset_output, filename)
 
-            # convert to numpy then convert to f32 then convert to python list
-            positive_prompt_embedding = positive_prompt_embedding.detach().cpu().to(torch.float32)
-            negative_prompt_embedding = negative_prompt_embedding.detach().cpu().to(torch.float32)
-            torch.cuda.empty_cache()
+        # Save the data to a JSON file
+        with open(file_path, 'w') as json_file:
+            json.dump(prompt_json, json_file)
 
-        prompt_list.append(
-            GeneratedPrompt(positive_prompt_str, negative_prompt_str, num_topics, num_modifiers,
-                            num_styles, num_constraints, prompt_vector, positive_prompt_embedding,
-                            negative_prompt_embedding))
+        count += 1
 
-    # unload model
-    sd.unload_model()
 
-    return prompt_list
+def get_sorted_list_with_cumulative(phrases, phrases_token_size, count_list):
+    # sort by count
+    sorted_phrases = []
+    sorted_token_size = []
+    sorted_count = []
+    sorted_cumulative_sum = []
+    sorted_indexes = sorted(range(len(count_list)), key=lambda x: count_list[x], reverse=True)
+
+    prev_sum = 0
+    for i in sorted_indexes:
+        sorted_phrases.append(phrases[i])
+        sorted_token_size.append(phrases_token_size[i])
+        sorted_count.append(count_list[i])
+
+        # add cumulative sum
+        cumulative_sum = prev_sum + count_list[i]
+        sorted_cumulative_sum.append(cumulative_sum)
+        prev_sum = cumulative_sum
+
+    return sorted_phrases, sorted_token_size, sorted_count, sorted_cumulative_sum
+
+
+def generate_prompts_from_csv_proportional_selection(csv_dataset_path,
+                                                     csv_phrase_limit,
+                                                     prompt_count,
+                                                     positive_prefix="",
+                                                     dataset_output=""):
+    max_token_size = 75
+    comma_token_size = 1
+
+    phrases, \
+        phrases_token_size,\
+        positive_count_list,\
+        negative_count_list = initialize_prompt_list_from_csv(csv_dataset_path, csv_phrase_limit)
+
+    total_len_phrases = len(phrases)
+
+    positive_phrases, \
+        positive_token_size, \
+        positive_count, \
+        positive_cumulative_sum = get_sorted_list_with_cumulative(phrases, phrases_token_size, positive_count_list)
+
+    positive_total_cumulative = positive_cumulative_sum[-1]
+
+    negative_phrases, \
+        negative_token_size, \
+        negative_count, \
+        negative_cumulative_sum = get_sorted_list_with_cumulative(phrases, phrases_token_size, negative_count_list)
+
+    negative_total_cumulative = negative_cumulative_sum[-1]
+
+    # del unused var at this point
+    del phrases
+    del phrases_token_size
+    del positive_count_list
+    del negative_count_list
+
+    positive_prefix_token_size = 0
+    if positive_prefix != "":
+        # get token size for prefix
+        enc = tiktoken.get_encoding("cl100k_base")
+        positive_prefix_prompt_tokens = enc.encode(positive_prefix)
+        positive_prefix_token_size = len(positive_prefix_prompt_tokens)
+
+    print("Generating {} prompts...".format(prompt_count))
+    count = 0
+    for i in tqdm(range(0, prompt_count)):
+        positive_prompt_total_token_size = positive_prefix_token_size
+        negative_prompt_total_token_size = 0
+        positive_prompt = []
+        negative_prompt = []
+        prompt_vector = [0] * total_len_phrases
+
+        # positive prompt
+        while positive_prompt_total_token_size < max_token_size:
+            random_int = random.randint(0, positive_total_cumulative)
+            random_index = find_first_element_binary_search(positive_cumulative_sum, random_int)
+            if prompt_vector[random_index] != 0:
+                continue
+
+            prompt_index = random_index
+            random_prompt = positive_phrases[prompt_index]
+
+            chosen_phrase_size = positive_token_size[prompt_index]
+            sum_token_size = positive_prompt_total_token_size + chosen_phrase_size + comma_token_size
+            if sum_token_size < max_token_size:
+                # update used array
+                prompt_vector[prompt_index] = 1
+                positive_prompt.append(random_prompt)
+                positive_prompt_total_token_size = sum_token_size
+            else:
+                break
+
+        # negative prompt
+        while negative_prompt_total_token_size < max_token_size:
+            random_int = random.randint(0, negative_total_cumulative)
+            random_index = find_first_element_binary_search(negative_cumulative_sum, random_int)
+
+            if prompt_vector[random_index] != 0:
+                continue
+
+            prompt_index = random_index
+            random_prompt = negative_phrases[prompt_index]
+
+            chosen_phrase_size = negative_token_size[prompt_index]
+            sum_token_size = negative_prompt_total_token_size + chosen_phrase_size + comma_token_size
+            if sum_token_size < max_token_size:
+                # update used array
+                prompt_vector[prompt_index] = -1
+                negative_prompt.append(random_prompt)
+                negative_prompt_total_token_size = sum_token_size
+            else:
+                break
+
+        positive_prompt_str = ', '.join([prompt.Phrase for prompt in positive_prompt])
+        if positive_prefix != "":
+            positive_prompt_str = "{}, {}".format(positive_prefix, positive_prompt_str)
+        negative_prompt_str = ', '.join([prompt.Phrase for prompt in negative_prompt])
+
+        num_topics = len([prompt.Phrase for prompt in positive_prompt if "topic" in prompt.Types])
+        num_modifiers = len([prompt.Phrase for prompt in positive_prompt if "modifier" in prompt.Types])
+        num_styles = len([prompt.Phrase for prompt in positive_prompt if "style" in prompt.Types])
+        num_constraints = len([prompt.Phrase for prompt in positive_prompt if "constraint" in prompt.Types])
+
+        prompt = GeneratedPrompt(positive_prompt_str, negative_prompt_str, num_topics, num_modifiers,
+                            num_styles, num_constraints, prompt_vector)
+
+        # save prompt json
+        prompt_json = prompt.to_json()
+        filename = "{num:0{digits}}.json".format(num=count, digits=count_number_of_digits(prompt_count))
+        file_path = os.path.join(dataset_output, filename)
+
+        # Save the data to a JSON file
+        with open(file_path, 'w') as json_file:
+            json.dump(prompt_json, json_file)
+
+        count += 1
+
+
+# find the first element, whose cumulative total is more than the random number
+def find_first_element_binary_search(cumulative_total_arr, random_num):
+    low = 0
+    high = len(cumulative_total_arr) - 1
+    mid = 0
+
+    while low <= high:
+        mid = (high + low) / 2
+        mid = math.floor(mid)
+
+        # If random_num is greater, ignore left half
+        if cumulative_total_arr[mid] < random_num:
+            low = mid + 1
+        # If random_num is smaller, ignore right half
+        elif cumulative_total_arr[mid] > random_num:
+            high = mid - 1
+        # means random_num is present at mid
+        else:
+            return mid
+
+        # use this index since sometimes the exact
+        # random num is not in the list
+        if low == high:
+            return low
+
+    # If we reach here, then the element was not present
+    return -1
 
 
 def count_number_of_digits(num):
@@ -345,31 +521,37 @@ def count_number_of_digits(num):
     while (num > 0):
         count = count + 1
         num = num // 10
-    return  count
+    return count
 
-def generate_prompts_and_save_to_npz(csv_dataset_path,
-                                      csv_phrase_limit,
-                                      prompt_count,
-                                      positive_prefix="",
-                                      save_embeddings=True,
-                                      checkpoint_path="",
-                                      dataset_output=""):
-    prompt_list = generate_prompts_from_csv(csv_dataset_path, csv_phrase_limit, prompt_count, positive_prefix,
-                                            save_embeddings, checkpoint_path)
 
+def generate_prompts_and_save_to_json(csv_dataset_path,
+                                     csv_phrase_limit,
+                                     prompt_count,
+                                     positive_prefix="",
+                                     dataset_output="",
+                                     positive_ratio_threshold=3,
+                                     negative_ratio_threshold=3,
+                                     use_threshold=True,
+                                     proportional_selection=False):
     # Create the directory if it doesn't exist
     if not os.path.exists(dataset_output):
         os.makedirs(dataset_output)
 
-    count = 0
-    for prompt in prompt_list:
-        prompt_json = prompt.to_json()
-        filename = "{num:0{digits}}.npz".format(num=count, digits=count_number_of_digits(prompt_count))
-        file_path = os.path.join(dataset_output, filename)
-
-        # save data
-        np.savez_compressed(file_path, data=prompt_json)
-        count += 1
+    if proportional_selection is True:
+        generate_prompts_from_csv_proportional_selection(csv_dataset_path,
+                                                        csv_phrase_limit,
+                                                        prompt_count,
+                                                        positive_prefix,
+                                                        dataset_output)
+    else:
+        generate_prompts_from_csv(csv_dataset_path,
+                                csv_phrase_limit,
+                                prompt_count,
+                                positive_prefix,
+                                dataset_output,
+                                positive_ratio_threshold,
+                                negative_ratio_threshold,
+                                use_threshold)
 
     shutil.make_archive(dataset_output, 'zip', dataset_output)
     print("Prompt list saved to {}".format(dataset_output))

@@ -24,7 +24,7 @@ from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion_base_script import StableDiffusionBaseScript
 from stable_diffusion.utils_backend import get_autocast, set_seed
 from chad_score.chad_score import ChadScorePredictor
-from model.util_clip import UtilClip
+from model.util_clip import ClipModelHuggingface
 from stable_diffusion.utils_image import save_images
 
 def parse_arguments():
@@ -170,8 +170,6 @@ def embeddings_chad_score(embeddings_vector, seed, index, output, chad_score_pre
     images = torch.clamp((images + 1.0) / 2.0, min=0.0, max=1.0)
 
 
-    #image_features = util_clip.get_image_features(images)
-
     ## Normalize the image tensor
     mean = torch.tensor([0.48145466, 0.4578275, 0.40821073], device=device).view(-1, 1, 1)
     std = torch.tensor([0.26862954, 0.26130258, 0.27577711], device=device).view(-1, 1, 1)
@@ -185,9 +183,6 @@ def embeddings_chad_score(embeddings_vector, seed, index, output, chad_score_pre
     # Get the CLIP features
     image_features = util_clip.model.encode_image(resized_image_tensor)
     image_features = image_features.squeeze(0)
-
-    #image_input = util_clip.preprocess(images=images, return_tensors="pt")
-    #image_input = image_input.unsqueeze(0)
 
     image_features = image_features.to(torch.float32)
 
@@ -240,7 +235,7 @@ if __name__ == "__main__":
     chad_score_predictor.load_model(chad_score_model_path)
 
     # Load the clip model
-    util_clip = UtilClip(device=device)
+    util_clip = ClipModelHuggingface(device=device)
     util_clip.load_model()
 
     prompt_list = read_prompts_from_zip(prompts_path, num_prompts)

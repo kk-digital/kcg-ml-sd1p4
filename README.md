@@ -283,7 +283,7 @@ options:
 python3 ./scripts/generate_images_from_prompt_generator.py --checkpoint_path "./input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors" --cfg_scale 7 --num_images 10 --num_phrases 12 --output "./output/"
 ```
 
-### Generate Images From Prompt List Dataset
+### Generate Images From Prompt List Dataset 
 
 To generate images from prompt list dataset, these are the available CLI arguments:
 
@@ -316,10 +316,12 @@ options:
                         Number of batches (default: 1)
   --prompt_list_dataset_path PROMPT_LIST_DATASET_PATH
                         The path to prompt list dataset zip
+  --include_negative_prompt INCLUDE_NEGATIVE_PROMPT
+                        True if negative prompt embedding will be used for generating images
 ```
 
 ``` shell
-python3 ./scripts/generate_images_from_prompt_list.py --checkpoint_path "./input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors" --cfg_scale 7 --num_images 2 --output ./output/generated-dataset-from-prompt-list --prompt_list_dataset_path ./test/test_zip_files/prompt_list_civitai_2_test.zip 
+python3 ./scripts/generate_images_from_prompt_list.py --checkpoint_path "./input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors" --cfg_scale 7 --num_images 2 --output ./output/generated-dataset-from-prompt-list --prompt_list_dataset_path ./test/test_zip_files/prompt_list_civitai_2_test.zip --include_negative_prompt True
 ```
 
 ### Chad Score
@@ -436,7 +438,8 @@ python scripts/prompt_gradient.py --input_path input/set_0000_v2.zip --model_pat
 ### Prompt Generator
 Generates prompts and saves to a json file
 ```
-usage: prompt_generator.py [-h] [--positive-prefix POSITIVE_PREFIX] [--num-prompts NUM_PROMPTS] [--csv-phrase-limit CSV_PHRASE_LIMIT] [--csv-path CSV_PATH] [--save-embeddings SAVE_EMBEDDINGS] [--output OUTPUT] [--checkpoint-path CHECKPOINT_PATH]
+usage: prompt_generator.py [-h] [--positive-prefix POSITIVE_PREFIX] [--num-prompts NUM_PROMPTS] [--csv-phrase-limit CSV_PHRASE_LIMIT] [--csv-path CSV_PATH] [--output OUTPUT] [--positive-ratio-threshold POSITIVE_RATIO_THRESHOLD] [--negative-ratio-threshold NEGATIVE_RATIO_THRESHOLD]
+                           [--use-threshold USE_THRESHOLD] [--proportional-selection PROPORTIONAL_SELECTION]
 
 Prompt Generator CLI tool generates prompts from phrases inside a csv
 
@@ -449,16 +452,24 @@ options:
   --csv-phrase-limit CSV_PHRASE_LIMIT
                         Number of phrases to use from the csv data
   --csv-path CSV_PATH   Full path to the csv path
-  --save-embeddings SAVE_EMBEDDINGS
-                        True if prompt embeddings will be saved
   --output OUTPUT       Output path for dataset zip containing prompt list npz
-  --checkpoint-path CHECKPOINT_PATH
-                        Path to the model checkpoint
+  --positive-ratio-threshold POSITIVE_RATIO_THRESHOLD
+                        Threshold ratio of positive/negative to use a phrase for positive prompt
+  --negative-ratio-threshold NEGATIVE_RATIO_THRESHOLD
+                        Threshold ratio of negative/positive to use a phrase for negative prompt
+  --use-threshold USE_THRESHOLD
+                        True if positive and negative ratio will be used
+  --proportional-selection PROPORTIONAL_SELECTION
+                        True if proportional selection will be used to get the phrases
 ```
 
 Example Usage:
 ```
-  python ./scripts/prompt_generator.py --num-prompts 50 --positive-prefix "environmental, concept art, side scrolling, video game" --csv-phrase-limit 512 --csv-path ./input/civit_ai_data_phrase_count_v5.csv --save-embeddings True --output ./output/prompt_list_civitai_50_test --checkpoint-path ./input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors
+python ./scripts/prompt_generator.py --num-prompts 50 --positive-prefix "environmental, concept art, side scrolling, video game" --csv-phrase-limit 512 --csv-path ./input/civit_ai_data_phrase_count_v6.csv --output ./output/prompt_list_civitai_50_test --positive-ratio-threshold 3 --negative-ratio-threshold 3
+```
+
+```
+python ./scripts/prompt_generator.py --num-prompts 50 --positive-prefix "environmental, concept art, side scrolling, video game" --csv-phrase-limit 512 --csv-path ./input/civit_ai_data_phrase_count_v6.csv --output ./output/prompt_list_civitai_50_test --proportional-selection True      
 ```
 
 ### Image Ranker by Fitness Score
@@ -536,7 +547,65 @@ options:
 
 Example Usage:
 ```
-python scripts/split_image.py --image_path './input/test.png' --output './output/sub_images'
+python scripts/split_image.py --image_path './test/test_images/512x512_test.png' --output './output/sub_images'
+```
+
+
+
+### Affine Combination Of Embeddings GA
+
+Combines N Number of prompts, the prompts are loaded from zip file
+Each prompt has a weight
+We search the weight vector space and try to maximize the fitness function
+The fitness function for now is chad score
+```
+options:
+  -h, --help            show this help message and exit
+  --generations GENERATIONS
+                        The number of generations to execute
+  --mutation_probability MUTATION_PROBABILITY
+                        The probability of the occurence of a mutation
+  --keep_elitism KEEP_ELITISM
+                        Whether to keep the top fitness individual or not
+  --crossover_type CROSSOVER_TYPE
+                        Type of the crossover
+  --mutation_type MUTATION_TYPE
+                        Type of the mutation (swapn, random ...)
+  --mutation_percent_genes MUTATION_PERCENT_GENES    
+                        Percentage of the gene that will be mutated
+  --population POPULATION
+                        Number of starting population
+  --steps STEPS
+                        Number of steps for the sampler (iterations)
+                       
+  --device DEVICE
+                        Defaults to cuda:0
+  --num_phrases NUM_PHRASES
+                        Number of phrases to use         
+  --cfg_strength CFG_STRENGTH
+                        Defaults to 12                 
+  --sampler SAMPLER
+                        Sampler name (ddim, ddpm)                  
+                        
+  --checkpoint_path CHECKPOINT_PATH
+                        Path to the model checkpoint                  
+                        
+  --image_width IMAGE_WIDTH
+                        Generated image width                
+  --image_height IMAGE_HEIGHT
+                        Generated image height                 
+                        
+  --output OUTPUT
+                        Path to output folder                  
+  --num_prompts NUM_PROMPTS
+                        Number of prompts that will be used in the affine combination of embeddings                          
+ --prompts_path PROMPTs_PATH
+                        Path to the prompts zip file                        
+```
+
+Example Usage:
+```
+ python ./scripts/ga_affine_combination_embeddings.py --population 6 --num_prompts 6
 ```
 
 
