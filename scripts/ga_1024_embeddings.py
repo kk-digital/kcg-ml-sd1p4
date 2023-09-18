@@ -244,29 +244,11 @@ def on_generation(ga_instance):
  
 
 
-def clip_text_get_prompt_embedding_numpy(config, prompts: list):
-    #load model from memory
-    clip_text_embedder = CLIPTextEmbedder(device=get_device())
-    clip_text_embedder.load_submodels()
-
-    prompt_embedding_numpy_list = []
-    for prompt in prompts:
-        print(prompt)
-        prompt_embedding = clip_text_embedder(prompt)
-
-        prompt_embedding_cpu = prompt_embedding.cpu()
-
-        del prompt_embedding
-        torch.cuda.empty_cache()
-
-        prompt_embedding_numpy_list.append(prompt_embedding_cpu.detach().numpy())
-
-
-    return prompt_embedding_numpy_list
-
 def prompt_embedding_vectors(sd, prompt_array):
     # Generate embeddings for each prompt
-    return clip_text_get_prompt_embedding_numpy(config, prompts=prompt_array)
+    embedded_prompts = ga.clip_text_get_prompt_embedding(config, prompts=prompt_array)
+    embedded_prompts.to("cpu")
+    return embedded_prompts
 
 # Call the GA loop function with your initialized StableDiffusion model
 
@@ -313,7 +295,7 @@ for prompt in prompts_array:
     prompts_str_array.append(prompt_str)
 
 
-embedded_prompts_numpy = np.array(clip_text_get_prompt_embedding_numpy(config, prompts_str_array))
+embedded_prompts_numpy = np.array(ga.clip_text_get_prompt_embedding(config, prompts_str_array))
 
 
 
