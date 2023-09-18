@@ -98,6 +98,8 @@ print(OUTPUT_DIR)
 print(IMAGES_ROOT_DIR)
 print(FEATURES_DIR)
 
+prompt_idx = 0
+
 # Initialize logger
 def log_to_file(message):
     
@@ -110,22 +112,25 @@ def log_to_file(message):
 
 # Function to calculate the chad score for batch of images
 def calculate_and_store_images(ga_instance, solution, solution_idx):
-    generation = ga_instance.generations_completed	
+    global prompt_idx  # Referencing the global variable
+
+    generation = ga_instance.generations_completed
     # Set seed
     SEED = random.randint(0, 2**24)
     if FIXED_SEED == True:
         SEED = 54846
 
-    # Calculate combined embedding
+    # Calculate combined embedding using the current prompt index
     combined_embedding_np = np.zeros((1, 77, 768))
-    for i, coeff in enumerate(solution):
-        combined_embedding_np += embedded_prompts_numpy[i] * coeff
+    coeff = solution[prompt_idx]
+    combined_embedding_np += embedded_prompts_numpy[prompt_idx] * coeff
 
     print(f"Generation {generation}, Solution {solution_idx}:")
     print(f"    Max value: {np.max(combined_embedding_np)}")
-    print(f"    Min value: {np.max(combined_embedding_np)}")
+    print(f"    Min value: {np.min(combined_embedding_np)}")
     print(f"    Mean value: {np.mean(combined_embedding_np)}")
     print(f"    Standard deviation: {np.std(combined_embedding_np)}")    
+
     # Save the combined embedding
     try:
         filepath = os.path.join(FEATURES_DIR, f'combined_embedding_{solution_idx}.npz')
@@ -160,6 +165,10 @@ def calculate_and_store_images(ga_instance, solution, solution_idx):
     # Clean up to free memory
     del combined_embedding_np, prompt_embedding, latent, image, pil_image
     torch.cuda.empty_cache()
+
+    prompt_idx += 1
+    if prompt_idx >= len(embedded_prompts_numpy):  # Reset the index when we've gone through all the prompts
+        prompt_idx = 0
 
     return fitness_score
 
@@ -244,11 +253,29 @@ def on_generation(ga_instance):
  
 
 
+def clip_text_get_prompt_embedding_numpy(config, prompts: list):
+    #load model from memory
+    clip_text_embedder = CLIPTextEmbedder(device=get_device())
+    clip_text_embedder.load_submodels()
+
+    prompt_embedding_numpy_list = []
+    for prompt in prompts:
+        print(prompt)
+        prompt_embedding = clip_text_embedder(prompt)
+
+        prompt_embedding_cpu = prompt_embedding.cpu()
+
+        del prompt_embedding
+        torch.cuda.empty_cache()
+
+        prompt_embedding_numpy_list.append(prompt_embedding_cpu.detach().numpy())
+
+
+    return prompt_embedding_numpy_list
+
 def prompt_embedding_vectors(sd, prompt_array):
     # Generate embeddings for each prompt
-    embedded_prompts = ga.clip_text_get_prompt_embedding(config, prompts=prompt_array)
-    embedded_prompts.to("cpu")
-    return embedded_prompts
+    return clip_text_get_prompt_embedding_numpy(config, prompts=prompt_array)
 
 # Call the GA loop function with your initialized StableDiffusion model
 
@@ -295,7 +322,7 @@ for prompt in prompts_array:
     prompts_str_array.append(prompt_str)
 
 
-embedded_prompts_numpy = np.array(ga.clip_text_get_prompt_embedding(config, prompts_str_array))
+embedded_prompts_numpy = np.array(clip_text_get_prompt_embedding_numpy(config, prompts_str_array))
 
 
 
