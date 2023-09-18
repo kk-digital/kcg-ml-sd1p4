@@ -59,7 +59,7 @@ image_features_clip_model, preprocess = clip.load("ViT-L/14", device=DEVICE)
 # Why are you using this prompt generator?
 EMBEDDED_PROMPTS_DIR = os.path.abspath(join(base_dir, 'input', 'embedded_prompts'))
 
-OUTPUT_DIR = abspath(join(base_dir, 'output', 'ga'))
+OUTPUT_DIR = abspath(join(base_dir, 'output', 'ga_1024'))
 
 os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -141,8 +141,8 @@ def calculate_and_store_images(ga_instance, solution, solution_idx):
     image = sd.get_image_from_latent(latent)
 
     # Save prompt and latent numpy arrays
-    np.savez_compressed(os.path.join(FEATURES_DIR, f'prompt_embedding_{solution_idx}.npz'), prompt_embedding=prompt_embedding.cpu().numpy())
-    np.savez_compressed(os.path.join(FEATURES_DIR, f'latent_{solution_idx}.npz'), latent=latent.cpu().numpy())
+    #np.savez_compressed(os.path.join(FEATURES_DIR, f'prompt_embedding_{solution_idx}.npz'), prompt_embedding=prompt_embedding.cpu().numpy())
+    #np.savez_compressed(os.path.join(FEATURES_DIR, f'latent_{solution_idx}.npz'), latent=latent.cpu().numpy())
 
     # Convert to PIL image and calculate fitness score
     pil_image = to_pil(image[0])
