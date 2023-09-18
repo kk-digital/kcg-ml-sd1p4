@@ -264,7 +264,7 @@ def clip_text_get_prompt_embedding_numpy(config, prompts: list):
 
 
 def prompt_embedding_vectors(sd, prompt_array):
-    
+
     return clip_text_get_prompt_embedding_numpy(config, prompts=prompt_array)
 
 # Call the GA loop function with your initialized StableDiffusion model
@@ -312,7 +312,7 @@ for prompt in prompts_array:
     prompts_str_array.append(prompt_str)
 
 
-embedded_prompts_numpy = np.array(ga.clip_text_get_prompt_embedding(config, prompts_str_array))
+embedded_prompts_numpy = np.array(clip_text_get_prompt_embedding_numpy(config, prompts_str_array))
 
 
 
