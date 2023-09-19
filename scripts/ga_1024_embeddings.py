@@ -324,7 +324,7 @@ json_file_path = os.path.join(IMAGES_ROOT_DIR, 'prompts_str_array.json')
 with open(json_file_path, 'w', encoding='utf-8') as f:
     json.dump(prompts_str_array, f, ensure_ascii=False, indent=4)
 
-embedded_prompts_numpy = np.array(clip_text_get_prompt_embedding_numpy(config, prompts_str_array))
+embedded_prompts_numpy = clip_text_get_prompt_embedding_numpy(config, prompts_str_array)
 
 for idx, embedding in enumerate(embedded_prompts_numpy):
     # Define the filepath for the current embedding
