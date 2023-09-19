@@ -269,17 +269,12 @@ def clip_text_get_prompt_embedding_numpy(config, prompts: list):
     return prompt_embedding_numpy_list
 
 
-#def prompt_embedding_vectors(sd, prompt_array):
+def prompt_embedding_vectors(sd, prompt_array):
     
- #   return clip_text_get_prompt_embedding_numpy(config, prompts=prompt_array)
+    return clip_text_get_prompt_embedding_numpy(config, prompts=prompt_array)
 
 # Call the GA loop function with your initialized StableDiffusion model
 
-def prompt_embedding_vectors(sd, prompt_array):
-    # Generate embeddings for each prompt
-    embedded_prompts = ga.clip_text_get_prompt_embedding(config, prompts=prompt_array)
-    embedded_prompts.to("cpu")
-    return embedded_prompts
 
 generations = args.generations
 population_size = 12
@@ -305,7 +300,7 @@ sd.model.load_unet(config.get_model(SDconfigs.UNET))
 
 # Get embedding of null prompt
 NULL_PROMPT = prompt_embedding_vectors(sd, [""])[0]
-#NULL_PROMPT = torch.from_numpy(NULL_PROMPT)
+NULL_PROMPT = torch.from_numpy(NULL_PROMPT)
 NULL_PROMPT = NULL_PROMPT.to(device=get_device(), dtype=torch.float32)
 # print("NULL_PROMPT= ", str(NULL_PROMPT))
 # print("NULL_PROMPT size= ", str(torch.Tensor.size(NULL_PROMPT)))
@@ -329,7 +324,7 @@ json_file_path = os.path.join(IMAGES_ROOT_DIR, 'prompts_str_array.json')
 with open(json_file_path, 'w', encoding='utf-8') as f:
     json.dump(prompts_str_array, f, ensure_ascii=False, indent=4)
 
-embedded_prompts_numpy = prompt_embedding_vectors(config, prompts_str_array)
+embedded_prompts_numpy = np.array(clip_text_get_prompt_embedding_numpy(config, prompts_str_array))
 
 for idx, embedding in enumerate(embedded_prompts_numpy):
     # Define the filepath for the current embedding
