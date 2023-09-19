@@ -128,12 +128,11 @@ def calculate_and_store_images(ga_instance, solution, solution_idx):
     print(f"    Standard deviation: {np.std(combined_embedding_np)}")    
     # Save the combined embedding
     try:
-        filepath = os.path.join(FEATURES_DIR, f'combined_embedding_{solution_idx}.npz')
-        np.savez_compressed(filepath, combined_embedding=combined_embedding_np)
-        print(f"Successfully saved to {filepath}")
+        individual_filepath = os.path.join(FEATURES_DIR, f'embedded_prompt_{solution_idx}_{i}.npz')
+        np.savez_compressed(individual_filepath, embedded_prompt=embedded_prompts_numpy[i])
+        print(f"Successfully saved individual embedded prompt to {individual_filepath}")
     except Exception as e:
-        print(f"Could not save file due to: {e}")
-        print(f"Filepath: {filepath}")
+        print(f"Could not save individual embedded prompt due to: {e}")
 
     # Convert to PyTorch tensor and generate latent and image
     prompt_embedding = torch.tensor(combined_embedding_np, dtype=torch.float32).view(1, 77, 768).to(DEVICE)
@@ -312,7 +311,7 @@ for prompt in prompts_array:
     prompts_str_array.append(prompt_str)
 
 
-embedded_prompts_numpy = np.array(ga.clip_text_get_prompt_embedding(config, prompts_str_array))
+embedded_prompts_numpy = np.array(clip_text_get_prompt_embedding(config, prompts_str_array))
 
 
 
