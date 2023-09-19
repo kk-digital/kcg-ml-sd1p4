@@ -324,16 +324,15 @@ json_file_path = os.path.join(IMAGES_ROOT_DIR, 'prompts_str_array.json')
 with open(json_file_path, 'w', encoding='utf-8') as f:
     json.dump(prompts_str_array, f, ensure_ascii=False, indent=4)
 
-embedded_prompts_numpy = np.array(clip_text_get_prompt_embedding_numpy(config, prompts_str_array))
+prompt_embedding_list = clip_text_get_prompt_embedding_numpy(config, prompts_str_array)
 
-for idx, embedding in enumerate(embedded_prompts_numpy):
-    # Define the filepath for the current embedding
-    filepath = os.path.join(FEATURES_DIR, f'embedding_{idx}.npz')
-    
-    # Save the embedding as a compressed numpy file
-    np.savez_compressed(filepath, embedding=embedding)
-    
-    print(f"Successfully saved embedding {idx} to {filepath}")
+prompt_embedding_data = [
+    {"prompt": prompt, "embedding": embedding.tolist()} 
+    for prompt, embedding in prompt_embedding_list
+]
+json_file_path = os.path.join(IMAGES_ROOT_DIR, 'prompt_embeddings.json')
+with open(json_file_path, 'w', encoding='utf-8') as f:
+    json.dump(prompt_embedding_data, f, ensure_ascii=False, indent=4)
 
 # random_mutation_min_val=5,
 # random_mutation_max_val=10,
