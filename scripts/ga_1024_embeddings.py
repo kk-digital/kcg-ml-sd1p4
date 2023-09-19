@@ -236,23 +236,36 @@ def on_generation(ga_instance):
 
     start_time = time.time()  # Reset the start time for the next generation
 
-def clip_text_get_prompt_embedding_numpy(config, prompts: list):	
-    #load model from memory	
-    clip_text_embedder = CLIPTextEmbedder(device=get_device())	
-    clip_text_embedder.load_submodels()	
 
-    prompt_embedding_numpy_list = []	
-    for prompt in prompts:	
-        print(prompt)	
-        prompt_embedding = clip_text_embedder(prompt)	
+def clip_text_get_prompt_embedding_numpy(config, prompts: list):
+    #null_prompt = null_prompt
+    prompts = prompts
 
-        prompt_embedding_cpu = prompt_embedding.cpu()	
+    #load model from memory
+    clip_text_embedder = CLIPTextEmbedder(device=get_device())
+    clip_text_embedder.load_submodels(
+        tokenizer_path=config.get_model_folder_path(CLIPconfigs.TXT_EMB_TOKENIZER),
+        transformer_path=config.get_model_folder_path(CLIPconfigs.TXT_EMB_TEXT_MODEL)
+    )
 
-        del prompt_embedding	
-        torch.cuda.empty_cache()	
+    prompt_embedding_numpy_list = []
+    for prompt in prompts:
+        print(prompt)
+        prompt_embedding = clip_text_embedder.forward(prompt)
+        prompt_embedding_cpu = prompt_embedding.cpu()
+        prompt_embedding_numpy_list.append(prompt_embedding_cpu.detach().numpy())
+        # Flattening tensor and appending
+        #print("clip_text_get_prompt_embedding, 1 embedding= ", str(torch.Tensor.size(prompt_embedding)))
+        #clip_text_get_prompt_embedding, 1 embedding=  torch.Size([1, 77, 768])
+        #prompt_embedding = prompt_embedding.view(-1)
+        #print("clip_text_get_prompt_embedding, 2 embedding= ", str(torch.Tensor.size(prompt_embedding)))
+        #clip_text_get_prompt_embedding, 2 embedding=  torch.Size([59136])
 
-        prompt_embedding_numpy_list.append(prompt_embedding_cpu.detach().numpy())	
 
+    ## Clear model from memory
+    clip_text_embedder.to("cpu")
+    del clip_text_embedder
+    torch.cuda.empty_cache()
 
     return prompt_embedding_numpy_list
 
