@@ -110,32 +110,16 @@ def log_to_file(message):
 
 # Function to calculate the chad score for batch of images
 def calculate_and_store_images(ga_instance, solution, solution_idx):
-    generation = ga_instance.generations_completed    
+    generation = ga_instance.generations_completed	
     # Set seed
     SEED = random.randint(0, 2**24)
     if FIXED_SEED == True:
         SEED = 54846
 
+    # Calculate combined embedding
+    combined_embedding_np = np.zeros((1, 77, 768))
     for i, coeff in enumerate(solution):
-        # Convert to PyTorch tensor and generate latent and image
-        prompt_embedding = torch.tensor(embedded_prompts_numpy[i], dtype=torch.float32).view(1, 77, 768).to(DEVICE)
-        latent = sd.generate_images_latent_from_embeddings(seed=SEED, embedded_prompt=prompt_embedding, null_prompt=NULL_PROMPT, uncond_scale=CFG_STRENGTH)
-        image = sd.get_image_from_latent(latent)
-
-        # Convert to PIL image and calculate fitness score
-        pil_image = to_pil(image[0])
-        if CONVERT_GREY_SCALE_FOR_SCORING == True:
-            pil_image = pil_image.convert("L").convert("RGB")
-        
-        fitness_score = white_background_fitness(pil_image)
-        
-        # Save the individual image
-        file_dir = os.path.join(IMAGES_ROOT_DIR, str(generation))
-        os.makedirs(file_dir, exist_ok=True)
-        filename = os.path.join(file_dir, f'g{generation:04}_{solution_idx:04}_{i}.png')
-        pil_image.save(filename)
-
-        # Save the individual embedded prompt
+    # Save each individual embedded prompt numpy array
         try:
             individual_filepath = os.path.join(FEATURES_DIR, f'embedded_prompt_{solution_idx}_{i}.npz')
             np.savez_compressed(individual_filepath, embedded_prompt=embedded_prompts_numpy[i])
@@ -144,12 +128,40 @@ def calculate_and_store_images(ga_instance, solution, solution_idx):
             print(f"Could not save individual embedded prompt due to: {e}")
             print(f"Filepath: {individual_filepath}")
 
-        # Clean up to free memory
-        del prompt_embedding, latent, image, pil_image
-        torch.cuda.empty_cache()
+
+    print(f"Generation {generation}, Solution {solution_idx}:")
+    print(f"    Max value: {np.max(combined_embedding_np)}")
+    print(f"    Min value: {np.max(combined_embedding_np)}")
+    print(f"    Mean value: {np.mean(combined_embedding_np)}")
+    print(f"    Standard deviation: {np.std(combined_embedding_np)}")    
+
+    # Convert to PyTorch tensor and generate latent and image
+    prompt_embedding = torch.tensor(combined_embedding_np, dtype=torch.float32).view(1, 77, 768).to(DEVICE)
+    latent = sd.generate_images_latent_from_embeddings(seed=SEED, embedded_prompt=prompt_embedding, null_prompt=NULL_PROMPT, uncond_scale=CFG_STRENGTH)
+    image = sd.get_image_from_latent(latent)
+
+    # Save prompt and latent numpy arrays
+    #np.savez_compressed(os.path.join(FEATURES_DIR, f'prompt_embedding_{solution_idx}.npz'), prompt_embedding=prompt_embedding.cpu().numpy())
+    #np.savez_compressed(os.path.join(FEATURES_DIR, f'latent_{solution_idx}.npz'), latent=latent.cpu().numpy())
+
+    # Convert to PIL image and calculate fitness score
+    pil_image = to_pil(image[0])
+    if CONVERT_GREY_SCALE_FOR_SCORING == True:
+        pil_image = pil_image.convert("L").convert("RGB")
+    
+    fitness_score = white_background_fitness(pil_image)
+    
+    # Save the individual image
+    file_dir = os.path.join(IMAGES_ROOT_DIR, str(generation))
+    os.makedirs(file_dir, exist_ok=True)
+    filename = os.path.join(file_dir, f'g{generation:04}_{solution_idx:04}.png')
+    pil_image.save(filename)
+
+    # Clean up to free memory
+    del combined_embedding_np, prompt_embedding, latent, image, pil_image
+    torch.cuda.empty_cache()
 
     return fitness_score
-
 
 
 
@@ -230,34 +242,29 @@ def on_generation(ga_instance):
 
     start_time = time.time()  # Reset the start time for the next generation
 
-def clip_text_get_prompt_embedding_numpy(config, prompts: list):
-    # Load model from memory
-    clip_text_embedder = CLIPTextEmbedder(device=get_device())
-    clip_text_embedder.load_submodels(
-        tokenizer_path=config.get_model_folder_path(CLIPconfigs.TXT_EMB_TOKENIZER),
-        transformer_path=config.get_model_folder_path(CLIPconfigs.TXT_EMB_TEXT_MODEL)
-    )
+def clip_text_get_prompt_embedding_numpy(config, prompts: list):	
+    #load model from memory	
+    clip_text_embedder = CLIPTextEmbedder(device=get_device())	
+    clip_text_embedder.load_submodels()	
 
-    prompt_embedding_numpy_list = []
-    for prompt in prompts:
-        prompt_embedding = clip_text_embedder.forward(prompt)
-        prompt_embedding_cpu = prompt_embedding.cpu()
-        prompt_embedding_numpy_list.append(prompt_embedding_cpu.detach().numpy())
+    prompt_embedding_numpy_list = []	
+    for prompt in prompts:	
+        print(prompt)	
+        prompt_embedding = clip_text_embedder(prompt)	
 
-        del prompt_embedding
-        torch.cuda.empty_cache()
+        prompt_embedding_cpu = prompt_embedding.cpu()	
 
-    # Clear model from memory
-    clip_text_embedder.to("cpu")
-    del clip_text_embedder
-    torch.cuda.empty_cache()
+        del prompt_embedding	
+        torch.cuda.empty_cache()	
+
+        prompt_embedding_numpy_list.append(prompt_embedding_cpu.detach().numpy())	
+
 
     return prompt_embedding_numpy_list
 
 
-
 def prompt_embedding_vectors(sd, prompt_array):
-
+    
     return clip_text_get_prompt_embedding_numpy(config, prompts=prompt_array)
 
 # Call the GA loop function with your initialized StableDiffusion model
@@ -293,7 +300,7 @@ NULL_PROMPT = NULL_PROMPT.to(device=get_device(), dtype=torch.float32)
 # print("NULL_PROMPT size= ", str(torch.Tensor.size(NULL_PROMPT)))
 
 # generate prompts and get embeddings
-num_genes = 5  # Each individual is 1024 floats
+num_genes = 1024  # Each individual is 1024 floats
 prompt_phrase_length = 6  # number of words in prompt
 prompts_array = ga.generate_prompts(num_genes, prompt_phrase_length)
 
@@ -305,7 +312,7 @@ for prompt in prompts_array:
     prompts_str_array.append(prompt_str)
 
 
-embedded_prompts_numpy = np.array(clip_text_get_prompt_embedding_numpy(config, prompts_str_array))
+embedded_prompts_numpy = np.array(ga.clip_text_get_prompt_embedding(config, prompts_str_array))
 
 
 
