@@ -237,39 +237,36 @@ def on_generation(ga_instance):
 
 
 def clip_text_get_prompt_embedding_numpy(config, prompts: list):
-    # null_prompt = null_prompt
+    #null_prompt = null_prompt
     prompts = prompts
 
-    # Load the model from memory
+    #load model from memory
     clip_text_embedder = CLIPTextEmbedder(device=get_device())
     clip_text_embedder.load_submodels(
         tokenizer_path=config.get_model_folder_path(CLIPconfigs.TXT_EMB_TOKENIZER),
         transformer_path=config.get_model_folder_path(CLIPconfigs.TXT_EMB_TEXT_MODEL)
     )
 
-    # Create a list to store the prompt and its corresponding embedding
-    prompt_embedding_list = []
-
+    prompt_embedding_numpy_list = []
     for prompt in prompts:
-        # Print the current prompt (this remains the same)
         print(prompt)
-        
-        # Get the embedding for the current prompt (this remains the same)
         prompt_embedding = clip_text_embedder.forward(prompt)
-        
-        # Move the tensor to the CPU and convert it to a numpy array (this remains the same)
-        prompt_embedding_cpu = prompt_embedding.cpu().detach().numpy()
-        
-        # Add a dictionary containing the prompt and its embedding to your list
-        prompt_embedding_list.append({"prompt": prompt, "embedding": prompt_embedding_cpu})
+        prompt_embedding_cpu = prompt_embedding.cpu()
+        prompt_embedding_numpy_list.append(prompt_embedding_cpu.detach().numpy())
+        # Flattening tensor and appending
+        #print("clip_text_get_prompt_embedding, 1 embedding= ", str(torch.Tensor.size(prompt_embedding)))
+        #clip_text_get_prompt_embedding, 1 embedding=  torch.Size([1, 77, 768])
+        #prompt_embedding = prompt_embedding.view(-1)
+        #print("clip_text_get_prompt_embedding, 2 embedding= ", str(torch.Tensor.size(prompt_embedding)))
+        #clip_text_get_prompt_embedding, 2 embedding=  torch.Size([59136])
 
-    # Clear the model from memory (the rest remains the same)
+
+    ## Clear model from memory
     clip_text_embedder.to("cpu")
     del clip_text_embedder
     torch.cuda.empty_cache()
 
-    # Return your list of prompt-embedding dictionaries
-    return prompt_embedding_list
+    return prompt_embedding_numpy_list
 
 
 def prompt_embedding_vectors(sd, prompt_array):
@@ -302,7 +299,7 @@ sd.model.load_unet(config.get_model(SDconfigs.UNET))
 # calculate prompts
 
 # Get embedding of null prompt
-NULL_PROMPT = prompt_embedding_vectors(sd, [""])[0]['embedding']
+NULL_PROMPT = prompt_embedding_vectors(sd, [""])[0]
 NULL_PROMPT = torch.from_numpy(NULL_PROMPT)
 NULL_PROMPT = NULL_PROMPT.to(device=get_device(), dtype=torch.float32)
 # print("NULL_PROMPT= ", str(NULL_PROMPT))
@@ -327,15 +324,8 @@ json_file_path = os.path.join(IMAGES_ROOT_DIR, 'prompts_str_array.json')
 with open(json_file_path, 'w', encoding='utf-8') as f:
     json.dump(prompts_str_array, f, ensure_ascii=False, indent=4)
 
-prompt_embedding_data = clip_text_get_prompt_embedding_numpy(config, prompts_str_array)
+embedded_prompts_numpy = np.array(clip_text_get_prompt_embedding_numpy(config, prompts_str_array))
 
-prompt_embedding_data = [
-    {"prompt": prompt, "embedding": embedding.tolist()} 
-    for prompt, embedding in zip(prompts_str_array, prompt_embedding_data)
-]
-json_file_path = os.path.join(IMAGES_ROOT_DIR, 'prompt_embeddings.json')
-with open(json_file_path, 'w', encoding='utf-8') as f:
-    json.dump(prompt_embedding_data, f, ensure_ascii=False, indent=4)
 
 # random_mutation_min_val=5,
 # random_mutation_max_val=10,
