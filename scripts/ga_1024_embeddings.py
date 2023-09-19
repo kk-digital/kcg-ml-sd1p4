@@ -110,31 +110,31 @@ def log_to_file(message):
 
 # Function to calculate the chad score for batch of images
 def calculate_and_store_images(ga_instance, solution, solution_idx):
-    generation = ga_instance.generations_completed    
+    generation = ga_instance.generations_completed	
     # Set seed
     SEED = random.randint(0, 2**24)
     if FIXED_SEED == True:
         SEED = 54846
 
-    # Calculate combined embedding using PyTorch tensors
-    combined_embedding_tensor = torch.zeros((1, 77, 768), device=DEVICE)
+    # Calculate combined embedding
+    combined_embedding_np = np.zeros((1, 77, 768))
     for i, coeff in enumerate(solution):
-        embedded_prompts[i] = embedded_prompts[i].to(DEVICE)
-        combined_embedding_tensor += embedded_prompts[i].unsqueeze(0) * coeff
+        combined_embedding_np += embedded_prompts_numpy[i] * coeff
         print(f"Iteration {i}, Coefficient: {coeff}")
 
     print(f"Generation {generation}, Solution {solution_idx}:")
-    print(f"    Max value: {torch.max(combined_embedding_tensor)}")
-    print(f"    Min value: {torch.min(combined_embedding_tensor)}")
-    print(f"    Mean value: {torch.mean(combined_embedding_tensor)}")
-    print(f"    Standard deviation: {torch.std(combined_embedding_tensor)}")    
+    print(f"    Max value: {np.max(combined_embedding_np)}")
+    print(f"    Min value: {np.max(combined_embedding_np)}")
+    print(f"    Mean value: {np.mean(combined_embedding_np)}")
+    print(f"    Standard deviation: {np.std(combined_embedding_np)}")    
 
-    # Generate latent and image using the combined embedding tensor
-    prompt_embedding = combined_embedding_tensor.view(1, 77, 768).to(DEVICE)
+
+    # Convert to PyTorch tensor and generate latent and image
+    prompt_embedding = torch.tensor(combined_embedding_np, dtype=torch.float32).view(1, 77, 768).to(DEVICE)
     latent = sd.generate_images_latent_from_embeddings(seed=SEED, embedded_prompt=prompt_embedding, null_prompt=NULL_PROMPT, uncond_scale=CFG_STRENGTH)
     image = sd.get_image_from_latent(latent)
 
-    # Save prompt and latent numpy arrays (note: we convert tensors to numpy arrays here)
+    # Save prompt and latent numpy arrays
     #np.savez_compressed(os.path.join(FEATURES_DIR, f'prompt_embedding_{solution_idx}.npz'), prompt_embedding=prompt_embedding.cpu().numpy())
     #np.savez_compressed(os.path.join(FEATURES_DIR, f'latent_{solution_idx}.npz'), latent=latent.cpu().numpy())
 
@@ -152,11 +152,10 @@ def calculate_and_store_images(ga_instance, solution, solution_idx):
     pil_image.save(filename)
 
     # Clean up to free memory
-    del combined_embedding_tensor, prompt_embedding, latent, image, pil_image
+    del combined_embedding_np, prompt_embedding, latent, image, pil_image
     torch.cuda.empty_cache()
 
     return fitness_score
-
 
 
 
@@ -237,33 +236,40 @@ def on_generation(ga_instance):
     start_time = time.time()  # Reset the start time for the next generation
 
 
-def clip_text_get_prompt_embedding(config, prompts: list):
-    # Load the model from memory
+def clip_text_get_prompt_embedding_numpy(config, prompts: list):
+
+    #load model from memory
     clip_text_embedder = CLIPTextEmbedder(device=get_device())
     clip_text_embedder.load_submodels(
         tokenizer_path=config.get_model_folder_path(CLIPconfigs.TXT_EMB_TOKENIZER),
         transformer_path=config.get_model_folder_path(CLIPconfigs.TXT_EMB_TEXT_MODEL)
     )
 
-    prompt_embedding_list = []
+    prompt_embedding_numpy_list = []
     for prompt in prompts:
+        print(prompt)
         prompt_embedding = clip_text_embedder.forward(prompt)
-        prompt_embedding = prompt_embedding.cpu().squeeze(0)  # Move to CPU and remove the batch dimension
-        prompt_embedding_list.append(prompt_embedding)
+        prompt_embedding_cpu = prompt_embedding.cpu()
+        prompt_embedding_numpy_list.append(prompt_embedding_cpu.detach().numpy())
+        # Flattening tensor and appending
+        #print("clip_text_get_prompt_embedding, 1 embedding= ", str(torch.Tensor.size(prompt_embedding)))
+        #clip_text_get_prompt_embedding, 1 embedding=  torch.Size([1, 77, 768])
+        #prompt_embedding = prompt_embedding.view(-1)
+        #print("clip_text_get_prompt_embedding, 2 embedding= ", str(torch.Tensor.size(prompt_embedding)))
+        #clip_text_get_prompt_embedding, 2 embedding=  torch.Size([59136])
 
-    # Stack all the individual prompt embeddings into a single tensor
-    prompt_embedding_tensor = torch.stack(prompt_embedding_list, dim=0)
 
-    # Clear the model from memory
+    ## Clear model from memory
     clip_text_embedder.to("cpu")
     del clip_text_embedder
     torch.cuda.empty_cache()
 
-    return prompt_embedding_tensor
+    return prompt_embedding_numpy_list
 
 
 def prompt_embedding_vectors(sd, prompt_array):
-    return clip_text_get_prompt_embedding(config, prompts=prompt_array)
+    
+    return clip_text_get_prompt_embedding_numpy(config, prompts=prompt_array)
 
 # Call the GA loop function with your initialized StableDiffusion model
 
@@ -292,12 +298,13 @@ sd.model.load_unet(config.get_model(SDconfigs.UNET))
 
 # Get embedding of null prompt
 NULL_PROMPT = prompt_embedding_vectors(sd, [""])[0]
+NULL_PROMPT = torch.from_numpy(NULL_PROMPT)
 NULL_PROMPT = NULL_PROMPT.to(device=get_device(), dtype=torch.float32)
 # print("NULL_PROMPT= ", str(NULL_PROMPT))
 # print("NULL_PROMPT size= ", str(torch.Tensor.size(NULL_PROMPT)))
 
 # generate prompts and get embeddings
-num_genes = 50  # Each individual is 1024 floats
+num_genes = 300  # Each individual is 1024 floats
 prompt_phrase_length = 6  # number of words in prompt
 prompts_array = ga.generate_prompts(num_genes, prompt_phrase_length)
 
@@ -315,7 +322,8 @@ json_file_path = os.path.join(IMAGES_ROOT_DIR, 'prompts_str_array.json')
 with open(json_file_path, 'w', encoding='utf-8') as f:
     json.dump(prompts_str_array, f, ensure_ascii=False, indent=4)
 
-embedded_prompts = clip_text_get_prompt_embedding(config, prompts_str_array)
+embedded_prompts_numpy = np.array(clip_text_get_prompt_embedding_numpy(config, prompts_str_array))
+
 
 # random_mutation_min_val=5,
 # random_mutation_max_val=10,
