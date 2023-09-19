@@ -302,7 +302,7 @@ sd.model.load_unet(config.get_model(SDconfigs.UNET))
 # calculate prompts
 
 # Get embedding of null prompt
-NULL_PROMPT = prompt_embedding_vectors(sd, [""])[0]
+NULL_PROMPT = prompt_embedding_vectors(sd, [""])[0]['embedding']
 NULL_PROMPT = torch.from_numpy(NULL_PROMPT)
 NULL_PROMPT = NULL_PROMPT.to(device=get_device(), dtype=torch.float32)
 # print("NULL_PROMPT= ", str(NULL_PROMPT))
