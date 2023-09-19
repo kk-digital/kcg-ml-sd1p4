@@ -6,7 +6,7 @@ from stable_diffusion.utils_backend import get_device
 
 
 
-class ClipModelHuggingface():
+class ClipOpenAi():
     def __init__(self, device=None):
         self.device = get_device(device)
 
