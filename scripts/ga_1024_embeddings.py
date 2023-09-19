@@ -269,12 +269,17 @@ def clip_text_get_prompt_embedding_numpy(config, prompts: list):
     return prompt_embedding_numpy_list
 
 
-def prompt_embedding_vectors(sd, prompt_array):
+#def prompt_embedding_vectors(sd, prompt_array):
     
-    return clip_text_get_prompt_embedding_numpy(config, prompts=prompt_array)
+ #   return clip_text_get_prompt_embedding_numpy(config, prompts=prompt_array)
 
 # Call the GA loop function with your initialized StableDiffusion model
 
+def prompt_embedding_vectors(sd, prompt_array):
+    # Generate embeddings for each prompt
+    embedded_prompts = ga.clip_text_get_prompt_embedding(config, prompts=prompt_array)
+    embedded_prompts.to("cpu")
+    return embedded_prompts
 
 generations = args.generations
 population_size = 12
@@ -324,7 +329,7 @@ json_file_path = os.path.join(IMAGES_ROOT_DIR, 'prompts_str_array.json')
 with open(json_file_path, 'w', encoding='utf-8') as f:
     json.dump(prompts_str_array, f, ensure_ascii=False, indent=4)
 
-embedded_prompts_numpy = clip_text_get_prompt_embedding_numpy(config, prompts_str_array)
+embedded_prompts_numpy = prompt_embedding_vectors(config, prompts_str_array)
 
 for idx, embedding in enumerate(embedded_prompts_numpy):
     # Define the filepath for the current embedding
