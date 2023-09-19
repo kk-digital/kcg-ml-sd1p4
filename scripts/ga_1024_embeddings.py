@@ -294,7 +294,7 @@ NULL_PROMPT = NULL_PROMPT.to(device=get_device(), dtype=torch.float32)
 # print("NULL_PROMPT size= ", str(torch.Tensor.size(NULL_PROMPT)))
 
 # generate prompts and get embeddings
-num_genes = 20  # Each individual is 1024 floats
+num_genes = 300  # Each individual is 1024 floats
 prompt_phrase_length = 6  # number of words in prompt
 prompts_array = ga.generate_prompts(num_genes, prompt_phrase_length)
 
@@ -305,6 +305,12 @@ for prompt in prompts_array:
     prompt_str = prompt.get_positive_prompt_str()
     prompts_str_array.append(prompt_str)
 
+# Construct the full path to the JSON file
+json_file_path = os.path.join(IMAGES_ROOT_DIR, 'prompts_str_array.json')
+
+# Saving the list to a JSON file
+with open(json_file_path, 'w', encoding='utf-8') as f:
+    json.dump(prompts_str_array, f, ensure_ascii=False, indent=4)
 
 embedded_prompts_numpy = np.array(clip_text_get_prompt_embedding_numpy(config, prompts_str_array))
 
