@@ -250,6 +250,10 @@ def clip_text_get_prompt_embedding_numpy(config, prompts: list):
         print(prompt)
         prompt_embedding = clip_text_embedder.forward(prompt)
         prompt_embedding_cpu = prompt_embedding.cpu()
+
+        del prompt_embedding
+        torch.cuda.empty_cache()
+        
         prompt_embedding_numpy_list.append(prompt_embedding_cpu.detach().numpy())
         # Flattening tensor and appending
         #print("clip_text_get_prompt_embedding, 1 embedding= ", str(torch.Tensor.size(prompt_embedding)))
