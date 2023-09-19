@@ -118,9 +118,8 @@ def calculate_and_store_images(ga_instance, solution, solution_idx):
 
     # Calculate combined embedding using PyTorch tensors
     combined_embedding_tensor = torch.zeros((1, 77, 768), device=DEVICE)
-    combined_embedding_tensor = combined_embedding_tensor.to(DEVICE)
-    embedded_prompts[i] = embedded_prompts[i].to(DEVICE)
     for i, coeff in enumerate(solution):
+        embedded_prompts[i] = embedded_prompts[i].to(DEVICE)
         combined_embedding_tensor += embedded_prompts[i].unsqueeze(0) * coeff
         print(f"Iteration {i}, Coefficient: {coeff}")
 
