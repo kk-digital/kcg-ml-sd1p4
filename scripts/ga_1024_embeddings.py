@@ -329,6 +329,10 @@ with open(json_file_path, 'w', encoding='utf-8') as f:
 
 prompt_embedding_data = clip_text_get_prompt_embedding_numpy(config, prompts_str_array)
 
+prompt_embedding_data = [
+    {"prompt": prompt, "embedding": embedding.tolist()} 
+    for prompt, embedding in zip(prompts_str_array, prompt_embedding_data)
+]
 json_file_path = os.path.join(IMAGES_ROOT_DIR, 'prompt_embeddings.json')
 with open(json_file_path, 'w', encoding='utf-8') as f:
     json.dump(prompt_embedding_data, f, ensure_ascii=False, indent=4)
