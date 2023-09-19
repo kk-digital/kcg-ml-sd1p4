@@ -247,7 +247,8 @@ def clip_text_get_prompt_embedding(config, prompts: list):
     prompt_embedding_list = []
     for prompt in prompts:
         prompt_embedding = clip_text_embedder.forward(prompt)
-        prompt_embedding_list.append(prompt_embedding.squeeze(0))  # Removing the batch dimension
+        prompt_embedding = prompt_embedding.cpu().squeeze(0)  # Move to CPU and remove the batch dimension
+        prompt_embedding_list.append(prompt_embedding)
 
     # Stack all the individual prompt embeddings into a single tensor
     prompt_embedding_tensor = torch.stack(prompt_embedding_list, dim=0)
