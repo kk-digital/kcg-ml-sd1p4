@@ -311,7 +311,7 @@ for prompt in prompts_array:
     prompts_str_array.append(prompt_str)
 
 
-embedded_prompts_numpy = np.array(clip_text_get_prompt_embedding(config, prompts_str_array))
+embedded_prompts_numpy = np.array(clip_text_get_prompt_embedding_numpy(config, prompts_str_array))
 
 
 
