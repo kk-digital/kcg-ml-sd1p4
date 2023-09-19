@@ -110,17 +110,32 @@ def log_to_file(message):
 
 # Function to calculate the chad score for batch of images
 def calculate_and_store_images(ga_instance, solution, solution_idx):
-    generation = ga_instance.generations_completed	
+    generation = ga_instance.generations_completed    
     # Set seed
     SEED = random.randint(0, 2**24)
     if FIXED_SEED == True:
         SEED = 54846
 
-    # Calculate combined embedding
-    combined_embedding_np = np.zeros((1, 77, 768))
     for i, coeff in enumerate(solution):
-        combined_embedding_np += embedded_prompts_numpy[i] * coeff
-                # Save individual embedded_prompt_numpy
+        # Convert to PyTorch tensor and generate latent and image
+        prompt_embedding = torch.tensor(embedded_prompts_numpy[i], dtype=torch.float32).view(1, 77, 768).to(DEVICE)
+        latent = sd.generate_images_latent_from_embeddings(seed=SEED, embedded_prompt=prompt_embedding, null_prompt=NULL_PROMPT, uncond_scale=CFG_STRENGTH)
+        image = sd.get_image_from_latent(latent)
+
+        # Convert to PIL image and calculate fitness score
+        pil_image = to_pil(image[0])
+        if CONVERT_GREY_SCALE_FOR_SCORING == True:
+            pil_image = pil_image.convert("L").convert("RGB")
+        
+        fitness_score = white_background_fitness(pil_image)
+        
+        # Save the individual image
+        file_dir = os.path.join(IMAGES_ROOT_DIR, str(generation))
+        os.makedirs(file_dir, exist_ok=True)
+        filename = os.path.join(file_dir, f'g{generation:04}_{solution_idx:04}_{i}.png')
+        pil_image.save(filename)
+
+        # Save the individual embedded prompt
         try:
             individual_filepath = os.path.join(FEATURES_DIR, f'embedded_prompt_{solution_idx}_{i}.npz')
             np.savez_compressed(individual_filepath, embedded_prompt=embedded_prompts_numpy[i])
@@ -129,47 +144,12 @@ def calculate_and_store_images(ga_instance, solution, solution_idx):
             print(f"Could not save individual embedded prompt due to: {e}")
             print(f"Filepath: {individual_filepath}")
 
-    print(f"Generation {generation}, Solution {solution_idx}:")
-    print(f"    Max value: {np.max(combined_embedding_np)}")
-    print(f"    Min value: {np.max(combined_embedding_np)}")
-    print(f"    Mean value: {np.mean(combined_embedding_np)}")
-    print(f"    Standard deviation: {np.std(combined_embedding_np)}")    
-    # Save the combined embedding
-    try:
-        filepath = os.path.join(FEATURES_DIR, f'combined_embedding_{solution_idx}.npz')
-        np.savez_compressed(filepath, combined_embedding=combined_embedding_np)
-        print(f"Successfully saved to {filepath}")
-    except Exception as e:
-        print(f"Could not save file due to: {e}")
-        print(f"Filepath: {filepath}")
-
-    # Convert to PyTorch tensor and generate latent and image
-    prompt_embedding = torch.tensor(combined_embedding_np, dtype=torch.float32).view(1, 77, 768).to(DEVICE)
-    latent = sd.generate_images_latent_from_embeddings(seed=SEED, embedded_prompt=prompt_embedding, null_prompt=NULL_PROMPT, uncond_scale=CFG_STRENGTH)
-    image = sd.get_image_from_latent(latent)
-
-    # Save prompt and latent numpy arrays
-    #np.savez_compressed(os.path.join(FEATURES_DIR, f'prompt_embedding_{solution_idx}.npz'), prompt_embedding=prompt_embedding.cpu().numpy())
-    #np.savez_compressed(os.path.join(FEATURES_DIR, f'latent_{solution_idx}.npz'), latent=latent.cpu().numpy())
-
-    # Convert to PIL image and calculate fitness score
-    pil_image = to_pil(image[0])
-    if CONVERT_GREY_SCALE_FOR_SCORING == True:
-        pil_image = pil_image.convert("L").convert("RGB")
-    
-    fitness_score = white_background_fitness(pil_image)
-    
-    # Save the individual image
-    file_dir = os.path.join(IMAGES_ROOT_DIR, str(generation))
-    os.makedirs(file_dir, exist_ok=True)
-    filename = os.path.join(file_dir, f'g{generation:04}_{solution_idx:04}.png')
-    pil_image.save(filename)
-
-    # Clean up to free memory
-    del combined_embedding_np, prompt_embedding, latent, image, pil_image
-    torch.cuda.empty_cache()
+        # Clean up to free memory
+        del prompt_embedding, latent, image, pil_image
+        torch.cuda.empty_cache()
 
     return fitness_score
+
 
 
 
