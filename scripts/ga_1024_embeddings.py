@@ -120,19 +120,14 @@ def calculate_and_store_images(ga_instance, solution, solution_idx):
     combined_embedding_np = np.zeros((1, 77, 768))
     for i, coeff in enumerate(solution):
         combined_embedding_np += embedded_prompts_numpy[i] * coeff
+        print(f"Iteration {i}, Coefficient: {coeff}")
 
     print(f"Generation {generation}, Solution {solution_idx}:")
     print(f"    Max value: {np.max(combined_embedding_np)}")
     print(f"    Min value: {np.max(combined_embedding_np)}")
     print(f"    Mean value: {np.mean(combined_embedding_np)}")
     print(f"    Standard deviation: {np.std(combined_embedding_np)}")    
-    # Save the combined embedding
-    try:
-        individual_filepath = os.path.join(FEATURES_DIR, f'embedded_prompt_{solution_idx}_{i}.npz')
-        np.savez_compressed(individual_filepath, embedded_prompt=embedded_prompts_numpy[i])
-        print(f"Successfully saved individual embedded prompt to {individual_filepath}")
-    except Exception as e:
-        print(f"Could not save individual embedded prompt due to: {e}")
+
 
     # Convert to PyTorch tensor and generate latent and image
     prompt_embedding = torch.tensor(combined_embedding_np, dtype=torch.float32).view(1, 77, 768).to(DEVICE)
@@ -299,7 +294,7 @@ NULL_PROMPT = NULL_PROMPT.to(device=get_device(), dtype=torch.float32)
 # print("NULL_PROMPT size= ", str(torch.Tensor.size(NULL_PROMPT)))
 
 # generate prompts and get embeddings
-num_genes = 200  # Each individual is 1024 floats
+num_genes = 20  # Each individual is 1024 floats
 prompt_phrase_length = 6  # number of words in prompt
 prompts_array = ga.generate_prompts(num_genes, prompt_phrase_length)
 
@@ -313,7 +308,14 @@ for prompt in prompts_array:
 
 embedded_prompts_numpy = np.array(clip_text_get_prompt_embedding_numpy(config, prompts_str_array))
 
-
+for idx, embedding in enumerate(embedded_prompts_numpy):
+    # Define the filepath for the current embedding
+    filepath = os.path.join(FEATURES_DIR, f'embedding_{idx}.npz')
+    
+    # Save the embedding as a compressed numpy file
+    np.savez_compressed(filepath, embedding=embedding)
+    
+    print(f"Successfully saved embedding {idx} to {filepath}")
 
 # random_mutation_min_val=5,
 # random_mutation_max_val=10,
