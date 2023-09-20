@@ -8,6 +8,9 @@
       - [scripts/ga_filesize.py](#scriptsga_filesizepy)
    - [LEAP-based GAs](#leap-based-gas)
       - [scripts/prompts_ga_leap.py](#scriptsprompts_ga_leappy)
+      - [scripts/ga_white_background_leap.py](#scriptsga_white_background_leappy)
+      - [scripts/ga_bounding_box_size_leap.py](#scriptsga_bounding_box_size_leappy)
+      - [scripts/ga_filesize_leap.py](#scriptsga_filesize_leappy)
    - [Pygad Configuration](#pygad-configuration)
       - [CLI args](#cli-args)
       - [Available Selection Operators](#available-selection-operators)
@@ -155,6 +158,30 @@ Example Usage:
 
 ``` shell
 python scripts/prompts_ga_leap.py --generations 100
+```
+
+### scripts/ga_white_background_leap.py
+
+Example Usage:
+
+``` shell
+python scripts/ga_white_background_leap.py --generations 100
+```
+
+### scripts/ga_bounding_box_size_leap.py
+
+Example Usage:
+
+``` shell
+python scripts/ga_bounding_box_size_leap.py --generations 100
+```
+
+### scripts/ga_filesize_leap.py
+
+Example Usage:
+
+``` shell
+python scripts/ga_filesize_leap.py --generations 100
 ```
 
 ## Pygad Configuration
