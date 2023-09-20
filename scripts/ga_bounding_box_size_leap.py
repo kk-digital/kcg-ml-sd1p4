@@ -51,7 +51,7 @@ config = ModelPathConfig()
 
 EMBEDDED_PROMPTS_DIR = os.path.abspath(join(base_dir, 'input', 'embedded_prompts'))
 
-OUTPUT_DIR = abspath(join(base_dir, 'output', 'ga_filesize_leap'))
+OUTPUT_DIR = abspath(join(base_dir, 'output', 'ga_box_size_leap'))
 
 os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
