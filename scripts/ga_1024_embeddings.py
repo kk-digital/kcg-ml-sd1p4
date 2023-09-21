@@ -305,6 +305,7 @@ sd.model.load_unet(config.get_model(SDconfigs.UNET))
 NULL_PROMPT = prompt_embedding_vectors(sd, [""])[0]
 NULL_PROMPT = torch.from_numpy(NULL_PROMPT)
 NULL_PROMPT = NULL_PROMPT.to(device=get_device(), dtype=torch.float32)
+torch.save(NULL_PROMPT, os.path.join(FEATURES_DIR, 'null_cond.pt'))
 # print("NULL_PROMPT= ", str(NULL_PROMPT))
 # print("NULL_PROMPT size= ", str(torch.Tensor.size(NULL_PROMPT)))
 
