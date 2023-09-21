@@ -1,10 +1,13 @@
+import argparse
 import hashlib
 import logging
 import os
 import random
 import sys
+import time
 from contextlib import closing
 from dataclasses import dataclass, field
+from datetime import datetime
 from os.path import join
 from typing import Any
 
@@ -16,11 +19,11 @@ from blendmodes.blend import blendLayers
 from blendmodes.blendtype import BlendType
 from skimage import exposure
 
-from utility import masking, images, rng, prompt_parser
-from utility.rng import ImageRNG
-
 base_dir = os.getcwd()
 sys.path.append(base_dir)
+from utility import masking, images, rng, prompt_parser
+from utility.rng import ImageRNG
+from utility.utils_logger import logger
 from configs.model_config import ModelPathConfig
 from stable_diffusion.sampler.ddim import DDIMSampler
 from stable_diffusion.sampler.ddpm import DDPMSampler
@@ -50,7 +53,7 @@ opt_f = 8
 opts = Options()
 
 opts.outdir_samples = output_dir
-opts.save_init_img = True
+opts.save_init_img = False
 opts.img2img_color_correction = False
 opts.img2img_background_color = '#ffffff'
 opts.initial_noise_multiplier = 1.0
@@ -148,7 +151,7 @@ def decode_latent_batch(model, batch, target_device=None, check_for_nans=False):
 @dataclass(repr=False)
 class StableDiffusionProcessing:
     sd_model: object = None
-    outpath_samples: str = None
+    outpath: str = None
     prompt: str = ""
     prompt_for_display: str = None
     negative_prompt: str = ""
@@ -458,6 +461,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
             # Save init image
             if opts.save_init_img:
+                if not os.path.exists(opts.outdir_init_images):
+                    os.makedirs(opts.outdir_init_images)
                 self.init_img_hash = hashlib.md5(img.tobytes()).hexdigest()
                 img.save(join(opts.outdir_init_images, f"{self.init_img_hash}.png"))
 
@@ -465,8 +470,6 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
             if crop_region is None and self.resize_mode != 3:
                 image = images.resize_image(self.resize_mode, image, self.width, self.height)
-                # save image in storage
-                image.save(join(opts.outdir_init_images, f"{self.init_img_hash}_resized.png"))
 
             if image_mask is not None:
                 image_masked = Image.new('RGBa', (image.width, image.height))
@@ -684,11 +687,10 @@ def process_images(p: StableDiffusionProcessingImg2Img):
                 #     image = apply_color_correction(p.color_corrections[i], image)
 
                 image = apply_overlay(image, p.paste_to, i, p.overlay_images)
-                image.save(join(p.outpath_samples, f"result_{i}.png"))
+                image.save(join(p.outpath, f"{int(time.time())}-{p.mask_blur}-{p.cfg_scale}.png"))
 
-            # with torch.cuda.device('cpu'):
-            #     torch.cuda.empty_cache()
-            #     torch.cuda.ipc_collect()
+            del x_samples_ddim
+            torch_gc()
 
 
 def create_binary_mask(image):
@@ -700,14 +702,14 @@ def create_binary_mask(image):
 
 
 def img2img(prompt: str, negative_prompt: str, sampler_name: str, batch_size: int, n_iter: int, steps: int,
-            cfg_scale: float, width: int, height: int, mask_blur: int, inpainting_fill: int, init_img):
-    image = init_img
-
+            cfg_scale: float, width: int, height: int, mask_blur: int, inpainting_fill: int,
+            outpath, styles, init_images, mask, resize_mode, denoising_strength,
+            image_cfg_scale, inpaint_full_res_padding, inpainting_mask_invert):
     p = StableDiffusionProcessingImg2Img(
-        outpath_samples=opts.outdir_samples or opts.outdir_img2img_samples,
+        outpath=outpath,
         prompt=prompt,
         negative_prompt=negative_prompt,
-        styles=[],
+        styles=styles,
         sampler_name=sampler_name,
         batch_size=batch_size,
         n_iter=n_iter,
@@ -715,34 +717,92 @@ def img2img(prompt: str, negative_prompt: str, sampler_name: str, batch_size: in
         cfg_scale=cfg_scale,
         width=width,
         height=height,
-        init_images=[image],
-        mask=create_binary_mask(init_maks),
+        init_images=init_images,
+        mask=create_binary_mask(mask),
         mask_blur=mask_blur,
         inpainting_fill=inpainting_fill,
-        resize_mode=0,
-        denoising_strength=0.75,
-        image_cfg_scale=1.5,
-        inpaint_full_res_padding=32,
-        inpainting_mask_invert=0,
+        resize_mode=resize_mode,
+        denoising_strength=denoising_strength,
+        image_cfg_scale=image_cfg_scale,
+        inpaint_full_res_padding=inpaint_full_res_padding,
+        inpainting_mask_invert=inpainting_mask_invert,
     )
 
     with closing(p):
         process_images(p)
 
 
-init_image = Image.open("test.png")
-init_maks = Image.open("mask.png")
+def parse_args():
+    parser = argparse.ArgumentParser(description="Call img2img with specified parameters.")
 
-img2img(prompt="character, chibi, waifu, side scrolling, white background, centered",
-        negative_prompt="realistic, anime, manga, black background, centered",
-        sampler_name="ddim",
-        batch_size=1,
-        n_iter=1,
-        steps=20,
-        cfg_scale=7,
-        width=512,
-        height=512,
-        mask_blur=4,
-        inpainting_fill=1,
-        init_img=init_image,
-        )
+    # Required parameters
+    parser.add_argument("--prompt", type=str, help="Input prompt")
+    parser.add_argument("--init_img", type=str, help="Path to the initial image")
+    parser.add_argument("--init_mask", type=str, help="Path to the initial mask")
+
+    # Optional parameters with default values
+    parser.add_argument("--negative_prompt", type=str, default="", help="Negative prompt")
+    parser.add_argument("--sampler_name", type=str, default="ddim", help="Sampler name")
+    parser.add_argument("--batch_size", type=int, default=1, help="Batch size")
+    parser.add_argument("--n_iter", type=int, default=1, help="Number of iterations")
+    parser.add_argument("--steps", type=int, default=20, help="Steps")
+    parser.add_argument("--cfg_scale", type=float, default=7.0, help="Config scale")
+    parser.add_argument("--width", type=int, default=512, help="Image width")
+    parser.add_argument("--height", type=int, default=512, help="Image height")
+    parser.add_argument("--mask_blur", type=int, default=4, help="Mask blur value")
+    parser.add_argument("--inpainting_fill", type=int, default=1, help="Inpainting fill value")
+
+    # Additional parameters for StableDiffusionProcessingImg2Img
+    # Add default values as needed
+    parser.add_argument("--outpath", type=str, default=f"output/inpainting/{datetime.now().strftime('%m-%d-%Y')}",
+                        help="Output path for samples")
+    parser.add_argument("--styles", nargs="*", default=[], help="Styles list")
+    parser.add_argument("--resize_mode", type=int, default=0, help="Resize mode")
+    parser.add_argument("--denoising_strength", type=float, default=0.75, help="Denoising strength")
+    parser.add_argument("--image_cfg_scale", type=float, default=1.5, help="Image config scale")
+    parser.add_argument("--inpaint_full_res_padding", type=int, default=32, help="Inpaint full resolution padding")
+    parser.add_argument("--inpainting_mask_invert", type=int, default=0, help="Inpainting mask invert value")
+
+    return parser.parse_args()
+
+
+def main():
+    args = parse_args()
+
+    init_image = Image.open(args.init_img)
+    init_mask = Image.open(args.init_mask)
+
+    # Displaying the parameters using the logger
+    logger.info("Parameters for img2img:")
+    for arg, value in vars(args).items():
+        logger.info(f"{arg}: {value}")
+
+    # Create the output directory if it does not exist
+    if not os.path.exists(args.outpath):
+        os.makedirs(args.outpath)
+
+    img2img(prompt=args.prompt,
+            negative_prompt=args.negative_prompt,
+            sampler_name=args.sampler_name,
+            batch_size=args.batch_size,
+            n_iter=args.n_iter,
+            steps=args.steps,
+            cfg_scale=args.cfg_scale,
+            width=args.width,
+            height=args.height,
+            mask_blur=args.mask_blur,
+            inpainting_fill=args.inpainting_fill,
+            outpath=args.outpath,
+            styles=args.styles,
+            init_images=[init_image],
+            mask=init_mask,
+            resize_mode=args.resize_mode,
+            denoising_strength=args.denoising_strength,
+            image_cfg_scale=args.image_cfg_scale,
+            inpaint_full_res_padding=args.inpaint_full_res_padding,
+            inpainting_mask_invert=args.inpainting_mask_invert
+            )
+
+
+if __name__ == "__main__":
+    main()

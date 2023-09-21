@@ -5,38 +5,40 @@
 ## Summary
 
 - [kcg-ml-sd1p4](#kcg-ml-sd1p4)
-  - [Prerequisites](#prerequisites)
-    - [Installing Requirements](#installing-requirements)
-    - [Downloading Models](#downloading-models)
-    - [Processing Models](#processing-models)
-  - [Running Stable Diffusion scripts](#running-stable-diffusion-scripts)
-    - [Text To Image](#text-to-image)
-    - [Embed prompts](#embed-prompts)
-    - [Images from embeddings](#images-from-embeddings)
-    - [Images from distributions](#images-from-distributions)
-    - [Images from temperature range](#images-from-temperature-range)
-    - [Images and encodings](#images-and-encodings)
-    - [Perturbations on prompts embeddings](#perturbations-on-prompts-embeddings)
-    - [Image Grid Generator](#image-grid-generator)
-    - [Generate Images From Prompt Generator](#generate-images-from-prompt-generator)
-    - [Generate Images From Prompt List Dataset](#generate-images-from-prompt-list-dataset)
-    - [Chad Score](#chad-score)
-    - [Chad Sort](#chad-sort)
-    - [Running GenerationTask](#running-generationtask)
-    - [Prompt Score](#prompt-score)
-    - [Prompt Embeddings Gradient Optimization](#prompt-embeddings-gradient-optimization)
-    - [Prompt Generator](#prompt-generator)
-    - [Image Ranker by Fitness Score](#fitness_score_ranker) 
-    - [Auto-ml](#auto-ml)
-    - [Generate Images From Model Predictions](#generate-images-from-model-predictions)
-  - [Tests](#tests)
-    - [To run all scripts](#to-run-all-scripts)
-    - [To run all kcg-ml-sd1p4 tests](#to-run-all-kcg-ml-sd1p4-tests)
+    - [Prerequisites](#prerequisites)
+        - [Installing Requirements](#installing-requirements)
+        - [Downloading Models](#downloading-models)
+        - [Processing Models](#processing-models)
+    - [Running Stable Diffusion scripts](#running-stable-diffusion-scripts)
+        - [Text To Image](#text-to-image)
+        - [Embed prompts](#embed-prompts)
+        - [Images from embeddings](#images-from-embeddings)
+        - [Images from distributions](#images-from-distributions)
+        - [Images from temperature range](#images-from-temperature-range)
+        - [Images and encodings](#images-and-encodings)
+        - [Perturbations on prompts embeddings](#perturbations-on-prompts-embeddings)
+        - [Image Grid Generator](#image-grid-generator)
+        - [Generate Images From Prompt Generator](#generate-images-from-prompt-generator)
+        - [Generate Images From Prompt List Dataset](#generate-images-from-prompt-list-dataset)
+        - [Chad Score](#chad-score)
+        - [Chad Sort](#chad-sort)
+        - [Running GenerationTask](#running-generationtask)
+        - [Prompt Score](#prompt-score)
+        - [Prompt Embeddings Gradient Optimization](#prompt-embeddings-gradient-optimization)
+        - [Prompt Generator](#prompt-generator)
+        - [Image Ranker by Fitness Score](#fitness_score_ranker)
+        - [Auto-ml](#auto-ml)
+        - [Generate Images From Model Predictions](#generate-images-from-model-predictions)
+    - [Tests](#tests)
+        - [To run all scripts](#to-run-all-scripts)
+        - [To run all kcg-ml-sd1p4 tests](#to-run-all-kcg-ml-sd1p4-tests)
 
 ## Prerequisites
 
 ### Installing Requirements
-Run: 
+
+Run:
+
 ```bash
 pip3 install -r requirements.txt
 ```
@@ -49,15 +51,18 @@ This script will download these models:
     CLIP Text model - ./input/model/clip/text_model/pytorch_model.bin
     Stable Diffusion - ./input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors
 
-Run: 
+Run:
+
 ```bash
 python3 ./download_models.py
 ```
 
 ### Processing Models
+
 _Note: This script takes in a stable diffusion model and cuts it up into sub-models_
 
-Run: 
+Run:
+
 ```bash
 python3 ./process_models.py
 ```
@@ -104,6 +109,7 @@ options:
 ```
 
 Example Usage:
+
 ``` shell
 python3 ./scripts/text_to_image.py --prompt "character, chibi, waifu, side scrolling, white background, centered" --negative-prompt "white" --checkpoint_path "./input/model/v1-5-pruned-emaonly.safetensors" --batch_size 1 --num_images 1
 ```
@@ -120,18 +126,22 @@ python3 ./scripts/embed_prompts.py --prompts 'A painting of a computer virus', '
 
 **Command line arguments**
 
-- `-p, --prompts`: The prompts to embed. Defaults to `['A painting of a computer virus', 'An old photo of a computer scientist']`.
-- `--embedded_prompts_dir`: The path to the directory containing the embedded prompts tensors. Defaults to a constant `EMBEDDED_PROMPTS_DIR`, which is expected to be `'./input/embedded_prompts/'`.
+- `-p, --prompts`: The prompts to embed. Defaults
+  to `['A painting of a computer virus', 'An old photo of a computer scientist']`.
+- `--embedded_prompts_dir`: The path to the directory containing the embedded prompts tensors. Defaults to a
+  constant `EMBEDDED_PROMPTS_DIR`, which is expected to be `'./input/embedded_prompts/'`.
 -
+
 ### Images from embeddings
 
 Only run this _after_ generating the embedded prompts with the [above script](#embed-prompts).
 
-
 **Command line arguments**
 
-- `-p, --embedded_prompts_dir`: The path to the directory containing the embedded prompts tensors. Defaults to the `EMBEDDED_PROMPTS_DIR` constant, which is expected to be `'./input/embedded_prompts/'`.
-- `-od, --output_dir`: The output directory. Defaults to the `OUTPUT_DIR` constant, which is expected to be `'./output/noise-tests/from_embeddings'`.
+- `-p, --embedded_prompts_dir`: The path to the directory containing the embedded prompts tensors. Defaults to
+  the `EMBEDDED_PROMPTS_DIR` constant, which is expected to be `'./input/embedded_prompts/'`.
+- `-od, --output_dir`: The output directory. Defaults to the `OUTPUT_DIR` constant, which is expected to
+  be `'./output/noise-tests/from_embeddings'`.
 - `--num_images`: Number of images to generate. Defaults to `1`.
 - `-bs, --batch_size`: Batch size to use. Defaults to `1`.
 - `-t, --temperature`: Sampling temperature. Defaults to `1.0`.
@@ -141,8 +151,10 @@ Only run this _after_ generating the embedded prompts with the [above script](#e
 - `--low_vram`: Only use this if the gpu you have is old`.
 - `--sampler`: Default value is `DDIM`.
 - `--seed`: Default value is `empty string`.
-- `--cfg_scale`: unconditional guidance scale: eps = eps(x, empty) + scale * (eps(x, cond) - eps(x, empty)) . Defaults to `7`.
-- 
+- `--cfg_scale`: unconditional guidance scale: eps = eps(x, empty) + scale * (eps(x, cond) - eps(x, empty)) . Defaults
+  to `7`.
+-
+
 Try running:
 
 ```bash
@@ -152,18 +164,23 @@ python3 ./scripts/generate_images_from_embeddings.py --num_images 4 --temperatur
 ### Images from distributions
 
 Try running:
+
 ```bash
 python3 ./scripts/generate_images_from_distributions.py -d 4 --params_steps 4 --params_range 0.49 0.54 --num_seeds 4 --temperature 1.2 --ddim_eta 1.2
 ```
 
 **Command line arguments**
 
-- `-p, --prompt`: The prompt to generate images from. Defaults to `"A woman with flowers in her hair in a courtyard, in the style of Frank Frazetta"`.
+- `-p, --prompt`: The prompt to generate images from. Defaults
+  to `"A woman with flowers in her hair in a courtyard, in the style of Frank Frazetta"`.
 - `--negative-prompt`: The negative prompt. For things we dont want to see in generated image. Defaults to `''`.
-- `-od, --output_dir`: The output directory. Defaults to the `OUTPUT_DIR` constant, which should be `"./output/noise-tests/from_distributions"`.
-- `-cp, --checkpoint_path`: The path to the checkpoint file to load from. Defaults to the `CHECKPOINT_PATH` constant, which should be `"./input/model/v1-5-pruned-emaonly.safetensors"`.
+- `-od, --output_dir`: The output directory. Defaults to the `OUTPUT_DIR` constant, which should
+  be `"./output/noise-tests/from_distributions"`.
+- `-cp, --checkpoint_path`: The path to the checkpoint file to load from. Defaults to the `CHECKPOINT_PATH` constant,
+  which should be `"./input/model/v1-5-pruned-emaonly.safetensors"`.
 - `-F, --fully_initialize`: Whether to fully initialize or not. Defaults to `False`.
-- `-d, --distribution_index`: The distribution index to use. Defaults to `4`. Options: 0: "Normal", 1: "Cauchy", 2: "Gumbel", 3: "Laplace", 4: "Logistic".
+- `-d, --distribution_index`: The distribution index to use. Defaults to `4`. Options: 0: "Normal", 1: "Cauchy", 2: "
+  Gumbel", 3: "Laplace", 4: "Logistic".
 - `-bs, --batch_size`: The batch size to use. Defaults to `1`.
 - `--params_steps`: The number of steps for the parameters. Defaults to `3`.
 - `--params_range`: The range of parameters. Defaults to `[0.49, 0.54]`.
@@ -183,12 +200,16 @@ python3 ./scripts/generate_images_from_temperature_range.py -d 4 --params_range 
 
 **Command line arguments**
 
-- `-p, --prompt`: The prompt to generate images from. Defaults to `"A woman with flowers in her hair in a courtyard, in the style of Frank Frazetta"`.
+- `-p, --prompt`: The prompt to generate images from. Defaults
+  to `"A woman with flowers in her hair in a courtyard, in the style of Frank Frazetta"`.
 - `--negative-prompt`: The negative prompt. For things we dont want to see in generated image. Defaults to `''`.
-- `-od, --output_dir`: The output directory. Defaults to the `OUTPUT_DIR` constant, which is expected to be `"./output/noise-tests/temperature_range"`.
-- `-cp, --checkpoint_path`: The path to the checkpoint file to load from. Defaults to the `CHECKPOINT_PATH` constant, which is expected to be `"./input/model/v1-5-pruned-emaonly.safetensors"`.
+- `-od, --output_dir`: The output directory. Defaults to the `OUTPUT_DIR` constant, which is expected to
+  be `"./output/noise-tests/temperature_range"`.
+- `-cp, --checkpoint_path`: The path to the checkpoint file to load from. Defaults to the `CHECKPOINT_PATH` constant,
+  which is expected to be `"./input/model/v1-5-pruned-emaonly.safetensors"`.
 - `-F, --fully_initialize`: Whether to fully initialize or not. Defaults to `False`.
-- `-d, --distribution_index`: The distribution index to use. Defaults to 4. Options: 0: "Normal", 1: "Cauchy", 2: "Gumbel", 3: "Laplace", 4: "Logistic".
+- `-d, --distribution_index`: The distribution index to use. Defaults to 4. Options: 0: "Normal", 1: "Cauchy", 2: "
+  Gumbel", 3: "Laplace", 4: "Logistic".
 - `-s, --seed`: The seed value. Defaults to random int `0 to 2^24`.
 - `-bs, --batch_size`: The batch size to use. Defaults to `1`.
 - `--params_steps`: The number of steps for the parameters. Defaults to `3`.
@@ -199,23 +220,24 @@ python3 ./scripts/generate_images_from_temperature_range.py -d 4 --params_range 
 - `--clear_output_dir`: Whether to clear the output directory or not. Defaults to `False`.
 - `--cuda_device`: The CUDA device to use. Defaults to `"get_device()"`.
 
-
 ### Images and encodings
 
 **Command line arguments**
 
 - `--batch_size`: How many images to generate at once. Defaults to `1`.
 - `--num_iterations`: How many times to iterate the generation of a batch of images. Defaults to `10`.
-- `--prompt`: The prompt to render. It is an optional argument. Defaults to `"a painting of a cute monkey playing guitar"`.
+- `--prompt`: The prompt to render. It is an optional argument. Defaults
+  to `"a painting of a cute monkey playing guitar"`.
 - `--negative-prompt`: The negative prompt. For things we dont want to see in generated image. Defaults to `''`.
 - `--cuda_device`: CUDA device to use for generation. Defaults to `"get_device()"`.
 - `--low_vram`: Flag for low vram gpus. Defaults to `False`.
 - `--sampler`: Sampler name. Defaults to `ddim`.
-- `--cfg_scale`: Unconditional guidance scale: eps = eps(x, empty) + scale * (eps(x, cond) - eps(x, empty)) . Defaults to `7`.
+- `--cfg_scale`: Unconditional guidance scale: eps = eps(x, empty) + scale * (eps(x, cond) - eps(x, empty)) . Defaults
+  to `7`.
 - `--seed`: Array of seed values, one for each generated image. Defaults to ``.
 
-
 Try running:
+
 ```bash
 python3 ./scripts/generate_images_and_encodings.py --prompt "An oil painting of a computer generated image of a geometric pattern" --num_iterations 10
 ```
@@ -223,26 +245,27 @@ python3 ./scripts/generate_images_and_encodings.py --prompt "An oil painting of 
 ### Perturbations on prompts embeddings
 
 Try running:
+
 ```bash
 python3 ./scripts/embed_prompts_and_generate_images.py
 ```
+
 Outputs in: `./output/disturbing_embeddings`
 
-- `--prompt`: The prompt to embed. Defaults to `"A woman with flowers in her hair in a courtyard, in the style of Frank Frazetta"`.
+- `--prompt`: The prompt to embed. Defaults
+  to `"A woman with flowers in her hair in a courtyard, in the style of Frank Frazetta"`.
 - `--num_iterations`: The number of iterations to batch-generate images. Defaults to `8`.
 - `--seed`: The noise seed used to generate the images. Defaults to random int `0 to 2^24`.
 - `--noise_multiplier`: The multiplier for the amount of noise used to disturb the prompt embedding. Defaults to `0.01`.
 - `--cuda_device`: The CUDA device to use. Defaults to `"get_device()"`.
 
-
 ### Image Grid Generator
 
-The Image Grid generator is a script that generates a grid of images from a directory or a zip file containing images. 
+The Image Grid generator is a script that generates a grid of images from a directory or a zip file containing images.
 
 Run the script with the following command:
 
     python ./utility/scripts/grid_generator.py --input_path ./test/test_images/clip_segmentation --output_path ./tmp --rows 3 --columns 2  --img_size 256
-
 
 ### Generate Images From Prompt Generator
 
@@ -283,7 +306,7 @@ options:
 python3 ./scripts/generate_images_from_prompt_generator.py --checkpoint_path "./input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors" --cfg_scale 7 --num_images 10 --num_phrases 12 --output "./output/"
 ```
 
-### Generate Images From Prompt List Dataset 
+### Generate Images From Prompt List Dataset
 
 To generate images from prompt list dataset, these are the available CLI arguments:
 
@@ -337,6 +360,7 @@ options:
 ```
 
 Example Usage:
+
 ``` shell
 python3 ./scripts/chad_score.py --model-path="input/model/chad_score/chad-score-v1.pth" --image-path="test/test_images/test_img.jpg"
 ```
@@ -377,9 +401,11 @@ options:
 ```
 
 Example Usage:
+
 ``` shell
 python3 ./scripts/run_generation_task.py --task_path './test/test_generation_task/text_to_image_v1.json'
 ```
+
 ``` shell
 python3 ./scripts/run_generation_task.py --task_path './test/test_generation_task/generate_images_from_random_prompt_v1.json'
 ```
@@ -409,6 +435,7 @@ options:
 ```
 
 Example Usage:
+
 ``` shell
 python scripts/prompt_score.py --input_path input/set_0000_v2.zip --use_76th_embedding --num_epochs 200 --epsilon_raw 10 --epsilon_scaled 0.2 --model_output_name prompt_score.pth
 ```
@@ -436,7 +463,9 @@ python scripts/prompt_gradient.py --input_path input/set_0000_v2.zip --model_pat
 ```
 
 ### Prompt Generator
+
 Generates prompts and saves to a json file
+
 ```
 usage: prompt_generator.py [-h] [--positive-prefix POSITIVE_PREFIX] [--num-prompts NUM_PROMPTS] [--csv-phrase-limit CSV_PHRASE_LIMIT] [--csv-path CSV_PATH] [--output OUTPUT] [--positive-ratio-threshold POSITIVE_RATIO_THRESHOLD] [--negative-ratio-threshold NEGATIVE_RATIO_THRESHOLD]
                            [--use-threshold USE_THRESHOLD] [--proportional-selection PROPORTIONAL_SELECTION]
@@ -464,6 +493,7 @@ options:
 ```
 
 Example Usage:
+
 ```
 python ./scripts/prompt_generator.py --num-prompts 50 --positive-prefix "environmental, concept art, side scrolling, video game" --csv-phrase-limit 512 --csv-path ./input/civit_ai_data_phrase_count_v6.csv --output ./output/prompt_list_civitai_50_test --positive-ratio-threshold 3 --negative-ratio-threshold 3
 ```
@@ -473,16 +503,20 @@ python ./scripts/prompt_generator.py --num-prompts 50 --positive-prefix "environ
 ```
 
 ### Image Ranker by Fitness Score
+
 script will rank images according spedicif fitness functoin
 
 Example Usage:
+
 ```
 python3 scripts/fitness_score_ranker.py --fitness_function ga/fitness_bounding_box_centered.py --zip_path /path/to/the/zip/file --output_path /path/to/the/output
 
 ```
 
 ### Auto-ml
+
 _Note: Current only support dataset generated from Generate Images Random Prompt_
+
 ```
 usage: auto_ml.py [-h] [--x-input X_INPUT] [--total-time TOTAL_TIME] [--per-run-time PER_RUN_TIME] [--dataset-zip-path DATASET_ZIP_PATH] [--output OUTPUT]
 
@@ -499,13 +533,17 @@ options:
                         Path to the dataset to be used
   --output OUTPUT       Output path where the plot image will be saved
 ```
+
 Example Usage:
+
 ``` shell
 python scripts/auto_ml.py --dataset-zip-path ./input/set_0002.zip --x-input "clip" --output "./output"
 ```
 
 ### Generate Images From Model Predictions
+
 _Note: Currently only supports prediction output from kcg-ml/elm-regression_
+
 ```
 usage: generate_images_from_predictions.py [-h] [--dataset-path DATASET_PATH] [--output-path OUTPUT_PATH] [--num-class NUM_CLASS] [--limit-per-class LIMIT_PER_CLASS]
 
@@ -524,11 +562,13 @@ options:
 ```
 
 Example Usage:
+
 ```
 python ./scripts/generate_images_from_predictions.py --dataset-path "./output/chad-score-prediction.json" --output-path "./output/sort-generate-test" --num-class 10 --limit-per-class 1 
 ```
 
 ### Split images
+
 ```
 
 Split a bigger image example 512x512 into smaller pieces, example 64x64
@@ -546,11 +586,10 @@ options:
 ```
 
 Example Usage:
+
 ```
 python scripts/split_image.py --image_path './test/test_images/512x512_test.png' --output './output/sub_images'
 ```
-
-
 
 ### Affine Combination Of Embeddings GA
 
@@ -558,6 +597,7 @@ Combines N Number of prompts, the prompts are loaded from zip file
 Each prompt has a weight
 We search the weight vector space and try to maximize the fitness function
 The fitness function for now is chad score
+
 ```
 options:
   -h, --help            show this help message and exit
@@ -604,36 +644,99 @@ options:
 ```
 
 Example Usage:
+
 ```
  python ./scripts/ga_affine_combination_embeddings.py --population 6 --num_prompts 6
 ```
 
+## Inpainting
+
+Inpating an image in an especif spot.
+
+usage: inpaint_A1111.py [-h] --prompt PROMPT --init_img INIT_IMG --init_mask INIT_MASK [--negative_prompt NEGATIVE_PROMPT] [--sampler_name SAMPLER_NAME] [--batch_size BATCH_SIZE] [--n_iter N_ITER] [--steps STEPS] [--cfg_scale CFG_SCALE] [--width WIDTH] [--height HEIGHT]
+                        [--mask_blur MASK_BLUR] [--inpainting_fill INPAINTING_FILL] [--outpath_samples OUTPATH_SAMPLES] [--styles STYLES [STYLES ...]] [--resize_mode RESIZE_MODE] [--denoising_strength DENOISING_STRENGTH]
+                        [--image_cfg_scale IMAGE_CFG_SCALE] [--inpaint_full_res_padding INPAINT_FULL_RES_PADDING] [--inpainting_mask_invert INPAINTING_MASK_INVERT]
+
+```
+required arguments:
+  --prompt PROMPT       Input prompt.
+  --init_img INIT_IMG   Path to the initial image.
+  --init_mask INIT_MASK Path to the initial mask.
+```
+
+```
+options:
+  -h, --help            show this help message and exit
+  --negative_prompt NEGATIVE_PROMPT
+                        Negative prompt.
+  --sampler_name SAMPLER_NAME
+                        Sampler name. Default: ddim.
+  --batch_size BATCH_SIZE
+                        Batch size. Default: 1.
+  --n_iter N_ITER
+                        Number of iterations. Default: 1.
+  --steps STEPS
+                        Steps. Default: 20.
+  --cfg_scale CFG_SCALE
+                        Config scale. Default: 7.0.
+  --width WIDTH
+                        Image width. Default: 512.
+  --height HEIGHT
+                        Image height. Default: 512.
+  --mask_blur MASK_BLUR
+                        Mask blur value. Default: 4.
+  --inpainting_fill INPAINTING_FILL
+                        Inpainting fill value. Default: 1.
+  --outpath_samples OUTPATH_SAMPLES
+                        Output path for samples. Default: output_samples_path.
+  --styles STYLES [STYLES ...]
+                        Styles list. Default: [].
+  --resize_mode RESIZE_MODE
+                        Resize mode. Default: 0.
+  --denoising_strength DENOISING_STRENGTH
+                        Denoising strength. Default: 0.75.
+  --image_cfg_scale IMAGE_CFG_SCALE
+                        Image config scale. Default: 1.5.
+  --inpaint_full_res_padding INPAINT_FULL_RES_PADDING
+                        Inpaint full resolution padding. Default: 32.
+  --inpainting_mask_invert INPAINTING_MASK_INVERT
+                        Inpainting mask invert value. Default: 0.
+```
+
+Exemple usage:
+
+```
+python ./scripts/inpaint_A1111.py --prompt "A cat paint by Vincent Van Gogh" --init_img "./test/test_inpainting/background.png" --init_mask "./test/test_inpainting/mask.png"
+```
 
 ## Tests
+
 ### To run all scripts
+
 1. Make an env
 
-    `python3 -m venv env`
+   `python3 -m venv env`
 2. Activate env
 
-    `source env/bin/activate`
+   `source env/bin/activate`
 3. Install requirements
 
-    `pip install -r requirements.txt`
+   `pip install -r requirements.txt`
 4. run pytest
 
-    `python -m unittest test_main_scripts.py `
+   `python -m unittest test_main_scripts.py `
 
 ### To run all kcg-ml-sd1p4 tests
+
 1. Make an env
 
-    `python3 -m venv env`
+   `python3 -m venv env`
 2. Activate env
 
-    `source env/bin/activate`
+   `source env/bin/activate`
 3. Install requirements
 
-    `pip install -r requirements.txt`
+   `pip install -r requirements.txt`
 4. run pytest
 
-    `pytest ./test/test_scripts"`
+   `pytest ./test/test_scripts"`
