@@ -245,10 +245,17 @@ def clip_text_get_prompt_embedding_numpy(config, prompts: list):
 
     prompt_embedding_numpy_list = []
     for idx, prompt in enumerate(prompts):
-        print(f"Processing Prompt {idx}: {prompt}")
+        print(prompt)
         prompt_embedding = clip_text_embedder.forward(prompt)
         prompt_embedding_cpu = prompt_embedding.cpu().detach().numpy()  # Convert to CPU numpy array
         prompt_embedding_numpy_list.append(prompt_embedding_cpu)
+
+        # Save the numpy array to a .npz file
+        filename = os.path.join(FEATURES_DIR, f'prompt_embedding_{idx}.npz')
+        np.savez_compressed(filename, embedding=prompt_embedding_cpu)
+
+        # Print the prompt and the saved filename
+        print(f"Prompt: '{prompt}' -> Embedded Prompt Filename: '{filename}'")
 
         # Clearing the current tensor to save memory
         del prompt_embedding
@@ -260,6 +267,7 @@ def clip_text_get_prompt_embedding_numpy(config, prompts: list):
     torch.cuda.empty_cache()
 
     return prompt_embedding_numpy_list
+
 
 
 
@@ -301,7 +309,7 @@ NULL_PROMPT = NULL_PROMPT.to(device=get_device(), dtype=torch.float32)
 # print("NULL_PROMPT size= ", str(torch.Tensor.size(NULL_PROMPT)))
 
 # generate prompts and get embeddings
-num_genes = 1024 # Each individual is 1024 floats
+num_genes = 20 # Each individual is 1024 floats
 prompt_phrase_length = 6  # number of words in prompt
 prompts_array = ga.generate_prompts(num_genes, prompt_phrase_length)
 
