@@ -26,7 +26,6 @@ from typing import List
 import safetensors
 import torch
 import torch.nn as nn
-from diffusers.models.vae import DiagonalGaussianDistribution
 
 from utility.labml.monit import section
 from .model_paths import (
@@ -283,16 +282,6 @@ class LatentDiffusion(nn.Module):
         We scale down by the scaling factor and then decode.
         """
         return self.first_stage_model.decode(z / self.latent_scaling_factor)
-
-    def get_learned_conditioning(self, c):
-        if hasattr(self.cond_stage_model, 'encode') and callable(self.cond_stage_model.encode):
-            c = self.cond_stage_model.encode(c)
-            if isinstance(c, DiagonalGaussianDistribution):
-                c = c.mode()
-        else:
-            c = self.cond_stage_model(c)
-
-        return c
 
     def forward(self, x: torch.Tensor, t: torch.Tensor, context: torch.Tensor):
         """

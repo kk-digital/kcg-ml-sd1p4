@@ -14,7 +14,6 @@ import clip
 import pygad
 import argparse
 import csv
-import json
 
 # import safetensors as st
 
@@ -27,6 +26,9 @@ from ga.utils import get_next_ga_dir
 import ga
 from stable_diffusion import CLIPconfigs
 from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
+#from ga.fitness_pixel_value import fitness_pixel_value
+#from ga.fitness_white_background import white_background_fitness
+from ga.fitness_filesize import filesize_fitness
 from ga.fitness_white_background import white_background_fitness
 
 
@@ -59,7 +61,7 @@ image_features_clip_model, preprocess = clip.load("ViT-L/14", device=DEVICE)
 # Why are you using this prompt generator?
 EMBEDDED_PROMPTS_DIR = os.path.abspath(join(base_dir, 'input', 'embedded_prompts'))
 
-OUTPUT_DIR = abspath(join(base_dir, 'output', 'ga_1024'))
+OUTPUT_DIR = abspath(join(base_dir, 'output', 'ga'))
 
 os.makedirs(EMBEDDED_PROMPTS_DIR, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -85,7 +87,6 @@ if not os.path.exists(csv_filename):
 
 
 fitness_cache = {}
-start_time = time.time()
 
 # TODO: NULL_PROMPT is completely wrong
 NULL_PROMPT = None  # assign later
@@ -109,52 +110,61 @@ def log_to_file(message):
 
 
 # Function to calculate the chad score for batch of images
-def calculate_and_store_images(ga_instance, solution, solution_idx):
-    generation = ga_instance.generations_completed	
+def calculate_fitness_score(ga_instance, solution, solution_idx):
     # Set seed
-    SEED = random.randint(0, 2**24)
+    SEED = random.randint(0, 2 ** 24)
     if FIXED_SEED == True:
         SEED = 54846
 
-    # Calculate combined embedding
-    combined_embedding_np = np.zeros((1, 77, 768))
+    combined_embedding_np = np.zeros((77, 768))
     for i, coeff in enumerate(solution):
-        combined_embedding_np += embedded_prompts_numpy[i] * coeff
-        print(f"Iteration {i}, Coefficient: {coeff}")
+        combined_embedding_np = combined_embedding_np + embedded_prompts_numpy[i] * coeff
 
-    print(f"Generation {generation}, Solution {solution_idx}:")
-    print(f"    Max value: {np.max(combined_embedding_np)}")
-    print(f"    Min value: {np.max(combined_embedding_np)}")
-    print(f"    Mean value: {np.mean(combined_embedding_np)}")
-    print(f"    Standard deviation: {np.std(combined_embedding_np)}")    
+    try:
+        filepath = os.path.join(FEATURES_DIR, f'combined_embedding_{solution_idx}.npz')
+        np.savez_compressed(filepath, combined_embedding=combined_embedding_np)
+        print(f"Successfully saved to {filepath}")
+    except Exception as e:
+        print(f"Could not save file due to: {e}")
+        print(f"Filepath: {filepath}")    
+    # Convert the combined numpy array to a PyTorch tensor
+    prompt_embedding = torch.tensor(combined_embedding_np, dtype=torch.float32)
+    prompt_embedding = prompt_embedding.view(1, 77, 768).to(DEVICE)
+    
+    # Generate image from the new combined_embedding
+    latent = sd.generate_images_latent_from_embeddings(
+        seed=SEED,
+        embedded_prompt=prompt_embedding,
+        null_prompt=NULL_PROMPT,
+        uncond_scale=CFG_STRENGTH
+    )
 
+    # Convert the PyTorch tensors to numpy arrays
+    prompt_numpy = prompt_embedding.cpu().numpy()
+    latent_numpy = latent.cpu().numpy()  # Assuming `latent` is a torch tensor
 
-    # Convert to PyTorch tensor and generate latent and image
-    prompt_embedding = torch.tensor(combined_embedding_np, dtype=torch.float32).view(1, 77, 768).to(DEVICE)
-    latent = sd.generate_images_latent_from_embeddings(seed=SEED, embedded_prompt=prompt_embedding, null_prompt=NULL_PROMPT, uncond_scale=CFG_STRENGTH)
+    np.savez_compressed(os.path.join(FEATURES_DIR, f'prompt_embedding_{solution_idx}.npz'), prompt_embedding=prompt_numpy)
+    np.savez_compressed(os.path.join(FEATURES_DIR, f'latent_{solution_idx}.npz'), latent=latent_numpy)
+
+    # Create image from latent
     image = sd.get_image_from_latent(latent)
 
-    # Save prompt and latent numpy arrays
-    #np.savez_compressed(os.path.join(FEATURES_DIR, f'prompt_embedding_{solution_idx}.npz'), prompt_embedding=prompt_embedding.cpu().numpy())
-    #np.savez_compressed(os.path.join(FEATURES_DIR, f'latent_{solution_idx}.npz'), latent=latent.cpu().numpy())
+    # Move back to cpu and free the memory
+    del combined_embedding_np
 
-    # Convert to PIL image and calculate fitness score
-    pil_image = to_pil(image[0])
+    prompt_embedding = prompt_embedding.to("cpu")
+    del prompt_embedding
+
+
+    pil_image = to_pil(image[0])  # Convert to (height, width, channels)
+
+    # Convert to grey scale if needed
     if CONVERT_GREY_SCALE_FOR_SCORING == True:
-        pil_image = pil_image.convert("L").convert("RGB")
-    
+        pil_image = pil_image.convert("L")
+        pil_image = pil_image.convert("RGB")
+
+    # Calculate fitness score
     fitness_score = white_background_fitness(pil_image)
-    
-    # Save the individual image
-    file_dir = os.path.join(IMAGES_ROOT_DIR, str(generation))
-    os.makedirs(file_dir, exist_ok=True)
-    filename = os.path.join(file_dir, f'g{generation:04}_{solution_idx:04}.png')
-    pil_image.save(filename)
-
-    # Clean up to free memory
-    del combined_embedding_np, prompt_embedding, latent, image, pil_image
-    torch.cuda.empty_cache()
-
     return fitness_score
 
 
@@ -163,7 +173,7 @@ def cached_fitness_func(ga_instance, solution, solution_idx):
     solution_copy = solution.copy()  # flatten() is a destructive operation
     solution_flattened = solution_copy.flatten()
     solution_tuple = tuple(solution_flattened)
-
+    
     if FIXED_SEED == True:
         # When FIXED_SEED is True, we try to get the score from the cache
         if solution_tuple in fitness_cache:
@@ -171,11 +181,11 @@ def cached_fitness_func(ga_instance, solution, solution_idx):
             return fitness_cache[solution_tuple]
         else:
             # If it is not in the cache, we calculate it and then store it in the cache
-            fitness_cache[solution_tuple] = calculate_and_store_images(ga_instance, solution, solution_idx)
+            fitness_cache[solution_tuple] = calculate_fitness_score(ga_instance, solution, solution_idx)
             return fitness_cache[solution_tuple]
     else:
         # When FIXED_SEED is False, we do not use the cache and calculate a fresh score every time
-        return calculate_and_store_images(ga_instance, solution, solution_idx)
+        return calculate_fitness_score(ga_instance, solution, solution_idx)
 
 
 
@@ -215,64 +225,84 @@ def on_mutation(ga_instance, offspring_mutation):
     log_to_file(f"Performing mutation at generation: {ga_instance.generations_completed}")
 
 
-def on_start(ga_instance):
-    log_to_file(f"Starting the genetic algorithm with {ga_instance.num_generations} generations and {ga_instance.sol_per_pop} population size.")
+def store_generation_images(ga_instance):
+    start_time = time.time()
+    generation = ga_instance.generations_completed
+    print("Generation #", generation)
+    print("Population size: ", len(ga_instance.population))
 
-def on_generation(ga_instance):
-    global start_time  # Make sure to define start_time as a global variable
+
+    file_dir = os.path.join(IMAGES_ROOT_DIR, str(generation))
+    os.makedirs(file_dir)
+    for i, ind in enumerate(ga_instance.population):
+        print(i)
+        SEED = random.randint(0, 2 ** 24)
+        if FIXED_SEED == True:
+            SEED = 54846
+
+        combined_embedding_np = np.zeros((77, 768))
+        for ii, coeff in enumerate(ind):
+            combined_embedding_np = combined_embedding_np + embedded_prompts_numpy[ii] * coeff
+
+        combined_embedding = torch.from_numpy(combined_embedding_np)
+        combined_embedding = combined_embedding.to(device=get_device(), dtype=torch.float32)
+        # WARNING: Is using autocast internally
+        latent = sd.generate_images_latent_from_embeddings(
+            seed=SEED,
+            embedded_prompt=combined_embedding,
+            null_prompt=NULL_PROMPT,
+            uncond_scale=CFG_STRENGTH
+        )
+
+        image = sd.get_image_from_latent(latent)
+        del latent
+        torch.cuda.empty_cache()
+
+        pil_image = to_pil(image[0])
+        del image
+        torch.cuda.empty_cache()
+        filename = os.path.join(file_dir, f'g{generation:04}_{i:04}.png')
+        pil_image.save(filename)
+        del pil_image  # Delete the PIL image
+        torch.cuda.empty_cache()
+
+
     end_time = time.time()  # End timing for generation
     total_time = end_time - start_time
-    log_to_file(f"----------------------------------")
-    log_to_file(f"Total time taken for Generation #{ga_instance.generations_completed}: {total_time} seconds")
-
+    log_to_file(f"----------------------------------" )
+    log_to_file(f"Total time taken for Generation #{generation}: {total_time} seconds")
+    
     # Log images per generation
     num_images = len(ga_instance.population)
-    log_to_file(f"Images generated in Generation #{ga_instance.generations_completed}: {num_images}")
-
+    log_to_file(f"Images generated in Generation #{generation}: {num_images}")
+    
     # Log images/sec
     images_per_second = num_images / total_time
-    log_to_file(f"Images per second in Generation #{ga_instance.generations_completed}: {images_per_second}")
-
-    start_time = time.time()  # Reset the start time for the next generation
+    log_to_file(f"Images per second in Generation #{generation}: {images_per_second}")
 
 
 def clip_text_get_prompt_embedding_numpy(config, prompts: list):
-
     #load model from memory
     clip_text_embedder = CLIPTextEmbedder(device=get_device())
-    clip_text_embedder.load_submodels(
-        tokenizer_path=config.get_model_folder_path(CLIPconfigs.TXT_EMB_TOKENIZER),
-        transformer_path=config.get_model_folder_path(CLIPconfigs.TXT_EMB_TEXT_MODEL)
-    )
+    clip_text_embedder.load_submodels()
 
     prompt_embedding_numpy_list = []
     for prompt in prompts:
         print(prompt)
-        prompt_embedding = clip_text_embedder.forward(prompt)
+        prompt_embedding = clip_text_embedder(prompt)
+
         prompt_embedding_cpu = prompt_embedding.cpu()
 
         del prompt_embedding
         torch.cuda.empty_cache()
-        
+
         prompt_embedding_numpy_list.append(prompt_embedding_cpu.detach().numpy())
-        # Flattening tensor and appending
-        #print("clip_text_get_prompt_embedding, 1 embedding= ", str(torch.Tensor.size(prompt_embedding)))
-        #clip_text_get_prompt_embedding, 1 embedding=  torch.Size([1, 77, 768])
-        #prompt_embedding = prompt_embedding.view(-1)
-        #print("clip_text_get_prompt_embedding, 2 embedding= ", str(torch.Tensor.size(prompt_embedding)))
-        #clip_text_get_prompt_embedding, 2 embedding=  torch.Size([59136])
 
-
-    ## Clear model from memory
-    clip_text_embedder.to("cpu")
-    del clip_text_embedder
-    torch.cuda.empty_cache()
 
     return prompt_embedding_numpy_list
 
-
 def prompt_embedding_vectors(sd, prompt_array):
-    
+    # Generate embeddings for each prompt
     return clip_text_get_prompt_embedding_numpy(config, prompts=prompt_array)
 
 # Call the GA loop function with your initialized StableDiffusion model
@@ -319,12 +349,7 @@ for prompt in prompts_array:
     prompt_str = prompt.get_positive_prompt_str()
     prompts_str_array.append(prompt_str)
 
-# Construct the full path to the JSON file
-json_file_path = os.path.join(IMAGES_ROOT_DIR, 'prompts_str_array.json')
-
-# Saving the list to a JSON file
-with open(json_file_path, 'w', encoding='utf-8') as f:
-    json.dump(prompts_str_array, f, ensure_ascii=False, indent=4)
+print(prompt_str)
 
 embedded_prompts_numpy = np.array(clip_text_get_prompt_embedding_numpy(config, prompts_str_array))
 
@@ -338,10 +363,11 @@ embedded_prompts_numpy = np.array(clip_text_get_prompt_embedding_numpy(config, p
 initial_population = []
 
 for i in range(population_size):
-    random_weights = np.random.normal(loc=0.0, scale=1.0, size=num_genes)
-    random_weights = np.abs(random_weights)  # Making sure weights are non-negative
-    random_weights /= random_weights.sum()  # Normalizing the weights to sum to 1
+    random_weights = np.random.dirichlet(np.ones(num_genes), size=1).flatten()
+    #random_weights = np.full(num_prompts, 1.0 / num_prompts)
+    #normalized_weights = (random_weights - np.mean(random_weights)) / np.std(random_weights)
     initial_population.append(random_weights)
+
 
 # Printing out each individual in the initial population
 for i, individual in enumerate(initial_population):
@@ -352,7 +378,7 @@ for i, individual in enumerate(initial_population):
 ga_instance = pygad.GA(initial_population=initial_population,
                        num_generations=generations,
                        num_parents_mating=num_parents_mating,
-                       fitness_func=cached_fitness_func,
+                       fitness_func=calculate_fitness_score,
                        sol_per_pop=population_size,
                        num_genes=num_genes, 
                        # Pygad uses 0-100 range for percentage
@@ -363,7 +389,7 @@ ga_instance = pygad.GA(initial_population=initial_population,
                        mutation_type=mutation_type,
                        on_fitness=on_fitness,
                        on_mutation=on_mutation,
-                       on_generation=on_generation,
+                       on_generation=store_generation_images,
                        on_stop=on_fitness,
                        parent_selection_type=parent_selection_type,
                        keep_parents=0,
@@ -373,7 +399,7 @@ ga_instance = pygad.GA(initial_population=initial_population,
                        # fitness_func=calculate_fitness_score,
                        # on_parents=on_parents,
                        # on_crossover=on_crossover,
-                       on_start=on_start,
+                       on_start=store_generation_images,
                        )
 
 log_to_file(f"Batch Size: {population_size}")
