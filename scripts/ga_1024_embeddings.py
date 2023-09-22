@@ -118,9 +118,9 @@ def calculate_and_store_images(ga_instance, solution, solution_idx):
 
     # Calculate combined embedding
     combined_embedding_np = np.zeros((1, 77, 768))
-    for i, coeff in enumerate(solution):
-        combined_embedding_np += embedded_prompts_numpy[i] * coeff
-        print(f"Iteration {i}, Coefficient: {coeff}")
+    for i, prompt_embedding_np in enumerate(embedded_prompts_numpy):
+        prompt_embedding = torch.tensor(prompt_embedding_np, dtype=torch.float32).to(DEVICE)
+        #print(f"Iteration {i}, Coefficient: {coeff}")
 
     print(f"Generation {generation}, Solution {solution_idx}:")
     print(f"    Max value: {np.max(combined_embedding_np)}")
@@ -130,7 +130,7 @@ def calculate_and_store_images(ga_instance, solution, solution_idx):
 
 
     # Convert to PyTorch tensor and generate latent and image
-    prompt_embedding = torch.tensor(combined_embedding_np, dtype=torch.float32).view(1, 77, 768).to(DEVICE)
+    #prompt_embedding = torch.tensor(combined_embedding_np, dtype=torch.float32).view(1, 77, 768).to(DEVICE)
     latent = sd.generate_images_latent_from_embeddings(seed=SEED, embedded_prompt=prompt_embedding, null_prompt=NULL_PROMPT, uncond_scale=CFG_STRENGTH)
     image = sd.get_image_from_latent(latent)
 
