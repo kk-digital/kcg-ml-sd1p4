@@ -235,10 +235,7 @@ def on_generation(ga_instance):
 
     start_time = time.time()  # Reset the start time for the next generation
 
-
 def clip_text_get_prompt_embedding_numpy(config, prompts: list):
-    # prompts = prompts  # This line seems unnecessary, so it's commented out
-
     # Load model from memory
     clip_text_embedder = CLIPTextEmbedder(device=get_device())
     clip_text_embedder.load_submodels(
@@ -247,8 +244,8 @@ def clip_text_get_prompt_embedding_numpy(config, prompts: list):
     )
 
     prompt_embedding_numpy_list = []
-    for prompt in prompts:
-        print(prompt)
+    for idx, prompt in enumerate(prompts):
+        print(f"Processing Prompt {idx}: {prompt}")
         prompt_embedding = clip_text_embedder.forward(prompt)
         prompt_embedding_cpu = prompt_embedding.cpu().detach().numpy()  # Convert to CPU numpy array
         prompt_embedding_numpy_list.append(prompt_embedding_cpu)
@@ -263,6 +260,7 @@ def clip_text_get_prompt_embedding_numpy(config, prompts: list):
     torch.cuda.empty_cache()
 
     return prompt_embedding_numpy_list
+
 
 
 
