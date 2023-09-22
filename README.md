@@ -497,6 +497,10 @@ options:
                         True if proportional selection will be used to get the phrases
 ```
 
+```
+To get civitai csv, download via:
+https://mega.nz/file/wNIXHKDA#CIB92fLkCquatWvzUAjjcKbrKCUmO2ffRVrzE3XYQVM
+```
 Example Usage:
 
 ```
@@ -658,11 +662,11 @@ Example Usage:
 
 Inpainting an image.
 
+```
 usage: inpaint_A1111.py [-h] --prompt PROMPT --init_img INIT_IMG --init_mask INIT_MASK [--negative_prompt NEGATIVE_PROMPT] [--sampler_name SAMPLER_NAME] [--batch_size BATCH_SIZE] [--n_iter N_ITER] [--steps STEPS] [--cfg_scale CFG_SCALE] [--width WIDTH] [--height HEIGHT]
                         [--mask_blur MASK_BLUR] [--inpainting_fill INPAINTING_FILL] [--outpath_samples OUTPATH_SAMPLES] [--styles STYLES [STYLES ...]] [--resize_mode RESIZE_MODE] [--denoising_strength DENOISING_STRENGTH]
                         [--image_cfg_scale IMAGE_CFG_SCALE] [--inpaint_full_res_padding INPAINT_FULL_RES_PADDING] [--inpainting_mask_invert INPAINTING_MASK_INVERT]
 
-```
 required arguments:
   --prompt PROMPT       Input prompt.
   --init_img INIT_IMG   Path to the initial image.
@@ -718,11 +722,11 @@ python ./scripts/inpaint_A1111.py --prompt "A cat paint by Vincent Van Gogh" --i
 
 Generate image dataset using inpainting and prompts from prompt list dataset.
 
+```
 usage: generate_images_with_inpainting_from_prompt_list.py [-h] [--prompt_list_dataset_path PROMPT_LIST_DATASET_PATH] [--num_images NUM_IMAGES] [--init_img INIT_IMG] [--init_mask INIT_MASK] [--sampler_name SAMPLER_NAME] [--batch_size BATCH_SIZE] [--n_iter N_ITER] [--steps STEPS] [--cfg_scale CFG_SCALE]
                                                            [--width WIDTH] [--height HEIGHT] [--mask_blur MASK_BLUR] [--inpainting_fill INPAINTING_FILL] [--outpath OUTPATH] [--styles [STYLES ...]] [--resize_mode RESIZE_MODE] [--denoising_strength DENOISING_STRENGTH] [--image_cfg_scale IMAGE_CFG_SCALE]
                                                            [--inpaint_full_res_padding INPAINT_FULL_RES_PADDING] [--inpainting_mask_invert INPAINTING_MASK_INVERT]
 
-```
 required arguments:
   --prompt_list_dataset_path PROMPT_LIST_DATASET_PATH
                         The path of the prompt list dataset
