@@ -120,6 +120,7 @@ def calculate_and_store_images(ga_instance, solution, solution_idx):
     combined_embedding_np = np.zeros((1, 77, 768))
     for i, prompt_embedding_np in enumerate(embedded_prompts_numpy):
         prompt_embedding = torch.tensor(prompt_embedding_np, dtype=torch.float32).to(DEVICE)
+        np.savez_compressed(os.path.join(FEATURES_DIR, f'second_prompt_embedding_{i}.npz'), prompt_embedding=prompt_embedding_np)
         #print(f"Iteration {i}, Coefficient: {coeff}")
 
     print(f"Generation {generation}, Solution {solution_idx}:")
@@ -251,7 +252,7 @@ def clip_text_get_prompt_embedding_numpy(config, prompts: list):
         prompt_embedding_numpy_list.append(prompt_embedding_cpu)
 
         # Save the numpy array to a .npz file
-        filename = os.path.join(FEATURES_DIR, f'prompt_embedding_{idx}.npz')
+        filename = os.path.join(FEATURES_DIR, f'first_prompt_embedding_{idx}.npz')
         np.savez_compressed(filename, embedding=prompt_embedding_cpu)
 
         # Print the prompt and the saved filename
