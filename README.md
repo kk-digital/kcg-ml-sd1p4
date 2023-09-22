@@ -5,33 +5,37 @@
 ## Summary
 
 - [kcg-ml-sd1p4](#kcg-ml-sd1p4)
-    - [Prerequisites](#prerequisites)
-        - [Installing Requirements](#installing-requirements)
-        - [Downloading Models](#downloading-models)
-        - [Processing Models](#processing-models)
-    - [Running Stable Diffusion scripts](#running-stable-diffusion-scripts)
-        - [Text To Image](#text-to-image)
-        - [Embed prompts](#embed-prompts)
-        - [Images from embeddings](#images-from-embeddings)
-        - [Images from distributions](#images-from-distributions)
-        - [Images from temperature range](#images-from-temperature-range)
-        - [Images and encodings](#images-and-encodings)
-        - [Perturbations on prompts embeddings](#perturbations-on-prompts-embeddings)
-        - [Image Grid Generator](#image-grid-generator)
-        - [Generate Images From Prompt Generator](#generate-images-from-prompt-generator)
-        - [Generate Images From Prompt List Dataset](#generate-images-from-prompt-list-dataset)
-        - [Chad Score](#chad-score)
-        - [Chad Sort](#chad-sort)
-        - [Running GenerationTask](#running-generationtask)
-        - [Prompt Score](#prompt-score)
-        - [Prompt Embeddings Gradient Optimization](#prompt-embeddings-gradient-optimization)
-        - [Prompt Generator](#prompt-generator)
-        - [Image Ranker by Fitness Score](#fitness_score_ranker)
-        - [Auto-ml](#auto-ml)
-        - [Generate Images From Model Predictions](#generate-images-from-model-predictions)
-    - [Tests](#tests)
-        - [To run all scripts](#to-run-all-scripts)
-        - [To run all kcg-ml-sd1p4 tests](#to-run-all-kcg-ml-sd1p4-tests)
+  - [Prerequisites](#prerequisites)
+    - [Installing Requirements](#installing-requirements)
+    - [Downloading Models](#downloading-models)
+    - [Processing Models](#processing-models)
+  - [Running Stable Diffusion scripts](#running-stable-diffusion-scripts)
+    - [Text To Image](#text-to-image)
+    - [Embed prompts](#embed-prompts)
+    - [Images from embeddings](#images-from-embeddings)
+    - [Images from distributions](#images-from-distributions)
+    - [Images from temperature range](#images-from-temperature-range)
+    - [Images and encodings](#images-and-encodings)
+    - [Perturbations on prompts embeddings](#perturbations-on-prompts-embeddings)
+    - [Image Grid Generator](#image-grid-generator)
+    - [Generate Images From Prompt Generator](#generate-images-from-prompt-generator)
+    - [Generate Images From Prompt List Dataset](#generate-images-from-prompt-list-dataset)
+    - [Chad Score](#chad-score)
+    - [Chad Sort](#chad-sort)
+    - [Running GenerationTask](#running-generationtask)
+    - [Prompt Score](#prompt-score)
+    - [Prompt Embeddings Gradient Optimization](#prompt-embeddings-gradient-optimization)
+    - [Prompt Generator](#prompt-generator)
+    - [Image Ranker by Fitness Score](#image-ranker-by-fitness-score)
+    - [Auto-ml](#auto-ml)
+    - [Generate Images From Model Predictions](#generate-images-from-model-predictions)
+    - [Split images](#split-images)
+    - [Affine Combination Of Embeddings GA](#affine-combination-of-embeddings-ga)
+    - [Inpainting](#inpainting)
+    - [Generate Images Using Inpainting from Prompt List Dataset](#generate-images-using-inpainting-from-prompt-list-dataset)
+  - [Tests](#tests)
+    - [To run all scripts](#to-run-all-scripts)
+    - [To run all kcg-ml-sd1p4 tests](#to-run-all-kcg-ml-sd1p4-tests)
 
 ## Prerequisites
 
@@ -117,25 +121,26 @@ python3 ./scripts/text_to_image.py --prompt "character, chibi, waifu, side scrol
 ### Embed prompts
 
 Saves a tensor of a batch of prompts embeddings, and the tensor for the null prompt `""`.
-
-Command:
-
-```bash
-python3 ./scripts/embed_prompts.py --prompts 'A painting of a computer virus', 'An old photo of a computer scientist', 'A computer drawing a computer'
 ```
-
 **Command line arguments**
 
 - `-p, --prompts`: The prompts to embed. Defaults
   to `['A painting of a computer virus', 'An old photo of a computer scientist']`.
 - `--embedded_prompts_dir`: The path to the directory containing the embedded prompts tensors. Defaults to a
   constant `EMBEDDED_PROMPTS_DIR`, which is expected to be `'./input/embedded_prompts/'`.
--
+```
+Command:
+
+```
+python3 ./scripts/embed_prompts.py --prompts 'A painting of a computer virus', 'An old photo of a computer scientist', 'A computer drawing a computer'
+```
+
+
 
 ### Images from embeddings
 
 Only run this _after_ generating the embedded prompts with the [above script](#embed-prompts).
-
+```
 **Command line arguments**
 
 - `-p, --embedded_prompts_dir`: The path to the directory containing the embedded prompts tensors. Defaults to
@@ -154,7 +159,7 @@ Only run this _after_ generating the embedded prompts with the [above script](#e
 - `--cfg_scale`: unconditional guidance scale: eps = eps(x, empty) + scale * (eps(x, cond) - eps(x, empty)) . Defaults
   to `7`.
 -
-
+```
 Try running:
 
 ```bash
@@ -168,7 +173,7 @@ Try running:
 ```bash
 python3 ./scripts/generate_images_from_distributions.py -d 4 --params_steps 4 --params_range 0.49 0.54 --num_seeds 4 --temperature 1.2 --ddim_eta 1.2
 ```
-
+```
 **Command line arguments**
 
 - `-p, --prompt`: The prompt to generate images from. Defaults
@@ -189,7 +194,7 @@ python3 ./scripts/generate_images_from_distributions.py -d 4 --params_steps 4 --
 - `--ddim_eta`: Amount of noise to readd during the sampling process. Defaults to `0.0`.
 - `--clear_output_dir`: Either to clear or not the output directory before running. Defaults to `False`.
 - `--cuda_device`: CUDA device to use. Defaults to `"get_device()"`.
-
+```
 ### Images from temperature range
 
 Try running:
@@ -197,7 +202,7 @@ Try running:
 ```bash
 python3 ./scripts/generate_images_from_temperature_range.py -d 4 --params_range 0.49 0.54 --params_steps 3 --temperature_steps 3 --temperature_range 0.8 2.0
 ```
-
+```
 **Command line arguments**
 
 - `-p, --prompt`: The prompt to generate images from. Defaults
@@ -219,9 +224,9 @@ python3 ./scripts/generate_images_from_temperature_range.py -d 4 --params_range 
 - `--ddim_eta`: The value of ddim_eta. Defaults to `0.1`.
 - `--clear_output_dir`: Whether to clear the output directory or not. Defaults to `False`.
 - `--cuda_device`: The CUDA device to use. Defaults to `"get_device()"`.
-
+```
 ### Images and encodings
-
+```
 **Command line arguments**
 
 - `--batch_size`: How many images to generate at once. Defaults to `1`.
@@ -235,7 +240,7 @@ python3 ./scripts/generate_images_from_temperature_range.py -d 4 --params_range 
 - `--cfg_scale`: Unconditional guidance scale: eps = eps(x, empty) + scale * (eps(x, cond) - eps(x, empty)) . Defaults
   to `7`.
 - `--seed`: Array of seed values, one for each generated image. Defaults to ``.
-
+```
 Try running:
 
 ```bash
@@ -649,9 +654,9 @@ Example Usage:
  python ./scripts/ga_affine_combination_embeddings.py --population 6 --num_prompts 6
 ```
 
-## Inpainting
+### Inpainting
 
-Inpating an image in an especif spot.
+Inpainting an image.
 
 usage: inpaint_A1111.py [-h] --prompt PROMPT --init_img INIT_IMG --init_mask INIT_MASK [--negative_prompt NEGATIVE_PROMPT] [--sampler_name SAMPLER_NAME] [--batch_size BATCH_SIZE] [--n_iter N_ITER] [--steps STEPS] [--cfg_scale CFG_SCALE] [--width WIDTH] [--height HEIGHT]
                         [--mask_blur MASK_BLUR] [--inpainting_fill INPAINTING_FILL] [--outpath_samples OUTPATH_SAMPLES] [--styles STYLES [STYLES ...]] [--resize_mode RESIZE_MODE] [--denoising_strength DENOISING_STRENGTH]
@@ -709,6 +714,66 @@ Exemple usage:
 python ./scripts/inpaint_A1111.py --prompt "A cat paint by Vincent Van Gogh" --init_img "./test/test_inpainting/background.png" --init_mask "./test/test_inpainting/mask.png"
 ```
 
+### Generate Images Using Inpainting from Prompt List Dataset
+
+Generate image dataset using inpainting and prompts from prompt list dataset.
+
+usage: generate_images_with_inpainting_from_prompt_list.py [-h] [--prompt_list_dataset_path PROMPT_LIST_DATASET_PATH] [--num_images NUM_IMAGES] [--init_img INIT_IMG] [--init_mask INIT_MASK] [--sampler_name SAMPLER_NAME] [--batch_size BATCH_SIZE] [--n_iter N_ITER] [--steps STEPS] [--cfg_scale CFG_SCALE]
+                                                           [--width WIDTH] [--height HEIGHT] [--mask_blur MASK_BLUR] [--inpainting_fill INPAINTING_FILL] [--outpath OUTPATH] [--styles [STYLES ...]] [--resize_mode RESIZE_MODE] [--denoising_strength DENOISING_STRENGTH] [--image_cfg_scale IMAGE_CFG_SCALE]
+                                                           [--inpaint_full_res_padding INPAINT_FULL_RES_PADDING] [--inpainting_mask_invert INPAINTING_MASK_INVERT]
+
+```
+required arguments:
+  --prompt_list_dataset_path PROMPT_LIST_DATASET_PATH
+                        The path of the prompt list dataset
+  --num_images NUM_IMAGES
+                        The number of images to generate
+  --init_img INIT_IMG   Path to the initial image.
+  --init_mask INIT_MASK Path to the initial mask.
+```
+
+```
+options:
+  -h, --help            show this help message and exit
+  --sampler_name SAMPLER_NAME
+                        Sampler name. Default: ddim.
+  --batch_size BATCH_SIZE
+                        Batch size. Default: 1.
+  --n_iter N_ITER
+                        Number of iterations. Default: 1.
+  --steps STEPS
+                        Steps. Default: 20.
+  --cfg_scale CFG_SCALE
+                        Config scale. Default: 7.0.
+  --width WIDTH
+                        Image width. Default: 512.
+  --height HEIGHT
+                        Image height. Default: 512.
+  --mask_blur MASK_BLUR
+                        Mask blur value. Default: 4.
+  --inpainting_fill INPAINTING_FILL
+                        Inpainting fill value. Default: 1.
+  --outpath_samples OUTPATH_SAMPLES
+                        Output path for samples. Default: output_samples_path.
+  --styles STYLES [STYLES ...]
+                        Styles list. Default: [].
+  --resize_mode RESIZE_MODE
+                        Resize mode. Default: 0.
+  --denoising_strength DENOISING_STRENGTH
+                        Denoising strength. Default: 0.75.
+  --image_cfg_scale IMAGE_CFG_SCALE
+                        Image config scale. Default: 1.5.
+  --inpaint_full_res_padding INPAINT_FULL_RES_PADDING
+                        Inpaint full resolution padding. Default: 32.
+  --inpainting_mask_invert INPAINTING_MASK_INVERT
+                        Inpainting mask invert value. Default: 0.
+```
+
+Exemple usage:
+
+```
+python ./scripts/generate_images_with_inpainting_from_prompt_list.py --init_img "./test/test_inpainting/white_512x512.jpg" --init_mask "./test/test_inpainting/character_mask.png" --prompt_list_dataset_path ./test/test_zip_files/prompt_list_civitai_2_test.zip --num_images 2
+```
 ## Tests
 
 ### To run all scripts
