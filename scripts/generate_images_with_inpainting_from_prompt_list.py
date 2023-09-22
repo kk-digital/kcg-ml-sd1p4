@@ -11,8 +11,8 @@ sys.path.insert(0, base_directory)
 from cli_builder import CLI
 from utility.dataset.prompt_list_dataset import PromptListDataset
 from utility.utils_logger import logger
-from scripts.inpaint_A1111 import img2img
-
+from scripts.inpaint_A1111 import img2img, get_model
+from stable_diffusion.utils_backend import get_device
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Call img2img with specified parameters.")
@@ -74,6 +74,9 @@ def main():
     if not os.path.exists(args.outpath):
         os.makedirs(args.outpath)
 
+    device = get_device()
+    sd, config, model = get_model(device, args.steps)
+
     for i in tqdm(range(len(prompt_dataset.prompt_paths))):
         prompt_data = prompt_dataset.get_prompt_data(i)
         positive_prompt = prompt_data.positive_prompt_str
@@ -97,7 +100,10 @@ def main():
                 denoising_strength=args.denoising_strength,
                 image_cfg_scale=args.image_cfg_scale,
                 inpaint_full_res_padding=args.inpaint_full_res_padding,
-                inpainting_mask_invert=args.inpainting_mask_invert
+                inpainting_mask_invert=args.inpainting_mask_invert,
+                sd=sd,
+                config=config,
+                model=model
                 )
 
 if __name__ == "__main__":

@@ -209,15 +209,16 @@ class StableDiffusionProcessing:
         return embedded_prompts
 
     def __post_init__(self):
-        # NOTE: Initializing stable diffusion
-        self.sd = StableDiffusion(device=self.device, n_steps=self.n_steps)
-        self.config = ModelPathConfig()
-        self.sd.quick_initialize().load_autoencoder(self.config.get_model(SDconfigs.VAE)).load_decoder(
-            self.config.get_model(SDconfigs.VAE_DECODER))
-        self.sd.model.load_unet(self.config.get_model(SDconfigs.UNET))
-        self.sd.initialize_latent_diffusion(path='input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors',
-                                            force_submodels_init=True)
-        self.model = self.sd.model
+        if self.sd is None:
+            # NOTE: Initializing stable diffusion
+            self.sd = StableDiffusion(device=self.device, n_steps=self.n_steps)
+            self.config = ModelPathConfig()
+            self.sd.quick_initialize().load_autoencoder(self.config.get_model(SDconfigs.VAE)).load_decoder(
+                self.config.get_model(SDconfigs.VAE_DECODER))
+            self.sd.model.load_unet(self.config.get_model(SDconfigs.UNET))
+            self.sd.initialize_latent_diffusion(path='input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors',
+                                                force_submodels_init=True)
+            self.model = self.sd.model
 
         if self.styles is None:
             self.styles = []
@@ -701,10 +702,24 @@ def create_binary_mask(image):
     return image
 
 
+def get_model(device, n_steps):
+    # NOTE: Initializing stable diffusion
+    sd = StableDiffusion(device=device, n_steps=n_steps)
+    config = ModelPathConfig()
+    sd.quick_initialize().load_autoencoder(config.get_model(SDconfigs.VAE)).load_decoder(
+        config.get_model(SDconfigs.VAE_DECODER))
+    sd.model.load_unet(config.get_model(SDconfigs.UNET))
+    sd.initialize_latent_diffusion(path='input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors',
+                                        force_submodels_init=True)
+    model = sd.model
+
+    return sd, config, model
+
+
 def img2img(prompt: str, negative_prompt: str, sampler_name: str, batch_size: int, n_iter: int, steps: int,
             cfg_scale: float, width: int, height: int, mask_blur: int, inpainting_fill: int,
             outpath, styles, init_images, mask, resize_mode, denoising_strength,
-            image_cfg_scale, inpaint_full_res_padding, inpainting_mask_invert):
+            image_cfg_scale, inpaint_full_res_padding, inpainting_mask_invert, sd=None, config=None, model=None):
     p = StableDiffusionProcessingImg2Img(
         outpath=outpath,
         prompt=prompt,
@@ -726,6 +741,9 @@ def img2img(prompt: str, negative_prompt: str, sampler_name: str, batch_size: in
         image_cfg_scale=image_cfg_scale,
         inpaint_full_res_padding=inpaint_full_res_padding,
         inpainting_mask_invert=inpainting_mask_invert,
+        sd=sd,
+        config=config,
+        model=model
     )
 
     with closing(p):
