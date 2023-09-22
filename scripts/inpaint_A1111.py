@@ -155,7 +155,7 @@ class StableDiffusionProcessing:
     prompt: str = ""
     prompt_for_display: str = None
     negative_prompt: str = ""
-    styles: list[str] = None
+    styles: list = None
     seed: int = -1
     subseed: int = -1
     subseed_strength: float = 0
@@ -169,7 +169,7 @@ class StableDiffusionProcessing:
     cfg_scale: float = 7.0
     width: int = 512
     height: int = 512
-    extra_generation_params: dict[str, Any] = None
+    extra_generation_params: dict = None
     overlay_images: list = None
 
     cached_uc = [None, None]
@@ -180,7 +180,7 @@ class StableDiffusionProcessing:
     c: tuple = field(default=None, init=False)
     uc: tuple = field(default=None, init=False)
 
-    rng: ImageRNG | None = field(default=None, init=False)
+    rng: ImageRNG = field(default=None, init=False)
     color_corrections: list = field(default=None, init=False)
 
     all_prompts: list = field(default=None, init=False)
