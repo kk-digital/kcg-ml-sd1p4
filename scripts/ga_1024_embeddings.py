@@ -237,8 +237,9 @@ def on_generation(ga_instance):
 
 
 def clip_text_get_prompt_embedding_numpy(config, prompts: list):
+    # prompts = prompts  # This line seems unnecessary, so it's commented out
 
-    #load model from memory
+    # Load model from memory
     clip_text_embedder = CLIPTextEmbedder(device=get_device())
     clip_text_embedder.load_submodels(
         tokenizer_path=config.get_model_folder_path(CLIPconfigs.TXT_EMB_TOKENIZER),
@@ -249,19 +250,12 @@ def clip_text_get_prompt_embedding_numpy(config, prompts: list):
     for prompt in prompts:
         print(prompt)
         prompt_embedding = clip_text_embedder.forward(prompt)
-        prompt_embedding_cpu = prompt_embedding.cpu()
+        prompt_embedding_cpu = prompt_embedding.cpu().detach().numpy()  # Convert to CPU numpy array
+        prompt_embedding_numpy_list.append(prompt_embedding_cpu)
 
+        # Clearing the current tensor to save memory
         del prompt_embedding
         torch.cuda.empty_cache()
-        
-        prompt_embedding_numpy_list.append(prompt_embedding_cpu.detach().numpy())
-        # Flattening tensor and appending
-        #print("clip_text_get_prompt_embedding, 1 embedding= ", str(torch.Tensor.size(prompt_embedding)))
-        #clip_text_get_prompt_embedding, 1 embedding=  torch.Size([1, 77, 768])
-        #prompt_embedding = prompt_embedding.view(-1)
-        #print("clip_text_get_prompt_embedding, 2 embedding= ", str(torch.Tensor.size(prompt_embedding)))
-        #clip_text_get_prompt_embedding, 2 embedding=  torch.Size([59136])
-
 
     ## Clear model from memory
     clip_text_embedder.to("cpu")
@@ -269,6 +263,7 @@ def clip_text_get_prompt_embedding_numpy(config, prompts: list):
     torch.cuda.empty_cache()
 
     return prompt_embedding_numpy_list
+
 
 
 def prompt_embedding_vectors(sd, prompt_array):
