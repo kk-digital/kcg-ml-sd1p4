@@ -119,7 +119,6 @@ def calculate_and_store_images(ga_instance, solution, solution_idx):
     # Calculate combined embedding
     combined_embedding_np = np.zeros((1, 77, 768))
     for i, coeff in enumerate(solution):
-        np.savez_compressed(os.path.join(FEATURES_DIR, f'individual_embedding_{solution_idx}_{i}.npz'), embedding=embedded_prompts_numpy[i])
         combined_embedding_np += embedded_prompts_numpy[i] * coeff
         print(f"Iteration {i}, Coefficient: {coeff}")
 
@@ -305,12 +304,11 @@ sd.model.load_unet(config.get_model(SDconfigs.UNET))
 NULL_PROMPT = prompt_embedding_vectors(sd, [""])[0]
 NULL_PROMPT = torch.from_numpy(NULL_PROMPT)
 NULL_PROMPT = NULL_PROMPT.to(device=get_device(), dtype=torch.float32)
-torch.save(NULL_PROMPT, os.path.join(FEATURES_DIR, 'null_cond.pt'))
 # print("NULL_PROMPT= ", str(NULL_PROMPT))
 # print("NULL_PROMPT size= ", str(torch.Tensor.size(NULL_PROMPT)))
 
 # generate prompts and get embeddings
-num_genes = 3 # Each individual is 1024 floats
+num_genes = 1024 # Each individual is 1024 floats
 prompt_phrase_length = 6  # number of words in prompt
 prompts_array = ga.generate_prompts(num_genes, prompt_phrase_length)
 
