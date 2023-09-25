@@ -118,10 +118,10 @@ def calculate_and_store_images(ga_instance, solution, solution_idx):
 
     # Calculate combined embedding
     combined_embedding_np = np.zeros((1, 77, 768))
-    for i, prompt_embedding_np in enumerate(embedded_prompts_numpy):
-        prompt_embedding = torch.tensor(prompt_embedding_np, dtype=torch.float32).to(DEVICE)
-        np.savez_compressed(os.path.join(FEATURES_DIR, f'second_prompt_embedding_{i}.npz'), prompt_embedding=prompt_embedding_np)
-        #print(f"Iteration {i}, Coefficient: {coeff}")
+    for i, coeff in enumerate(solution):
+        combined_embedding_np += embedded_prompts_numpy[i] * coeff
+        np.savez_compressed(os.path.join(FEATURES_DIR, f'combined_embedding_{solution_idx}_{i}.npz'), embedding=combined_embedding_np)
+        print(f"Iteration {i}, Coefficient: {coeff}")
 
     print(f"Generation {generation}, Solution {solution_idx}:")
     print(f"    Max value: {np.max(combined_embedding_np)}")
@@ -131,7 +131,7 @@ def calculate_and_store_images(ga_instance, solution, solution_idx):
 
 
     # Convert to PyTorch tensor and generate latent and image
-    #prompt_embedding = torch.tensor(combined_embedding_np, dtype=torch.float32).view(1, 77, 768).to(DEVICE)
+    prompt_embedding = torch.tensor(combined_embedding_np, dtype=torch.float32).view(1, 77, 768).to(DEVICE)
     latent = sd.generate_images_latent_from_embeddings(seed=SEED, embedded_prompt=prompt_embedding, null_prompt=NULL_PROMPT, uncond_scale=CFG_STRENGTH)
     image = sd.get_image_from_latent(latent)
 
@@ -236,8 +236,10 @@ def on_generation(ga_instance):
 
     start_time = time.time()  # Reset the start time for the next generation
 
+
 def clip_text_get_prompt_embedding_numpy(config, prompts: list):
-    # Load model from memory
+
+    #load model from memory
     clip_text_embedder = CLIPTextEmbedder(device=get_device())
     clip_text_embedder.load_submodels(
         tokenizer_path=config.get_model_folder_path(CLIPconfigs.TXT_EMB_TOKENIZER),
@@ -245,22 +247,22 @@ def clip_text_get_prompt_embedding_numpy(config, prompts: list):
     )
 
     prompt_embedding_numpy_list = []
-    for idx, prompt in enumerate(prompts):
+    for prompt in prompts:
         print(prompt)
         prompt_embedding = clip_text_embedder.forward(prompt)
-        prompt_embedding_cpu = prompt_embedding.cpu().detach().numpy()  # Convert to CPU numpy array
-        prompt_embedding_numpy_list.append(prompt_embedding_cpu)
+        prompt_embedding_cpu = prompt_embedding.cpu()
 
-        # Save the numpy array to a .npz file
-        filename = os.path.join(FEATURES_DIR, f'first_prompt_embedding_{idx}.npz')
-        np.savez_compressed(filename, embedding=prompt_embedding_cpu)
-
-        # Print the prompt and the saved filename
-        print(f"Prompt: '{prompt}' -> Embedded Prompt Filename: '{filename}'")
-
-        # Clearing the current tensor to save memory
         del prompt_embedding
         torch.cuda.empty_cache()
+        
+        prompt_embedding_numpy_list.append(prompt_embedding_cpu.detach().numpy())
+        # Flattening tensor and appending
+        #print("clip_text_get_prompt_embedding, 1 embedding= ", str(torch.Tensor.size(prompt_embedding)))
+        #clip_text_get_prompt_embedding, 1 embedding=  torch.Size([1, 77, 768])
+        #prompt_embedding = prompt_embedding.view(-1)
+        #print("clip_text_get_prompt_embedding, 2 embedding= ", str(torch.Tensor.size(prompt_embedding)))
+        #clip_text_get_prompt_embedding, 2 embedding=  torch.Size([59136])
+
 
     ## Clear model from memory
     clip_text_embedder.to("cpu")
@@ -268,9 +270,6 @@ def clip_text_get_prompt_embedding_numpy(config, prompts: list):
     torch.cuda.empty_cache()
 
     return prompt_embedding_numpy_list
-
-
-
 
 
 def prompt_embedding_vectors(sd, prompt_array):
@@ -310,7 +309,7 @@ NULL_PROMPT = NULL_PROMPT.to(device=get_device(), dtype=torch.float32)
 # print("NULL_PROMPT size= ", str(torch.Tensor.size(NULL_PROMPT)))
 
 # generate prompts and get embeddings
-num_genes = 20 # Each individual is 1024 floats
+num_genes = 1024 # Each individual is 1024 floats
 prompt_phrase_length = 6  # number of words in prompt
 prompts_array = ga.generate_prompts(num_genes, prompt_phrase_length)
 
