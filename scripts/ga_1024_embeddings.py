@@ -121,7 +121,7 @@ def calculate_and_store_images(ga_instance, solution, solution_idx):
     for i, coeff in enumerate(solution):
         combined_embedding_np += embedded_prompts_numpy[i] * coeff
 
-    np.savez_compressed(os.path.join(FEATURES_DIR, f'combined_embedding_np{solution_idx}.npz'), combined_embedding_np=combined_embedding_np.cpu().numpy())
+    np.savez_compressed(os.path.join(FEATURES_DIR, f'combined_embedding_{solution_idx}.npz'), embedding=combined_embedding_np)
     print(f"Generation {generation}, Solution {solution_idx}:")
     print(f"    Max value: {np.max(combined_embedding_np)}")
     print(f"    Min value: {np.max(combined_embedding_np)}")
