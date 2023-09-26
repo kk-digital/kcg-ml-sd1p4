@@ -121,6 +121,7 @@ def calculate_and_store_images(ga_instance, solution, solution_idx):
     for i, coeff in enumerate(solution):
         combined_embedding_np += embedded_prompts_numpy[i] * coeff
 
+    np.savez_compressed(os.path.join(FEATURES_DIR, f'combined_embedding_np{solution_idx}.npz'), combined_embedding_np=combined_embedding_np.cpu().numpy())
     print(f"Generation {generation}, Solution {solution_idx}:")
     print(f"    Max value: {np.max(combined_embedding_np)}")
     print(f"    Min value: {np.max(combined_embedding_np)}")
@@ -130,14 +131,11 @@ def calculate_and_store_images(ga_instance, solution, solution_idx):
 
     # Convert to PyTorch tensor and generate latent and image
     prompt_embedding = torch.tensor(combined_embedding_np, dtype=torch.float32).view(1, 77, 768).to(DEVICE)
-    np.savez_compressed(os.path.join(FEATURES_DIR, f'prompt_embedding_{solution_idx}.npz'), prompt_embedding=prompt_embedding.cpu().numpy())
+    #np.savez_compressed(os.path.join(FEATURES_DIR, f'prompt_embedding_{solution_idx}.npz'), prompt_embedding=prompt_embedding.cpu().numpy())
     latent = sd.generate_images_latent_from_embeddings(seed = SEED, embedded_prompt=prompt_embedding, null_prompt=NULL_PROMPT, uncond_scale=CFG_STRENGTH)
-    np.savez_compressed(os.path.join(FEATURES_DIR, f'latent_{solution_idx}.npz'), latent=latent.cpu().numpy())
+    #np.savez_compressed(os.path.join(FEATURES_DIR, f'latent_{solution_idx}.npz'), latent=latent.cpu().numpy())
     image = sd.get_image_from_latent(latent)
 
-    # Save prompt and latent numpy arrays
-    #np.savez_compressed(os.path.join(FEATURES_DIR, f'prompt_embedding_{solution_idx}.npz'), prompt_embedding=prompt_embedding.cpu().numpy())
-    #np.savez_compressed(os.path.join(FEATURES_DIR, f'latent_{solution_idx}.npz'), latent=latent.cpu().numpy())
 
     # Convert to PIL image and calculate fitness score
     pil_image = to_pil(image[0])
