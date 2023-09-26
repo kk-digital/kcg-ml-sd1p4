@@ -5,6 +5,7 @@ import os
 from PIL import Image
 
 import argparse
+
 base_directory = "./"
 sys.path.insert(0, base_directory)
 
@@ -13,6 +14,7 @@ from utility.dataset.prompt_list_dataset import PromptListDataset
 from utility.utils_logger import logger
 from scripts.inpaint_A1111 import img2img, get_model
 from stable_diffusion.utils_backend import get_device
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Call img2img with specified parameters.")
@@ -48,6 +50,7 @@ def parse_args():
 
     return parser.parse_args()
 
+
 def main():
     args = parse_args()
 
@@ -82,6 +85,8 @@ def main():
         positive_prompt = prompt_data.positive_prompt_str
         negative_prompt = prompt_data.negative_prompt_str
         img2img(prompt=positive_prompt,
+                init_images=[init_image],
+                mask=init_mask,
                 negative_prompt=negative_prompt,
                 sampler_name=args.sampler_name,
                 batch_size=args.batch_size,
@@ -94,8 +99,6 @@ def main():
                 inpainting_fill=args.inpainting_fill,
                 outpath=args.outpath,
                 styles=args.styles,
-                init_images=[init_image],
-                mask=init_mask,
                 resize_mode=args.resize_mode,
                 denoising_strength=args.denoising_strength,
                 image_cfg_scale=args.image_cfg_scale,
@@ -103,8 +106,9 @@ def main():
                 inpainting_mask_invert=args.inpainting_mask_invert,
                 sd=sd,
                 config=config,
-                model=model
+                model=model,
                 )
+
 
 if __name__ == "__main__":
     main()
