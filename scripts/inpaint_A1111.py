@@ -30,11 +30,10 @@ from stable_diffusion.sampler.ddpm import DDPMSampler
 from stable_diffusion.sampler.diffusion import DiffusionSampler
 from stable_diffusion.latent_diffusion import LatentDiffusion
 from stable_diffusion.utils_backend import get_device, torch_gc, without_autocast, get_autocast
-from stable_diffusion import StableDiffusion
-from stable_diffusion.model_paths import (SDconfigs)
+from stable_diffusion import StableDiffusion, CLIPTextEmbedder
+from stable_diffusion.model_paths import (SDconfigs, CLIPconfigs)
 
 # NOTE: It's just for the prompt embedder. Later refactor
-import ga
 
 output_dir = join(base_dir, 'output', 'inpainting')
 os.makedirs(output_dir, exist_ok=True)
@@ -203,9 +202,16 @@ class StableDiffusionProcessing:
     ddim_eta: float = 0.0
     device = get_device()
 
+    clip_text_embedder = CLIPTextEmbedder(device=get_device())
+
     def prompt_embedding_vectors(self, prompt_array):
-        embedded_prompts = ga.clip_text_get_prompt_embedding(self.config, prompts=prompt_array)
-        embedded_prompts.to("cpu")
+        embedded_prompts = []
+        for prompt in prompt_array:
+            prompt_embedding = self.clip_text_embedder.forward(prompt)
+            embedded_prompts.append(prompt_embedding)
+
+        embedded_prompts = torch.stack(embedded_prompts)
+
         return embedded_prompts
 
     def __post_init__(self):
@@ -216,12 +222,18 @@ class StableDiffusionProcessing:
             self.sd.quick_initialize().load_autoencoder(self.config.get_model(SDconfigs.VAE)).load_decoder(
                 self.config.get_model(SDconfigs.VAE_DECODER))
             self.sd.model.load_unet(self.config.get_model(SDconfigs.UNET))
-            self.sd.initialize_latent_diffusion(path='input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors',
-                                                force_submodels_init=True)
+            self.sd.initialize_latent_diffusion(
+                path='input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors',
+                force_submodels_init=True)
             self.model = self.sd.model
 
         if self.styles is None:
             self.styles = []
+
+        self.clip_text_embedder.load_submodels(
+            tokenizer_path=self.config.get_model_folder_path(CLIPconfigs.TXT_EMB_TOKENIZER),
+            transformer_path=self.config.get_model_folder_path(CLIPconfigs.TXT_EMB_TEXT_MODEL)
+        )
 
         self.cached_uc = StableDiffusionProcessing.cached_uc
         self.cached_c = StableDiffusionProcessing.cached_c
@@ -239,6 +251,9 @@ class StableDiffusionProcessing:
         self.uc = None
         StableDiffusionProcessing.cached_c = [None, None]
         StableDiffusionProcessing.cached_uc = [None, None]
+
+        self.clip_text_embedder.to("cpu")
+        torch.cuda.empty_cache()
 
     def setup_prompts(self):
         if isinstance(self.prompt, list):
@@ -309,20 +324,6 @@ class StableDiffusionProcessing:
         prompts = prompt_parser.SdConditioning(self.prompts, width=self.width, height=self.height)
         negative_prompts = prompt_parser.SdConditioning(self.negative_prompts, width=self.width, height=self.height,
                                                         is_negative_prompt=True)
-        # self.uc = self.get_conds_with_caching(prompt_parser.get_learned_conditioning, negative_prompts, self.steps,
-        #                                       [self.cached_uc], {})
-        # self.c = self.get_conds_with_caching(prompt_parser.get_multicond_learned_conditioning, prompts, self.steps,
-        #                                      [self.cached_c], {})
-        #
-        # self.c = self.c.batch[0][0].schedules[0].cond
-        # self.uc = self.uc[0][0].cond
-
-        # embedded_prompts = self.prompt_embedding_vectors(prompt_array=self.prompts)
-        # embedded_prompts_cpu = embedded_prompts.to("cpu")
-        # embedded_prompts_list = embedded_prompts_cpu.detach().numpy()
-        #
-        # prompt_embedding = torch.tensor(embedded_prompts_list[0], dtype=torch.float32)
-        # prompt_embedding = prompt_embedding.view(1, 77, 768).to(DEVICE)
 
         self.uc = self.prompt_embedding_vectors(negative_prompts)[0]
         self.c = self.prompt_embedding_vectors(prompts)[0]
@@ -372,33 +373,6 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         if isinstance(value, int):
             self.mask_blur_x = value
             self.mask_blur_y = value
-
-    # def images_tensor_to_samples(self,image, approximation=None, model=None):
-    #     '''image[0, 1] -> latent'''
-    #     if approximation is None:
-    #         approximation = approximation_indexes.get(opts.sd_vae_encode_method, 0)
-    #
-    #     if approximation == 3:
-    #         image = image.to(self.device, self.devices.dtype)
-    #         x_latent = sd_vae_taesd.encoder_model()(image)
-    #     else:
-    #         if model is None:
-    #             model = shared.sd_model
-    #         model.first_stage_model.to(devices.dtype_vae)
-    #
-    #         image = image.to(shared.device, dtype=devices.dtype_vae)
-    #         image = image * 2 - 1
-    #         if len(image) > 1:
-    #             x_latent = torch.stack([
-    #                 model.get_first_stage_encoding(
-    #                     model.encode_first_stage(torch.unsqueeze(img, 0))
-    #                 )[0]
-    #                 for img in image
-    #             ])
-    #         else:
-    #             x_latent = model.get_first_stage_encoding(model.encode_first_stage(image))
-    #
-    #     return x_latent
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         self.image_cfg_scale: float = None
@@ -649,14 +623,14 @@ def process_images(p: StableDiffusionProcessingImg2Img):
             p.seeds = p.all_seeds[n * p.batch_size:(n + 1) * p.batch_size]
             p.subseeds = p.all_subseeds[n * p.batch_size:(n + 1) * p.batch_size]
 
+            # May we need to configure this part to get the propaly conds
+            p.setup_conds()
+
             p.rng = rng.ImageRNG((opt_C, p.height // opt_f, p.width // opt_f), p.seeds, subseeds=p.subseeds,
                                  subseed_strength=p.subseed_strength, seed_resize_from_h=p.seed_resize_from_h,
                                  seed_resize_from_w=p.seed_resize_from_w)
             if len(p.prompts) == 0:
                 break
-
-            # May we need to configure this part to get the propaly conds
-            p.setup_conds()
 
             with without_autocast():
                 samples_ddim = p.sample(conditioning=p.c, unconditional_conditioning=p.uc, seeds=p.seeds,
@@ -684,11 +658,8 @@ def process_images(p: StableDiffusionProcessingImg2Img):
 
                 image = Image.fromarray(x_sample)
 
-                # if opts.img2img_color_correction:
-                #     image = apply_color_correction(p.color_corrections[i], image)
-
                 image = apply_overlay(image, p.paste_to, i, p.overlay_images)
-                image.save(join(p.outpath, f"{int(time.time())}-{p.mask_blur}-{p.cfg_scale}.png"))
+                image.save(join(p.outpath, f"{int(time.time())}.png"))
 
             del x_samples_ddim
             torch_gc()
@@ -710,7 +681,7 @@ def get_model(device, n_steps):
         config.get_model(SDconfigs.VAE_DECODER))
     sd.model.load_unet(config.get_model(SDconfigs.UNET))
     sd.initialize_latent_diffusion(path='input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors',
-                                        force_submodels_init=True)
+                                   force_submodels_init=True)
     model = sd.model
 
     return sd, config, model
@@ -748,7 +719,6 @@ def img2img(prompt: str, negative_prompt: str, sampler_name: str, batch_size: in
 
     with closing(p):
         process_images(p)
-
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Call img2img with specified parameters.")

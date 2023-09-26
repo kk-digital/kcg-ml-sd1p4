@@ -718,6 +718,10 @@ Exemple usage:
 python ./scripts/inpaint_A1111.py --prompt "A cat paint by Vincent Van Gogh" --init_img "./test/test_inpainting/background.png" --init_mask "./test/test_inpainting/mask.png"
 ```
 
+```
+python ./scripts/inpaint_A1111.py --prompt "Anime icon" --init_img "./test/test_inpainting/icon/background.png" --init_mask "./test/test_inpainting/icon/mask.png" --mask_blur 0 --n_iter 5
+```
+
 ### Generate Images Using Inpainting from Prompt List Dataset
 
 Generate image dataset using inpainting and prompts from prompt list dataset.
