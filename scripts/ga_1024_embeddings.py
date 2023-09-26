@@ -119,6 +119,7 @@ def calculate_and_store_images(ga_instance, solution, solution_idx):
     # Calculate combined embedding
     combined_embedding_np = np.zeros((1, 77, 768))
     for i, coeff in enumerate(solution):
+        print(i, embedded_prompts_numpy[i][:, :3, :3]) 
         combined_embedding_np += embedded_prompts_numpy[i] * coeff
 
     #np.savez_compressed(os.path.join(FEATURES_DIR, f'combined_embedding_{solution_idx}.npz'), embedding=combined_embedding_np)
@@ -326,7 +327,7 @@ with open(json_file_path, 'w', encoding='utf-8') as f:
     json.dump(prompts_str_array, f, ensure_ascii=False, indent=4)
 
 embedded_prompts_numpy = np.array(clip_text_get_prompt_embedding_numpy(config, prompts_str_array))
-np.savez_compressed(FEATURES_DIR, embedded_prompts=embedded_prompts_numpy)
+#np.savez_compressed(FEATURES_DIR, embedded_prompts=embedded_prompts_numpy)
 
 # random_mutation_min_val=5,
 # random_mutation_max_val=10,
