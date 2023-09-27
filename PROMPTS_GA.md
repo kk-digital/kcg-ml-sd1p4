@@ -7,10 +7,10 @@
       - [scripts/ga_scripts/ga_bounding_box_centered.py](#scriptsga_scriptsga_bounding_box_centeredpy)
       - [scripts/ga_scripts/ga_filesize.py](#scriptsga_scriptsga_filesizepy)
    - [LEAP-based GAs](#leap-based-gas)
-      - [scripts/ga_scripts/prompts_ga_leap.py](#scriptsga_scriptsprompts_ga_leappy)
-      - [scripts/ga_scripts/ga_white_background_leap.py](#scriptsga_scriptsga_white_background_leappy)
-      - [scripts/ga_scripts/ga_bounding_box_size_leap.py](#scriptsga_scriptsga_bounding_box_size_leappy)
-      - [scripts/ga_scripts/ga_filesize_leap.py](#scriptsga_filesize_leappy)
+      - [scripts/ga_scripts/ga_leap_prompts.py](#scriptsga_scriptsga_leap_promptspy)
+      - [scripts/ga_scripts/ga_leap_white_background.py](#scriptsga_scriptsga_leap_white_backgroundpy)
+      - [scripts/ga_scripts/ga_leap_bounding_box_size.py](#scriptsga_scriptsga_leap_bounding_box_sizepy)
+      - [scripts/ga_scripts/ga_leap_filesize.py](#scriptsga_leap_filesizepy)
    - [Pygad Configuration](#pygad-configuration)
       - [CLI args](#cli-args)
       - [Available Selection Operators](#available-selection-operators)
@@ -23,7 +23,7 @@
 
 Documentation for these scripts:
 - `scripts/ga_scripts/prompts_ga.py`
-- `scripts/ga_scripts/prompts_ga_leap.py`
+- `scripts/ga_scripts/ga_leap_prompts.py`
 - `scripts/ga_scripts/ga_bounding_box_size.py`
 - `scripts/ga_scripts/ga_filesize.py`
 - `scripts/ga_scripts/ga_bounding_box_centered.py`
@@ -32,7 +32,7 @@ Documentation for these scripts:
 The script generates text prompt phrases, which are used to compute prompt
 embeddings to initialize a genetic algorithm population. The fitness function is
 chad score. All scripts use Pygad as their GA library, with the exception of
-`scripts/ga_scripts/prompts_ga_leap.py`.
+`scripts/ga_scripts/ga_leap_prompts.py`.
 
 ## Pygad-based GAs
 
@@ -152,36 +152,36 @@ python scripts/ga_scripts/ga_filesize.py \
 
 ## LEAP-based GAs
 
-### scripts/ga_scripts/prompts_ga_leap.py
+### scripts/ga_scripts/ga_leap_prompts.py
 
 Example Usage:
 
 ``` shell
-python scripts/ga_scripts/prompts_ga_leap.py --generations 100
+python scripts/ga_scripts/ga_leap_prompts.py --generations 100
 ```
 
-### scripts/ga_scripts/ga_white_background_leap.py
+### scripts/ga_scripts/ga_leap_white_background.py
 
 Example Usage:
 
 ``` shell
-python scripts/ga_scripts/ga_white_background_leap.py --generations 100
+python scripts/ga_scripts/ga_leap_white_background.py --generations 100
 ```
 
-### scripts/ga_scripts/ga_bounding_box_size_leap.py
+### scripts/ga_scripts/ga_leap_bounding_box_size.py
 
 Example Usage:
 
 ``` shell
-python scripts/ga_scripts/ga_bounding_box_size_leap.py --generations 100
+python scripts/ga_scripts/ga_leap_bounding_box_size.py --generations 100
 ```
 
-### scripts/ga_scripts/ga_filesize_leap.py
+### scripts/ga_scripts/ga_leap_filesize.py
 
 Example Usage:
 
 ``` shell
-python scripts/ga_scripts/ga_filesize_leap.py --generations 100
+python scripts/ga_scripts/ga_leap_filesize.py --generations 100
 ```
 
 ## Pygad Configuration
