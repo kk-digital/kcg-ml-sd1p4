@@ -5,11 +5,14 @@
 # from utility.minio import cmd, progress
 # import boto3
 # from tqdm import tqdm
+# import io
 # from botocore.client import Config
-#
+# from PIL import Image
+# import requests
 # ACCESS_KEY =
 # SECRET_KEY =
 # cmd.MINIO_ADDRESS =
+#
 # def test_list_buckets():
 #     expected_bucket_list_len = 1
 #     if cmd.is_minio_server_accesssible() and ACCESS_KEY is not None and SECRET_KEY is not None:
@@ -17,6 +20,24 @@
 #         buckets = cmd.get_list_of_buckets(client)
 #         print(buckets)
 #         assert len(buckets) > expected_bucket_list_len
+#     else:
+#         return
+#
+#
+# def test_upload_data():
+#     bucket_name = "datasets"
+#     file_name = "icons/test_image.jpg"
+#
+#     url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+#     image = Image.open(requests.get(url, stream=True).raw)
+#     img_byte_arr = io.BytesIO()
+#     image.save(img_byte_arr, format='JPEG')
+#     img_byte_arr.seek(0)
+#
+#
+#     if cmd.is_minio_server_accesssible() and ACCESS_KEY is not None and SECRET_KEY is not None:
+#         client = cmd.connect_to_minio_client(ACCESS_KEY, SECRET_KEY)
+#         cmd.upload_data(client, bucket_name, file_name, img_byte_arr)
 #     else:
 #         return
 #
