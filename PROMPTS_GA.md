@@ -2,15 +2,15 @@
 
 - [Prompts Genetic Algorithms](#prompts-genetic-algorithms)
    - [Pygad-based GAs](#pygad-based-gas)
-      - [scripts/prompts_ga.py](#scriptsprompts_gapy)
-      - [scripts/ga_bounding_box_size.py](#scriptsga_bounding_box_sizepy)
-      - [scripts/ga_bounding_box_centered.py](#scriptsga_bounding_box_centeredpy)
-      - [scripts/ga_filesize.py](#scriptsga_filesizepy)
+      - [scripts/ga_scripts/prompts_ga.py](#scriptsga_scriptsprompts_gapy)
+      - [scripts/ga_scripts/ga_bounding_box_size.py](#scriptsga_scriptsga_bounding_box_sizepy)
+      - [scripts/ga_scripts/ga_bounding_box_centered.py](#scriptsga_scriptsga_bounding_box_centeredpy)
+      - [scripts/ga_scripts/ga_filesize.py](#scriptsga_scriptsga_filesizepy)
    - [LEAP-based GAs](#leap-based-gas)
-      - [scripts/prompts_ga_leap.py](#scriptsprompts_ga_leappy)
-      - [scripts/ga_white_background_leap.py](#scriptsga_white_background_leappy)
-      - [scripts/ga_bounding_box_size_leap.py](#scriptsga_bounding_box_size_leappy)
-      - [scripts/ga_filesize_leap.py](#scriptsga_filesize_leappy)
+      - [scripts/ga_scripts/prompts_ga_leap.py](#scriptsga_scriptsprompts_ga_leappy)
+      - [scripts/ga_scripts/ga_white_background_leap.py](#scriptsga_scriptsga_white_background_leappy)
+      - [scripts/ga_scripts/ga_bounding_box_size_leap.py](#scriptsga_scriptsga_bounding_box_size_leappy)
+      - [scripts/ga_scripts/ga_filesize_leap.py](#scriptsga_filesize_leappy)
    - [Pygad Configuration](#pygad-configuration)
       - [CLI args](#cli-args)
       - [Available Selection Operators](#available-selection-operators)
@@ -22,31 +22,31 @@
 # Prompts Genetic Algorithms
 
 Documentation for these scripts:
-- `scripts/prompts_ga.py`
-- `scripts/prompts_ga_leap.py`
-- `scripts/ga_bounding_box_size.py`
-- `scripts/ga_filesize.py`
-- `scripts/ga_bounding_box_centered.py`
-- `scripts/ga_filesize.py`
+- `scripts/ga_scripts/prompts_ga.py`
+- `scripts/ga_scripts/prompts_ga_leap.py`
+- `scripts/ga_scripts/ga_bounding_box_size.py`
+- `scripts/ga_scripts/ga_filesize.py`
+- `scripts/ga_scripts/ga_bounding_box_centered.py`
+- `scripts/ga_scripts/ga_filesize.py`
 
 The script generates text prompt phrases, which are used to compute prompt
 embeddings to initialize a genetic algorithm population. The fitness function is
 chad score. All scripts use Pygad as their GA library, with the exception of
-`scripts/prompts_ga_leap.py`.
+`scripts/ga_scripts/prompts_ga_leap.py`.
 
 ## Pygad-based GAs
 
-### scripts/prompts_ga.py
+### scripts/ga_scripts/prompts_ga.py
 
 Example Usage:
 
 ``` shell
-python scripts/prompts_ga.py --generations 5 --mutation_probability 0.10 --crossover_type single_point --keep_elitism 0 --mutation_type swap --mutation_percent_genes 0.05 --population_size 5
+python scripts/ga_scripts/prompts_ga.py --generations 5 --mutation_probability 0.10 --crossover_type single_point --keep_elitism 0 --mutation_type swap --mutation_percent_genes 0.05 --population_size 5
 ```
 
-### scripts/ga_bounding_box_size.py
+### scripts/ga_scripts/ga_bounding_box_size.py
 
-Documentation for script at `./scripts/ga_bounding_box_size.py`.
+Documentation for script at `./scripts/ga_scripts/ga_bounding_box_size.py`.
 
 The script generates text prompt phrases, which are used to compute prompt
 embeddings to initialize a genetic algorithm population. The fitness function is located in ga/fitness_bounding_box_size.py. 
@@ -55,12 +55,12 @@ The fitness score will be 1.0 when the object occupies one-fourth of the full im
 Example Usage:
 
 ``` shell
-python scripts/ga_bounding_box_size.py --generations 100 --mutation_probability 0.05 --crossover_type single_point --keep_elitism 0 --mutation_type random --mutation_percent_genes 0.05
+python scripts/ga_scripts/ga_bounding_box_size.py --generations 100 --mutation_probability 0.05 --crossover_type single_point --keep_elitism 0 --mutation_type random --mutation_percent_genes 0.05
 ```
 
-### scripts/ga_bounding_box_centered.py
+### scripts/ga_scripts/ga_bounding_box_centered.py
 
-Documentation for script at `./scripts/ga_bounding_box_centered.py`.
+Documentation for script at `./scripts/ga_scripts/ga_bounding_box_centered.py`.
 
 The script generates text prompt phrases, which are used to compute prompt
 embeddings to initialize a genetic algorithm population. The fitness function is located in ga/fitness_bounding_box_centered.py. 
@@ -69,7 +69,7 @@ The fitness score will be 1.0 when the object is centered within the image.
 Example Usage:
 
 ``` shell
-python scripts/ga_bounding_box_centered.py \
+python scripts/ga_scripts/ga_bounding_box_centered.py \
   --generations 100 \
   --mutation_probability 0.05 \
   --crossover_type single_point \
@@ -80,9 +80,9 @@ python scripts/ga_bounding_box_centered.py \
 
 
 
-### scripts/ga_latent.py
+### scripts/ga_scripts/ga_latent.py
 
-Documentation for script at `./scripts/ga_latent.py`.
+Documentation for script at `./scripts/ga_scripts/ga_latent.py`.
 
 The script generates random latent vectors or can generate images from random prompt to initialize a genetic algorithm population.
 The fitness function is chad_score.
@@ -90,7 +90,7 @@ The fitness function is chad_score.
 Example Usage:
 
 ``` shell
-python scripts/ga_latent.py
+python scripts/ga_scripts/ga_latent.py
 ```
 ### CLI args
 
@@ -131,9 +131,9 @@ options:
 
 ```
 
-### scripts/ga_filesize.py
+### scripts/ga_scripts/ga_filesize.py
 
-Documentation for script at `./scripts/ga_filesize.py`.
+Documentation for script at `./scripts/ga_scripts/ga_filesize.py`.
 
 The script generates text prompt phrases, which are used to compute prompt
 embeddings to initialize a genetic algorithm population. The fitness function is located in ga/fitness_filesize.py. 
@@ -141,7 +141,7 @@ embeddings to initialize a genetic algorithm population. The fitness function is
 Example Usage:
 
 ``` shell
-python scripts/ga_filesize.py \
+python scripts/ga_scripts/ga_filesize.py \
   --generations 100 \
   --mutation_probability 0.05 \
   --crossover_type single_point \
@@ -152,36 +152,36 @@ python scripts/ga_filesize.py \
 
 ## LEAP-based GAs
 
-### scripts/prompts_ga_leap.py
+### scripts/ga_scripts/prompts_ga_leap.py
 
 Example Usage:
 
 ``` shell
-python scripts/prompts_ga_leap.py --generations 100
+python scripts/ga_scripts/prompts_ga_leap.py --generations 100
 ```
 
-### scripts/ga_white_background_leap.py
+### scripts/ga_scripts/ga_white_background_leap.py
 
 Example Usage:
 
 ``` shell
-python scripts/ga_white_background_leap.py --generations 100
+python scripts/ga_scripts/ga_white_background_leap.py --generations 100
 ```
 
-### scripts/ga_bounding_box_size_leap.py
+### scripts/ga_scripts/ga_bounding_box_size_leap.py
 
 Example Usage:
 
 ``` shell
-python scripts/ga_bounding_box_size_leap.py --generations 100
+python scripts/ga_scripts/ga_bounding_box_size_leap.py --generations 100
 ```
 
-### scripts/ga_filesize_leap.py
+### scripts/ga_scripts/ga_filesize_leap.py
 
 Example Usage:
 
 ``` shell
-python scripts/ga_filesize_leap.py --generations 100
+python scripts/ga_scripts/ga_filesize_leap.py --generations 100
 ```
 
 ## Pygad Configuration
