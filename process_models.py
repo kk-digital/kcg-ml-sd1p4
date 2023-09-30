@@ -36,16 +36,16 @@ if __name__ == "__main__":
         )
         summary(model)
     with section("Stable Diffusion: saving vae submodels"):
-        model.first_stage_model.save_submodels()  
+        model.first_stage_model.save_submodels() # saves autoencoder submodels (encoder, decoder) with loaded state dict
     with section("Stable Diffusion: unloading vae submodels"):
-        model.first_stage_model.unload_submodels()  
+        model.first_stage_model.unload_submodels()  # unloads autoencoder submodels
     with section("Stable Diffusion: saving embedder submodels"):
-        model.cond_stage_model.save_submodels()  
+        model.cond_stage_model.save_submodels()  # saves text embedder submodels (tokenizer, transformer) with loaded state dict
     with section("Stable Diffusion: unloading embedder submodels"):
-        model.cond_stage_model.unload_submodels()  
+        model.cond_stage_model.unload_submodels()  # unloads text embedder submodels
     with section("Stable Diffusion: saving latent diffusion submodels"):
-        model.save_submodels()  
+        model.save_submodels()  # saves latent diffusion submodels (autoencoder, clip_embedder, unet) with loaded state dict and unloaded submodels (when it applies)
     with section("Stable Diffusion: unloading latent diffusion submodels"):
-        model.unload_submodels()  
+        model.unload_submodels()  # unloads latent diffusion submodels
     with section("Stable Diffusion: saving latent diffusion model"):
-        model.save()  
+        model.save()  # saves latent diffusion model with loaded state dict and unloaded submodels
