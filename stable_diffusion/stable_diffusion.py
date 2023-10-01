@@ -31,7 +31,7 @@ class StableDiffusion:
             self,
             *,
             device=None,
-            model: LatentDiffusion = None,
+            model: LatentDiffusion,
             ddim_steps: int = 50,
             ddim_eta: float = 0.0,
             force_cpu: bool = False,
