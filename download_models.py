@@ -72,10 +72,17 @@ if __name__ == "__main__":
 
     logger.info("Downloading models. This may take a while.")
 
-    # check if minio server is available
+    # Check if the MinIO server is available
     is_minio_accessible = is_minio_server_accesssible()
-    if is_minio_accessible:
-        minio_client = connect_to_minio_client()
+
+    if not is_minio_accessible:
+        logger.error("Cannot access the MinIO server.")
+    else:
+        try:
+            minio_client = connect_to_minio_client()
+        except Exception as e:
+            logger.error(f"Error connecting to MinIO: {str(e)}")
+            is_minio_accessible = False
 
     with section("Downloading CLIP model"):
         # DOWNLOAD_BASE_CLIP_MODEL
@@ -85,18 +92,25 @@ if __name__ == "__main__":
         if is_minio_accessible:
             bucket_name = "clip-vit-large-patch14"
             object_name = "model.safetensors"
-            download_from_minio(minio_client, bucket_name, object_name, clip_path)
+            try:
+                download_from_minio(minio_client, bucket_name, object_name, clip_path)
+            except Exception as e:
+                logger.error(f"Error downloading from MinIO: {str(e)}")
         else:
             download_file(clip_url, clip_path, "CLIP model")
 
     with section("Downloading Base Diffusion model"):
         # DOWNLOAD_BASE_SD_MODEL
-
         sd_path = config.get_model('sd/v1-5-pruned-emaonly', check_existence=False)
         sd_url = r'https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors'
+
         if is_minio_accessible:
             bucket_name = "stable-diffusion-models"
             object_name = "v1-5-pruned-emaonly.safetensors"
-            download_from_minio(minio_client, bucket_name, object_name, sd_path)
+            try:
+                download_from_minio(minio_client, bucket_name, object_name, sd_path)
+            except Exception as e:
+                logger.error(f"Error downloading from MinIO: {str(e)}")
         else:
             download_file(sd_url, sd_path, "Stable Diffusion checkpoint")
+
