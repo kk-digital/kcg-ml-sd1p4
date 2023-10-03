@@ -17,6 +17,7 @@ sys.path.insert(0, base_directory)
 
 from chad_score.chad_score import ChadScorePredictor
 from model.util_clip import ClipOpenAi
+from utility.clip.clip import ClipModel
 from ga.prompt_generator import generate_prompts
 from generation_task_result import GenerationTaskResult
 from stable_diffusion.utils_backend import get_autocast, set_seed
@@ -335,7 +336,7 @@ def generate_images_from_prompt_list(num_images,
     CrossAttention.use_flash_attention = flash
 
     # Load default clip model
-    util_clip = ClipOpenAi(device=device)
+    util_clip = ClipModel(device=device)
     util_clip.load_model()
 
     # Load default chad model
