@@ -336,7 +336,7 @@ def generate_images_from_prompt_list(num_images,
     CrossAttention.use_flash_attention = flash
 
     # Load default clip model
-    util_clip = ClipModel(device=device)
+    util_clip = ClipOpenAi(device=device)
     util_clip.load_model()
 
     # Load default chad model
