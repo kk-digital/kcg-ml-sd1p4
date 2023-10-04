@@ -359,7 +359,7 @@ def generate_images_from_prompt_list(num_images,
 
     images_processed = 0
     zip_every_n = 1  # Change this to your desired number
-    zip_counter = 0 
+
     
     for current_task_index in range(num_datasets):
         dataset_start_time = time.time()
@@ -406,16 +406,11 @@ def generate_images_from_prompt_list(num_images,
             if images_processed >= zip_every_n:
                 # Zip the processed images
                 set_directory_path = os.path.join(output, set_folder_name)
-                
-                zip_filename = os.path.join(output, f'{set_folder_name}_{zip_counter:04}.zip')
-                
+                zip_filename = os.path.join(output, f'{set_folder_name}{images_processed}.zip')
                 shutil.make_archive(zip_filename[:-4], 'zip', set_directory_path)
                 print(f'Created zip file: {zip_filename}')
 
-                # Increment the zip counter
-                zip_counter += 1
-                
-                # Reset the counter for processed images
+                # Reset the counter
                 images_processed = 0
 
         for generation_task_result_item in generation_task_result_list:
