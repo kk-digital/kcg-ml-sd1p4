@@ -358,7 +358,7 @@ def generate_images_from_prompt_list(num_images,
                                         path=checkpoint_path, force_submodels_init=True)
 
     images_processed = 0
-    zip_every_n = 1  # Change this to your desired number
+    zip_every_n = 10000  # Change this to your desired number
 
     for current_task_index in range(num_datasets):
         dataset_start_time = time.time()
@@ -430,7 +430,7 @@ def generate_images_from_prompt_list(num_images,
         # Delete the entire set_000x folder after zipping
         if os.path.exists(set_directory_path):
             shutil.rmtree(set_directory_path)
-            print(f"Deleted folder: {set_folder_name}")
+            
 
         dataset_execution_time = time.time() - dataset_start_time
         print("Dataset generation duration: {0:0.02f} seconds".format(dataset_execution_time))
