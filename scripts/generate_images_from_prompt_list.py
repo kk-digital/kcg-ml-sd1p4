@@ -430,7 +430,7 @@ def generate_images_from_prompt_list(num_images,
         # Delete the entire set_000x folder after zipping
         if os.path.exists(set_directory_path):
             shutil.rmtree(set_directory_path)
-            
+            print(f"Deleted folder: {set_folder_name}")
 
         dataset_execution_time = time.time() - dataset_start_time
         print("Dataset generation duration: {0:0.02f} seconds".format(dataset_execution_time))
