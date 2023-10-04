@@ -358,7 +358,7 @@ def generate_images_from_prompt_list(num_images,
                                         path=checkpoint_path, force_submodels_init=True)
 
     images_processed = 0
-    zip_every_n = 1  # Change this to your desired number
+    zip_every_n = 10000  # Change this to your desired number
 
     
     for current_task_index in range(num_datasets):
