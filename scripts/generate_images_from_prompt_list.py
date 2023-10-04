@@ -327,6 +327,8 @@ def generate_images_from_prompt_list(num_images,
                                      image_batch_size,
                                      prompt_dataset,
                                      include_negative_prompt=False):
+    
+    
     model_name = os.path.basename(checkpoint_path)
 
     seed_array = get_seed_array_from_string(seed, array_size=(num_images * num_datasets))
@@ -354,6 +356,9 @@ def generate_images_from_prompt_list(num_images,
     )
     txt2img.initialize_latent_diffusion(autoencoder=None, clip_text_embedder=None, unet_model=None,
                                         path=checkpoint_path, force_submodels_init=True)
+
+    images_processed = 0
+    zip_every_n = 10000  # Change this to your desired number
 
     for current_task_index in range(num_datasets):
         dataset_start_time = time.time()
@@ -395,6 +400,17 @@ def generate_images_from_prompt_list(num_images,
             current_batch_index += 1
             batch_execution_time = time.time() - batch_start_time
             print("Batch duration: {0:0.02f} seconds".format(batch_execution_time))
+
+            images_processed += len(batch) * image_batch_size
+            if images_processed >= zip_every_n:
+                # Zip the processed images
+                set_directory_path = os.path.join(output, set_folder_name)
+                zip_filename = os.path.join(output, f'{set_folder_name}_{images_processed}.zip')
+                shutil.make_archive(zip_filename[:-4], 'zip', set_directory_path)
+                print(f'Created zip file: {zip_filename}')
+
+                # Reset the counter
+                images_processed = 0
 
         for generation_task_result_item in generation_task_result_list:
             generation_task_result = generation_task_result_item['generation_task_result']
