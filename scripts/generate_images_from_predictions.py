@@ -44,18 +44,25 @@ def save_json(data, json_output):
 
 
 # Sort by chad score starting from 0 to +INF
-def create_folders_by_chad_score_range(predictions, output_path, num_class=10):
-    chad_scores = [prediction['chad-score-prediction'] for prediction in predictions]
-    min_chad_score = min(chad_scores)[0]
-    max_chad_score = max(chad_scores)[0]
+def create_folders_by_chad_score_range(predictions, output_path, num_class=10, method="uniform"):
+    chad_scores = [prediction['chad-score-prediction'][0] for prediction in predictions]
+    min_chad_score = min(chad_scores)
+    max_chad_score = max(chad_scores)
 
-    class_range_increment = round((max_chad_score - min_chad_score) / num_class)
+    if method == "top_percent":
+        # Adjust class range increment for top percent method
+        class_range_increment = 1  # This will ensure folders like 8-9, 10-11, etc.
+        starting_class = round(min_chad_score)
+    else:
+        # Original computation for class range increment
+        class_range_increment = round((max_chad_score - min_chad_score) / num_class)
+        starting_class = round(min_chad_score) - 1
 
-    starting_class = round(min_chad_score) - 1
     class_value = starting_class
 
     classes = []
     class_dict = {}
+
     # create folders
     for _ in range(num_class):
         class_name = "{0}-{1}".format(class_value, class_value + class_range_increment)
@@ -70,6 +77,7 @@ def create_folders_by_chad_score_range(predictions, output_path, num_class=10):
         class_value += class_range_increment
 
     return classes, class_dict
+
 
 
 def get_class_index(classes, score):
@@ -196,7 +204,7 @@ def generate_image_based_on_classes(dataset_path, output_path, checkpoint_path, 
         predictions = proportional_rejection_sampling(predictions)
     # If the sampling method is "uniform", we don't need to do anything additional, so no elif for it
 
-    classes, class_dict = create_folders_by_chad_score_range(predictions, output_path, num_class)
+    classes, class_dict = create_folders_by_chad_score_range(predictions, output_path, num_class, sampling_method)
     generate_image_using_prompt(predictions, classes, class_dict, limit_per_class, checkpoint_path)
 
 
