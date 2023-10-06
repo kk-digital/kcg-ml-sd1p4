@@ -176,9 +176,22 @@ def generate_image_based_on_classes(dataset_path, output_path, checkpoint_path, 
     predictions = load_json(dataset_path)
     print(len(predictions))
     
-    if sampling_method == "top_percent":
+    #if sampling_method == "top_percent":
         # Sort and then slice the list to only retain the top K percentage of predictions
-        predictions = sorted(predictions, key=lambda x: x['chad-score-prediction'][0], reverse=True)[:int(len(predictions) * top_k_percentage / 100)]
+     #   predictions = sorted(predictions, key=lambda x: x['chad-score-prediction'][0], reverse=True)[:int(len(predictions) * top_k_percentage / 100)]
+    if sampling_method == "top_percent":
+        sorted_predictions = sorted(predictions, key=lambda x: x['chad-score-prediction'][0], reverse=True)
+        slice_index = int(len(predictions) * top_k_percentage / 100)
+        
+        # Debug print statements
+        print(f"Original length of predictions: {len(predictions)}")
+        print(f"Top K% slice index: {slice_index}")
+        print(f"Top prediction score: {sorted_predictions[0]['chad-score-prediction'][0]}")
+        print(f"Score at slice index: {sorted_predictions[slice_index]['chad-score-prediction'][0]}")
+        print(f"Chad scores of the top {top_k_percentage}%: {[pred['chad-score-prediction'][0] for pred in sorted_predictions[:slice_index]]}")
+        
+        predictions = sorted_predictions[:slice_index]
+    
     elif sampling_method == "proportional_rejection":
         predictions = proportional_rejection_sampling(predictions)
     # If the sampling method is "uniform", we don't need to do anything additional, so no elif for it
