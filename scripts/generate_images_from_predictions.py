@@ -172,10 +172,32 @@ def generate_image_using_prompt(predictions, classes, class_dict, limit_per_clas
         class_limit_dict[class_index] = class_limit_dict[class_index] + 1
 
 
-def generate_image_based_on_classes(dataset_path, output_path, checkpoint_path, num_class=10, limit_per_class=128):
+def generate_image_based_on_classes(dataset_path, output_path, checkpoint_path, sampling_method="uniform", num_class=10, limit_per_class=128, top_k_percentage=10):
     predictions = load_json(dataset_path)
+    
+    if sampling_method == "top_percent":
+        # Sort and then slice the list to only retain the top K percentage of predictions
+        predictions = sorted(predictions, key=lambda x: x['chad-score-prediction'][0], reverse=True)[:int(len(predictions) * top_k_percentage / 100)]
+    elif sampling_method == "proportional_rejection":
+        predictions = proportional_rejection_sampling(predictions)
+    # If the sampling method is "uniform", we don't need to do anything additional, so no elif for it
+
     classes, class_dict = create_folders_by_chad_score_range(predictions, output_path, num_class)
     generate_image_using_prompt(predictions, classes, class_dict, limit_per_class, checkpoint_path)
+
+
+def proportional_rejection_sampling(predictions, min_acceptance=5, max_acceptance=90):
+    sampled_predictions = []
+    min_score = min([pred['chad-score-prediction'][0] for pred in predictions])
+    max_score = max([pred['chad-score-prediction'][0] for pred in predictions])
+
+    for pred in predictions:
+        score = pred['chad-score-prediction'][0]
+        acceptance_prob = min_acceptance + (max_acceptance - min_acceptance) * ((score - min_score) / (max_score - min_score))
+        if random.randint(0, 100) <= acceptance_prob:
+            sampled_predictions.append(pred)
+
+    return sampled_predictions
 
 
 def parse_arguments():
@@ -188,6 +210,9 @@ def parse_arguments():
                         help='Path to the checkpoint file')
     parser.add_argument('--num-class', type=int, default=10, help='Number of classes to sort the images')
     parser.add_argument('--limit-per-class', type=int, default=128, help='Number of images to generate per class')
+    parser.add_argument('--sampling-method', type=str, choices=["top_percent", "proportional_rejection", "uniform"], default="uniform",
+                        help='Method of sampling from predictions. Options: top_percent, proportional_rejection, uniform')
+    parser.add_argument('--top-k-percentage', type=int, default=10, help='Percentage of top scores to be considered when using top_percent sampling method.')
 
     return parser.parse_args()
 
@@ -198,10 +223,11 @@ def main():
     start_time = time.time()
 
     # generate and save
-    generate_image_based_on_classes(args.dataset_path, args.output_path, args.checkpoint_path, args.num_class,
-                                    args.limit_per_class)
+    generate_image_based_on_classes(args.dataset_path, args.output_path, args.checkpoint_path, args.sampling_method, args.num_class,
+                                    args.limit_per_class, args.top_k_percentage)
 
     print("Total Elapsed Time: {0}s".format(time.time() - start_time))
+
 
 
 if __name__ == '__main__':
