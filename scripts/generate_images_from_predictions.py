@@ -80,17 +80,18 @@ def create_folders_by_chad_score_range(predictions, output_path, num_class=10, m
 
 
 
-
 def get_class_index(classes, score):
     len_classes = len(classes)
-    if score > classes[-1]:  # if score is above the last boundary
-        return len_classes - 2
-    if score < classes[0]:  # if score is below the first boundary
+    
+    # Check for edge cases
+    if score < classes[0]:
         return 0
-    for i in range(len_classes):
-        if i == len_classes - 1:
-            return i
-        if classes[i] <= score <= classes[i + 1]:
+    if score >= classes[-1]:
+        return len_classes - 2
+    
+    # Find appropriate class for the score
+    for i in range(len_classes - 1):  # We don't need to check the last class, as it's covered by the edge case above
+        if classes[i] <= score < classes[i + 1]:
             return i
 
 
