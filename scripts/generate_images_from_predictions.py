@@ -90,7 +90,7 @@ def get_class_index(classes, score):
     for i in range(len_classes):
         if i == len_classes - 1:
             return i
-        if classes[i] <= score < classes[i + 1]:
+        if classes[i] <= score <= classes[i + 1]:
             return i
 
 
