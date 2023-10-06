@@ -174,6 +174,7 @@ def generate_image_using_prompt(predictions, classes, class_dict, limit_per_clas
 
 def generate_image_based_on_classes(dataset_path, output_path, checkpoint_path, sampling_method="uniform", num_class=10, limit_per_class=128, top_k_percentage=10):
     predictions = load_json(dataset_path)
+    print(len(predictions))
     
     if sampling_method == "top_percent":
         # Sort and then slice the list to only retain the top K percentage of predictions
