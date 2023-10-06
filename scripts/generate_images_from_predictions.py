@@ -52,31 +52,32 @@ def create_folders_by_chad_score_range(predictions, output_path, num_class=10, m
     if method == "top_percent":
         # Adjust class range increment for top percent method
         class_range_increment = 1  # This will ensure folders like 8-9, 10-11, etc.
-        starting_class = round(min_chad_score)
+        starting_class = int(min_chad_score)  # Floor of minimum score
+        ending_class = int(max_chad_score) + 1  # Ceiling of maximum score
+
+        classes = list(range(starting_class, ending_class))
+        num_class = len(classes) - 1  # Adjust number of classes
     else:
         # Original computation for class range increment
         class_range_increment = round((max_chad_score - min_chad_score) / num_class)
         starting_class = round(min_chad_score) - 1
+        classes = [starting_class + i*class_range_increment for i in range(num_class)]
 
-    class_value = starting_class
-
-    classes = []
     class_dict = {}
 
     # create folders
-    for _ in range(num_class):
-        class_name = "{0}-{1}".format(class_value, class_value + class_range_increment)
+    for i in range(num_class):
+        class_name = "{0}-{1}".format(classes[i], classes[i] + class_range_increment)
 
         # create folder
         folder_name = os.path.join(output_path, class_name)
         if not os.path.exists(folder_name):
             os.makedirs(folder_name)
 
-        classes.append(class_value)
-        class_dict[class_value] = folder_name
-        class_value += class_range_increment
+        class_dict[classes[i]] = folder_name
 
     return classes, class_dict
+
 
 
 
