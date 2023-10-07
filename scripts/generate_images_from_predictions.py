@@ -60,10 +60,10 @@ def create_folders_by_chad_score_range(predictions, output_path, num_class=10, m
         min_range_value = int(min(top_percentile_scores))
         
         # Find the largest integer value in the top percentage (rounded up)
-        max_range_value = int(max(top_percentile_scores)) + 1
+        max_range_value = int(max(top_percentile_scores))
         
         # Create folders from min_range_value to max_range_value
-        for class_value in range(min_range_value, max_range_value):
+        for class_value in range(min_range_value, max_range_value + 1):
             class_name = "{0}-{1}".format(class_value, class_value + 1)
     
             # create folder
@@ -77,7 +77,7 @@ def create_folders_by_chad_score_range(predictions, output_path, num_class=10, m
     else:
         # Original computation for class range increment
         class_range_increment = round((max_chad_score - min_chad_score) / num_class)
-        starting_class = round(min_chad_score) - 1
+        starting_class = round(min_chad_score)
 
         class_value = starting_class
 
@@ -95,6 +95,7 @@ def create_folders_by_chad_score_range(predictions, output_path, num_class=10, m
             class_value += class_range_increment
 
     return classes, class_dict
+
 
 
 
