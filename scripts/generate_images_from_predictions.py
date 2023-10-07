@@ -54,32 +54,34 @@ def create_folders_by_chad_score_range(predictions, output_path, num_class=10, m
         top_percentile_scores = sorted_chad_scores[:int(len(sorted_chad_scores) * num_class / 100)]
         min_chad_score = min(top_percentile_scores)
         max_chad_score = max(top_percentile_scores)
-        class_range_increment = (max_chad_score - min_chad_score) / num_class
-        starting_class = min_chad_score
-    else:
-        # Original computation for class range increment
-        class_range_increment = (max_chad_score - min_chad_score) / num_class
-        starting_class = min_chad_score
+    
+    # For rounding, we want to get the smallest and largest integers for the range
+    min_class_value = int(min_chad_score)
+    max_class_value = int(max_chad_score) + 1
+    
+    class_range = (max_class_value - min_class_value)
+    class_range_increment = class_range // num_class if num_class <= class_range else 1
 
-    class_value = starting_class
+    # make sure num_class is adjusted if there's not enough range
+    num_class = class_range // class_range_increment 
+
     classes = []
     class_dict = {}
 
     # create folders
     for _ in range(num_class):
-        class_name = "{0}-{1}".format(class_value, class_value + class_range_increment)
+        class_name = "{0}-{1}".format(min_class_value, min_class_value + class_range_increment)
 
         # create folder
         folder_name = os.path.join(output_path, class_name)
         if not os.path.exists(folder_name):
             os.makedirs(folder_name)
 
-        classes.append(class_value)
-        class_dict[class_value] = folder_name
-        class_value += class_range_increment
+        classes.append(min_class_value)
+        class_dict[min_class_value] = folder_name
+        min_class_value += class_range_increment
 
     return classes, class_dict
-
 
 
 
