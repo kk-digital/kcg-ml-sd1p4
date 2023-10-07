@@ -46,42 +46,35 @@ def save_json(data, json_output):
 # Sort by chad score starting from 0 to +INF
 def create_folders_by_chad_score_range(predictions, output_path, num_class=10, method="uniform"):
     chad_scores = [prediction['chad-score-prediction'][0] for prediction in predictions]
-    min_chad_score = min(chad_scores)
-    max_chad_score = max(chad_scores)
-
+    
     if method == "top_percent":
         sorted_chad_scores = sorted(chad_scores, reverse=True)
         top_percentile_scores = sorted_chad_scores[:int(len(sorted_chad_scores) * num_class / 100)]
-        min_chad_score = min(top_percentile_scores)
-        max_chad_score = max(top_percentile_scores)
+        starting_class = int(min(top_percentile_scores))  # get the smallest integer value for the top percentile
+        ending_class = int(max(top_percentile_scores)) + 1  # get the largest integer value for the top percentile
+    else:
+        starting_class = int(min(chad_scores))
+        ending_class = int(max(chad_scores)) + 1
     
-    # For rounding, we want to get the smallest and largest integers for the range
-    min_class_value = int(min_chad_score)
-    max_class_value = int(max_chad_score) + 1
-    
-    class_range = (max_class_value - min_class_value)
-    class_range_increment = class_range // num_class if num_class <= class_range else 1
-
-    # make sure num_class is adjusted if there's not enough range
-    num_class = class_range // class_range_increment 
-
     classes = []
     class_dict = {}
 
-    # create folders
-    for _ in range(num_class):
-        class_name = "{0}-{1}".format(min_class_value, min_class_value + class_range_increment)
+    # create folders based on integer values
+    current_class = starting_class
+    while current_class < ending_class:
+        class_name = "{0}-{1}".format(current_class, current_class + 1)
 
         # create folder
         folder_name = os.path.join(output_path, class_name)
         if not os.path.exists(folder_name):
             os.makedirs(folder_name)
 
-        classes.append(min_class_value)
-        class_dict[min_class_value] = folder_name
-        min_class_value += class_range_increment
+        classes.append(current_class)
+        class_dict[current_class] = folder_name
+        current_class += 1
 
     return classes, class_dict
+
 
 
 
