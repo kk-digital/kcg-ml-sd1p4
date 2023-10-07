@@ -49,34 +49,53 @@ def create_folders_by_chad_score_range(predictions, output_path, num_class=10, m
     min_chad_score = min(chad_scores)
     max_chad_score = max(chad_scores)
 
+    classes = []
+    class_dict = {}
+
     if method == "top_percent":
-        # Adjust class range increment for top percent method
-        class_range_increment = 1  # This will ensure folders like 8-9, 10-11, etc.
-        starting_class = round(min_chad_score)
+        sorted_chad_scores = sorted(chad_scores, reverse=True)
+        top_percentile_scores = sorted_chad_scores[:int(len(sorted_chad_scores) * num_class / 100)]
+        
+        # Find the smallest integer value in the top percentage (rounded down)
+        min_range_value = int(min(top_percentile_scores))
+        
+        # Find the largest integer value in the top percentage (rounded up)
+        max_range_value = int(max(top_percentile_scores)) + 1
+        
+        # Create folders from min_range_value to max_range_value
+        for class_value in range(min_range_value, max_range_value):
+            class_name = "{0}-{1}".format(class_value, class_value + 1)
+    
+            # create folder
+            folder_name = os.path.join(output_path, class_name)
+            if not os.path.exists(folder_name):
+                os.makedirs(folder_name)
+    
+            classes.append(class_value)
+            class_dict[class_value] = folder_name
+
     else:
         # Original computation for class range increment
         class_range_increment = round((max_chad_score - min_chad_score) / num_class)
         starting_class = round(min_chad_score) - 1
 
-    class_value = starting_class
+        class_value = starting_class
 
-    classes = []
-    class_dict = {}
+        # create folders
+        for _ in range(num_class):
+            class_name = "{0}-{1}".format(class_value, class_value + class_range_increment)
 
-    # create folders
-    for _ in range(num_class):
-        class_name = "{0}-{1}".format(class_value, class_value + class_range_increment)
+            # create folder
+            folder_name = os.path.join(output_path, class_name)
+            if not os.path.exists(folder_name):
+                os.makedirs(folder_name)
 
-        # create folder
-        folder_name = os.path.join(output_path, class_name)
-        if not os.path.exists(folder_name):
-            os.makedirs(folder_name)
-
-        classes.append(class_value)
-        class_dict[class_value] = folder_name
-        class_value += class_range_increment
+            classes.append(class_value)
+            class_dict[class_value] = folder_name
+            class_value += class_range_increment
 
     return classes, class_dict
+
 
 
 
