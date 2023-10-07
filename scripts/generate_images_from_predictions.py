@@ -46,34 +46,50 @@ def save_json(data, json_output):
 # Sort by chad score starting from 0 to +INF
 def create_folders_by_chad_score_range(predictions, output_path, num_class=10, method="uniform"):
     chad_scores = [prediction['chad-score-prediction'][0] for prediction in predictions]
-    
+
     if method == "top_percent":
         sorted_chad_scores = sorted(chad_scores, reverse=True)
         top_percentile_scores = sorted_chad_scores[:int(len(sorted_chad_scores) * num_class / 100)]
-        starting_class = int(min(top_percentile_scores))  # get the smallest integer value for the top percentile
-        ending_class = int(max(top_percentile_scores)) + 1  # get the largest integer value for the top percentile
-    else:
-        starting_class = int(min(chad_scores))
-        ending_class = int(max(chad_scores)) + 1
+        min_range_value = int(min(top_percentile_scores))
+        max_range_value = int(max(top_percentile_scores))
+        
+        classes = []
+        class_dict = {}
     
-    classes = []
-    class_dict = {}
+        # create folders based on integer values
+        for class_value in range(min_range_value, max_range_value + 1):
+            class_name = "{0}-{1}".format(class_value, class_value + 1)
+    
+            # create folder
+            folder_name = os.path.join(output_path, class_name)
+            if not os.path.exists(folder_name):
+                os.makedirs(folder_name)
+    
+            classes.append(class_value)
+            class_dict[class_value] = folder_name
 
-    # create folders based on integer values
-    current_class = starting_class
-    while current_class < ending_class:
-        class_name = "{0}-{1}".format(current_class, current_class + 1)
-
-        # create folder
-        folder_name = os.path.join(output_path, class_name)
-        if not os.path.exists(folder_name):
-            os.makedirs(folder_name)
-
-        classes.append(current_class)
-        class_dict[current_class] = folder_name
-        current_class += 1
+    else:
+        # Original computation for class range increment
+        class_range_increment = (max(chad_scores) - min(chad_scores)) / num_class
+        starting_class = round(min(chad_scores))
+        class_value = starting_class
+        classes = []
+        class_dict = {}
+        # create folders
+        for _ in range(num_class):
+            class_name = "{0}-{1}".format(class_value, class_value + class_range_increment)
+    
+            # create folder
+            folder_name = os.path.join(output_path, class_name)
+            if not os.path.exists(folder_name):
+                os.makedirs(folder_name)
+    
+            classes.append(class_value)
+            class_dict[class_value] = folder_name
+            class_value += class_range_increment
 
     return classes, class_dict
+
 
 
 
