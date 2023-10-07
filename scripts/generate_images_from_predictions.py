@@ -50,16 +50,18 @@ def create_folders_by_chad_score_range(predictions, output_path, num_class=10, m
     max_chad_score = max(chad_scores)
 
     if method == "top_percent":
-        # Adjust class range increment for top percent method
-        class_range_increment = 1  # This will ensure folders like 8-9, 10-11, etc.
-        starting_class = round(min_chad_score)
+        sorted_chad_scores = sorted(chad_scores, reverse=True)
+        top_percentile_scores = sorted_chad_scores[:int(len(sorted_chad_scores) * num_class / 100)]
+        min_chad_score = min(top_percentile_scores)
+        max_chad_score = max(top_percentile_scores)
+        class_range_increment = (max_chad_score - min_chad_score) / num_class
+        starting_class = min_chad_score
     else:
         # Original computation for class range increment
-        class_range_increment = round((max_chad_score - min_chad_score) / num_class)
-        starting_class = round(min_chad_score) - 1
+        class_range_increment = (max_chad_score - min_chad_score) / num_class
+        starting_class = min_chad_score
 
     class_value = starting_class
-
     classes = []
     class_dict = {}
 
@@ -77,6 +79,7 @@ def create_folders_by_chad_score_range(predictions, output_path, num_class=10, m
         class_value += class_range_increment
 
     return classes, class_dict
+
 
 
 
