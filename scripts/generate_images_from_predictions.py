@@ -44,41 +44,56 @@ def save_json(data, json_output):
 
 
 # Sort by chad score starting from 0 to +INF
-def create_folders_by_chad_score_range(predictions, output_path, num_class=10):
-    chad_scores = [prediction['chad-score-prediction'] for prediction in predictions]
-    min_chad_score = min(chad_scores)[0]
-    max_chad_score = max(chad_scores)[0]
+def create_folders_by_chad_score_range(predictions, output_path, num_class=10, method="uniform"):
+    chad_scores = [prediction['chad-score-prediction'][0] for prediction in predictions]
+    min_chad_score = min(chad_scores)
+    max_chad_score = max(chad_scores)
 
-    class_range_increment = round((max_chad_score - min_chad_score) / num_class)
+    if method == "top_percent":
+        # Adjust class range increment for top percent method
+        class_range_increment = 1  # This will ensure folders like 8-9, 10-11, etc.
+        starting_class = int(min_chad_score)  # Floor of minimum score
+        ending_class = int(max_chad_score) + 1  # Ceiling of maximum score
 
-    starting_class = round(min_chad_score) - 1
-    class_value = starting_class
+        classes = list(range(starting_class, ending_class))
+        num_class = len(classes) - 1  # Adjust number of classes
+    else:
+        # Original computation for class range increment
+        class_range_increment = round((max_chad_score - min_chad_score) / num_class)
+        starting_class = round(min_chad_score) - 1
+        classes = [starting_class + i*class_range_increment for i in range(num_class)]
 
-    classes = []
     class_dict = {}
+
     # create folders
-    for _ in range(num_class):
-        class_name = "{0}-{1}".format(class_value, class_value + class_range_increment)
+    for i in range(num_class):
+        class_name = "{0}-{1}".format(classes[i], classes[i] + class_range_increment)
 
         # create folder
         folder_name = os.path.join(output_path, class_name)
         if not os.path.exists(folder_name):
             os.makedirs(folder_name)
 
-        classes.append(class_value)
-        class_dict[class_value] = folder_name
-        class_value += class_range_increment
+        class_dict[classes[i]] = folder_name
 
     return classes, class_dict
 
 
+
 def get_class_index(classes, score):
     len_classes = len(classes)
-    for i in range(len_classes):
-        if i == len_classes - 1:
+    
+    # Check for edge cases
+    if score < classes[0]:
+        return 0
+    if score >= classes[-1]:
+        return len_classes - 2
+    
+    # Find appropriate class for the score
+    for i in range(len_classes - 1):  # We don't need to check the last class, as it's covered by the edge case above
+        if classes[i] <= score < classes[i + 1]:
             return i
-        if classes[i] <= score <= classes[i + 1]:
-            return i
+
 
 
 def initialize_model(sampler, checkpoint_path, flash, steps,
@@ -176,9 +191,9 @@ def generate_image_based_on_classes(dataset_path, output_path, checkpoint_path, 
     predictions = load_json(dataset_path)
     print(len(predictions))
     
-    if sampling_method == "top_percent":
+    #if sampling_method == "top_percent":
         # Sort and then slice the list to only retain the top K percentage of predictions
-        predictions = sorted(predictions, key=lambda x: x['chad-score-prediction'][0], reverse=True)[:int(len(predictions) * top_k_percentage / 100)]
+     #   predictions = sorted(predictions, key=lambda x: x['chad-score-prediction'][0], reverse=True)[:int(len(predictions) * top_k_percentage / 100)]
     if sampling_method == "top_percent":
         sorted_predictions = sorted(predictions, key=lambda x: x['chad-score-prediction'][0], reverse=True)
         slice_index = int(len(predictions) * top_k_percentage / 100)
@@ -196,7 +211,7 @@ def generate_image_based_on_classes(dataset_path, output_path, checkpoint_path, 
         predictions = proportional_rejection_sampling(predictions)
     # If the sampling method is "uniform", we don't need to do anything additional, so no elif for it
 
-    classes, class_dict = create_folders_by_chad_score_range(predictions, output_path, num_class)
+    classes, class_dict = create_folders_by_chad_score_range(predictions, output_path, num_class, sampling_method)
     generate_image_using_prompt(predictions, classes, class_dict, limit_per_class, checkpoint_path)
 
 
