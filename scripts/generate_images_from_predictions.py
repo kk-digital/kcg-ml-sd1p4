@@ -52,29 +52,29 @@ def create_folders_by_chad_score_range(predictions, output_path, num_class=10, m
     if method == "top_percent":
         # Adjust class range increment for top percent method
         class_range_increment = 1  # This will ensure folders like 8-9, 10-11, etc.
-        starting_class = int(min_chad_score)  # Floor of minimum score
-        ending_class = int(max_chad_score) + 1  # Ceiling of maximum score
-
-        classes = list(range(starting_class, ending_class))
-        num_class = len(classes) - 1  # Adjust number of classes
+        starting_class = round(min_chad_score)
     else:
         # Original computation for class range increment
         class_range_increment = round((max_chad_score - min_chad_score) / num_class)
         starting_class = round(min_chad_score) - 1
-        classes = [starting_class + i*class_range_increment for i in range(num_class)]
 
+    class_value = starting_class
+
+    classes = []
     class_dict = {}
 
     # create folders
-    for i in range(num_class):
-        class_name = "{0}-{1}".format(classes[i], classes[i] + class_range_increment)
+    for _ in range(num_class):
+        class_name = "{0}-{1}".format(class_value, class_value + class_range_increment)
 
         # create folder
         folder_name = os.path.join(output_path, class_name)
         if not os.path.exists(folder_name):
             os.makedirs(folder_name)
 
-        class_dict[classes[i]] = folder_name
+        classes.append(class_value)
+        class_dict[class_value] = folder_name
+        class_value += class_range_increment
 
     return classes, class_dict
 
@@ -82,18 +82,11 @@ def create_folders_by_chad_score_range(predictions, output_path, num_class=10, m
 
 def get_class_index(classes, score):
     len_classes = len(classes)
-    
-    # Check for edge cases
-    if score < classes[0]:
-        return 0
-    if score >= classes[-1]:
-        return len_classes - 2
-    
-    # Find appropriate class for the score
-    for i in range(len_classes - 1):  # We don't need to check the last class, as it's covered by the edge case above
-        if classes[i] <= score < classes[i + 1]:
+    for i in range(len_classes):
+        if i == len_classes - 1:
             return i
-
+        if classes[i] <= score <= classes[i + 1]:
+            return i
 
 
 def initialize_model(sampler, checkpoint_path, flash, steps,
