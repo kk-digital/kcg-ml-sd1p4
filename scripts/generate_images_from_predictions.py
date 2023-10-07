@@ -44,6 +44,8 @@ def save_json(data, json_output):
 
 
 # Sort by chad score starting from 0 to +INF
+import math
+
 def create_folders_by_chad_score_range(predictions, output_path, num_class=10, method="uniform"):
     chad_scores = [prediction['chad-score-prediction'][0] for prediction in predictions]
     min_chad_score = min(chad_scores)
@@ -53,17 +55,12 @@ def create_folders_by_chad_score_range(predictions, output_path, num_class=10, m
     class_dict = {}
 
     if method == "top_percent":
-        sorted_chad_scores = sorted(chad_scores, reverse=True)
-        top_percentile_scores = sorted_chad_scores[:int(len(sorted_chad_scores) * num_class / 100)]
-        
-        # Find the smallest integer value in the top percentage (rounded down)
-        min_range_value = int(min(top_percentile_scores))
-        
-        # Find the largest integer value in the top percentage (rounded up)
-        max_range_value = int(max(top_percentile_scores))
+        # Get the floor value of the minimum and the ceiling of the maximum for the top K% scores
+        min_range_value = math.floor(min(chad_scores))
+        max_range_value = math.ceil(max(chad_scores))
         
         # Create folders from min_range_value to max_range_value
-        for class_value in range(min_range_value, max_range_value + 1):
+        for class_value in range(min_range_value, max_range_value):
             class_name = "{0}-{1}".format(class_value, class_value + 1)
     
             # create folder
@@ -95,6 +92,7 @@ def create_folders_by_chad_score_range(predictions, output_path, num_class=10, m
             class_value += class_range_increment
 
     return classes, class_dict
+
 
 
 
