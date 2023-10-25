@@ -174,6 +174,16 @@ class CLI:
         )
 
         return self
+    
+    def n_image_same_prompt(self):
+        self.parser.add_argument(
+            '--n-image-same-prompt',
+            type=int,
+            default=1,
+            help='How many images to generate for same prompt with different seeds (default: %(default)s)'
+        )
+
+        return self
 
     def seed(self):
         self.parser.add_argument(

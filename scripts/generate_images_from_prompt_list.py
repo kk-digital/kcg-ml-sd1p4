@@ -28,37 +28,41 @@ from cli_builder import CLI
 from utility.dataset.prompt_list_dataset import PromptListDataset
 
 
-def get_batch_list(num_images, seed_array, current_task_index, image_dir, image_batch_size):
+def get_batch_list(num_images, n_image_same_prompt, seed_array, current_task_index, image_dir, image_batch_size):
     batch_list = []
     current_batch = []
     current_batch_index = 0
     current_batch_image_index = 0
     # Loop through images and generate the prompt, seed for each one
     for i in range(num_images):
-        print("Generating batches : image " + str(i) + " out of " + str(num_images));
+        # For each prompt, generate n_image_same_prompt images with different seeds
+        for j in range(n_image_same_prompt):
+            print(f"Generating batches: prompt {i+1}, image {j+1} out of {num_images * n_image_same_prompt}")
 
-        this_seed = seed_array[(i + current_task_index * num_images) % len(seed_array)]
-        timestamp = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
-        total_digits = 4
-        base_file_name = f'{i:0{total_digits}d}-{timestamp}'
-        image_name = base_file_name + '.jpg'
-        # Specify the filename with the path to the images directory under the respective set folder
-        filename = os.path.join(image_dir, image_name)
+            # get a new seed for each image
+            this_seed = seed_array[current_task_index][i][j % n_image_same_prompt]
 
-        current_batch.append({
-            'prompt_index': i,
-            'seed': this_seed,
-            "image_name": image_name,
-            "filename": filename,
-            "base_file_name": base_file_name
-        })
+            timestamp = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+            total_digits = 4
+            base_file_name = f'{i:0{total_digits}d}-{timestamp}'
+            image_name = base_file_name + '.jpg'
+            filename = os.path.join(image_dir, image_name)
 
-        current_batch_image_index = current_batch_image_index + 1
-        if current_batch_image_index >= image_batch_size or (i == (num_images - 1)):
-            current_batch_image_index = 0
-            batch_list.append(current_batch)
-            current_batch = []
-            current_batch_index += 1
+            current_batch.append({
+                'prompt_index': i,
+                'seed': this_seed,
+                "image_name": image_name,
+                "filename": filename,
+                "base_file_name": base_file_name
+            })
+
+            current_batch_image_index = current_batch_image_index + 1
+
+            if current_batch_image_index >= image_batch_size or (i == (num_images - 1)):
+                current_batch_image_index = 0
+                batch_list.append(current_batch)
+                current_batch = []
+                current_batch_index += 1
 
     return batch_list
 
@@ -311,6 +315,7 @@ def save_image_data(prompt_dataset, batch, current_batch_index, image_batch_size
 
 
 def generate_images_from_prompt_list(num_images,
+                                     n_image_same_prompt,
                                      image_width,
                                      image_height,
                                      cfg_strength,
@@ -331,7 +336,11 @@ def generate_images_from_prompt_list(num_images,
     
     model_name = os.path.basename(checkpoint_path)
 
-    seed_array = get_seed_array_from_string(seed, array_size=(num_images * num_datasets))
+    # generate a seed array with 3 dimensions, number of images per prompt, number of images and number of datasets
+    seed_array = [
+        [get_seed_array_from_string(seed, array_size=n_image_same_prompt) for _ in range(num_images)]
+        for _ in range(num_datasets)
+    ]
 
     # Set flash attention
     CrossAttention.use_flash_attention = flash
@@ -375,7 +384,7 @@ def generate_images_from_prompt_list(num_images,
         os.makedirs(feature_dir, exist_ok=True)
         os.makedirs(image_dir, exist_ok=True)
 
-        batch_list = get_batch_list(num_images, seed_array, current_task_index, image_dir,
+        batch_list = get_batch_list(num_images, n_image_same_prompt, seed_array, current_task_index, image_dir,
                                     image_batch_size)
 
         current_batch_index = 0
@@ -449,6 +458,7 @@ def main():
         .force_cpu() \
         .cuda_device() \
         .num_images() \
+        .n_image_same_prompt() \
         .seed() \
         .image_width() \
         .image_height() \
@@ -471,6 +481,7 @@ def main():
 
     # generate images
     generate_images_from_prompt_list(num_images,
+                                     opt.n_image_same_prompt,
                                      opt.image_width,
                                      opt.image_height,
                                      opt.cfg_scale,
