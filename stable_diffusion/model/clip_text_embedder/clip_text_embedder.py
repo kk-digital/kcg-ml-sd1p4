@@ -114,7 +114,7 @@ class CLIPTextEmbedder(nn.Module):
         except Exception as e:
             logger.error(f"CLIPTextEmbedder not loaded. Error: {e}")
 
-    def forward(self, prompts: List[str]):
+    def forward(self, prompts: List[str], return_all: bool = False):
         """
         :param prompts: are the list of prompts to embed
         """
@@ -125,7 +125,16 @@ class CLIPTextEmbedder(nn.Module):
         tokens = batch_encoding["input_ids"].to(self.device)
 
         # Get CLIP embeddings
-        return self.transformer(input_ids=tokens).last_hidden_state
+        clip_output = self.transformer(input_ids=tokens)
+
+        if not return_all:
+            return clip_output.last_hidden_state
+
+        output = dict()
+        output['last_hidden_state'] = clip_output.last_hidden_state
+        output['pooler_output'] = clip_output.pooler_output
+        output['attention_mask'] = batch_encoding['attention_mask']
+        return output
 
 # %%
 
