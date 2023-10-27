@@ -30,6 +30,15 @@ sys.path.insert(0, os.getcwd())
 from stable_diffusion.model_paths import CLIP_TEXT_EMBEDDER_PATH, CLIP_TOKENIZER_DIR_PATH, CLIP_TEXT_MODEL_DIR_PATH, CLIP_MODEL_PATH
 from stable_diffusion.utils_backend import get_device
 
+from utility.model_output import ModelOutput
+
+
+class CLIPTextEmbedderOutput(ModelOutput):
+    
+    last_hidden_state: torch.FloatTensor = None
+    pooler_output: torch.FloatTensor = None
+    attention_mask: torch.FloatTensor = None
+
 
 class CLIPTextEmbedder(nn.Module):
     """
@@ -118,6 +127,12 @@ class CLIPTextEmbedder(nn.Module):
         """
         :param prompts: are the list of prompts to embed
         """
+        return self.forward_return_all(prompts).last_hidden_state
+
+    def forward_return_all(self, prompts: List[str]):
+        """
+        :param prompts: are the list of prompts to embed
+        """
         # Tokenize the prompts
         batch_encoding = self.tokenizer(prompts, truncation=True, max_length=self.max_length, return_length=True,
                                         return_overflowing_tokens=False, padding="max_length", return_tensors="pt")
@@ -125,8 +140,14 @@ class CLIPTextEmbedder(nn.Module):
         tokens = batch_encoding["input_ids"].to(self.device)
 
         # Get CLIP embeddings
-        return self.transformer(input_ids=tokens).last_hidden_state
-
+        clip_output = self.transformer(input_ids=tokens)
+        
+        return CLIPTextEmbedderOutput(
+            last_hidden_state=clip_output.last_hidden_state,
+            pooler_output=clip_output.pooler_output,
+            attention_mask=batch_encoding['attention_mask']
+        )
+    
 # %%
 
 # if __name__ == "__main__":
