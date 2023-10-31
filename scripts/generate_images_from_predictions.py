@@ -44,32 +44,58 @@ def save_json(data, json_output):
 
 
 # Sort by chad score starting from 0 to +INF
-def create_folders_by_chad_score_range(predictions, output_path, num_class=10):
-    chad_scores = [prediction['chad-score-prediction'] for prediction in predictions]
-    min_chad_score = min(chad_scores)[0]
-    max_chad_score = max(chad_scores)[0]
+import math
 
-    class_range_increment = round((max_chad_score - min_chad_score) / num_class)
-
-    starting_class = round(min_chad_score) - 1
-    class_value = starting_class
+def create_folders_by_chad_score_range(predictions, output_path, num_class=10, method="uniform"):
+    chad_scores = [prediction['chad-score-prediction'][0] for prediction in predictions]
+    min_chad_score = min(chad_scores)
+    max_chad_score = max(chad_scores)
 
     classes = []
     class_dict = {}
-    # create folders
-    for _ in range(num_class):
-        class_name = "{0}-{1}".format(class_value, class_value + class_range_increment)
 
-        # create folder
-        folder_name = os.path.join(output_path, class_name)
-        if not os.path.exists(folder_name):
-            os.makedirs(folder_name)
+    if method == "top_percent":
+        # Get the floor value of the minimum and the ceiling of the maximum for the top K% scores
+        min_range_value = math.floor(min(chad_scores))
+        max_range_value = math.ceil(max(chad_scores))
+        
+        # Create folders from min_range_value to max_range_value
+        for class_value in range(min_range_value, max_range_value):
+            class_name = "{0}-{1}".format(class_value, class_value + 1)
+    
+            # create folder
+            folder_name = os.path.join(output_path, class_name)
+            if not os.path.exists(folder_name):
+                os.makedirs(folder_name)
+    
+            classes.append(class_value)
+            class_dict[class_value] = folder_name
 
-        classes.append(class_value)
-        class_dict[class_value] = folder_name
-        class_value += class_range_increment
+    else:
+        # Original computation for class range increment
+        class_range_increment = round((max_chad_score - min_chad_score) / num_class)
+        starting_class = round(min_chad_score)
+
+        class_value = starting_class
+
+        # create folders
+        for _ in range(num_class):
+            class_name = "{0}-{1}".format(class_value, class_value + class_range_increment)
+
+            # create folder
+            folder_name = os.path.join(output_path, class_name)
+            if not os.path.exists(folder_name):
+                os.makedirs(folder_name)
+
+            classes.append(class_value)
+            class_dict[class_value] = folder_name
+            class_value += class_range_increment
 
     return classes, class_dict
+
+
+
+
 
 
 def get_class_index(classes, score):
@@ -172,10 +198,46 @@ def generate_image_using_prompt(predictions, classes, class_dict, limit_per_clas
         class_limit_dict[class_index] = class_limit_dict[class_index] + 1
 
 
-def generate_image_based_on_classes(dataset_path, output_path, checkpoint_path, num_class=10, limit_per_class=128):
+def generate_image_based_on_classes(dataset_path, output_path, checkpoint_path, sampling_method="uniform", num_class=10, limit_per_class=128, top_k_percentage=10):
     predictions = load_json(dataset_path)
-    classes, class_dict = create_folders_by_chad_score_range(predictions, output_path, num_class)
+    print(len(predictions))
+    
+    #if sampling_method == "top_percent":
+        # Sort and then slice the list to only retain the top K percentage of predictions
+     #   predictions = sorted(predictions, key=lambda x: x['chad-score-prediction'][0], reverse=True)[:int(len(predictions) * top_k_percentage / 100)]
+    if sampling_method == "top_percent":
+        sorted_predictions = sorted(predictions, key=lambda x: x['chad-score-prediction'][0], reverse=True)
+        slice_index = int(len(predictions) * top_k_percentage / 100)
+        
+        # Debug print statements
+        print(f"Original length of predictions: {len(predictions)}")
+        print(f"Top K% slice index: {slice_index}")
+        print(f"Top prediction score: {sorted_predictions[0]['chad-score-prediction'][0]}")
+        print(f"Score at slice index: {sorted_predictions[slice_index]['chad-score-prediction'][0]}")
+        print(f"Chad scores of the top {top_k_percentage}%: {[pred['chad-score-prediction'][0] for pred in sorted_predictions[:slice_index]]}")
+        
+        predictions = sorted_predictions[:slice_index]
+    
+    elif sampling_method == "proportional_rejection":
+        predictions = proportional_rejection_sampling(predictions)
+    # If the sampling method is "uniform", we don't need to do anything additional, so no elif for it
+
+    classes, class_dict = create_folders_by_chad_score_range(predictions, output_path, num_class, sampling_method)
     generate_image_using_prompt(predictions, classes, class_dict, limit_per_class, checkpoint_path)
+
+
+def proportional_rejection_sampling(predictions, min_acceptance=5, max_acceptance=90):
+    sampled_predictions = []
+    min_score = min([pred['chad-score-prediction'][0] for pred in predictions])
+    max_score = max([pred['chad-score-prediction'][0] for pred in predictions])
+
+    for pred in predictions:
+        score = pred['chad-score-prediction'][0]
+        acceptance_prob = min_acceptance + (max_acceptance - min_acceptance) * ((score - min_score) / (max_score - min_score))
+        if random.randint(0, 100) <= acceptance_prob:
+            sampled_predictions.append(pred)
+
+    return sampled_predictions
 
 
 def parse_arguments():
@@ -188,6 +250,9 @@ def parse_arguments():
                         help='Path to the checkpoint file')
     parser.add_argument('--num-class', type=int, default=10, help='Number of classes to sort the images')
     parser.add_argument('--limit-per-class', type=int, default=128, help='Number of images to generate per class')
+    parser.add_argument('--sampling-method', type=str, choices=["top_percent", "proportional_rejection", "uniform"], default="uniform",
+                        help='Method of sampling from predictions. Options: top_percent, proportional_rejection, uniform')
+    parser.add_argument('--top-k-percentage', type=int, default=10, help='Percentage of top scores to be considered when using top_percent sampling method.')
 
     return parser.parse_args()
 
@@ -198,10 +263,11 @@ def main():
     start_time = time.time()
 
     # generate and save
-    generate_image_based_on_classes(args.dataset_path, args.output_path, args.checkpoint_path, args.num_class,
-                                    args.limit_per_class)
+    generate_image_based_on_classes(args.dataset_path, args.output_path, args.checkpoint_path, args.sampling_method, args.num_class,
+                                    args.limit_per_class, args.top_k_percentage)
 
     print("Total Elapsed Time: {0}s".format(time.time() - start_time))
+
 
 
 if __name__ == '__main__':

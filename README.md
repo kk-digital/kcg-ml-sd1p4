@@ -719,7 +719,7 @@ python ./scripts/inpaint_A1111.py --prompt "A cat paint by Vincent Van Gogh" --i
 ```
 
 ```
-python ./scripts/inpaint_A1111.py --prompt "Anime icon" --init_img "./test/test_inpainting/icon/background.png" --init_mask "./test/test_inpainting/icon/mask.png" --mask_blur 0 --n_iter 5
+python ./scripts/inpaint_A1111.py --prompt "flat, vector art, game art, vector art, stylized, cell shaded, 8 bit, 16 bit, retro, russian futurism" --init_img "./test/test_inpainting/icon/background.png" --init_mask "./test/test_inpainting/icon/mask.png" --mask_blur 0 --n_iter 5 --metadata_output
 ```
 
 ### Generate Images Using Inpainting from Prompt List Dataset
