@@ -146,6 +146,7 @@ dmypy.json
 *.pt
 # Ignore cache
 /stable_diffusion/cache
+/io/input/model/clip/text_embedder/clip-vit-large-patch14/
 
 #Ignore prompts
 data.json
@@ -155,4 +156,4 @@ data.json
 
 # ignore pycharm
 .idea
-/io/input/model/clip/text_embedder/clip-vit-large-patch14/
+
