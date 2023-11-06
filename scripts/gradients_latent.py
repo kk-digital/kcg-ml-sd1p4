@@ -252,14 +252,12 @@ if __name__ == "__main__":
 
     latent_tmp = latent
     latent = latent.clone().requires_grad_()
+    latent.requires_grad_(True)
 
     del latent_tmp
 
     images = txt2img.get_image_from_latent(latent)
     image_list, image_hash_list = save_images(images, starting_images_directory + '/image' + '.jpg')
-
-    # Create a random latent tensor of shape (1, 4, 64, 64)
-    #random_latent = torch.rand((1, 4, 64, 64), device=device, dtype=torch.float32)
 
     optimizer = optim.AdamW([latent], lr=learning_rate)
     mse_loss = nn.MSELoss()
@@ -268,16 +266,21 @@ if __name__ == "__main__":
 
     start_time = time.time()
 
-    fixed_taget_features = get_target_embeddings_features(util_clip, "chibi, anime, waifu, side scrolling")
-
-    fixed_target = fixed_taget_features.detach()
+    fixed_taget_features = get_target_embeddings_features(util_clip, "cat")
 
     for i in range(0, iterations):
-        # Zero the gradients
 
+        fixed_target = fixed_taget_features.clone().requires_grad_()
+
+        # Zero the gradients
+        optimizer.zero_grad()
+
+        # weither to save image or not
+        # ----------------------------
         save_image = False
-        if i % 100 == 0:
+        if i % 1 == 0:
             save_image = True
+        # ----------------------------
 
         fitness = latents_similarity_score(latent, i, output, fixed_target, device, save_image)
 
@@ -291,7 +294,6 @@ if __name__ == "__main__":
 
         loss.backward()
         optimizer.step()
-        optimizer.zero_grad()
 
     end_time = time.time()
 

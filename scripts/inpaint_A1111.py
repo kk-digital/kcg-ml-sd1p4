@@ -15,9 +15,8 @@ import cv2
 import numpy as np
 import torch
 from PIL import Image, ImageOps
-from blendmodes.blend import blendLayers
-from blendmodes.blendtype import BlendType
-from skimage import exposure
+
+from utility.memory_json import MemoryJSON
 
 base_dir = os.getcwd()
 sys.path.append(base_dir)
@@ -30,11 +29,10 @@ from stable_diffusion.sampler.ddpm import DDPMSampler
 from stable_diffusion.sampler.diffusion import DiffusionSampler
 from stable_diffusion.latent_diffusion import LatentDiffusion
 from stable_diffusion.utils_backend import get_device, torch_gc, without_autocast, get_autocast
-from stable_diffusion import StableDiffusion
-from stable_diffusion.model_paths import (SDconfigs)
+from stable_diffusion import StableDiffusion, CLIPTextEmbedder
+from stable_diffusion.model_paths import (SDconfigs, CLIPconfigs)
 
 # NOTE: It's just for the prompt embedder. Later refactor
-import ga
 
 output_dir = join(base_dir, 'output', 'inpainting')
 os.makedirs(output_dir, exist_ok=True)
@@ -69,6 +67,8 @@ approximation_indexes = {"Full": 0, "Approx NN": 1, "Approx cheap": 2, "TAESD": 
 
 DEVICE = get_device()
 PROMPT_STYLES = None
+
+'''Utility functions'''
 
 
 def flatten(img, bgcolor):
@@ -115,10 +115,6 @@ def get_fixed_seed(seed):
     return seed
 
 
-class DecodedSamples(list):
-    already_decoded = True
-
-
 def samples_to_images_tensor(sample, approximation=None, model=None):
     """Transforms 4-channel latent space images into 3-channel RGB image tensors, with values in range [-1, 1]."""
 
@@ -146,6 +142,46 @@ def decode_latent_batch(model, batch, target_device=None, check_for_nans=False):
         samples.append(sample)
 
     return samples
+
+
+def apply_overlay(image, paste_loc, index, overlays):
+    if overlays is None or index >= len(overlays):
+        return image
+
+    overlay = overlays[index]
+
+    if paste_loc is not None:
+        x, y, w, h = paste_loc
+        base_image = Image.new('RGBA', (overlay.width, overlay.height))
+        image = images.resize_image(1, image, w, h)
+        base_image.paste(image, (x, y))
+        image = base_image
+
+    image = image.convert('RGBA')
+    image.alpha_composite(overlay)
+    image = image.convert('RGB')
+
+    return image
+
+
+def get_model(device, n_steps):
+    sd = StableDiffusion(device=device, n_steps=n_steps)
+    config = ModelPathConfig()
+    sd.quick_initialize().load_autoencoder(config.get_model(SDconfigs.VAE)).load_decoder(
+        config.get_model(SDconfigs.VAE_DECODER))
+    sd.model.load_unet(config.get_model(SDconfigs.UNET))
+    sd.initialize_latent_diffusion(path='input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors',
+                                   force_submodels_init=True)
+    model = sd.model
+
+    return sd, config, model
+
+
+'''Core Classes'''
+
+
+class DecodedSamples(list):
+    already_decoded = True
 
 
 @dataclass(repr=False)
@@ -199,29 +235,47 @@ class StableDiffusionProcessing:
     sd: StableDiffusion = None
     config: ModelPathConfig = None
     model: LatentDiffusion = None
+    clip_text_embedder: CLIPTextEmbedder = None
+
     n_steps: int = 50
     ddim_eta: float = 0.0
     device = get_device()
 
     def prompt_embedding_vectors(self, prompt_array):
-        embedded_prompts = ga.clip_text_get_prompt_embedding(self.config, prompts=prompt_array)
-        embedded_prompts.to("cpu")
+        embedded_prompts = []
+        for prompt in prompt_array:
+            prompt_embedding = self.clip_text_embedder.forward(prompt)
+            embedded_prompts.append(prompt_embedding)
+
+        embedded_prompts = torch.stack(embedded_prompts)
+
         return embedded_prompts
 
     def __post_init__(self):
-        if self.sd is None:
-            # NOTE: Initializing stable diffusion
-            self.sd = StableDiffusion(device=self.device, n_steps=self.n_steps)
+        if self.config is None:
             self.config = ModelPathConfig()
+
+        if self.sd is None:
+            self.sd = StableDiffusion(device=self.device, n_steps=self.n_steps)
             self.sd.quick_initialize().load_autoencoder(self.config.get_model(SDconfigs.VAE)).load_decoder(
                 self.config.get_model(SDconfigs.VAE_DECODER))
             self.sd.model.load_unet(self.config.get_model(SDconfigs.UNET))
-            self.sd.initialize_latent_diffusion(path='input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors',
-                                                force_submodels_init=True)
+            self.sd.initialize_latent_diffusion(
+                path='input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors',
+                force_submodels_init=True)
+
+        if self.model is None:
             self.model = self.sd.model
 
         if self.styles is None:
             self.styles = []
+
+        if self.clip_text_embedder is None:
+            self.clip_text_embedder = CLIPTextEmbedder(device=get_device())
+            self.clip_text_embedder.load_submodels(
+                tokenizer_path=self.config.get_model_folder_path(CLIPconfigs.TXT_EMB_TOKENIZER),
+                transformer_path=self.config.get_model_folder_path(CLIPconfigs.TXT_EMB_TEXT_MODEL)
+            )
 
         self.cached_uc = StableDiffusionProcessing.cached_uc
         self.cached_c = StableDiffusionProcessing.cached_c
@@ -239,6 +293,9 @@ class StableDiffusionProcessing:
         self.uc = None
         StableDiffusionProcessing.cached_c = [None, None]
         StableDiffusionProcessing.cached_uc = [None, None]
+
+        self.clip_text_embedder.to("cpu")
+        torch.cuda.empty_cache()
 
     def setup_prompts(self):
         if isinstance(self.prompt, list):
@@ -309,20 +366,6 @@ class StableDiffusionProcessing:
         prompts = prompt_parser.SdConditioning(self.prompts, width=self.width, height=self.height)
         negative_prompts = prompt_parser.SdConditioning(self.negative_prompts, width=self.width, height=self.height,
                                                         is_negative_prompt=True)
-        # self.uc = self.get_conds_with_caching(prompt_parser.get_learned_conditioning, negative_prompts, self.steps,
-        #                                       [self.cached_uc], {})
-        # self.c = self.get_conds_with_caching(prompt_parser.get_multicond_learned_conditioning, prompts, self.steps,
-        #                                      [self.cached_c], {})
-        #
-        # self.c = self.c.batch[0][0].schedules[0].cond
-        # self.uc = self.uc[0][0].cond
-
-        # embedded_prompts = self.prompt_embedding_vectors(prompt_array=self.prompts)
-        # embedded_prompts_cpu = embedded_prompts.to("cpu")
-        # embedded_prompts_list = embedded_prompts_cpu.detach().numpy()
-        #
-        # prompt_embedding = torch.tensor(embedded_prompts_list[0], dtype=torch.float32)
-        # prompt_embedding = prompt_embedding.view(1, 77, 768).to(DEVICE)
 
         self.uc = self.prompt_embedding_vectors(negative_prompts)[0]
         self.c = self.prompt_embedding_vectors(prompts)[0]
@@ -354,12 +397,24 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
     init_latent: torch.Tensor = field(default=None, init=False)
     device = get_device()
 
+    metadata_output: bool = False
+    metadata_file: MemoryJSON = None
+
     def __post_init__(self):
         super().__post_init__()
 
         self.image_mask = self.mask
         self.mask = None
         self.initial_noise_multiplier = opts.initial_noise_multiplier if self.initial_noise_multiplier is None else self.initial_noise_multiplier
+
+        # create metadata file in output folder
+        if self.metadata_output:
+            self.metadata_file = MemoryJSON(join(self.outpath, 'metadata.json'), size_memory=1e9)
+
+    def close(self):
+        super().close()
+        if self.metadata_output:
+            self.metadata_file.finalize()
 
     @property
     def mask_blur(self):
@@ -372,33 +427,6 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         if isinstance(value, int):
             self.mask_blur_x = value
             self.mask_blur_y = value
-
-    # def images_tensor_to_samples(self,image, approximation=None, model=None):
-    #     '''image[0, 1] -> latent'''
-    #     if approximation is None:
-    #         approximation = approximation_indexes.get(opts.sd_vae_encode_method, 0)
-    #
-    #     if approximation == 3:
-    #         image = image.to(self.device, self.devices.dtype)
-    #         x_latent = sd_vae_taesd.encoder_model()(image)
-    #     else:
-    #         if model is None:
-    #             model = shared.sd_model
-    #         model.first_stage_model.to(devices.dtype_vae)
-    #
-    #         image = image.to(shared.device, dtype=devices.dtype_vae)
-    #         image = image * 2 - 1
-    #         if len(image) > 1:
-    #             x_latent = torch.stack([
-    #                 model.get_first_stage_encoding(
-    #                     model.encode_first_stage(torch.unsqueeze(img, 0))
-    #                 )[0]
-    #                 for img in image
-    #             ])
-    #         else:
-    #             x_latent = model.get_first_stage_encoding(model.encode_first_stage(image))
-    #
-    #     return x_latent
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         self.image_cfg_scale: float = None
@@ -578,40 +606,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         return samples
 
 
-def apply_color_correction(correction, original_image):
-    logging.info("Applying color correction.")
-    image = Image.fromarray(cv2.cvtColor(exposure.match_histograms(
-        cv2.cvtColor(
-            np.asarray(original_image),
-            cv2.COLOR_RGB2LAB
-        ),
-        correction,
-        channel_axis=2
-    ), cv2.COLOR_LAB2RGB).astype("uint8"))
-
-    image = blendLayers(image, original_image, BlendType.LUMINOSITY)
-
-    return image.convert('RGB')
-
-
-def apply_overlay(image, paste_loc, index, overlays):
-    if overlays is None or index >= len(overlays):
-        return image
-
-    overlay = overlays[index]
-
-    if paste_loc is not None:
-        x, y, w, h = paste_loc
-        base_image = Image.new('RGBA', (overlay.width, overlay.height))
-        image = images.resize_image(1, image, w, h)
-        base_image.paste(image, (x, y))
-        image = base_image
-
-    image = image.convert('RGBA')
-    image.alpha_composite(overlay)
-    image = image.convert('RGB')
-
-    return image
+'''Core Functions'''
 
 
 def process_images(p: StableDiffusionProcessingImg2Img):
@@ -649,14 +644,14 @@ def process_images(p: StableDiffusionProcessingImg2Img):
             p.seeds = p.all_seeds[n * p.batch_size:(n + 1) * p.batch_size]
             p.subseeds = p.all_subseeds[n * p.batch_size:(n + 1) * p.batch_size]
 
+            # May we need to configure this part to get the propaly conds
+            p.setup_conds()
+
             p.rng = rng.ImageRNG((opt_C, p.height // opt_f, p.width // opt_f), p.seeds, subseeds=p.subseeds,
                                  subseed_strength=p.subseed_strength, seed_resize_from_h=p.seed_resize_from_h,
                                  seed_resize_from_w=p.seed_resize_from_w)
             if len(p.prompts) == 0:
                 break
-
-            # May we need to configure this part to get the propaly conds
-            p.setup_conds()
 
             with without_autocast():
                 samples_ddim = p.sample(conditioning=p.c, unconditional_conditioning=p.uc, seeds=p.seeds,
@@ -684,70 +679,25 @@ def process_images(p: StableDiffusionProcessingImg2Img):
 
                 image = Image.fromarray(x_sample)
 
-                # if opts.img2img_color_correction:
-                #     image = apply_color_correction(p.color_corrections[i], image)
-
                 image = apply_overlay(image, p.paste_to, i, p.overlay_images)
-                image.save(join(p.outpath, f"{int(time.time())}-{p.mask_blur}-{p.cfg_scale}.png"))
+                file_name = f"{int(time.time())}.png"
+                image.save(join(p.outpath, file_name))
 
-            del x_samples_ddim
-            torch_gc()
+                if p.metadata_output:
+                    p.metadata_file.add({
+                        "path": join(p.outpath, file_name),
+                        "prompt": p.main_prompt,
+                        "negative_prompt": p.main_negative_prompt,
+                        "seed": p.seeds[i],
+                        "cfg_scale": p.cfg_scale,
+                        "sampling_method": p.sampler_name,
+                        "latent_mask": p.latent_mask,
+                        "embeddings": p.prompt_embedding_vectors(p.prompts)[0].tolist(),
+                        "subseed": p.subseeds[i],
+                    })
 
-
-def create_binary_mask(image):
-    if image.mode == 'RGBA' and image.getextrema()[-1] != (255, 255):
-        image = image.split()[-1].convert("L").point(lambda x: 255 if x > 128 else 0)
-    else:
-        image = image.convert('L')
-    return image
-
-
-def get_model(device, n_steps):
-    # NOTE: Initializing stable diffusion
-    sd = StableDiffusion(device=device, n_steps=n_steps)
-    config = ModelPathConfig()
-    sd.quick_initialize().load_autoencoder(config.get_model(SDconfigs.VAE)).load_decoder(
-        config.get_model(SDconfigs.VAE_DECODER))
-    sd.model.load_unet(config.get_model(SDconfigs.UNET))
-    sd.initialize_latent_diffusion(path='input/model/sd/v1-5-pruned-emaonly/v1-5-pruned-emaonly.safetensors',
-                                        force_submodels_init=True)
-    model = sd.model
-
-    return sd, config, model
-
-
-def img2img(prompt: str, negative_prompt: str, sampler_name: str, batch_size: int, n_iter: int, steps: int,
-            cfg_scale: float, width: int, height: int, mask_blur: int, inpainting_fill: int,
-            outpath, styles, init_images, mask, resize_mode, denoising_strength,
-            image_cfg_scale, inpaint_full_res_padding, inpainting_mask_invert, sd=None, config=None, model=None):
-    p = StableDiffusionProcessingImg2Img(
-        outpath=outpath,
-        prompt=prompt,
-        negative_prompt=negative_prompt,
-        styles=styles,
-        sampler_name=sampler_name,
-        batch_size=batch_size,
-        n_iter=n_iter,
-        steps=steps,
-        cfg_scale=cfg_scale,
-        width=width,
-        height=height,
-        init_images=init_images,
-        mask=create_binary_mask(mask),
-        mask_blur=mask_blur,
-        inpainting_fill=inpainting_fill,
-        resize_mode=resize_mode,
-        denoising_strength=denoising_strength,
-        image_cfg_scale=image_cfg_scale,
-        inpaint_full_res_padding=inpaint_full_res_padding,
-        inpainting_mask_invert=inpainting_mask_invert,
-        sd=sd,
-        config=config,
-        model=model
-    )
-
-    with closing(p):
-        process_images(p)
+        del x_samples_ddim
+        torch_gc()
 
 
 def parse_args():
@@ -780,8 +730,49 @@ def parse_args():
     parser.add_argument("--image_cfg_scale", type=float, default=1.5, help="Image config scale")
     parser.add_argument("--inpaint_full_res_padding", type=int, default=32, help="Inpaint full resolution padding")
     parser.add_argument("--inpainting_mask_invert", type=int, default=0, help="Inpainting mask invert value")
+    parser.add_argument("--metadata_output", action="store_true", help="Metadata output", default=False)
 
     return parser.parse_args()
+
+
+def img2img(prompt=None, init_images=None, mask=None, negative_prompt="", sampler_name="ddim", batch_size=1, n_iter=1, steps=20,
+            cfg_scale=7.0, width=512, height=512, mask_blur=4, inpainting_fill=1, outpath=None, styles=[],
+            resize_mode=0, denoising_strength=0.75, image_cfg_scale=1.5, inpaint_full_res_padding=32,
+            inpainting_mask_invert=0, metadata_output=False, sd=None, config=None, model=None, clip_text_embedder=None):
+    assert prompt is not None, "Prompt must be specified"
+    assert init_images is not None, "Initial image must be specified"
+    assert mask is not None, "Mask must be specified"
+
+    p = StableDiffusionProcessingImg2Img(
+        prompt=prompt,
+        negative_prompt=negative_prompt,
+        sampler_name=sampler_name,
+        batch_size=batch_size,
+        n_iter=n_iter,
+        steps=steps,
+        cfg_scale=cfg_scale,
+        width=width,
+        height=height,
+        mask_blur=mask_blur,
+        inpainting_fill=inpainting_fill,
+        outpath=outpath,
+        styles=styles,
+        init_images=init_images,
+        mask=mask,
+        resize_mode=resize_mode,
+        denoising_strength=denoising_strength,
+        image_cfg_scale=image_cfg_scale,
+        inpaint_full_res_padding=inpaint_full_res_padding,
+        inpainting_mask_invert=inpainting_mask_invert,
+        metadata_output=metadata_output,
+        sd=sd,
+        config=config,
+        model=model,
+        clip_text_embedder=clip_text_embedder
+    )
+
+    with closing(p):
+        process_images(p)
 
 
 def main():
@@ -799,27 +790,10 @@ def main():
     if not os.path.exists(args.outpath):
         os.makedirs(args.outpath)
 
-    img2img(prompt=args.prompt,
-            negative_prompt=args.negative_prompt,
-            sampler_name=args.sampler_name,
-            batch_size=args.batch_size,
-            n_iter=args.n_iter,
-            steps=args.steps,
-            cfg_scale=args.cfg_scale,
-            width=args.width,
-            height=args.height,
-            mask_blur=args.mask_blur,
-            inpainting_fill=args.inpainting_fill,
-            outpath=args.outpath,
-            styles=args.styles,
-            init_images=[init_image],
-            mask=init_mask,
-            resize_mode=args.resize_mode,
-            denoising_strength=args.denoising_strength,
-            image_cfg_scale=args.image_cfg_scale,
-            inpaint_full_res_padding=args.inpaint_full_res_padding,
-            inpainting_mask_invert=args.inpainting_mask_invert
-            )
+    img2img(args.prompt, [init_image], init_mask, args.negative_prompt, args.sampler_name, args.batch_size, args.n_iter,
+            args.steps, args.cfg_scale, args.width, args.height, args.mask_blur, args.inpainting_fill, args.outpath,
+            args.styles, args.resize_mode, args.denoising_strength, args.image_cfg_scale,
+            args.inpaint_full_res_padding, args.inpainting_mask_invert, args.metadata_output)
 
 
 if __name__ == "__main__":

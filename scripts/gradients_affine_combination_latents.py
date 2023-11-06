@@ -25,7 +25,7 @@ from stable_diffusion.model.clip_text_embedder import CLIPTextEmbedder
 from stable_diffusion_base_script import StableDiffusionBaseScript
 from stable_diffusion.utils_backend import get_autocast, set_seed
 from chad_score.chad_score import ChadScorePredictor
-from model.util_clip import ClipModelHuggingface
+from model.util_clip import ClipOpenAi
 from stable_diffusion.utils_image import save_images
 
 def parse_arguments():
@@ -168,12 +168,8 @@ def latents_similarity_score(latent, index, output, target_features, device, sav
     if save_image:
         image_list, image_hash_list = save_images(images, output + '/image' + str(index + 1) + '.jpg')
 
-    del latent
-    torch.cuda.empty_cache()
-
     # Map images to `[0, 1]` space and clip
     images = torch.clamp((images + 1.0) / 2.0, min=0.0, max=1.0)
-
 
     ## Normalize the image tensor
     mean = torch.tensor([0.48145466, 0.4578275, 0.40821073], device=device).view(-1, 1, 1)
@@ -191,16 +187,8 @@ def latents_similarity_score(latent, index, output, target_features, device, sav
 
     image_features = image_features.to(torch.float32)
 
-    # cleanup
-    del images
-    torch.cuda.empty_cache()
-
     fitness = get_similarity_score(image_features, target_features)
     print("fitness : ", fitness.item())
-
-    # cleanup
-    del image_features
-    torch.cuda.empty_cache()
 
     return fitness
 
@@ -308,7 +296,7 @@ if __name__ == "__main__":
     chad_score_predictor.load_model(chad_score_model_path)
 
     # Load the clip model
-    util_clip = ClipModelHuggingface(device=device)
+    util_clip = ClipOpenAi(device=device)
     util_clip.load_model()
 
     prompt_list = read_prompts_from_zip(prompts_path, num_prompts)
@@ -325,6 +313,7 @@ if __name__ == "__main__":
                                         path=checkpoint_path, force_submodels_init=True)
 
     fixed_taget_features = get_target_embeddings_features(util_clip, "chibi, anime, waifu, side scrolling")
+    fixed_taget_features = fixed_taget_features.clone().requires_grad_()
 
     latent_array = []
     index = 0
@@ -354,7 +343,7 @@ if __name__ == "__main__":
             h=image_height
         )
 
-        latent = latent.clone()
+        latent = latent.clone().requires_grad_()
 
         images = txt2img.get_image_from_latent(latent)
         image_list, image_hash_list = save_images(images, starting_images_directory + '/image' + str(index + 1) + '.jpg')
@@ -376,26 +365,23 @@ if __name__ == "__main__":
     # convert to tensor
     weight_array = torch.tensor(weight_array, device=device, dtype=torch.float32, requires_grad=True)
 
-    optimizer = optim.AdamW([weight_array], lr=learning_rate, weight_decay=0.01)
-    mse_loss = nn.MSELoss(reduction='sum')
+    optimizer = optim.AdamW([weight_array], lr=learning_rate)
+    mse_loss = nn.MSELoss()
 
     target = torch.tensor([1.0], device=device, dtype=torch.float32, requires_grad=True)
 
     start_time = time.time()
 
-    fixed_taget_features = get_target_embeddings_features(util_clip, "chibi, anime, waifu, side scrolling")
-
     for i in range(0, iterations):
         # Zero the gradients
-
-        fixed_taget = fixed_taget_features.detach().clone()
 
         save_image = True
 
         combined_latent = combine_latents(latent_array, weight_array, device)
+        combined_latent = combined_latent.clone().requires_grad_()
 
         #chad_score, chad_score_scaled = latents_chad_score(combined_latent, i, output, chad_score_predictor)
-        fitness = latents_similarity_score(combined_latent, i, output, fixed_taget, device, save_image)
+        fitness = latents_similarity_score(combined_latent, i, output, fixed_taget_features, device, save_image)
 
         input = fitness
         loss = mse_loss(input, target)

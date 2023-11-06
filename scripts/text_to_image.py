@@ -22,6 +22,7 @@ from stable_diffusion.model.unet.unet_attention import CrossAttention
 from stable_diffusion.utils_backend import set_seed, get_autocast
 from stable_diffusion.utils_image import save_images
 from stable_diffusion_base_script import StableDiffusionBaseScript
+from utility.utils_argument_parsing import get_seed_array_from_string
 from utility.labml import monit
 
 
@@ -170,13 +171,7 @@ def text_to_image(prompt, negative_prompt, output, sampler, checkpoint_path, fla
     # Split the numbers_string into a list of substrings using the comma as the delimiter
     seed_string_array = seed.split(',')
 
-    # default seed value is random int from 0 to 2^24
-    if seed == '':
-        rand_seed = randrange(0, 2 ** 24)
-        seed_string_array = str(rand_seed)
-
-    # Convert the elements in the list to integers (optional, if needed)
-    seed_array = [int(num) for num in seed_string_array]
+    seed_array = get_seed_array_from_string(seed, array_size=num_images)
 
     # Set flash attention
     CrossAttention.use_flash_attention = flash
