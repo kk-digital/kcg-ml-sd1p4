@@ -70,7 +70,7 @@ def get_list_of_objects(client, bucket_name):
     return objects
 
 
-def upload_file(client, bucket_name, object_name, file_path):
+def upload_from_file(client, bucket_name, object_name, file_path):
     result = client.fput_object(bucket_name, object_name, file_path)
     print(
         "created {0} object; etag: {1}, version-id: {2}".format(
@@ -78,9 +78,22 @@ def upload_file(client, bucket_name, object_name, file_path):
         ),
     )
 
+
+def upload_data(client, bucket_name, object_name, data):
+    result = client.put_object(
+        bucket_name, object_name, data, length=-1, part_size=10 * 1024 * 1024,
+    )
+    print(
+        "created {0} object; etag: {1}, version-id: {2}".format(
+            result.object_name, result.etag, result.version_id,
+        ),
+    )
+
+
 def remove_an_object(client, bucket_name, object_name):
     # Remove object.
     client.remove_object(bucket_name, object_name)
+
 
 def is_object_exists(client, bucket_name, object_name):
     result = client.stat_object(bucket_name, object_name)
