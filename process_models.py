@@ -18,7 +18,8 @@ if __name__ == "__main__":
     # CLIP
     with section("Initialize CLIP image encoder and load submodels from lib"):
         img_encoder = CLIPImageEncoder()
-        img_encoder.load_submodels_from_transformer()
+        #img_encoder.load_submodels_from_transformer()
+        img_encoder.load_submodels()
     with section("CLIP: Saving image encoder submodels"):
         img_encoder.save_submodels()
         img_encoder.unload_submodels()
