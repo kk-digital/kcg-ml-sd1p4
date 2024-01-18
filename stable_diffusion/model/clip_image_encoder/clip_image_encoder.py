@@ -78,7 +78,7 @@ class CLIPImageEncoder(nn.Module):
                 self.config.get_model_folder_path(CLIPconfigs.IMG_ENC_PROCESSOR), local_files_only=True)
             return self
         except Exception as e:
-            logger.error('Error loading submodels: ', e)
+            logger.error('Error loading submodels: ', str(e))
 
     def unload_submodels(self):
         # Unload the model from GPU memory
