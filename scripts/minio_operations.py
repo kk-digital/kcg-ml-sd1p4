@@ -77,7 +77,7 @@ def main():
     elif args.command == "list-objects":
         cmd.get_list_of_objects(client, args.bucket_name)
     elif args.command == "upload":
-        cmd.upload_file(client, args.bucket_name, args.object_name, args.input)
+        cmd.upload_from_file(client, args.bucket_name, args.object_name, args.input)
 
 
 if __name__ == '__main__':
