@@ -62,7 +62,8 @@ class CLIPImageEncoder(nn.Module):
             logger.info(f"CLIP ImageProcessor successfully loaded from : {image_processor_path}\n")
             return self
         except Exception as e:
-            logger.error('Error loading submodels: ', e)
+            print('Error loading submodels:')
+            print(str(e))
 
     def load_submodels_from_transformer(self, clip_transformer=CLIPconfigs.CLIP_MODEL):
         model = self.config.get_model(clip_transformer)
