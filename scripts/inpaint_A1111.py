@@ -16,10 +16,12 @@ import numpy as np
 import torch
 from PIL import Image, ImageOps
 
-from utility.memory_json import MemoryJSON
-
 base_dir = os.getcwd()
 sys.path.append(base_dir)
+
+from utility.memory_json import MemoryJSON
+
+
 from utility import masking, images, rng, prompt_parser
 from utility.rng import ImageRNG
 from utility.utils_logger import logger
